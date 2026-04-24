@@ -1,1147 +1,745 @@
 <!DOCTYPE html>
-<html lang="zh-TW">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>GLITCH STUDIO</title>
+<html lang="zh-TW"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>GLITCH STUDIO v4</title>
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Bebas+Neue&family=Courier+Prime:wght@400;700&display=swap');
-
-:root {
-  --bg: #0e0e0e;
-  --surface: #161616;
-  --border: #2a2a2a;
-  --text: #e8e8e0;
-  --muted: #666;
-  --accent: #ff2244;
-  --accent2: #00ffcc;
-  --film: #f5c842;
-  --tech: #00e5ff;
-  --horror: #8b00ff;
-  --retro: #ff6b00;
-  --blood: #cc0000;
-}
-
-* { margin:0; padding:0; box-sizing:border-box; }
-html, body { height:100%; background:var(--bg); color:var(--text); font-family:'Share Tech Mono', monospace; overflow-x:hidden; }
-
-/* Scanlines overlay */
-body::before {
-  content:'';
-  position:fixed;
-  inset:0;
-  background:repeating-linear-gradient(0deg, transparent, transparent 3px, rgba(0,0,0,0.08) 3px, rgba(0,0,0,0.08) 4px);
-  pointer-events:none;
-  z-index:9999;
-}
-
-header {
-  border-bottom:1px solid var(--border);
-  padding:20px 40px;
-  display:flex;
-  align-items:baseline;
-  gap:20px;
-}
-.logo {
-  font-family:'Bebas Neue', sans-serif;
-  font-size:36px;
-  letter-spacing:6px;
-  color:var(--text);
-  position:relative;
-}
-.logo::before {
-  content:'GLITCH';
-  position:absolute;
-  top:0;left:0;
-  color:var(--accent);
-  clip-path:inset(0 0 60% 0);
-  transform:translateX(2px);
-  opacity:0.7;
-}
-.logo::after {
-  content:'GLITCH';
-  position:absolute;
-  top:0;left:0;
-  color:var(--accent2);
-  clip-path:inset(60% 0 0 0);
-  transform:translateX(-2px);
-  opacity:0.5;
-}
-.logo-sub {
-  font-size:11px;
-  letter-spacing:4px;
-  color:var(--muted);
-  text-transform:uppercase;
-}
-.status-dot {
-  margin-left:auto;
-  display:flex;
-  align-items:center;
-  gap:8px;
-  font-size:11px;
-  color:var(--muted);
-  letter-spacing:2px;
-}
-.dot {
-  width:7px;height:7px;border-radius:50%;
-  background:var(--accent2);
-  animation:pulse 2s ease-in-out infinite;
-}
-@keyframes pulse { 0%,100%{opacity:1}50%{opacity:0.2} }
-
-.main-layout {
-  display:grid;
-  grid-template-columns:1fr 340px;
-  gap:0;
-  height:calc(100vh - 77px);
-}
-
-/* LEFT: Canvas area */
-.canvas-area {
-  border-right:1px solid var(--border);
-  display:flex;
-  flex-direction:column;
-  align-items:center;
-  justify-content:center;
-  gap:20px;
-  padding:30px;
-  position:relative;
-  overflow:hidden;
-}
-
-.drop-zone {
-  width:100%;
-  max-width:600px;
-  aspect-ratio:4/3;
-  border:1.5px dashed var(--border);
-  display:flex;
-  flex-direction:column;
-  align-items:center;
-  justify-content:center;
-  gap:12px;
-  cursor:pointer;
-  transition:border-color 0.2s;
-  position:relative;
-  overflow:hidden;
-  background:#111;
-}
-.drop-zone:hover { border-color:var(--muted); }
-.drop-zone.has-image { border-style:solid; border-color:var(--border); }
-.drop-zone.dragover { border-color:var(--accent2); }
-
-.drop-icon {
-  font-family:'Bebas Neue',sans-serif;
-  font-size:48px;
-  color:#2a2a2a;
-  letter-spacing:4px;
-}
-.drop-text { font-size:12px; color:var(--muted); letter-spacing:3px; }
-.drop-hint { font-size:10px; color:#333; letter-spacing:2px; }
-
-#mainCanvas {
-  position:absolute;
-  inset:0;
-  width:100%;
-  height:100%;
-  object-fit:contain;
-  display:none;
-}
-
-.canvas-info {
-  display:flex;
-  gap:20px;
-  font-size:10px;
-  color:var(--muted);
-  letter-spacing:2px;
-}
-.info-item span { color:var(--text); }
-
-/* RIGHT: Controls */
-.controls {
-  display:flex;
-  flex-direction:column;
-  overflow-y:auto;
-  scrollbar-width:thin;
-  scrollbar-color:var(--border) transparent;
-}
-.controls::-webkit-scrollbar { width:3px; }
-.controls::-webkit-scrollbar-thumb { background:var(--border); }
-
-.ctrl-section {
-  padding:24px 20px;
-  border-bottom:1px solid var(--border);
-}
-.ctrl-label {
-  font-size:10px;
-  letter-spacing:4px;
-  color:var(--muted);
-  margin-bottom:16px;
-  text-transform:uppercase;
-}
-
-/* Effect buttons */
-.effect-grid {
-  display:grid;
-  grid-template-columns:1fr 1fr;
-  gap:8px;
-}
-
-.effect-btn {
-  padding:12px 8px;
-  border:1px solid var(--border);
-  background:transparent;
-  cursor:pointer;
-  text-align:center;
-  transition:all 0.15s;
-  position:relative;
-  overflow:hidden;
-}
-.effect-btn::before {
-  content:'';
-  position:absolute;
-  inset:0;
-  opacity:0;
-  transition:opacity 0.15s;
-}
-.effect-btn:hover::before { opacity:1; }
-.effect-btn.active { border-width:2px; }
-
-.effect-btn .e-name {
-  font-family:'Bebas Neue',sans-serif;
-  font-size:16px;
-  letter-spacing:3px;
-  display:block;
-  margin-bottom:2px;
-}
-.effect-btn .e-tag {
-  font-size:9px;
-  letter-spacing:2px;
-  color:var(--muted);
-}
-
-/* Film */
-.eff-film { --c:#f5c842; }
-.eff-film::before { background:rgba(245,200,66,0.06); }
-.eff-film .e-name { color:#f5c842; }
-.eff-film.active { border-color:#f5c842; background:rgba(245,200,66,0.05); }
-
-/* Tech */
-.eff-tech { --c:#00e5ff; }
-.eff-tech::before { background:rgba(0,229,255,0.06); }
-.eff-tech .e-name { color:#00e5ff; }
-.eff-tech.active { border-color:#00e5ff; background:rgba(0,229,255,0.05); }
-
-/* Horror */
-.eff-horror { --c:#8b00ff; }
-.eff-horror::before { background:rgba(139,0,255,0.08); }
-.eff-horror .e-name { color:#8b00ff; }
-.eff-horror.active { border-color:#8b00ff; background:rgba(139,0,255,0.05); }
-
-/* Retro */
-.eff-retro { --c:#ff6b00; }
-.eff-retro::before { background:rgba(255,107,0,0.06); }
-.eff-retro .e-name { color:#ff6b00; }
-.eff-retro.active { border-color:#ff6b00; background:rgba(255,107,0,0.05); }
-
-/* Blood */
-.eff-blood { --c:#cc0000; }
-.eff-blood::before { background:rgba(204,0,0,0.06); }
-.eff-blood .e-name { color:#cc0000; }
-.eff-blood.active { border-color:#cc0000; background:rgba(204,0,0,0.05); }
-
-/* Intensity slider */
-.slider-row {
-  display:flex;
-  align-items:center;
-  gap:12px;
-  margin-top:8px;
-}
-.slider-row label { font-size:10px; color:var(--muted); letter-spacing:2px; white-space:nowrap; }
-.slider-row input[type=range] {
-  flex:1;
-  -webkit-appearance:none;
-  height:2px;
-  background:var(--border);
-  outline:none;
-  cursor:pointer;
-}
-.slider-row input[type=range]::-webkit-slider-thumb {
-  -webkit-appearance:none;
-  width:14px;height:14px;
-  border-radius:50%;
-  background:var(--text);
-  cursor:pointer;
-  border:2px solid var(--bg);
-  box-shadow:0 0 0 1px var(--border);
-}
-.slider-val {
-  font-size:11px;
-  color:var(--text);
-  min-width:28px;
-  text-align:right;
-}
-
-/* Preview toggle */
-.preview-toggle {
-  display:flex;
-  align-items:center;
-  gap:8px;
-  margin-top:14px;
-  cursor:pointer;
-  user-select:none;
-}
-.toggle-track {
-  width:36px;height:18px;
-  border:1px solid var(--border);
-  border-radius:9px;
-  position:relative;
-  background:transparent;
-  transition:border-color 0.2s;
-}
-.toggle-thumb {
-  position:absolute;
-  top:2px;left:2px;
-  width:12px;height:12px;
-  border-radius:50%;
-  background:var(--muted);
-  transition:all 0.2s;
-}
-.preview-toggle.on .toggle-track { border-color:var(--accent2); }
-.preview-toggle.on .toggle-thumb { left:20px; background:var(--accent2); }
-.toggle-label { font-size:10px; letter-spacing:3px; color:var(--muted); }
-.preview-toggle.on .toggle-label { color:var(--accent2); }
-
-/* Export */
-.export-grid {
-  display:grid;
-  grid-template-columns:1fr 1fr;
-  gap:8px;
-}
-.export-btn {
-  padding:14px 8px;
-  border:1px solid var(--border);
-  background:transparent;
-  cursor:pointer;
-  text-align:center;
-  transition:all 0.2s;
-  font-family:'Share Tech Mono',monospace;
-  color:var(--text);
-  font-size:11px;
-  letter-spacing:3px;
-  position:relative;
-  overflow:hidden;
-}
-.export-btn:hover:not(:disabled) { border-color:var(--text); background:rgba(255,255,255,0.03); }
-.export-btn:active:not(:disabled) { transform:scale(0.98); }
-.export-btn:disabled { opacity:0.3; cursor:not-allowed; }
-.export-btn .btn-format {
-  font-family:'Bebas Neue',sans-serif;
-  font-size:22px;
-  letter-spacing:4px;
-  display:block;
-  margin-bottom:2px;
-}
-.export-btn.gif-btn .btn-format { color:var(--accent2); }
-.export-btn.mp4-btn .btn-format { color:var(--accent); }
-
-/* Progress */
-.progress-bar {
-  width:100%;
-  height:2px;
-  background:var(--border);
-  margin-top:12px;
-  position:relative;
-  overflow:hidden;
-  display:none;
-}
-.progress-fill {
-  height:100%;
-  background:var(--accent2);
-  width:0%;
-  transition:width 0.1s;
-}
-.progress-text {
-  font-size:10px;
-  color:var(--muted);
-  letter-spacing:2px;
-  margin-top:8px;
-  display:none;
-  text-align:center;
-}
-
-/* Upload button */
-.upload-btn {
-  display:inline-block;
-  padding:10px 20px;
-  border:1px solid var(--border);
-  background:transparent;
-  cursor:pointer;
-  font-family:'Share Tech Mono',monospace;
-  font-size:11px;
-  letter-spacing:3px;
-  color:var(--muted);
-  transition:all 0.2s;
-}
-.upload-btn:hover { border-color:var(--text); color:var(--text); }
-
-#fileInput { display:none; }
-
-/* Duration control */
-.dur-row {
-  display:flex;
-  align-items:center;
-  gap:8px;
-  flex-wrap:wrap;
-}
-.dur-btn {
-  padding:6px 14px;
-  border:1px solid var(--border);
-  background:transparent;
-  cursor:pointer;
-  font-family:'Share Tech Mono',monospace;
-  font-size:11px;
-  letter-spacing:2px;
-  color:var(--muted);
-  transition:all 0.15s;
-}
-.dur-btn:hover { border-color:var(--muted); color:var(--text); }
-.dur-btn.active { border-color:var(--text); color:var(--text); }
-
-/* Frame counter */
-.frame-counter {
-  font-size:10px;
-  color:var(--muted);
-  letter-spacing:2px;
-  margin-top:8px;
-}
-
-/* Noise description */
-.effect-desc {
-  font-size:10px;
-  color:var(--muted);
-  letter-spacing:1px;
-  line-height:1.6;
-  margin-top:8px;
-  min-height:32px;
-  border-left:2px solid var(--border);
-  padding-left:10px;
-}
-</style>
-</head>
-<body>
+@import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Bebas+Neue&family=VT323&display=swap');
+:root{--bg:#0a0a0a;--b:#1f1f1f;--t:#e8e4dc;--m:#555;--a:#ff2244;--a2:#00ffcc}
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{height:100%;background:var(--bg);color:var(--t);font-family:'Share Tech Mono',monospace;overflow-x:hidden}
+body::before{content:'';position:fixed;inset:0;background:repeating-linear-gradient(0deg,transparent,transparent 3px,rgba(0,0,0,.06) 3px,rgba(0,0,0,.06) 4px);pointer-events:none;z-index:9999}
+header{border-bottom:1px solid var(--b);padding:14px 32px;display:flex;align-items:center;gap:16px}
+.logo{font-family:'Bebas Neue',sans-serif;font-size:30px;letter-spacing:6px;position:relative;line-height:1}
+.logo::before,.logo::after{content:'GLITCH';position:absolute;top:0;left:0}
+.logo::before{color:#ff2244;clip-path:inset(0 0 55% 0);transform:translateX(2px);opacity:.7}
+.logo::after{color:#00ffcc;clip-path:inset(55% 0 0 0);transform:translateX(-2px);opacity:.5}
+.sub{font-size:9px;letter-spacing:5px;color:var(--m)}
+.hr{margin-left:auto;display:flex;align-items:center;gap:8px;font-size:10px;color:var(--m);letter-spacing:2px}
+.dot{width:6px;height:6px;border-radius:50%;background:var(--a2);animation:bl 2s infinite}
+@keyframes bl{0%,100%{opacity:1}50%{opacity:.2}}
+.lay{display:grid;grid-template-columns:1fr 360px;height:calc(100vh - 61px)}
+.cv{border-right:1px solid var(--b);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;gap:14px;overflow:hidden}
+.dz{width:100%;max-width:680px;aspect-ratio:16/10;border:1px dashed #2a2a2a;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;cursor:pointer;position:relative;overflow:hidden;background:#0c0c0c;transition:border-color .2s}
+.dz:hover,.dz.drag{border-color:#444}
+.dz.has{border-style:solid;border-color:#1a1a1a;cursor:default}
+#cvs{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;display:none}
+.di{font-family:'Bebas Neue',sans-serif;font-size:52px;color:#1e1e1e;letter-spacing:4px}
+.dt{font-size:11px;color:var(--m);letter-spacing:3px}
+.dh{font-size:9px;color:#333;letter-spacing:2px}
+.ul{display:inline-block;padding:8px 18px;border:1px solid #2a2a2a;font-size:10px;letter-spacing:3px;color:var(--m);cursor:pointer;transition:all .2s;margin-top:8px}
+.ul:hover{border-color:#555;color:var(--t)}
+#fi{display:none}
+.meta{display:flex;gap:18px;font-size:10px;color:var(--m);letter-spacing:2px;align-items:center;flex-wrap:wrap;justify-content:center}
+.meta b{color:var(--t);font-weight:normal}
+.rep{padding:6px 14px;border:1px solid var(--b);background:transparent;cursor:pointer;font-family:inherit;font-size:9px;letter-spacing:2px;color:var(--m)}
+.rep:hover{border-color:#555;color:var(--t)}
+.ct{display:flex;flex-direction:column;overflow-y:auto;scrollbar-width:thin}
+.ct::-webkit-scrollbar{width:3px}
+.ct::-webkit-scrollbar-thumb{background:var(--b)}
+.sec{padding:14px 18px;border-bottom:1px solid var(--b)}
+.sl{font-size:9px;letter-spacing:4px;color:var(--m);margin-bottom:10px;display:flex;align-items:center;gap:8px}
+.sl::after{content:'';flex:1;height:1px;background:var(--b)}
+.eg{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px}
+.eb{padding:10px 4px;border:1px solid var(--b);background:transparent;cursor:pointer;text-align:center;transition:all .15s}
+.eb:hover{border-color:#444}
+.eb.on{border-width:2px}
+.en{font-family:'Bebas Neue',sans-serif;font-size:13px;letter-spacing:1.5px;display:block;margin-bottom:1px}
+.zh{font-size:8px;letter-spacing:1px;color:var(--m)}
+.desc{font-size:10px;color:var(--m);letter-spacing:1px;line-height:1.6;margin-top:10px;border-left:2px solid var(--b);padding-left:10px;min-height:20px}
+.rw{display:flex;align-items:center;gap:10px;margin-top:8px}
+.rw label{font-size:9px;letter-spacing:2px;color:var(--m);min-width:86px}
+.rw input[type=range]{flex:1;-webkit-appearance:none;height:1px;background:var(--b);outline:none;cursor:pointer}
+.rw input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:12px;height:12px;border-radius:50%;background:var(--t);cursor:pointer;border:2px solid var(--bg)}
+.vv{font-size:10px;color:var(--t);min-width:36px;text-align:right}
+.hue-slider{background:linear-gradient(90deg,#f00,#ff0,#0f0,#0ff,#00f,#f0f,#f00)!important;height:4px!important}
+.tg{display:flex;align-items:center;gap:8px;margin-top:10px;cursor:pointer;user-select:none}
+.tk{width:32px;height:16px;border:1px solid var(--b);border-radius:8px;position:relative}
+.th{position:absolute;top:2px;left:2px;width:10px;height:10px;border-radius:50%;background:var(--m);transition:all .2s}
+.tg.on .tk{border-color:var(--a2)}
+.tg.on .th{left:18px;background:var(--a2)}
+.tl{font-size:9px;letter-spacing:3px;color:var(--m)}
+.tg.on .tl{color:var(--a2)}
+.dr{display:flex;gap:6px;flex-wrap:wrap}
+.db{padding:6px 12px;border:1px solid var(--b);background:transparent;cursor:pointer;font-family:inherit;font-size:10px;letter-spacing:2px;color:var(--m)}
+.db:hover{border-color:#444;color:var(--t)}
+.db.on{border-color:var(--t);color:var(--t)}
+.fn{font-size:9px;color:var(--m);letter-spacing:2px;margin-top:8px}
+.xg{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.xb{padding:12px 6px;border:1px solid var(--b);background:transparent;cursor:pointer;font-family:inherit;font-size:9px;letter-spacing:2px;color:var(--t);text-align:center}
+.xb:hover:not(:disabled){border-color:var(--t);background:rgba(255,255,255,.02)}
+.xb:disabled{opacity:.25;cursor:not-allowed}
+.fmt{font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:4px;display:block;margin-bottom:2px}
+.gif-b .fmt{color:var(--a2)}
+.mp4-b .fmt{color:var(--a)}
+.pb{width:100%;height:1px;background:var(--b);margin-top:10px;display:none}
+.pf{height:100%;background:var(--a2);width:0;transition:width .1s}
+.pt{font-size:9px;color:var(--m);letter-spacing:2px;margin-top:6px;display:none;text-align:center}
+.rst{padding:2px 8px;border:1px solid var(--b);background:transparent;cursor:pointer;font-family:inherit;font-size:8px;letter-spacing:2px;color:var(--m)}
+.rst:hover{border-color:#555;color:var(--t)}
+.fx-opt{margin-top:10px;padding:10px;border:1px solid var(--b);background:rgba(255,255,255,.01);display:none}
+.fx-opt.show{display:block}
+.fx-opt-label{font-size:9px;letter-spacing:3px;color:var(--m);margin-bottom:6px}
+.pal{display:grid;grid-template-columns:repeat(5,1fr);gap:4px;margin-top:6px}
+.pc{padding:6px 4px;border:1px solid var(--b);background:transparent;cursor:pointer;font-family:inherit;font-size:9px;color:var(--m);text-align:center;letter-spacing:1px}
+.pc:hover{border-color:#444;color:var(--t)}
+.pc.on{border-color:var(--t);color:var(--t)}
+.c-film.on{border-color:#f5c842;background:rgba(245,200,66,.05)}.c-film .en{color:#f5c842}
+.c-cyber.on{border-color:#00e5ff;background:rgba(0,229,255,.05)}.c-cyber .en{color:#00e5ff}
+.c-retro.on{border-color:#ff6b00;background:rgba(255,107,0,.05)}.c-retro .en{color:#ff6b00}
+.c-404.on{border-color:#ff2244;background:rgba(255,34,68,.05)}.c-404 .en{color:#ff2244}
+.c-cctv.on{border-color:#aaffaa;background:rgba(170,255,170,.05)}.c-cctv .en{color:#aaffaa}
+.c-hack.on{border-color:#00ff41;background:rgba(0,255,65,.05)}.c-hack .en{color:#00ff41}
+.focus-hint{font-size:9px;color:var(--m);letter-spacing:1px;margin-top:6px;line-height:1.5}
+.focus-hint b{color:var(--a2)}
+.drag-target{position:absolute;width:20px;height:20px;border:2px solid var(--a2);border-radius:50%;cursor:move;display:none;z-index:20;pointer-events:auto;background:rgba(0,255,204,.15)}
+.drag-target.show{display:block}
+@media(max-width:900px){.lay{grid-template-columns:1fr;height:auto}.cv{border-right:none;border-bottom:1px solid var(--b);min-height:500px}}
+</style></head><body>
 
 <header>
-  <div class="logo">GLITCH</div>
-  <div>
-    <div style="font-family:'Bebas Neue';font-size:13px;letter-spacing:6px;color:var(--muted)">STUDIO</div>
-    <div class="logo-sub">NOISE EFFECT GENERATOR</div>
-  </div>
-  <div class="status-dot">
-    <div class="dot"></div>
-    SYSTEM READY
-  </div>
+  <div><div class="logo">GLITCH</div><div class="sub">STUDIO · NOISE ENGINE v4</div></div>
+  <div class="hr"><div class="dot"></div>SYSTEM ONLINE</div>
 </header>
 
-<div class="main-layout">
-  <!-- Canvas -->
-  <div class="canvas-area">
-    <div class="drop-zone" id="dropZone">
-      <canvas id="mainCanvas"></canvas>
-      <div id="dropContent">
-        <div class="drop-icon">UPLOAD</div>
-        <div class="drop-text">拖拉圖片 / 點擊上傳</div>
-        <div class="drop-hint">JPG · PNG · WEBP · GIF</div>
-        <br>
-        <label for="fileInput" class="upload-btn">CHOOSE FILE</label>
-        <input type="file" id="fileInput" accept="image/*">
+<div class="lay">
+  <div class="cv">
+    <div class="dz" id="dz">
+      <canvas id="cvs"></canvas>
+      <div class="drag-target" id="focus"></div>
+      <div id="du">
+        <div class="di">UPLOAD</div>
+        <div class="dt">拖拉圖片 / 點擊上傳</div>
+        <div class="dh">JPG · PNG · WEBP · GIF</div>
+        <label class="ul" for="fi">CHOOSE FILE</label>
+        <input type="file" id="fi" accept="image/*">
       </div>
     </div>
-    <div class="canvas-info">
-      <div>尺寸：<span id="infoSize">—</span></div>
-      <div>特效：<span id="infoEffect">—</span></div>
-      <div>強度：<span id="infoIntensity">—</span></div>
-      <div>幀數：<span id="infoFrames">—</span></div>
+    <div class="meta">
+      <div>SIZE <b id="mS">—</b></div>
+      <div>FX <b id="mF">FILM</b></div>
+      <div>FRM <b id="mR">24</b></div>
+      <button class="rep" id="rep" style="display:none">更換圖片</button>
     </div>
   </div>
 
-  <!-- Controls -->
-  <div class="controls">
-
-    <!-- Effects -->
-    <div class="ctrl-section">
-      <div class="ctrl-label">// 選擇特效</div>
-      <div class="effect-grid">
-        <button class="effect-btn eff-film active" data-effect="film">
-          <span class="e-name">FILM</span>
-          <span class="e-tag">電影感</span>
-        </button>
-        <button class="effect-btn eff-tech" data-effect="tech">
-          <span class="e-name">CYBER</span>
-          <span class="e-tag">未來科技感</span>
-        </button>
-        <button class="effect-btn eff-horror" data-effect="horror">
-          <span class="e-name">HORROR</span>
-          <span class="e-tag">恐怖感</span>
-        </button>
-        <button class="effect-btn eff-retro" data-effect="retro">
-          <span class="e-name">RETRO</span>
-          <span class="e-tag">復古感</span>
-        </button>
-        <button class="effect-btn eff-blood" data-effect="blood" style="grid-column:1/-1">
-          <span class="e-name">BLOOD</span>
-          <span class="e-tag">血腥感</span>
-        </button>
+  <div class="ct">
+    <div class="sec">
+      <div class="sl">// 特效選擇</div>
+      <div class="eg">
+        <button class="eb c-film on" data-fx="film"><span class="en">FILM</span><span class="zh">電影感</span></button>
+        <button class="eb c-cyber" data-fx="cyber"><span class="en">CYBER</span><span class="zh">賽博龐克</span></button>
+        <button class="eb c-retro" data-fx="retro"><span class="en">RETRO</span><span class="zh">復古感</span></button>
+        <button class="eb c-404" data-fx="err"><span class="en">404</span><span class="zh">系統錯誤</span></button>
+        <button class="eb c-cctv" data-fx="cctv"><span class="en">CCTV</span><span class="zh">監視器</span></button>
+        <button class="eb c-hack" data-fx="hack"><span class="en">HACK</span><span class="zh">終端機入侵</span></button>
       </div>
-      <div class="effect-desc" id="effectDesc">
-        粒子感映像管噪點、膠片刮痕、光暈色差，重現電影老底片質感。
+      <div class="desc" id="dc">粒子感噪點、膠片刮痕、光暈色差，重現電影老底片質感。</div>
+
+      <!-- CYBER palette -->
+      <div class="fx-opt" id="opt-cyber">
+        <div class="fx-opt-label">CYBER 配色方案</div>
+        <div class="pal" id="cyberPal">
+          <button class="pc on" data-pal="cm">青/洋紅</button>
+          <button class="pc" data-pal="op">橙/紫</button>
+          <button class="pc" data-pal="gy">綠/黃</button>
+          <button class="pc" data-pal="rb">紅/藍</button>
+          <button class="pc" data-pal="pt">粉/青</button>
+        </div>
+      </div>
+
+      <!-- RETRO palette -->
+      <div class="fx-opt" id="opt-retro">
+        <div class="fx-opt-label">RETRO 色調</div>
+        <div class="pal" id="retroPal">
+          <button class="pc on" data-pal="warm">暖色</button>
+          <button class="pc" data-pal="cool">冷色</button>
+          <button class="pc" data-pal="sepia">褐色</button>
+          <button class="pc" data-pal="neutral">中性</button>
+          <button class="pc" data-pal="teal">青綠</button>
+        </div>
+      </div>
+
+      <!-- FILM options -->
+      <div class="fx-opt show" id="opt-film">
+        <div class="fx-opt-label">FILM 專屬設定</div>
+        <div class="tg on" id="barsTog"><div class="tk"><div class="th"></div></div><div class="tl">上下電影黑邊</div></div>
+      </div>
+
+      <!-- 404 options -->
+      <div class="fx-opt" id="opt-err">
+        <div class="fx-opt-label">404 浮水印大小</div>
+        <div class="rw"><label>WATERMARK</label><input type="range" id="errWM" min="0" max="100" value="40"><span class="vv" id="vErrWM">40%</span></div>
+      </div>
+
+      <!-- CCTV options -->
+      <div class="fx-opt" id="opt-cctv">
+        <div class="fx-opt-label">CCTV 設定</div>
+        <div class="tg on" id="cctvCross"><div class="tk"><div class="th"></div></div><div class="tl">中央十字準星</div></div>
       </div>
     </div>
 
-    <!-- Intensity -->
-    <div class="ctrl-section">
-      <div class="ctrl-label">// 強度設定</div>
-      <div class="slider-row">
-        <label>INTENSITY</label>
-        <input type="range" id="intensitySlider" min="1" max="10" value="5" step="1">
-        <span class="slider-val" id="intensityVal">5</span>
+    <!-- FOCUS POSITIONING -->
+    <div class="sec">
+      <div class="sl">// 焦點位置（避開主體）</div>
+      <div class="dr">
+        <button class="db on" data-focus="auto">自動</button>
+        <button class="db" data-focus="tl">左上</button>
+        <button class="db" data-focus="tr">右上</button>
+        <button class="db" data-focus="bl">左下</button>
+        <button class="db" data-focus="br">右下</button>
+        <button class="db" data-focus="edge">邊緣環繞</button>
       </div>
-      <div class="slider-row" style="margin-top:12px;">
-        <label>SPEED</label>
-        <input type="range" id="speedSlider" min="1" max="10" value="5" step="1">
-        <span class="slider-val" id="speedVal">5</span>
-      </div>
-      <div class="preview-toggle on" id="previewToggle">
-        <div class="toggle-track"><div class="toggle-thumb"></div></div>
-        <div class="toggle-label">LIVE PREVIEW</div>
+      <div class="focus-hint">特效元素（HUD、光暈、文字）會集中在<b>未選擇的角落</b>，避免蓋住主體。</div>
+    </div>
+
+    <!-- GRANULAR INTENSITY -->
+    <div class="sec">
+      <div class="sl">// 細節強度（獨立調整）</div>
+      <div class="rw"><label>NOISE 噪點</label><input type="range" id="sNO" min="0" max="10" value="5"><span class="vv" id="vNO">5</span></div>
+      <div class="rw"><label>COLOR 色偏</label><input type="range" id="sCO" min="0" max="10" value="5"><span class="vv" id="vCO">5</span></div>
+      <div class="rw"><label>DARKEN 暗化</label><input type="range" id="sDK" min="0" max="10" value="5"><span class="vv" id="vDK">5</span></div>
+      <div class="rw"><label>HUD 元素</label><input type="range" id="sHU" min="0" max="10" value="5"><span class="vv" id="vHU">5</span></div>
+      <div class="rw"><label>SPEED 速度</label><input type="range" id="sSP" min="1" max="10" value="5"><span class="vv" id="vSP">5</span></div>
+      <div style="display:flex;align-items:center;margin-top:8px;gap:8px">
+        <div class="tg on" id="pt" style="margin-top:0"><div class="tk"><div class="th"></div></div><div class="tl">LIVE PREVIEW</div></div>
+        <button class="rst" id="rstInt" style="margin-left:auto">RESET 強度</button>
       </div>
     </div>
 
-    <!-- Duration -->
-    <div class="ctrl-section">
-      <div class="ctrl-label">// 輸出長度</div>
-      <div class="dur-row">
-        <button class="dur-btn active" data-dur="2">2s</button>
-        <button class="dur-btn" data-dur="3">3s</button>
-        <button class="dur-btn" data-dur="5">5s</button>
-        <button class="dur-btn" data-dur="8">8s</button>
-      </div>
-      <div class="frame-counter" id="frameCounter">預計 24 幀 @ 12fps</div>
+    <!-- COLOR ADJUSTMENT -->
+    <div class="sec">
+      <div class="sl">// 色調調整</div>
+      <div class="rw"><label>HUE</label><input type="range" id="sH" min="-180" max="180" value="0" class="hue-slider"><span class="vv" id="vH">0°</span></div>
+      <div class="rw"><label>SATURATION</label><input type="range" id="sS" min="0" max="200" value="100"><span class="vv" id="vS">100%</span></div>
+      <div style="display:flex;justify-content:flex-end;margin-top:6px"><button class="rst" id="rstColor">RESET 色調</button></div>
     </div>
 
-    <!-- Export -->
-    <div class="ctrl-section">
-      <div class="ctrl-label">// 輸出格式</div>
-      <div class="export-grid">
-        <button class="export-btn gif-btn" id="exportGif" disabled>
-          <span class="btn-format">GIF</span>
-          <span>動態圖片</span>
-        </button>
-        <button class="export-btn mp4-btn" id="exportMp4" disabled>
-          <span class="btn-format">MP4</span>
-          <span>影片檔案</span>
-        </button>
+    <!-- DURATION -->
+    <div class="sec">
+      <div class="sl">// 輸出長度</div>
+      <div class="dr">
+        <button class="db on" data-d="2">2s</button>
+        <button class="db" data-d="3">3s</button>
+        <button class="db" data-d="5">5s</button>
+        <button class="db" data-d="8">8s</button>
       </div>
-      <div class="progress-bar" id="progressBar">
-        <div class="progress-fill" id="progressFill"></div>
-      </div>
-      <div class="progress-text" id="progressText">PROCESSING...</div>
+      <div class="fn" id="fnN">預計 24 幀 @ 12fps</div>
     </div>
 
+    <!-- EXPORT -->
+    <div class="sec">
+      <div class="sl">// 輸出格式</div>
+      <div class="xg">
+        <button class="xb gif-b" id="bG" disabled><span class="fmt">GIF</span>動態圖片</button>
+        <button class="xb mp4-b" id="bM" disabled><span class="fmt">MP4</span>影片檔案</button>
+      </div>
+      <div class="pb" id="pb"><div class="pf" id="pf"></div></div>
+      <div class="pt" id="ptx">PROCESSING...</div>
+    </div>
   </div>
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/gif.js/0.2.0/gif.js"></script>
 <script>
-// ─────────────────────────────────────────────
-// State
-// ─────────────────────────────────────────────
-let sourceImage = null;
-let currentEffect = 'film';
-let intensity = 5;
-let speed = 5;
-let duration = 2;
-let livePreview = true;
-let animFrame = null;
-let frameCount = 0;
+let img=null,fx='film',D=2,L=true,raf=null;
+let NO=5,CO=5,DK=5,HU=5,SP=5,HUE=0,SAT=100;
+let bars=true,cctvCross=true;
+let errWM=40, focusMode='auto', cyberPal='cm', retroPal='warm';
+const FPS=12,$=s=>document.querySelector(s),$$=s=>document.querySelectorAll(s);
+const cv=$('#cvs'),ct=cv.getContext('2d'),dz=$('#dz');
+const cl=v=>Math.max(0,Math.min(255,v|0));
+const cp=(v,a,b)=>Math.max(a,Math.min(b,v));
 
-const canvas = document.getElementById('mainCanvas');
-const ctx = canvas.getContext('2d');
-const dropZone = document.getElementById('dropZone');
-const dropContent = document.getElementById('dropContent');
+// scale helpers - per control (0-10 maps to 0-2)
+const nS=()=>NO/5, coS=()=>CO/5, dkS=()=>DK/5, huS=()=>HU/5;
 
-// ─────────────────────────────────────────────
-// Upload / Drop
-// ─────────────────────────────────────────────
-document.getElementById('fileInput').addEventListener('change', e => {
-  if(e.target.files[0]) loadImage(e.target.files[0]);
-});
-dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('dragover'); });
-dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
-dropZone.addEventListener('drop', e => {
-  e.preventDefault();
-  dropZone.classList.remove('dragover');
-  if(e.dataTransfer.files[0]) loadImage(e.dataTransfer.files[0]);
-});
-dropZone.addEventListener('click', e => {
-  if(e.target.tagName !== 'LABEL' && e.target.tagName !== 'INPUT') {
-    if(!sourceImage) document.getElementById('fileInput').click();
-  }
-});
+$('#fi').onchange=e=>e.target.files[0]&&load(e.target.files[0]);
+dz.ondragover=e=>{e.preventDefault();dz.classList.add('drag')};
+dz.ondragleave=()=>dz.classList.remove('drag');
+dz.ondrop=e=>{e.preventDefault();dz.classList.remove('drag');e.dataTransfer.files[0]&&load(e.dataTransfer.files[0])};
+dz.onclick=e=>{if(!img&&e.target.tagName!=='LABEL'&&e.target.tagName!=='INPUT')$('#fi').click()};
+$('#rep').onclick=()=>$('#fi').click();
 
-function loadImage(file) {
-  const url = URL.createObjectURL(file);
-  const img = new Image();
-  img.onload = () => {
-    sourceImage = img;
-    // Size canvas to fit, max 800x600
-    const maxW = dropZone.clientWidth, maxH = dropZone.clientHeight;
-    const scale = Math.min(maxW/img.width, maxH/img.height, 1);
-    canvas.width = Math.round(img.width * scale);
-    canvas.height = Math.round(img.height * scale);
-    canvas.style.display = 'block';
-    dropContent.style.display = 'none';
-    dropZone.classList.add('has-image');
-    document.getElementById('exportGif').disabled = false;
-    document.getElementById('exportMp4').disabled = false;
-    document.getElementById('infoSize').textContent = `${canvas.width}×${canvas.height}`;
-    startLivePreview();
+function load(f){
+  const im=new Image();
+  im.onload=()=>{
+    img=im;
+    const sc=Math.min(dz.clientWidth/im.width,dz.clientHeight/im.height,1);
+    cv.width=Math.max(320,Math.round(im.width*sc));
+    cv.height=Math.round(im.height*cv.width/im.width);
+    cv.style.display='block';$('#du').style.display='none';dz.classList.add('has');
+    $('#bG').disabled=$('#bM').disabled=false;
+    $('#rep').style.display='inline-block';
+    $('#mS').textContent=`${cv.width}×${cv.height}`;
+    play();
   };
-  img.src = url;
+  im.src=URL.createObjectURL(f);
 }
 
-// ─────────────────────────────────────────────
-// Effect Controls
-// ─────────────────────────────────────────────
-const descs = {
-  film: '粒子感映像管噪點、膠片刮痕、光暈色差，重現電影老底片質感。',
-  tech: '數位像素錯位、RGB 色差掃描線、Hex 碼浮現，未來賽博龐克美學。',
-  horror: '黑暗邊緣侵蝕、扭曲波紋、閃爍白光，深淵凝視你的感官。',
-  retro: 'VHS 磁帶橫紋、色彩溢出、類比訊號失真，80年代錄影帶記憶。',
-  blood: '深紅液體滴落、肉眼靜脈紋理、傷口裂縫侵入畫面。'
+const DS={
+  film:'粒子感噪點、膠片刮痕、光暈色差，重現電影老底片質感。',
+  cyber:'霓虹光暈、掃描線、像素錯位、HEX代碼、Grid網格，賽博龐克風格。',
+  retro:'VHS磁帶橫紋、色彩溢出、類比訊號失真，80年代錄影帶記憶。',
+  err:'系統錯誤警示橫幅、紅色警告邊框、404文字閃爍浮層。',
+  cctv:'監視器時間碼、靜電噪訊、訊號中斷畫面，安全攝影機故障感。',
+  hack:'綠色終端機文字瀑布、代碼入侵覆蓋、ACCESS DENIED警告。'
+};
+$$('.eb').forEach(b=>b.onclick=function(){
+  $$('.eb').forEach(x=>x.classList.remove('on'));this.classList.add('on');
+  fx=this.dataset.fx;
+  $('#dc').textContent=DS[fx];
+  $('#mF').textContent=(fx==='err'?'404':fx).toUpperCase();
+  $$('.fx-opt').forEach(o=>o.classList.remove('show'));
+  const optEl=$(`#opt-${fx}`);if(optEl)optEl.classList.add('show');
+});
+
+// palette buttons
+$$('#cyberPal .pc').forEach(b=>b.onclick=function(){
+  $$('#cyberPal .pc').forEach(x=>x.classList.remove('on'));this.classList.add('on');
+  cyberPal=this.dataset.pal;
+});
+$$('#retroPal .pc').forEach(b=>b.onclick=function(){
+  $$('#retroPal .pc').forEach(x=>x.classList.remove('on'));this.classList.add('on');
+  retroPal=this.dataset.pal;
+});
+
+// sliders
+$('#sNO').oninput=e=>{NO=+e.target.value;$('#vNO').textContent=NO};
+$('#sCO').oninput=e=>{CO=+e.target.value;$('#vCO').textContent=CO};
+$('#sDK').oninput=e=>{DK=+e.target.value;$('#vDK').textContent=DK};
+$('#sHU').oninput=e=>{HU=+e.target.value;$('#vHU').textContent=HU};
+$('#sSP').oninput=e=>{SP=+e.target.value;$('#vSP').textContent=SP};
+$('#sH').oninput=e=>{HUE=+e.target.value;$('#vH').textContent=HUE+'°'};
+$('#sS').oninput=e=>{SAT=+e.target.value;$('#vS').textContent=SAT+'%'};
+$('#errWM').oninput=e=>{errWM=+e.target.value;$('#vErrWM').textContent=errWM+'%'};
+
+$('#rstInt').onclick=()=>{NO=CO=DK=HU=SP=5;['sNO','sCO','sDK','sHU','sSP'].forEach(i=>$('#'+i).value=5);['vNO','vCO','vDK','vHU','vSP'].forEach(i=>$('#'+i).textContent=5)};
+$('#rstColor').onclick=()=>{HUE=0;SAT=100;$('#sH').value=0;$('#sS').value=100;$('#vH').textContent='0°';$('#vS').textContent='100%'};
+
+$('#pt').onclick=function(){L=!L;this.classList.toggle('on',L);if(L&&img)play();else cancelAnimationFrame(raf)};
+$('#barsTog').onclick=function(){bars=!bars;this.classList.toggle('on',bars)};
+$('#cctvCross').onclick=function(){cctvCross=!cctvCross;this.classList.toggle('on',cctvCross)};
+
+// focus buttons
+$$('.db[data-focus]').forEach(b=>b.onclick=function(){
+  $$('.db[data-focus]').forEach(x=>x.classList.remove('on'));this.classList.add('on');
+  focusMode=this.dataset.focus;
+});
+
+$$('.db[data-d]').forEach(b=>b.onclick=function(){
+  $$('.db[data-d]').forEach(x=>x.classList.remove('on'));this.classList.add('on');
+  D=+this.dataset.d;const f=D*FPS;
+  $('#fnN').textContent=`預計 ${f} 幀 @ ${FPS}fps`;$('#mR').textContent=f;
+});
+
+function play(){
+  cancelAnimationFrame(raf);
+  let la=0,t=0;const iv=1000/(FPS+SP*.8);
+  (function lp(ts){
+    if(!L||!img)return;
+    if(ts-la>iv){draw(ct,cv.width,cv.height,t++);la=ts;}
+    raf=requestAnimationFrame(lp);
+  })(0);
+}
+
+function draw(c,w,h,t){
+  if(!img)return;
+  c.clearRect(0,0,w,h);c.drawImage(img,0,0,w,h);
+  if(HUE!==0||SAT!==100)applyHueSat(c,w,h);
+  FX[fx](c,w,h,t);
+}
+
+function applyHueSat(c,w,h){
+  const id=c.getImageData(0,0,w,h),d=id.data;
+  const hS=HUE/360,sM=SAT/100;
+  for(let i=0;i<d.length;i+=4){
+    let r=d[i]/255,g=d[i+1]/255,b=d[i+2]/255;
+    const mx=Math.max(r,g,b),mn=Math.min(r,g,b),l=(mx+mn)/2;
+    let h2=0,sa=0;
+    if(mx!==mn){const de=mx-mn;sa=l>.5?de/(2-mx-mn):de/(mx+mn);if(mx===r)h2=((g-b)/de+(g<b?6:0))/6;else if(mx===g)h2=((b-r)/de+2)/6;else h2=((r-g)/de+4)/6}
+    h2=(h2+hS+1)%1;
+    sa=Math.min(1,sa*sM);
+    const h2r=(p,q,tt)=>{if(tt<0)tt+=1;if(tt>1)tt-=1;return tt<1/6?p+(q-p)*6*tt:tt<.5?q:tt<2/3?p+(q-p)*(2/3-tt)*6:p};
+    if(!sa){d[i]=d[i+1]=d[i+2]=cl(l*255)}
+    else{const q=l<.5?l*(1+sa):l+sa-l*sa,p=2*l-q;d[i]=cl(h2r(p,q,h2+1/3)*255);d[i+1]=cl(h2r(p,q,h2)*255);d[i+2]=cl(h2r(p,q,h2-1/3)*255)}
+  }
+  c.putImageData(id,0,0);
+}
+
+function rgbSplit(c,w,h,r){
+  if(r<1)return;
+  const im=c.getImageData(0,0,w,h),ou=new ImageData(w,h);
+  for(let y=0;y<h;y++)for(let x=0;x<w;x++){
+    const i=(y*w+x)*4;
+    ou.data[i]=im.data[(y*w+cp(x+r,0,w-1))*4];
+    ou.data[i+1]=im.data[i+1];
+    ou.data[i+2]=im.data[(y*w+cp(x-r,0,w-1))*4+2];
+    ou.data[i+3]=255;
+  }
+  c.putImageData(ou,0,0);
+}
+
+// FOCUS ZONES: returns where HUD elements should go
+// Returns {tl:bool,tr:bool,bl:bool,br:bool,edge:bool,center:bool}
+function getZones(){
+  const z={tl:true,tr:true,bl:true,br:true,edge:true,center:false};
+  if(focusMode==='tl'){z.tl=false;z.center=false}
+  else if(focusMode==='tr'){z.tr=false;z.center=false}
+  else if(focusMode==='bl'){z.bl=false;z.center=false}
+  else if(focusMode==='br'){z.br=false;z.center=false}
+  else if(focusMode==='edge'){z.edge=true;z.center=false;z.tl=z.tr=z.bl=z.br=true}
+  return z;
+}
+
+// Color palettes
+const PALETTES={
+  cyber:{
+    cm:{p:[0,229,255],s:[255,20,147]},      // cyan/magenta
+    op:{p:[255,120,0],s:[180,50,255]},      // orange/purple
+    gy:{p:[180,255,50],s:[255,230,50]},     // green/yellow
+    rb:{p:[255,50,80],s:[80,120,255]},      // red/blue
+    pt:{p:[255,130,200],s:[100,255,220]}    // pink/teal
+  },
+  retro:{
+    warm:{tint:[255,100,0],alpha:.08,ch:[255,200,50]},
+    cool:{tint:[30,100,200],alpha:.1,ch:[150,220,255]},
+    sepia:{tint:[120,80,40],alpha:.12,ch:[230,200,150]},
+    neutral:{tint:[200,200,200],alpha:.03,ch:[240,240,240]},
+    teal:{tint:[0,150,150],alpha:.09,ch:[200,255,240]}
+  }
 };
 
-document.querySelectorAll('.effect-btn').forEach(btn => {
-  btn.addEventListener('click', () => {
-    document.querySelectorAll('.effect-btn').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-    currentEffect = btn.dataset.effect;
-    document.getElementById('effectDesc').textContent = descs[currentEffect];
-    document.getElementById('infoEffect').textContent = currentEffect.toUpperCase();
-  });
-});
-
-document.getElementById('intensitySlider').addEventListener('input', e => {
-  intensity = +e.target.value;
-  document.getElementById('intensityVal').textContent = intensity;
-  document.getElementById('infoIntensity').textContent = intensity;
-});
-document.getElementById('speedSlider').addEventListener('input', e => {
-  speed = +e.target.value;
-  document.getElementById('speedVal').textContent = speed;
-});
-
-document.getElementById('previewToggle').addEventListener('click', function() {
-  livePreview = !livePreview;
-  this.classList.toggle('on', livePreview);
-  if(livePreview && sourceImage) startLivePreview();
-  else { cancelAnimationFrame(animFrame); if(sourceImage) drawFrame(ctx, canvas.width, canvas.height, 0); }
-});
-
-document.querySelectorAll('.dur-btn').forEach(btn => {
-  btn.addEventListener('click', function() {
-    document.querySelectorAll('.dur-btn').forEach(b => b.classList.remove('active'));
-    this.classList.add('active');
-    duration = +this.dataset.dur;
-    updateFrameCounter();
-  });
-});
-
-function updateFrameCounter() {
-  const fps = 12;
-  const frames = duration * fps;
-  document.getElementById('frameCounter').textContent = `預計 ${frames} 幀 @ ${fps}fps`;
-  document.getElementById('infoFrames').textContent = frames;
-}
-updateFrameCounter();
-document.getElementById('infoEffect').textContent = 'FILM';
-document.getElementById('infoIntensity').textContent = '5';
-
-// ─────────────────────────────────────────────
-// Drawing Engine
-// ─────────────────────────────────────────────
-function drawFrame(targetCtx, w, h, t) {
-  if(!sourceImage) return;
-  targetCtx.clearRect(0,0,w,h);
-  targetCtx.drawImage(sourceImage, 0, 0, w, h);
-
-  switch(currentEffect) {
-    case 'film':   applyFilm(targetCtx, w, h, t); break;
-    case 'tech':   applyTech(targetCtx, w, h, t); break;
-    case 'horror': applyHorror(targetCtx, w, h, t); break;
-    case 'retro':  applyRetro(targetCtx, w, h, t); break;
-    case 'blood':  applyBlood(targetCtx, w, h, t); break;
-  }
-}
-
-const iScale = () => intensity / 5; // 0.2 – 2.0
-
-// ── FILM ──────────────────────────────────────
-function applyFilm(ctx, w, h, t) {
-  const s = iScale();
-  // Grain
-  const id = ctx.getImageData(0,0,w,h);
-  const d = id.data;
-  const grainAmt = 35 * s;
-  for(let i=0; i<d.length; i+=4) {
-    const g = (Math.random()-0.5)*grainAmt;
-    d[i]   = clamp(d[i]+g);
-    d[i+1] = clamp(d[i+1]+g);
-    d[i+2] = clamp(d[i+2]+g);
-  }
-  ctx.putImageData(id, 0, 0);
-
-  // Vignette
-  const vig = ctx.createRadialGradient(w/2,h/2,h*0.2,w/2,h/2,h*0.85);
-  vig.addColorStop(0,'transparent');
-  vig.addColorStop(1,`rgba(0,0,0,${0.5*s})`);
-  ctx.fillStyle = vig;
-  ctx.fillRect(0,0,w,h);
-
-  // Scratch
-  if(Math.random() < 0.25*s) {
-    const sx = Math.random()*w;
-    ctx.strokeStyle = `rgba(255,255,220,${0.3+Math.random()*0.5})`;
-    ctx.lineWidth = Math.random()<0.5 ? 0.5 : 1;
-    ctx.beginPath();
-    ctx.moveTo(sx, 0);
-    ctx.lineTo(sx + (Math.random()-0.5)*6, h);
-    ctx.stroke();
-  }
-
-  // Warm tone overlay
-  ctx.fillStyle = `rgba(245,180,60,${0.06*s})`;
-  ctx.fillRect(0,0,w,h);
-
-  // Slight RGB shift
-  const shift = Math.round(2*s);
-  const imgData = ctx.getImageData(0,0,w,h);
-  const out = new ImageData(w,h);
-  for(let y=0;y<h;y++) for(let x=0;x<w;x++) {
-    const i = (y*w+x)*4;
-    const ri = (y*w+Math.min(x+shift,w-1))*4;
-    const bi = (y*w+Math.max(x-shift,0))*4;
-    out.data[i]   = imgData.data[ri];
-    out.data[i+1] = imgData.data[i+1];
-    out.data[i+2] = imgData.data[bi+2];
-    out.data[i+3] = 255;
-  }
-  ctx.putImageData(out,0,0);
-
-  // Film frame line
-  if(t % 8 < 2) {
-    ctx.fillStyle = `rgba(255,240,200,${0.03*s})`;
-    ctx.fillRect(0,0,w,h);
-  }
-}
-
-// ── TECH ──────────────────────────────────────
-function applyTech(ctx, w, h, t) {
-  const s = iScale();
-  // Horizontal scan glitch lines
-  const numLines = Math.floor(3 * s);
-  for(let i=0;i<numLines;i++) {
-    if(Math.random() < 0.6) {
-      const y = Math.floor(Math.random()*h);
-      const lh = Math.floor(1+Math.random()*6);
-      const offset = Math.floor((Math.random()-0.5)*30*s);
-      const id = ctx.getImageData(0, y, w, lh);
-      ctx.putImageData(id, offset, y);
-      // Color shift for the glitch strip
-      ctx.fillStyle = `rgba(0,229,255,${0.1+Math.random()*0.15})`;
-      ctx.fillRect(0, y, w, lh);
+const FX={
+  film(c,w,h,t){
+    const nS=NO/5, dkSc=DK/5, coSc=CO/5, huSc=HU/5;
+    // Grain
+    if(nS>0){
+      const id=c.getImageData(0,0,w,h),d=id.data;
+      for(let i=0;i<d.length;i+=4){const g=(Math.random()-.5)*42*nS;d[i]=cl(d[i]+g);d[i+1]=cl(d[i+1]+g);d[i+2]=cl(d[i+2]+g)}
+      c.putImageData(id,0,0);
     }
-  }
-
-  // RGB split
-  const rShift = Math.round(4*s);
-  const id = ctx.getImageData(0,0,w,h);
-  const out = new ImageData(w,h);
-  for(let y=0;y<h;y++) for(let x=0;x<w;x++) {
-    const i = (y*w+x)*4;
-    const rx = clampVal(x+rShift, 0, w-1);
-    const bx = clampVal(x-rShift, 0, w-1);
-    out.data[i]   = id.data[(y*w+rx)*4];
-    out.data[i+1] = id.data[i+1];
-    out.data[i+2] = id.data[(y*w+bx)*4+2];
-    out.data[i+3] = 255;
-  }
-  ctx.putImageData(out,0,0);
-
-  // Scanlines
-  for(let y=0;y<h;y+=3) {
-    ctx.fillStyle = 'rgba(0,0,0,0.15)';
-    ctx.fillRect(0,y,w,1);
-  }
-
-  // Cyan glow overlay
-  ctx.fillStyle = `rgba(0,229,255,${0.04*s})`;
-  ctx.fillRect(0,0,w,h);
-
-  // HEX text overlay
-  ctx.fillStyle = `rgba(0,229,255,${0.18*s})`;
-  ctx.font = `${8+s*2}px 'Share Tech Mono',monospace`;
-  const hexChars = '0123456789ABCDEF';
-  if(Math.random()<0.4*s) {
-    for(let i=0;i<4;i++) {
-      const hx = Array.from({length:8},()=>hexChars[Math.floor(Math.random()*16)]).join('');
-      ctx.fillText(hx, Math.random()*w*0.7, 20+Math.random()*(h-40));
+    // Warm tone
+    if(coSc>0)c.fillStyle=`rgba(245,180,60,${.06*coSc})`,c.fillRect(0,0,w,h);
+    // Vignette (capped)
+    if(dkSc>0){
+      const vg=c.createRadialGradient(w/2,h/2,h*.3,w/2,h/2,h*.9);
+      vg.addColorStop(0,'transparent');vg.addColorStop(1,`rgba(0,0,0,${Math.min(.5,.3*dkSc)})`);
+      c.fillStyle=vg;c.fillRect(0,0,w,h);
     }
-  }
+    // Scratches
+    if(nS>0){
+      for(let k=0;k<(0|2*nS);k++)if(Math.random()<.45){c.strokeStyle=`rgba(255,255,220,${.3+Math.random()*.5})`;c.lineWidth=Math.random()<.5?.5:1;const x=Math.random()*w;c.beginPath();c.moveTo(x,0);c.lineTo(x+(Math.random()-.5)*8,h);c.stroke()}
+      for(let k=0;k<(0|10*nS);k++){c.fillStyle=`rgba(255,255,220,${.3+Math.random()*.4})`;c.fillRect(Math.random()*w,Math.random()*h,1+Math.random()*2,1+Math.random()*2)}
+    }
+    if(nS>0 && Math.random()<.2*nS)c.fillStyle=`rgba(255,240,200,${.05+Math.random()*.08})`,c.fillRect(0,0,w,h);
+    if(coSc>0)rgbSplit(c,w,h,Math.round(2*coSc));
+    if(bars){const bH=Math.round(h*.09);c.fillStyle='#000';c.fillRect(0,0,w,bH);c.fillRect(0,h-bH,w,bH)}
+  },
 
-  // Corner brackets
-  ctx.strokeStyle = `rgba(0,229,255,${0.5*s})`;
-  ctx.lineWidth = 1.5;
-  const bSize = 20;
-  [[0,0],[w-bSize,0],[0,h-bSize],[w-bSize,h-bSize]].forEach(([bx,by]) => {
-    ctx.beginPath();
-    if(bx<w/2 && by<h/2){ ctx.moveTo(bx,by+bSize);ctx.lineTo(bx,by);ctx.lineTo(bx+bSize,by); }
-    else if(bx>w/2 && by<h/2){ ctx.moveTo(bx,by);ctx.lineTo(bx+bSize,by);ctx.moveTo(bx+bSize,by);ctx.lineTo(bx+bSize,by+bSize); }
-    else if(bx<w/2){ ctx.moveTo(bx,by);ctx.lineTo(bx,by+bSize);ctx.moveTo(bx,by+bSize);ctx.lineTo(bx+bSize,by+bSize); }
-    else { ctx.moveTo(bx+bSize,by);ctx.lineTo(bx+bSize,by+bSize);ctx.lineTo(bx,by+bSize); }
-    ctx.stroke();
-  });
-}
+  cyber(c,w,h,t){
+    const nS=NO/5, coSc=CO/5, dkSc=DK/5, huSc=HU/5;
+    const zone=getZones();
+    const pal=PALETTES.cyber[cyberPal];
+    const P=pal.p, S=pal.s;
+    const rgbP=(a)=>`rgba(${P[0]},${P[1]},${P[2]},${a})`;
+    const rgbS=(a)=>`rgba(${S[0]},${S[1]},${S[2]},${a})`;
 
-// ── HORROR ────────────────────────────────────
-function applyHorror(ctx, w, h, t) {
-  const s = iScale();
+    // RGB split
+    if(coSc>0)rgbSplit(c,w,h,Math.round(5*coSc));
+    // glitch stripes
+    if(nS>0){
+      for(let i=0;i<(0|5*nS);i++)if(Math.random()<.75){
+        const y=0|Math.random()*h,lh=1+(0|Math.random()*8),id=c.getImageData(0,y,w,lh);
+        c.putImageData(id,0|(Math.random()-.5)*35*nS,y);
+        c.fillStyle=Math.random()<.5?rgbP(.2):rgbS(.2);c.fillRect(0,y,w,lh);
+      }
+    }
+    // scanlines
+    if(dkSc>0)for(let y=0;y<h;y+=3){c.fillStyle=`rgba(0,0,0,${.14*dkSc})`;c.fillRect(0,y,w,1)}
+    // neon grid bottom (respects zone)
+    if(huSc>0 && (zone.bl||zone.br)){
+      const gh=h*.35,gy=h-gh;
+      c.strokeStyle=rgbS(.35);c.lineWidth=1;
+      for(let i=0;i<=10;i++){const yy=gy+gh*(i/10);c.beginPath();c.moveTo(0,yy);c.lineTo(w,yy);c.stroke()}
+      c.strokeStyle=rgbP(.35);
+      for(let i=0;i<=12;i++){const xx=w*(i/12),cx=w/2;c.beginPath();c.moveTo(cx+(xx-cx)*.3,gy);c.lineTo(xx,h);c.stroke()}
+    }
+    // dual corner glows - only in active zones
+    if(zone.tl){const tl=c.createRadialGradient(w*.15,h*.15,0,w*.15,h*.15,w*.35);tl.addColorStop(0,rgbP(.12*huSc));tl.addColorStop(1,'transparent');c.fillStyle=tl;c.fillRect(0,0,w,h)}
+    if(zone.br){const br=c.createRadialGradient(w*.85,h*.85,0,w*.85,h*.85,w*.35);br.addColorStop(0,rgbS(.15*huSc));br.addColorStop(1,'transparent');c.fillStyle=br;c.fillRect(0,0,w,h)}
+    // HEX streams - place in allowed zones
+    if(huSc>0){
+      c.font=`${9+huSc}px 'Share Tech Mono',monospace`;
+      const HX='0123456789ABCDEF';
+      const spots=[];
+      if(zone.tl)spots.push([0,w*.3,0,h*.35]);
+      if(zone.tr)spots.push([w*.7,w,0,h*.35]);
+      if(zone.bl)spots.push([0,w*.3,h*.65,h]);
+      if(zone.br)spots.push([w*.7,w,h*.65,h]);
+      if(spots.length){
+        for(let i=0;i<(0|6*huSc);i++){
+          let st='';for(let j=0;j<8;j++)st+=HX[0|Math.random()*16];
+          const sp=spots[0|Math.random()*spots.length];
+          c.fillStyle=rgbP(.3+Math.random()*.4);
+          c.fillText(st,sp[0]+Math.random()*(sp[1]-sp[0]),sp[2]+Math.random()*(sp[3]-sp[2]));
+        }
+      }
+    }
+    // corner HUD brackets
+    if(huSc>0){
+      c.strokeStyle=rgbP(.7*huSc);c.lineWidth=1.5;const bs=24;
+      const corners=[];
+      if(zone.tl)corners.push([10,10,'tl']);
+      if(zone.tr)corners.push([w-10-bs,10,'tr']);
+      if(zone.bl)corners.push([10,h-10-bs,'bl']);
+      if(zone.br)corners.push([w-10-bs,h-10-bs,'br']);
+      corners.forEach(([x,y,p])=>{c.beginPath();if(p==='tl'){c.moveTo(x,y+bs);c.lineTo(x,y);c.lineTo(x+bs,y)}else if(p==='tr'){c.moveTo(x,y);c.lineTo(x+bs,y);c.lineTo(x+bs,y+bs)}else if(p==='bl'){c.moveTo(x,y);c.lineTo(x,y+bs);c.lineTo(x+bs,y+bs)}else{c.moveTo(x+bs,y);c.lineTo(x+bs,y+bs);c.lineTo(x,y+bs)}c.stroke()});
+    }
+    // status top text in active zone
+    if(huSc>0){
+      c.fillStyle=rgbP(.85);c.font=`bold ${9+huSc*.5}px 'Share Tech Mono',monospace`;
+      const ts=`[NEO-TOKYO // ${String(0|Math.random()*99).padStart(2,'0')}.${String(0|Math.random()*99).padStart(2,'0')}.77]`;
+      if(zone.tl){c.textAlign='left';c.fillText(ts,18,26);}
+      if(zone.tr){c.textAlign='right';c.fillText(`SYS::${String(0|Math.random()*9999).padStart(4,'0')}`,w-18,26);}
+      c.textAlign='left';
+    }
+    if(huSc>0 && t%20<3)c.fillStyle=rgbP(.06+Math.random()*.04),c.fillRect(0,0,w,h);
+  },
 
-  // Desaturate + darken
-  const id = ctx.getImageData(0,0,w,h);
-  const d = id.data;
-  for(let i=0;i<d.length;i+=4) {
-    const avg = (d[i]+d[i+1]+d[i+2])/3;
-    const mix = 0.6*s;
-    d[i]   = clamp(d[i]*(1-mix) + avg*mix);
-    d[i+1] = clamp(d[i+1]*(1-mix) + avg*mix * 0.85);
-    d[i+2] = clamp(d[i+2]*(1-mix) + avg*mix * 0.85);
+  retro(c,w,h,t){
+    const nS=NO/5, coSc=CO/5, huSc=HU/5;
+    const pal=PALETTES.retro[retroPal];
+    // Color grade
+    if(coSc>0){
+      const id=c.getImageData(0,0,w,h),d=id.data;
+      if(retroPal==='sepia'){
+        for(let i=0;i<d.length;i+=4){const r=d[i],g=d[i+1],b=d[i+2];d[i]=cl(r*.393+g*.769+b*.189);d[i+1]=cl(r*.349+g*.686+b*.168);d[i+2]=cl(r*.272+g*.534+b*.131)}
+      } else if(retroPal==='cool'){
+        for(let i=0;i<d.length;i+=4){d[i]=cl(d[i]*.9);d[i+1]=cl(d[i+1]*.95);d[i+2]=cl(d[i+2]*1.15)}
+      } else if(retroPal==='teal'){
+        for(let i=0;i<d.length;i+=4){d[i]=cl(d[i]*.85);d[i+1]=cl(d[i+1]*1.05);d[i+2]=cl(d[i+2]*1.05)}
+      } else if(retroPal==='neutral'){
+        for(let i=0;i<d.length;i+=4){const a=(d[i]+d[i+1]+d[i+2])/3;d[i]=cl(d[i]*.7+a*.3);d[i+1]=cl(d[i+1]*.7+a*.3);d[i+2]=cl(d[i+2]*.7+a*.3)}
+      } else {
+        for(let i=0;i<d.length;i+=4){d[i]=cl(d[i]*1.1);d[i+1]=cl(d[i+1]*.95);d[i+2]=cl(d[i+2]*.8)}
+      }
+      c.putImageData(id,0,0);
+    }
+    // noise bands
+    if(nS>0){
+      for(let i=0;i<(0|7*nS);i++){const y=0|Math.random()*h,bh=1+(0|Math.random()*4),bi=c.getImageData(0,y,w,bh),bd=bi.data;for(let j=0;j<bd.length;j+=4){bd[j]=cl(bd[j]+(Math.random()-.5)*90*nS);bd[j+1]=cl(bd[j+1]+(Math.random()-.5)*45*nS);bd[j+2]=cl(bd[j+2]+(Math.random()-.5)*35*nS)}c.putImageData(bi,0|(Math.random()-.5)*25*nS,y)}
+      for(let i=0;i<(0|2*nS);i++){const y=0|Math.random()*h,bh=2+(0|Math.random()*6);c.fillStyle=`rgba(255,255,255,${.2+Math.random()*.3})`;c.fillRect(0,y,w,bh)}
+    }
+    // scanlines
+    for(let y=0;y<h;y+=2){c.fillStyle='rgba(0,0,0,.15)';c.fillRect(0,y,w,1)}
+    if(coSc>0)rgbSplit(c,w,h,Math.round(6*coSc));
+    // tint overlay
+    if(coSc>0)c.fillStyle=`rgba(${pal.tint.join(',')},${pal.alpha*coSc})`,c.fillRect(0,0,w,h);
+    // VHS text (based on zone)
+    if(huSc>0){
+      const zone=getZones();
+      c.fillStyle=`rgba(${pal.ch.join(',')},.85)`;c.font=`bold ${11+huSc}px VT323,monospace`;
+      const n=new Date();
+      if(zone.tl){c.textAlign='left';c.fillText(`▶ PLAY  SP  ${n.getFullYear()}.${String(n.getMonth()+1).padStart(2,'0')}.${String(n.getDate()).padStart(2,'0')}`,8,20)}
+      if(zone.tr){c.textAlign='right';c.fillText(`${String(n.getHours()).padStart(2,'0')}:${String(n.getMinutes()).padStart(2,'0')}:${String((n.getSeconds()+t)%60).padStart(2,'0')}`,w-8,20)}
+      if(zone.bl){c.textAlign='left';c.fillText(`AM  STEREO  SP  TAPE-01`,8,h-12)}
+      c.textAlign='left';
+    }
+  },
+
+  err(c,w,h,t){
+    const nS=NO/5, coSc=CO/5, huSc=HU/5, dkSc=DK/5;
+    if(coSc>0)rgbSplit(c,w,h,Math.round(3*coSc));
+    // border
+    if(huSc>0){c.strokeStyle=`rgba(255,20,50,${.9+Math.sin(t*.5)*.1})`;c.lineWidth=Math.max(3,0|6*huSc);c.strokeRect(0,0,w,h)}
+    // stripes
+    if(nS>0)for(let k=0;k<(0|2*nS);k++)if(Math.random()<.6){const y=0|Math.random()*h,lh=2+(0|Math.random()*10),si=c.getImageData(0,y,w,lh);c.putImageData(si,0|(Math.random()-.5)*30*nS,y);c.fillStyle=`rgba(255,0,0,${.25+Math.random()*.3})`;c.fillRect(0,y,w,lh)}
+    // 404 watermark - customizable size via errWM (0-100%)
+    if(errWM>0){
+      const wmSize=h*.55*(errWM/100);
+      if(wmSize>10){
+        c.save();c.globalAlpha=Math.min(.28,.12+.08*Math.abs(Math.sin(t*.3)));
+        c.font=`bold ${0|wmSize}px 'Bebas Neue',monospace`;c.fillStyle='#ff2244';c.textAlign='center';c.textBaseline='middle';
+        // place based on focus
+        let px=w/2, py=h/2;
+        if(focusMode==='tl'){px=w*.72;py=h*.72}
+        else if(focusMode==='tr'){px=w*.28;py=h*.72}
+        else if(focusMode==='bl'){px=w*.72;py=h*.28}
+        else if(focusMode==='br'){px=w*.28;py=h*.28}
+        c.fillText('404',px,py);c.restore();
+      }
+    }
+    // banner
+    if(huSc>0){
+      const bh=0|28+huSc*4;
+      if(t%6<3){c.fillStyle='rgba(255,20,50,.92)';c.fillRect(0,0,w,bh);c.fillStyle='#fff'}
+      else{c.fillStyle='rgba(255,255,255,.92)';c.fillRect(0,0,w,bh);c.fillStyle='#ff2244'}
+      c.font=`bold ${0|10+huSc}px monospace`;c.textAlign='center';c.textBaseline='middle';
+      c.fillText('⚠ SYSTEM ERROR — 404 NOT FOUND — DATA CORRUPTED ⚠',w/2,bh/2);
+      c.fillStyle='rgba(0,0,0,.8)';c.fillRect(0,h-22,w,22);
+      c.fillStyle='#ff4466';c.font='9px monospace';c.textAlign='left';c.textBaseline='middle';
+      c.fillText(`ERR_CODE: 0xF404 | MEMORY DUMP FAILED | ${new Date().toISOString().slice(0,19)}`,10,h-11);
+      c.textBaseline='alphabetic';
+      // close btn based on zone
+      const zone=getZones();
+      if(zone.tr){
+        c.fillStyle='rgba(255,20,50,.9)';c.fillRect(w-38,bh+8,28,16);
+        c.fillStyle='#fff';c.font='bold 10px monospace';c.textAlign='center';c.textBaseline='middle';
+        c.fillText('× CLOSE',w-24,bh+17);c.textAlign='left';c.textBaseline='alphabetic';
+      }
+    }
+    if(dkSc>0)for(let y=0;y<h;y+=3){c.fillStyle=`rgba(0,0,0,${.06*dkSc})`;c.fillRect(0,y,w,1)}
+  },
+
+  cctv(c,w,h,t){
+    const nS=NO/5, coSc=CO/5, dkSc=DK/5, huSc=HU/5;
+    const zone=getZones();
+    // green tint (via CO)
+    if(coSc>0){
+      const id=c.getImageData(0,0,w,h),d=id.data;
+      for(let i=0;i<d.length;i+=4){const a=(d[i]+d[i+1]+d[i+2])/3,m=.6*coSc;d[i]=cl(d[i]*(1-m)+a*m*.75);d[i+1]=cl(d[i+1]*(1-m)+a*m*1.2);d[i+2]=cl(d[i+2]*(1-m)+a*m*.7)}
+      c.putImageData(id,0,0);
+    }
+    // scanlines
+    if(dkSc>0)for(let y=0;y<h;y+=2){c.fillStyle=`rgba(0,0,0,${.18*dkSc})`;c.fillRect(0,y,w,1)}
     // grain
-    const g = (Math.random()-0.5)*20*s;
-    d[i]   = clamp(d[i]+g);
-    d[i+1] = clamp(d[i+1]+g*0.8);
-    d[i+2] = clamp(d[i+2]+g*0.8);
-  }
-  ctx.putImageData(id, 0,0);
-
-  // Heavy vignette
-  const vig = ctx.createRadialGradient(w/2,h/2,h*0.1,w/2,h/2,h*0.7);
-  vig.addColorStop(0,'transparent');
-  vig.addColorStop(1,`rgba(0,0,0,${0.7*s})`);
-  ctx.fillStyle = vig;
-  ctx.fillRect(0,0,w,h);
-
-  // Distortion wave
-  const waveImg = ctx.getImageData(0,0,w,h);
-  const wOut = new ImageData(w,h);
-  const amp = 4*s;
-  const freq = 0.05;
-  for(let y=0;y<h;y++) {
-    const dx = Math.round(Math.sin(y*freq + t*0.3)*amp);
-    for(let x=0;x<w;x++) {
-      const sx = clampVal(x+dx,0,w-1);
-      const si = (y*w+sx)*4, di = (y*w+x)*4;
-      wOut.data[di]=waveImg.data[si]; wOut.data[di+1]=waveImg.data[si+1];
-      wOut.data[di+2]=waveImg.data[si+2]; wOut.data[di+3]=255;
+    if(nS>0){
+      const nId=c.getImageData(0,0,w,h),nd=nId.data;
+      for(let i=0;i<nd.length;i+=4)if(Math.random()<.3*nS){const n=(Math.random()-.5)*80*nS;nd[i]=cl(nd[i]+n);nd[i+1]=cl(nd[i+1]+n);nd[i+2]=cl(nd[i+2]+n)}
+      c.putImageData(nId,0,0);
+      for(let k=0;k<(0|3*nS);k++)if(Math.random()<.4){const y=0|Math.random()*h,bh=2+(0|Math.random()*10),bi=c.getImageData(0,y,w,bh),bd=bi.data;for(let j=0;j<bd.length;j+=4){const n=Math.random()*255*nS;bd[j]=cl(n*.8);bd[j+1]=cl(n);bd[j+2]=cl(n*.7);bd[j+3]=255}c.putImageData(bi,0|(Math.random()-.5)*20,y)}
     }
-  }
-  ctx.putImageData(wOut,0,0);
-
-  // Flicker
-  if(Math.random() < 0.15*s) {
-    ctx.fillStyle = `rgba(0,0,0,${0.4+Math.random()*0.4})`;
-    ctx.fillRect(0,0,w,h);
-  }
-
-  // Purple tint
-  ctx.fillStyle = `rgba(80,0,120,${0.08*s})`;
-  ctx.fillRect(0,0,w,h);
-}
-
-// ── RETRO ─────────────────────────────────────
-function applyRetro(ctx, w, h, t) {
-  const s = iScale();
-
-  // VHS color bleed
-  const id = ctx.getImageData(0,0,w,h);
-  const d = id.data;
-  for(let i=0;i<d.length;i+=4) {
-    // Warm shift
-    d[i]   = clamp(d[i]*1.1);
-    d[i+1] = clamp(d[i+1]*0.95);
-    d[i+2] = clamp(d[i+2]*0.85);
-  }
-  ctx.putImageData(id,0,0);
-
-  // Horizontal noise lines
-  const numBands = Math.floor(5*s);
-  for(let i=0;i<numBands;i++) {
-    const y = Math.floor(Math.random()*h);
-    const bh = Math.floor(1+Math.random()*3);
-    const bId = ctx.getImageData(0,y,w,bh);
-    const bd = bId.data;
-    for(let j=0;j<bd.length;j+=4) {
-      bd[j]   = clamp(bd[j] + (Math.random()-0.5)*80*s);
-      bd[j+1] = clamp(bd[j+1] + (Math.random()-0.5)*40*s);
-      bd[j+2] = clamp(bd[j+2] + (Math.random()-0.5)*30*s);
+    if(nS>0 && Math.random()<.1*nS){c.fillStyle='rgba(0,0,0,.9)';const by=0|Math.random()*(h-40);c.fillRect(0,by,w,15+(0|Math.random()*25));c.fillStyle='rgba(150,200,150,.7)';c.font=`${10+huSc}px VT323,monospace`;c.fillText('--- SIGNAL LOST ---',12,by+18)}
+    // HUD
+    if(huSc>0){
+      const n=new Date();const ts=`${String(n.getHours()).padStart(2,'0')}:${String(n.getMinutes()).padStart(2,'0')}:${String((n.getSeconds()+t)%60).padStart(2,'0')}`;
+      c.fillStyle='rgba(150,255,150,.9)';c.font=`bold ${11+huSc}px VT323,monospace`;
+      if(zone.tl){c.textAlign='left';c.fillText('CAM-01',10,18);c.fillText(`${n.getFullYear()}-${String(n.getMonth()+1).padStart(2,'0')}-${String(n.getDate()).padStart(2,'0')} ${ts}`,10,34)}
+      if(zone.tr){if(t%8<4){c.fillStyle='rgba(255,50,50,.95)';c.beginPath();c.arc(w-48,14,5,0,Math.PI*2);c.fill()}c.fillStyle='rgba(255,50,50,.95)';c.font=`bold ${10+huSc}px monospace`;c.textAlign='right';c.fillText('● REC',w-10,18)}
+      c.textAlign='left';
+      // crosshair (toggleable)
+      if(cctvCross){
+        const cx=w/2,cy=h/2,crs=15;
+        c.strokeStyle='rgba(150,255,150,.4)';c.lineWidth=1;
+        c.beginPath();c.moveTo(cx-crs,cy);c.lineTo(cx+crs,cy);c.moveTo(cx,cy-crs);c.lineTo(cx,cy+crs);c.stroke();
+      }
+      // bottom bar (in bottom zone)
+      if(zone.bl||zone.br){
+        c.fillStyle='rgba(0,20,0,.75)';c.fillRect(0,h-22,w,22);
+        c.fillStyle='rgba(150,255,150,.85)';c.font=`${9+huSc*.5}px VT323,monospace`;
+        c.fillText(`LOC: SECTOR 04-A | CH:01/16 | MOTION: ${Math.random()<.3?'DETECTED':'NONE'}`,10,h-8);
+      }
     }
-    ctx.putImageData(bId, Math.floor((Math.random()-0.5)*20*s), y);
-  }
+    // vignette capped
+    if(dkSc>0){const vg=c.createRadialGradient(w/2,h/2,h*.3,w/2,h/2,h*.85);vg.addColorStop(0,'transparent');vg.addColorStop(1,`rgba(0,0,0,${Math.min(.5,.3*dkSc)})`);c.fillStyle=vg;c.fillRect(0,0,w,h)}
+  },
 
-  // Scanlines (thicker VHS style)
-  for(let y=0;y<h;y+=2) {
-    ctx.fillStyle = 'rgba(0,0,0,0.12)';
-    ctx.fillRect(0,y,w,1);
-  }
-
-  // Color ghost (horizontal offset duplicate)
-  const ghostShift = Math.round(8*s);
-  const ghost = ctx.getImageData(0,0,w,h);
-  const gOut = new ImageData(w,h);
-  for(let y=0;y<h;y++) for(let x=0;x<w;x++) {
-    const i = (y*w+x)*4;
-    const gx = clampVal(x-ghostShift,0,w-1);
-    gOut.data[i]   = ghost.data[(y*w+gx)*4];
-    gOut.data[i+1] = ghost.data[i+1];
-    gOut.data[i+2] = ghost.data[i+2];
-    gOut.data[i+3] = 255;
-  }
-  ctx.globalAlpha = 0.25*s;
-  const tmpC = document.createElement('canvas');
-  tmpC.width=w; tmpC.height=h;
-  tmpC.getContext('2d').putImageData(gOut,0,0);
-  ctx.drawImage(tmpC,0,0);
-  ctx.globalAlpha = 1;
-
-  // Warm overlay + noise
-  ctx.fillStyle = `rgba(255,100,0,${0.07*s})`;
-  ctx.fillRect(0,0,w,h);
-
-  // VHS timestamp
-  ctx.fillStyle = `rgba(255,200,50,${0.7*s})`;
-  ctx.font = `bold ${10+s}px 'Courier Prime',monospace`;
-  const now = new Date();
-  ctx.fillText(`REC  ${now.toLocaleDateString()}  ${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`, 8, h-10);
-}
-
-// ── BLOOD ─────────────────────────────────────
-function applyBlood(ctx, w, h, t) {
-  const s = iScale();
-
-  // Dark red tint
-  const id = ctx.getImageData(0,0,w,h);
-  const d = id.data;
-  for(let i=0;i<d.length;i+=4) {
-    d[i]   = clamp(d[i]*1.15);
-    d[i+1] = clamp(d[i+1]*0.7);
-    d[i+2] = clamp(d[i+2]*0.6);
-    const g = (Math.random()-0.5)*15*s;
-    d[i]+=g; d[i+1]+=g*0.5; d[i+2]+=g*0.5;
-  }
-  ctx.putImageData(id,0,0);
-
-  // Blood drips
-  ctx.save();
-  const numDrips = Math.floor(3 + 4*s);
-  for(let i=0;i<numDrips;i++) {
-    const dx = Math.random()*w;
-    const startY = Math.random()*h*0.3;
-    const dripLen = (30+Math.random()*80)*s;
-    const dripW = 1+Math.random()*3*s;
-    const alpha = 0.4+Math.random()*0.5;
-
-    // Main drip
-    const g = ctx.createLinearGradient(dx,startY,dx,startY+dripLen);
-    g.addColorStop(0,`rgba(180,0,0,0)`);
-    g.addColorStop(0.3,`rgba(160,0,0,${alpha})`);
-    g.addColorStop(1,`rgba(120,0,0,${alpha*0.8})`);
-    ctx.fillStyle = g;
-    ctx.beginPath();
-    ctx.ellipse(dx, startY+dripLen*0.6, dripW/2, dripLen/2, 0, 0, Math.PI*2);
-    ctx.fill();
-
-    // Drip tip
-    ctx.fillStyle = `rgba(140,0,0,${alpha*0.9})`;
-    ctx.beginPath();
-    ctx.arc(dx, startY+dripLen, dripW*0.7, 0, Math.PI*2);
-    ctx.fill();
-  }
-  ctx.restore();
-
-  // Cracks / veins
-  ctx.strokeStyle = `rgba(120,0,0,${0.4*s})`;
-  ctx.lineWidth = 0.5+s*0.5;
-  for(let i=0;i<Math.floor(3*s);i++) {
-    const sx = Math.random()*w, sy = Math.random()*h;
-    ctx.beginPath(); ctx.moveTo(sx,sy);
-    let cx=sx, cy=sy;
-    for(let j=0;j<6;j++) {
-      cx += (Math.random()-0.5)*40; cy += (Math.random()-0.5)*30;
-      ctx.lineTo(cx,cy);
+  hack(c,w,h,t){
+    const nS=NO/5, coSc=CO/5, dkSc=DK/5, huSc=HU/5;
+    const zone=getZones();
+    // darkening (capped)
+    if(dkSc>0)c.fillStyle=`rgba(0,10,0,${Math.min(.5,.3+.04*dkSc)})`,c.fillRect(0,0,w,h);
+    if(coSc>0)c.fillStyle=`rgba(0,80,30,${.08*coSc})`,c.fillRect(0,0,w,h);
+    // matrix rain - density by huSc, placed in zones
+    if(huSc>0){
+      c.font=`bold ${11+huSc}px monospace`;
+      const ch='ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789@#$%&アカサタナハマヤラワ';
+      // Zone-based matrix rain: skip where focus isn't
+      const spots=[];
+      if(zone.tl)spots.push([0,w*.35,0,h*.4]);
+      if(zone.tr)spots.push([w*.65,w,0,h*.4]);
+      if(zone.bl)spots.push([0,w*.35,h*.6,h]);
+      if(zone.br)spots.push([w*.65,w,h*.6,h]);
+      if(focusMode==='edge')spots.push([0,w*.2,0,h],[w*.8,w,0,h],[0,w,0,h*.15],[0,w,h*.85,h]);
+      if(spots.length===0)spots.push([0,w,0,h]);
+      for(let i=0;i<(0|50*huSc);i++){
+        const sp=spots[0|Math.random()*spots.length];
+        const x=sp[0]+Math.random()*(sp[1]-sp[0]);
+        const y=sp[2]+Math.random()*(sp[3]-sp[2]);
+        const a=.15+Math.random()*.7;
+        c.fillStyle=`rgba(0,255,65,${a})`;c.fillText(ch[0|Math.random()*ch.length],x,y);
+      }
+      for(let i=0;i<(0|8*huSc);i++){const sp=spots[0|Math.random()*spots.length];c.fillStyle=`rgba(200,255,220,${.7+Math.random()*.3})`;c.fillText(ch[0|Math.random()*ch.length],sp[0]+Math.random()*(sp[1]-sp[0]),sp[2]+Math.random()*(sp[3]-sp[2]))}
     }
-    ctx.stroke();
-  }
+    // alert box (optional based on HU - if HU low, hide box; if high, show)
+    if(huSc>=0.6){
+      const bw=Math.min(w*.75,460),bh=66,bx=(w-bw)/2;
+      // position alert box in safe area
+      let by=(h-bh)/2;
+      if(focusMode==='tl')by=h-bh-20;
+      else if(focusMode==='tr')by=h-bh-20;
+      else if(focusMode==='bl')by=20;
+      else if(focusMode==='br')by=20;
 
-  // Dark vignette with red edge
-  const vig = ctx.createRadialGradient(w/2,h/2,h*0.15,w/2,h/2,h*0.75);
-  vig.addColorStop(0,'transparent');
-  vig.addColorStop(0.7,`rgba(60,0,0,${0.3*s})`);
-  vig.addColorStop(1,`rgba(80,0,0,${0.7*s})`);
-  ctx.fillStyle = vig;
-  ctx.fillRect(0,0,w,h);
-
-  // Flicker
-  if(Math.random() < 0.1*s) {
-    ctx.fillStyle = `rgba(100,0,0,${0.2*Math.random()})`;
-    ctx.fillRect(0,0,w,h);
-  }
-}
-
-// ─────────────────────────────────────────────
-// Helpers
-// ─────────────────────────────────────────────
-function clamp(v){ return Math.max(0,Math.min(255,Math.round(v))); }
-function clampVal(v,mn,mx){ return Math.max(mn,Math.min(mx,v)); }
-
-// ─────────────────────────────────────────────
-// Live Preview Loop
-// ─────────────────────────────────────────────
-function startLivePreview() {
-  cancelAnimationFrame(animFrame);
-  let t = 0;
-  const fps = 12 + speed;
-  let lastTime = 0;
-  const interval = 1000/fps;
-
-  function loop(ts) {
-    if(!livePreview || !sourceImage) return;
-    if(ts - lastTime > interval) {
-      drawFrame(ctx, canvas.width, canvas.height, t);
-      t++;
-      lastTime = ts;
+      if(t%12<5){
+        c.fillStyle='rgba(0,0,0,.88)';c.fillRect(bx,by,bw,bh);
+        c.strokeStyle='rgba(255,30,30,.95)';c.lineWidth=2;c.strokeRect(bx,by,bw,bh);
+        c.fillStyle='rgba(255,30,30,.98)';c.font=`bold ${16+huSc*2}px 'Bebas Neue',monospace`;
+        c.textAlign='center';c.textBaseline='middle';c.fillText('⛔ ACCESS DENIED',w/2,by+bh/2-8);
+        c.fillStyle='rgba(255,100,100,.9)';c.font=`${9+huSc}px monospace`;
+        c.fillText('UNAUTHORIZED ACCESS ATTEMPT DETECTED',w/2,by+bh/2+12);
+        c.textAlign='left';c.textBaseline='alphabetic';
+      }else if(t%12<10){
+        c.fillStyle='rgba(0,0,0,.85)';c.fillRect(bx,by,bw,bh);
+        c.strokeStyle='rgba(0,255,65,.85)';c.lineWidth=1;c.strokeRect(bx,by,bw,bh);
+        c.fillStyle='rgba(0,255,65,.98)';c.font=`bold ${14+huSc}px monospace`;
+        c.textAlign='center';c.textBaseline='middle';c.fillText(`> BREACHING FIREWALL... ${0|Math.random()*100}%`,w/2,by+bh/2-8);
+        c.fillStyle='rgba(0,255,65,.75)';c.font=`${9+huSc}px monospace`;
+        c.fillText('[████████░░] DECRYPTING PAYLOAD',w/2,by+bh/2+12);
+        c.textAlign='left';c.textBaseline='alphabetic';
+      }
     }
-    animFrame = requestAnimationFrame(loop);
+    // top/bottom bars based on zone
+    if(huSc>0){
+      if(zone.tl||zone.tr){
+        c.fillStyle='rgba(0,20,0,.88)';c.fillRect(0,0,w,22);
+        c.fillStyle='rgba(0,255,65,.95)';c.font=`bold ${9+huSc*.5}px monospace`;
+        if(zone.tl){c.textAlign='left';c.fillText('[ROOT@TARGET:~$ EXPLOIT_RUNNING]',10,15)}
+        if(zone.tr){c.textAlign='right';c.fillText(`PID:${String(0|Math.random()*9999).padStart(4,'0')}  UID:0`,w-10,15)}
+        c.textAlign='left';
+      }
+      if(zone.bl||zone.br){
+        c.fillStyle='rgba(0,20,0,.88)';c.fillRect(0,h-22,w,22);
+        c.fillStyle='rgba(0,255,65,.8)';c.font=`${9+huSc*.5}px monospace`;
+        const lg=['INJECTING SHELLCODE','BYPASSING 2FA','DUMPING CREDENTIALS','PATCHING KERNEL','UPLOADING TROJAN','ESCALATING PRIVILEGES'];
+        c.fillText(`> ${lg[t%lg.length]}... [${new Date().toISOString().slice(11,19)}]`,10,h-8);
+      }
+    }
+    // glitch lines
+    if(nS>0)for(let k=0;k<(0|2*nS);k++)if(Math.random()<.5){const y=0|Math.random()*h,lh=1+(0|Math.random()*4),li=c.getImageData(0,y,w,lh);c.putImageData(li,0|(Math.random()-.5)*30*nS,y)}
   }
-  animFrame = requestAnimationFrame(loop);
+};
+
+function prog(p,tx){
+  const b=$('#pb'),f=$('#pf'),t=$('#ptx');
+  b.style.display='block';t.style.display='block';f.style.width=p+'%';t.textContent=tx;
+  if(p>=100)setTimeout(()=>{b.style.display='none';t.style.display='none'},2500);
 }
+function dis(v){$('#bG').disabled=v;$('#bM').disabled=v}
 
-// ─────────────────────────────────────────────
-// Export
-// ─────────────────────────────────────────────
-const FPS = 12;
+$('#bG').onclick=async()=>{
+  if(!img)return;dis(true);cancelAnimationFrame(raf);
+  const w=cv.width,h=cv.height,tf=D*FPS;
+  prog(0,'GIF 產生中...');
+  const o=document.createElement('canvas');o.width=w;o.height=h;const oc=o.getContext('2d');
+  const g=new GIF({workers:2,quality:8,width:w,height:h,workerScript:'https://cdnjs.cloudflare.com/ajax/libs/gif.js/0.2.0/gif.worker.js'});
+  for(let f=0;f<tf;f++){draw(oc,w,h,f);g.addFrame(o,{copy:true,delay:1000/FPS|0});prog(0|f/tf*50,`渲染 ${f+1}/${tf}`);await new Promise(r=>setTimeout(r,0))}
+  g.on('progress',p=>prog(50+(0|p*50),'GIF 壓縮中...'));
+  g.on('finished',b=>{const u=URL.createObjectURL(b),a=document.createElement('a');a.href=u;a.download=`glitch_${fx}.gif`;a.click();prog(100,'下載完成！');dis(false);L&&play()});
+  g.render();
+};
 
-function setProgress(pct, text) {
-  const bar = document.getElementById('progressBar');
-  const fill = document.getElementById('progressFill');
-  const txt = document.getElementById('progressText');
-  bar.style.display = 'block';
-  txt.style.display = 'block';
-  fill.style.width = pct+'%';
-  txt.textContent = text;
-  if(pct >= 100) {
-    setTimeout(()=>{ bar.style.display='none'; txt.style.display='none'; },2000);
-  }
-}
-
-function disableExport(v) {
-  document.getElementById('exportGif').disabled = v;
-  document.getElementById('exportMp4').disabled = v;
-}
-
-// ── GIF Export ────────────────────────────────
-document.getElementById('exportGif').addEventListener('click', async () => {
-  if(!sourceImage) return;
-  disableExport(true);
-  cancelAnimationFrame(animFrame);
-
-  const w = canvas.width, h = canvas.height;
-  const totalFrames = duration * FPS;
-
-  setProgress(0, 'GIF 產生中...');
-
-  const offCanvas = document.createElement('canvas');
-  offCanvas.width = w; offCanvas.height = h;
-  const offCtx = offCanvas.getContext('2d');
-
-  const gif = new GIF({
-    workers: 2, quality: 8, width: w, height: h, workerScript:'https://cdnjs.cloudflare.com/ajax/libs/gif.js/0.2.0/gif.worker.js'
-  });
-
-  for(let f=0;f<totalFrames;f++) {
-    drawFrame(offCtx, w, h, f);
-    gif.addFrame(offCanvas, {copy:true, delay: Math.round(1000/FPS)});
-    setProgress(Math.round(f/totalFrames*50), `渲染幀 ${f+1}/${totalFrames}`);
-    await new Promise(r=>setTimeout(r,0));
-  }
-
-  gif.on('progress', p => setProgress(50 + Math.round(p*50), 'GIF 壓縮中...'));
-  gif.on('finished', blob => {
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url; a.download = `glitch_${currentEffect}.gif`;
-    a.click();
-    setProgress(100, '下載完成！');
-    disableExport(false);
-    if(livePreview) startLivePreview();
-  });
-  gif.render();
-});
-
-// ── MP4 Export ────────────────────────────────
-document.getElementById('exportMp4').addEventListener('click', async () => {
-  if(!sourceImage) return;
-  disableExport(true);
-  cancelAnimationFrame(animFrame);
-
-  const w = canvas.width, h = canvas.height;
-  const totalFrames = duration * FPS;
-
-  setProgress(0, 'MP4 產生中...');
-
-  const offCanvas = document.createElement('canvas');
-  offCanvas.width = w; offCanvas.height = h;
-  const offCtx = offCanvas.getContext('2d');
-
-  // Use MediaRecorder
-  const stream = offCanvas.captureStream(FPS);
-  const chunks = [];
-  // Try mp4 first, fallback to webm
-  const mimeType = MediaRecorder.isTypeSupported('video/mp4') ? 'video/mp4' :
-                   MediaRecorder.isTypeSupported('video/webm;codecs=vp9') ? 'video/webm;codecs=vp9' : 'video/webm';
-  const rec = new MediaRecorder(stream, {mimeType, videoBitsPerSecond:4000000});
-  rec.ondataavailable = e => { if(e.data.size>0) chunks.push(e.data); };
-  rec.onstop = () => {
-    const ext = mimeType.startsWith('video/mp4') ? 'mp4' : 'webm';
-    const blob = new Blob(chunks, {type: mimeType});
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url; a.download = `glitch_${currentEffect}.${ext}`;
-    a.click();
-    setProgress(100, `下載完成！(${ext.toUpperCase()})`);
-    disableExport(false);
-    if(livePreview) startLivePreview();
-  };
-
-  rec.start();
-
-  for(let f=0;f<totalFrames;f++) {
-    drawFrame(offCtx, w, h, f);
-    setProgress(Math.round(f/totalFrames*90), `渲染幀 ${f+1}/${totalFrames}`);
-    await new Promise(r=>setTimeout(r, Math.round(1000/FPS)));
-  }
-
-  setProgress(95, '封裝中...');
-  rec.stop();
-});
-</script>
-</body>
-</html>
+$('#bM').onclick=async()=>{
+  if(!img)return;dis(true);cancelAnimationFrame(raf);
+  const w=cv.width,h=cv.height,tf=D*FPS;
+  prog(0,'MP4 產生中...');
+  const o=document.createElement('canvas');o.width=w;o.height=h;const oc=o.getContext('2d');
+  const st=o.captureStream(FPS),ck=[];
+  const mm=MediaRecorder.isTypeSupported('video/mp4')?'video/mp4':MediaRecorder.isTypeSupported('video/webm;codecs=vp9')?'video/webm;codecs=vp9':'video/webm';
+  const r=new MediaRecorder(st,{mimeType:mm,videoBitsPerSecond:4e6});
+  r.ondataavailable=e=>e.data.size&&ck.push(e.data);
+  r.onstop=()=>{const ex=mm.startsWith('video/mp4')?'mp4':'webm',b=new Blob(ck,{type:mm}),u=URL.createObjectURL(b),a=document.createElement('a');a.href=u;a.download=`glitch_${fx}.${ex}`;a.click();prog(100,`下載完成！(${ex.toUpperCase()})`);dis(false);L&&play()};
+  r.start();
+  for(let f=0;f<tf;f++){draw(oc,w,h,f);prog(0|f/tf*90,`渲染 ${f+1}/${tf}`);await new Promise(rs=>setTimeout(rs,1000/FPS|0))}
+  prog(95,'封裝中...');r.stop();
+};
+</script></body></html>
