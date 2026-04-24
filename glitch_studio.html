@@ -29,7 +29,19 @@
    [A] STYLES
    ═══════════════════════════════════════════════ */
 
-@import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Bebas+Neue&family=VT323&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Bebas+Neue&family=VT323&family=Orbitron:wght@700&family=Major+Mono+Display&family=Press+Start+2P&family=Noto+Sans+JP:wght@900&family=Noto+Serif+JP:wght@700&family=M+PLUS+Rounded+1c:wght@700&family=Zen+Maru+Gothic:wght@700&family=Huninn&display=swap');
+
+/* 自訂中文字體（Google Fonts 沒有，從 jsdelivr 載入） */
+@font-face {
+  font-family: 'ChenYuluoyan';
+  src: url('https://cdn.jsdelivr.net/gh/Chenyu-otf/chenyuluoyan_thin/ChenYuluoyan-2.0-Thin.ttf') format('truetype');
+  font-display: swap;
+}
+@font-face {
+  font-family: 'NaikaiFont';
+  src: url('https://cdn.jsdelivr.net/gh/max32002/naikaifont@1.89/webfont/NaikaiFont-Regular.woff2') format('woff2');
+  font-display: swap;
+}
 
 :root {
   --bg: #0a0a0a;
@@ -329,6 +341,120 @@ header {
 .db.on { border-color: var(--t); color: var(--t); }
 .fn { font-size: 9px; color: var(--m); letter-spacing: 2px; margin-top: 8px; }
 
+/* 文字疊加區 */
+.txt-input {
+  width: 100%;
+  padding: 8px 10px;
+  background: #0c0c0c;
+  border: 1px solid var(--b);
+  color: var(--t);
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 1px;
+  margin-top: 6px;
+  outline: none;
+  transition: border-color .15s;
+}
+.txt-input:focus { border-color: var(--a2); }
+.txt-input::placeholder { color: #333; }
+
+.lang-tabs {
+  display: flex;
+  gap: 4px;
+  margin-top: 6px;
+}
+.lang-tab {
+  flex: 1;
+  padding: 8px 4px;
+  border: 1px solid var(--b);
+  background: transparent;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 10px;
+  letter-spacing: 3px;
+  color: var(--m);
+}
+.lang-tab:hover { border-color: #444; color: var(--t); }
+.lang-tab.on { border-color: var(--a2); color: var(--a2); }
+
+.font-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 4px;
+  margin-top: 6px;
+}
+.font-grid.hidden { display: none; }
+.fb {
+  padding: 10px 2px;
+  border: 1px solid var(--b);
+  background: transparent;
+  cursor: pointer;
+  font-size: 12px;
+  color: var(--m);
+  text-align: center;
+  line-height: 1.1;
+  transition: all .15s;
+}
+.fb:hover { border-color: #444; color: var(--t); }
+.fb.on { border-color: var(--a2); color: var(--t); }
+.fb small { font-size: 7px; color: var(--m); display: block; margin-top: 3px; letter-spacing: 1px; font-family:'Share Tech Mono',monospace; }
+
+.drag-hint {
+  font-size: 9px;
+  color: var(--m);
+  letter-spacing: 1px;
+  margin-top: 6px;
+  line-height: 1.5;
+}
+.drag-hint b { color: var(--a2); }
+
+/* 文字在預覽畫布上的拖曳游標 */
+.dz.has-text { cursor: grab; }
+.dz.has-text:active { cursor: grabbing; }
+.dz.dragging-text { cursor: grabbing !important; }
+
+.color-row {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  margin-top: 8px;
+  flex-wrap: wrap;
+}
+.swatch {
+  width: 22px; height: 22px;
+  border: 1px solid var(--b);
+  cursor: pointer;
+  padding: 0;
+}
+.swatch:hover { border-color: #aaa; }
+.swatch.on { border-color: var(--t); border-width: 2px; }
+.color-picker {
+  width: 22px; height: 22px;
+  border: 1px solid var(--b);
+  background: transparent;
+  cursor: pointer;
+  padding: 0;
+}
+
+.effect-btns {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 4px;
+  margin-top: 6px;
+}
+.eff-b {
+  padding: 6px 2px;
+  border: 1px solid var(--b);
+  background: transparent;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 9px;
+  letter-spacing: 1px;
+  color: var(--m);
+}
+.eff-b:hover { border-color: #444; color: var(--t); }
+.eff-b.on { border-color: var(--a2); color: var(--a2); }
+
 /* 匯出按鈕 */
 .xg {
   display: grid;
@@ -593,7 +719,68 @@ header {
       </div>
     </div>
 
-    <!-- B3.5 輸出長度 -->
+    <!-- B3.5 文字疊加 -->
+    <div class="sec">
+      <div class="sl">// 文字疊加</div>
+      <input type="text" class="txt-input" id="txtInput" placeholder="輸入文字（留空則不顯示）" maxlength="40">
+
+      <div class="fx-opt-label" style="margin-top:12px">字體語言</div>
+      <div class="lang-tabs">
+        <button class="lang-tab on" data-lang="en">ENGLISH</button>
+        <button class="lang-tab" data-lang="zh">中文 / 日文</button>
+      </div>
+
+      <!-- 英文字體 -->
+      <div class="font-grid" id="fontGridEn">
+        <button class="fb on" data-font="orbitron" style="font-family:'Orbitron',sans-serif">CYBER<small>科技</small></button>
+        <button class="fb" data-font="tech" style="font-family:'Share Tech Mono',monospace">TERM<small>科技</small></button>
+        <button class="fb" data-font="vt" style="font-family:'VT323',monospace">RETRO<small>科技</small></button>
+        <button class="fb" data-font="major" style="font-family:'Major Mono Display',monospace">MONO<small>復古</small></button>
+        <button class="fb" data-font="bebas" style="font-family:'Bebas Neue',sans-serif">BEBAS<small>海報</small></button>
+        <button class="fb" data-font="pixel" style="font-family:'Press Start 2P',cursive;font-size:9px">PIXEL<small>像素</small></button>
+      </div>
+
+      <!-- 中日文字體（日文字體 + 台灣自訂字體） -->
+      <div class="font-grid hidden" id="fontGridZh">
+        <button class="fb" data-font="jp-sans" style="font-family:'Noto Sans JP',sans-serif;font-weight:900">黑體<small>NOTO SANS</small></button>
+        <button class="fb" data-font="jp-serif" style="font-family:'Noto Serif JP',serif;font-weight:700">明朝<small>NOTO SERIF</small></button>
+        <button class="fb" data-font="jp-round" style="font-family:'M PLUS Rounded 1c',sans-serif;font-weight:700">圓體<small>M PLUS</small></button>
+        <button class="fb" data-font="jp-maru" style="font-family:'Zen Maru Gothic',sans-serif;font-weight:700">圓黑<small>ZEN MARU</small></button>
+        <button class="fb" data-font="tw-huninn" style="font-family:'Huninn',sans-serif">粉圓<small>JF OPEN</small></button>
+        <button class="fb" data-font="tw-chenyu" style="font-family:'ChenYuluoyan',cursive">手寫<small>辰宇落雁</small></button>
+        <button class="fb" data-font="tw-naikai" style="font-family:'NaikaiFont',sans-serif">內海<small>瀨戶風</small></button>
+      </div>
+
+      <div class="fx-opt-label" style="margin-top:12px">大小 / 透明度</div>
+      <div class="rw"><label>SIZE</label><input type="range" id="txtSize" min="12" max="160" value="42"><span class="vv" id="vTxtSize">42</span></div>
+      <div class="rw"><label>OPACITY</label><input type="range" id="txtOpacity" min="20" max="100" value="90"><span class="vv" id="vTxtOpacity">90%</span></div>
+      <div class="drag-hint">
+        💡 在預覽畫布上<b>直接拖曳</b>文字調整位置
+        <button class="rst" id="txtResetPos" style="margin-left:8px">置中</button>
+      </div>
+
+      <div class="fx-opt-label" style="margin-top:12px">顏色</div>
+      <div class="color-row">
+        <button class="swatch on" data-color="#ffffff" style="background:#ffffff"></button>
+        <button class="swatch" data-color="#000000" style="background:#000000"></button>
+        <button class="swatch" data-color="#ff2244" style="background:#ff2244"></button>
+        <button class="swatch" data-color="#00ffcc" style="background:#00ffcc"></button>
+        <button class="swatch" data-color="#f5c842" style="background:#f5c842"></button>
+        <button class="swatch" data-color="#00ff41" style="background:#00ff41"></button>
+        <button class="swatch" data-color="#ff6b00" style="background:#ff6b00"></button>
+        <input type="color" class="color-picker" id="txtColor" value="#ffffff" title="自訂顏色">
+      </div>
+
+      <div class="fx-opt-label" style="margin-top:12px">動態效果</div>
+      <div class="effect-btns" id="txtEffects">
+        <button class="eff-b on" data-eff="none">無</button>
+        <button class="eff-b" data-eff="flicker">閃爍</button>
+        <button class="eff-b" data-eff="rgb">色差</button>
+        <button class="eff-b" data-eff="type">打字機</button>
+      </div>
+    </div>
+
+    <!-- B3.6 輸出長度 -->
     <div class="sec">
       <div class="sl">// 輸出長度</div>
       <div class="dr">
@@ -655,6 +842,40 @@ let errWM     = 40;
 let focusMode = 'auto';
 let cyberPal  = 'cm';
 let retroPal  = 'warm';
+
+// 文字疊加
+let txt = {
+  text:    '',
+  font:    'orbitron',
+  lang:    'en',          // 'en' / 'zh'
+  x:       0.5,           // 0-1 比例座標（相對 canvas）
+  y:       0.5,
+  size:    42,
+  opacity: 90,
+  color:   '#ffffff',
+  effect:  'none'
+};
+
+// 字體對照表 - 分英文 / 中日文
+// 中日文組包含日文字體（漢字覆蓋最完整）+ 台灣自訂字體
+const FONTS = {
+  // 英文（6）
+  orbitron: { css: "'Orbitron', sans-serif",         weight: '700' },
+  tech:     { css: "'Share Tech Mono', monospace",   weight: '400' },
+  vt:       { css: "'VT323', monospace",             weight: '400' },
+  major:    { css: "'Major Mono Display', monospace", weight: '400' },
+  bebas:    { css: "'Bebas Neue', sans-serif",       weight: '400' },
+  pixel:    { css: "'Press Start 2P', cursive",      weight: '400' },
+  // 日文字體（4）
+  'jp-sans':  { css: "'Noto Sans JP', sans-serif",      weight: '900' },
+  'jp-serif': { css: "'Noto Serif JP', serif",          weight: '700' },
+  'jp-round': { css: "'M PLUS Rounded 1c', sans-serif", weight: '700' },
+  'jp-maru':  { css: "'Zen Maru Gothic', sans-serif",   weight: '700' },
+  // 台灣自訂字體（3）
+  'tw-huninn': { css: "'Huninn', sans-serif",            weight: '400' },
+  'tw-chenyu': { css: "'ChenYuluoyan', cursive",         weight: '400' },
+  'tw-naikai': { css: "'NaikaiFont', sans-serif",        weight: '400' }
+};
 
 const FPS = 12;
 
@@ -801,6 +1022,143 @@ $$('.db[data-focus]').forEach(b => b.onclick = function() {
   focusMode = this.dataset.focus;
 });
 
+// ─── 文字疊加 ───
+$('#txtInput').oninput   = e => { txt.text    = e.target.value; };
+$('#txtSize').oninput    = e => { txt.size    = +e.target.value; $('#vTxtSize').textContent    = txt.size; };
+$('#txtOpacity').oninput = e => { txt.opacity = +e.target.value; $('#vTxtOpacity').textContent = txt.opacity + '%'; };
+$('#txtColor').oninput   = e => {
+  txt.color = e.target.value;
+  $$('.swatch').forEach(x => x.classList.remove('on'));
+};
+
+// 判斷字體是否屬於中日文組（jp- 或 tw- 前綴）
+const isZhFont = f => f.startsWith('jp-') || f.startsWith('tw-');
+
+// 語言 tab 切換
+$$('.lang-tab').forEach(b => b.onclick = function() {
+  $$('.lang-tab').forEach(x => x.classList.remove('on'));
+  this.classList.add('on');
+  txt.lang = this.dataset.lang;
+
+  if (txt.lang === 'en') {
+    $('#fontGridEn').classList.remove('hidden');
+    $('#fontGridZh').classList.add('hidden');
+    // 若當前是中日文字體，切回第一個英文字體
+    if (!isZhFont(txt.font)) return;
+    const first = $('#fontGridEn .fb');
+    $$('#fontGridEn .fb').forEach(x => x.classList.remove('on'));
+    first.classList.add('on');
+    txt.font = first.dataset.font;
+  } else {
+    $('#fontGridEn').classList.add('hidden');
+    $('#fontGridZh').classList.remove('hidden');
+    if (isZhFont(txt.font)) return;
+    const first = $('#fontGridZh .fb');
+    $$('#fontGridZh .fb').forEach(x => x.classList.remove('on'));
+    first.classList.add('on');
+    txt.font = first.dataset.font;
+  }
+});
+
+// 字體選擇（兩組共用）
+$$('.fb').forEach(b => b.onclick = function() {
+  // 只取消同一 grid 內的 on
+  this.parentElement.querySelectorAll('.fb').forEach(x => x.classList.remove('on'));
+  this.classList.add('on');
+  txt.font = this.dataset.font;
+});
+
+// 顏色色票
+$$('.swatch').forEach(b => b.onclick = function() {
+  $$('.swatch').forEach(x => x.classList.remove('on'));
+  this.classList.add('on');
+  txt.color = this.dataset.color;
+  $('#txtColor').value = txt.color;
+});
+
+// 動態效果
+$$('.eff-b').forEach(b => b.onclick = function() {
+  $$('.eff-b').forEach(x => x.classList.remove('on'));
+  this.classList.add('on');
+  txt.effect = this.dataset.eff;
+});
+
+// 置中按鈕
+$('#txtResetPos').onclick = () => { txt.x = 0.5; txt.y = 0.5; };
+
+// ─── 文字拖曳（直接在 canvas 上） ───
+let dragging = false, dragOff = { x: 0, y: 0 };
+
+/** 事件座標轉 canvas 內部比例座標 (0-1) */
+function eventToCanvasPos(e) {
+  const r = cv.getBoundingClientRect();
+  const cx = (e.touches ? e.touches[0].clientX : e.clientX) - r.left;
+  const cy = (e.touches ? e.touches[0].clientY : e.clientY) - r.top;
+  // canvas 內部像素座標
+  const ix = cx * (cv.width / r.width);
+  const iy = cy * (cv.height / r.height);
+  return { x: ix / cv.width, y: iy / cv.height, ix, iy };
+}
+
+/** 檢查事件位置是否落在文字附近 */
+function hitTest(e) {
+  if (!txt.text || !img) return false;
+  const p = eventToCanvasPos(e);
+  // 允許 ±(size*2) 的容差（因為文字寬度難精算）
+  const tol = Math.max(30, txt.size * 0.8) / cv.width;
+  const tolY = Math.max(30, txt.size) / cv.height;
+  return Math.abs(p.x - txt.x) < tol * 3 && Math.abs(p.y - txt.y) < tolY;
+}
+
+cv.addEventListener('mousedown', e => {
+  if (!hitTest(e)) return;
+  dragging = true;
+  const p = eventToCanvasPos(e);
+  dragOff.x = p.x - txt.x;
+  dragOff.y = p.y - txt.y;
+  dz.classList.add('dragging-text');
+  e.preventDefault();
+});
+
+window.addEventListener('mousemove', e => {
+  if (!dragging) return;
+  const p = eventToCanvasPos(e);
+  txt.x = Math.max(0, Math.min(1, p.x - dragOff.x));
+  txt.y = Math.max(0, Math.min(1, p.y - dragOff.y));
+});
+
+window.addEventListener('mouseup', () => {
+  if (!dragging) return;
+  dragging = false;
+  dz.classList.remove('dragging-text');
+});
+
+// 觸控支援
+cv.addEventListener('touchstart', e => {
+  if (!hitTest(e)) return;
+  dragging = true;
+  const p = eventToCanvasPos(e);
+  dragOff.x = p.x - txt.x;
+  dragOff.y = p.y - txt.y;
+  e.preventDefault();
+}, { passive: false });
+
+window.addEventListener('touchmove', e => {
+  if (!dragging) return;
+  const p = eventToCanvasPos(e);
+  txt.x = Math.max(0, Math.min(1, p.x - dragOff.x));
+  txt.y = Math.max(0, Math.min(1, p.y - dragOff.y));
+  e.preventDefault();
+}, { passive: false });
+
+window.addEventListener('touchend', () => { dragging = false; });
+
+// 當有文字時，canvas 顯示 grab 游標
+const cvObserver = setInterval(() => {
+  if (txt.text && img) dz.classList.add('has-text');
+  else dz.classList.remove('has-text');
+}, 300);
+
 // 輸出長度
 $$('.db[data-d]').forEach(b => b.onclick = function() {
   $$('.db[data-d]').forEach(x => x.classList.remove('on'));
@@ -838,6 +1196,7 @@ function drawFrame(c, w, h, t) {
   c.drawImage(img, 0, 0, w, h);
   if (HUE !== 0 || SAT !== 100) applyHueSat(c, w, h);
   FX[fx](c, w, h, t);
+  if (txt.text) drawText(c, w, h, t);
 }
 
 // ──────────────────────────────────────────────────
@@ -1011,6 +1370,75 @@ function staticNoise(c, w, h, prob, amount) {
     d[i+1] = cl(d[i+1] + n);
     d[i+2] = cl(d[i+2] + n);
   });
+}
+
+/**
+ * 文字疊加繪製
+ * 使用 x/y 比例座標 (0-1)，以文字中心為定位點
+ */
+function drawText(c, w, h, t) {
+  // 打字機效果：逐字顯示
+  let text = txt.text;
+  if (txt.effect === 'type') {
+    const totalFrames = D * FPS;
+    const progress = (t % totalFrames) / totalFrames;
+    const chars = Math.ceil(text.length * Math.min(1, progress * 1.3));
+    text = text.slice(0, chars);
+    if (t % 4 < 2 && chars < txt.text.length + 1) text += '_';
+  }
+  if (!text) return;
+
+  const f = FONTS[txt.font] || FONTS.orbitron;
+  c.save();
+  c.font = `${f.weight} ${txt.size}px ${f.css}`;
+  c.textAlign = 'center';
+  c.textBaseline = 'middle';
+
+  // 比例座標 → 像素座標
+  const x = txt.x * w;
+  const y = txt.y * h;
+
+  // 動態效果
+  let alpha = txt.opacity / 100;
+
+  if (txt.effect === 'flicker') {
+    if (Math.random() < 0.12) alpha *= 0.25;
+    else if (Math.random() < 0.08) alpha *= 0.6;
+  }
+
+  c.globalAlpha = alpha;
+
+  if (txt.effect === 'rgb') {
+    // RGB 色差
+    const off = Math.max(2, txt.size * 0.04);
+    const wobble = Math.sin(t * 0.3) * off;
+    c.globalCompositeOperation = 'screen';
+    c.fillStyle = '#ff0040';
+    c.fillText(text, x + wobble, y);
+    c.fillStyle = '#00ffee';
+    c.fillText(text, x - wobble, y);
+    c.globalCompositeOperation = 'source-over';
+    c.fillStyle = txt.color;
+    c.fillText(text, x, y);
+  } else {
+    // 自動描邊
+    const rgb = hexToRgb(txt.color);
+    const isLight = rgb && (rgb.r + rgb.g + rgb.b) > 380;
+    c.strokeStyle = isLight ? 'rgba(0,0,0,0.6)' : 'rgba(255,255,255,0.6)';
+    c.lineWidth = Math.max(1, txt.size * 0.04);
+    c.lineJoin = 'round';
+    c.strokeText(text, x, y);
+    c.fillStyle = txt.color;
+    c.fillText(text, x, y);
+  }
+
+  c.restore();
+}
+
+/** Hex 轉 RGB */
+function hexToRgb(hex) {
+  const m = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+  return m ? { r: parseInt(m[1], 16), g: parseInt(m[2], 16), b: parseInt(m[3], 16) } : null;
 }
 
 // ──────────────────────────────────────────────────
