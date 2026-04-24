@@ -1,110 +1,473 @@
 <!DOCTYPE html>
-<html lang="zh-TW"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
 <title>GLITCH STUDIO v4</title>
-<style>
-@import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Bebas+Neue&family=VT323&display=swap');
-:root{--bg:#0a0a0a;--b:#1f1f1f;--t:#e8e4dc;--m:#555;--a:#ff2244;--a2:#00ffcc}
-*{margin:0;padding:0;box-sizing:border-box}
-html,body{height:100%;background:var(--bg);color:var(--t);font-family:'Share Tech Mono',monospace;overflow-x:hidden}
-body::before{content:'';position:fixed;inset:0;background:repeating-linear-gradient(0deg,transparent,transparent 3px,rgba(0,0,0,.06) 3px,rgba(0,0,0,.06) 4px);pointer-events:none;z-index:9999}
-header{border-bottom:1px solid var(--b);padding:14px 32px;display:flex;align-items:center;gap:16px}
-.logo{font-family:'Bebas Neue',sans-serif;font-size:30px;letter-spacing:6px;position:relative;line-height:1}
-.logo::before,.logo::after{content:'GLITCH';position:absolute;top:0;left:0}
-.logo::before{color:#ff2244;clip-path:inset(0 0 55% 0);transform:translateX(2px);opacity:.7}
-.logo::after{color:#00ffcc;clip-path:inset(55% 0 0 0);transform:translateX(-2px);opacity:.5}
-.sub{font-size:9px;letter-spacing:5px;color:var(--m)}
-.hr{margin-left:auto;display:flex;align-items:center;gap:8px;font-size:10px;color:var(--m);letter-spacing:2px}
-.dot{width:6px;height:6px;border-radius:50%;background:var(--a2);animation:bl 2s infinite}
-@keyframes bl{0%,100%{opacity:1}50%{opacity:.2}}
-.lay{display:grid;grid-template-columns:1fr 360px;height:calc(100vh - 61px)}
-.cv{border-right:1px solid var(--b);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;gap:14px;overflow:hidden}
-.dz{width:100%;max-width:680px;aspect-ratio:16/10;border:1px dashed #2a2a2a;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;cursor:pointer;position:relative;overflow:hidden;background:#0c0c0c;transition:border-color .2s}
-.dz:hover,.dz.drag{border-color:#444}
-.dz.has{border-style:solid;border-color:#1a1a1a;cursor:default}
-#cvs{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;display:none}
-.di{font-family:'Bebas Neue',sans-serif;font-size:52px;color:#1e1e1e;letter-spacing:4px}
-.dt{font-size:11px;color:var(--m);letter-spacing:3px}
-.dh{font-size:9px;color:#333;letter-spacing:2px}
-.ul{display:inline-block;padding:8px 18px;border:1px solid #2a2a2a;font-size:10px;letter-spacing:3px;color:var(--m);cursor:pointer;transition:all .2s;margin-top:8px}
-.ul:hover{border-color:#555;color:var(--t)}
-#fi{display:none}
-.meta{display:flex;gap:18px;font-size:10px;color:var(--m);letter-spacing:2px;align-items:center;flex-wrap:wrap;justify-content:center}
-.meta b{color:var(--t);font-weight:normal}
-.rep{padding:6px 14px;border:1px solid var(--b);background:transparent;cursor:pointer;font-family:inherit;font-size:9px;letter-spacing:2px;color:var(--m)}
-.rep:hover{border-color:#555;color:var(--t)}
-.ct{display:flex;flex-direction:column;overflow-y:auto;scrollbar-width:thin}
-.ct::-webkit-scrollbar{width:3px}
-.ct::-webkit-scrollbar-thumb{background:var(--b)}
-.sec{padding:14px 18px;border-bottom:1px solid var(--b)}
-.sl{font-size:9px;letter-spacing:4px;color:var(--m);margin-bottom:10px;display:flex;align-items:center;gap:8px}
-.sl::after{content:'';flex:1;height:1px;background:var(--b)}
-.eg{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px}
-.eb{padding:10px 4px;border:1px solid var(--b);background:transparent;cursor:pointer;text-align:center;transition:all .15s}
-.eb:hover{border-color:#444}
-.eb.on{border-width:2px}
-.en{font-family:'Bebas Neue',sans-serif;font-size:13px;letter-spacing:1.5px;display:block;margin-bottom:1px}
-.zh{font-size:8px;letter-spacing:1px;color:var(--m)}
-.desc{font-size:10px;color:var(--m);letter-spacing:1px;line-height:1.6;margin-top:10px;border-left:2px solid var(--b);padding-left:10px;min-height:20px}
-.rw{display:flex;align-items:center;gap:10px;margin-top:8px}
-.rw label{font-size:9px;letter-spacing:2px;color:var(--m);min-width:86px}
-.rw input[type=range]{flex:1;-webkit-appearance:none;height:1px;background:var(--b);outline:none;cursor:pointer}
-.rw input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:12px;height:12px;border-radius:50%;background:var(--t);cursor:pointer;border:2px solid var(--bg)}
-.vv{font-size:10px;color:var(--t);min-width:36px;text-align:right}
-.hue-slider{background:linear-gradient(90deg,#f00,#ff0,#0f0,#0ff,#00f,#f0f,#f00)!important;height:4px!important}
-.tg{display:flex;align-items:center;gap:8px;margin-top:10px;cursor:pointer;user-select:none}
-.tk{width:32px;height:16px;border:1px solid var(--b);border-radius:8px;position:relative}
-.th{position:absolute;top:2px;left:2px;width:10px;height:10px;border-radius:50%;background:var(--m);transition:all .2s}
-.tg.on .tk{border-color:var(--a2)}
-.tg.on .th{left:18px;background:var(--a2)}
-.tl{font-size:9px;letter-spacing:3px;color:var(--m)}
-.tg.on .tl{color:var(--a2)}
-.dr{display:flex;gap:6px;flex-wrap:wrap}
-.db{padding:6px 12px;border:1px solid var(--b);background:transparent;cursor:pointer;font-family:inherit;font-size:10px;letter-spacing:2px;color:var(--m)}
-.db:hover{border-color:#444;color:var(--t)}
-.db.on{border-color:var(--t);color:var(--t)}
-.fn{font-size:9px;color:var(--m);letter-spacing:2px;margin-top:8px}
-.xg{display:grid;grid-template-columns:1fr 1fr;gap:6px}
-.xb{padding:12px 6px;border:1px solid var(--b);background:transparent;cursor:pointer;font-family:inherit;font-size:9px;letter-spacing:2px;color:var(--t);text-align:center}
-.xb:hover:not(:disabled){border-color:var(--t);background:rgba(255,255,255,.02)}
-.xb:disabled{opacity:.25;cursor:not-allowed}
-.fmt{font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:4px;display:block;margin-bottom:2px}
-.gif-b .fmt{color:var(--a2)}
-.mp4-b .fmt{color:var(--a)}
-.pb{width:100%;height:1px;background:var(--b);margin-top:10px;display:none}
-.pf{height:100%;background:var(--a2);width:0;transition:width .1s}
-.pt{font-size:9px;color:var(--m);letter-spacing:2px;margin-top:6px;display:none;text-align:center}
-.rst{padding:2px 8px;border:1px solid var(--b);background:transparent;cursor:pointer;font-family:inherit;font-size:8px;letter-spacing:2px;color:var(--m)}
-.rst:hover{border-color:#555;color:var(--t)}
-.fx-opt{margin-top:10px;padding:10px;border:1px solid var(--b);background:rgba(255,255,255,.01);display:none}
-.fx-opt.show{display:block}
-.fx-opt-label{font-size:9px;letter-spacing:3px;color:var(--m);margin-bottom:6px}
-.pal{display:grid;grid-template-columns:repeat(5,1fr);gap:4px;margin-top:6px}
-.pc{padding:6px 4px;border:1px solid var(--b);background:transparent;cursor:pointer;font-family:inherit;font-size:9px;color:var(--m);text-align:center;letter-spacing:1px}
-.pc:hover{border-color:#444;color:var(--t)}
-.pc.on{border-color:var(--t);color:var(--t)}
-.c-film.on{border-color:#f5c842;background:rgba(245,200,66,.05)}.c-film .en{color:#f5c842}
-.c-cyber.on{border-color:#00e5ff;background:rgba(0,229,255,.05)}.c-cyber .en{color:#00e5ff}
-.c-retro.on{border-color:#ff6b00;background:rgba(255,107,0,.05)}.c-retro .en{color:#ff6b00}
-.c-404.on{border-color:#ff2244;background:rgba(255,34,68,.05)}.c-404 .en{color:#ff2244}
-.c-cctv.on{border-color:#aaffaa;background:rgba(170,255,170,.05)}.c-cctv .en{color:#aaffaa}
-.c-hack.on{border-color:#00ff41;background:rgba(0,255,65,.05)}.c-hack .en{color:#00ff41}
-.focus-hint{font-size:9px;color:var(--m);letter-spacing:1px;margin-top:6px;line-height:1.5}
-.focus-hint b{color:var(--a2)}
-.drag-target{position:absolute;width:20px;height:20px;border:2px solid var(--a2);border-radius:50%;cursor:move;display:none;z-index:20;pointer-events:auto;background:rgba(0,255,204,.15)}
-.drag-target.show{display:block}
-@media(max-width:900px){.lay{grid-template-columns:1fr;height:auto}.cv{border-right:none;border-bottom:1px solid var(--b);min-height:500px}}
-</style></head><body>
 
+<!-- ═══════════════════════════════════════════════════════════════════
+     GLITCH STUDIO v4
+     用途: 為遊戲角色照片加上動態 Glitch 特效，匯出 PNG / GIF / MP4
+     ═══════════════════════════════════════════════════════════════════
+     目錄：
+     [A] STYLES         樣式定義
+     [B] HTML STRUCTURE 介面骨架
+     [C] SCRIPT
+         C1. 全域狀態
+         C2. DOM 快捷與 Canvas
+         C3. 圖片上傳
+         C4. 事件監聽
+         C5. 渲染引擎
+         C6. 工具函式
+         C7. 色盤定義
+         C8. 特效實作 FX.{film, cyber, retro, err, cctv, hack}
+         C9. 匯出功能（PNG / GIF / MP4）
+     ═══════════════════════════════════════════════════════════════════ -->
+
+<style>
+/* ═══════════════════════════════════════════════
+   [A] STYLES
+   ═══════════════════════════════════════════════ */
+
+@import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Bebas+Neue&family=VT323&display=swap');
+
+:root {
+  --bg: #0a0a0a;
+  --b:  #1f1f1f;
+  --t:  #e8e4dc;
+  --m:  #555;
+  --a:  #ff2244;
+  --a2: #00ffcc;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+html, body {
+  height: 100%;
+  background: var(--bg);
+  color: var(--t);
+  font-family: 'Share Tech Mono', monospace;
+  overflow-x: hidden;
+}
+
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background: repeating-linear-gradient(0deg,
+    transparent, transparent 3px,
+    rgba(0,0,0,.06) 3px, rgba(0,0,0,.06) 4px);
+  pointer-events: none;
+  z-index: 9999;
+}
+
+/* ── Header ── */
+header {
+  border-bottom: 1px solid var(--b);
+  padding: 14px 32px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+.logo {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 30px;
+  letter-spacing: 6px;
+  position: relative;
+  line-height: 1;
+}
+.logo::before, .logo::after {
+  content: 'GLITCH';
+  position: absolute;
+  top: 0; left: 0;
+}
+.logo::before {
+  color: #ff2244;
+  clip-path: inset(0 0 55% 0);
+  transform: translateX(2px);
+  opacity: .7;
+}
+.logo::after {
+  color: #00ffcc;
+  clip-path: inset(55% 0 0 0);
+  transform: translateX(-2px);
+  opacity: .5;
+}
+.sub { font-size: 9px; letter-spacing: 5px; color: var(--m); }
+.hr {
+  margin-left: auto;
+  display: flex; align-items: center;
+  gap: 8px;
+  font-size: 10px;
+  color: var(--m);
+  letter-spacing: 2px;
+}
+.dot {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: var(--a2);
+  animation: bl 2s infinite;
+}
+@keyframes bl { 0%,100% {opacity:1} 50% {opacity:.2} }
+
+/* ── Layout ── */
+.lay {
+  display: grid;
+  grid-template-columns: 1fr 360px;
+  height: calc(100vh - 61px);
+}
+
+/* ── Canvas 側 ── */
+.cv {
+  border-right: 1px solid var(--b);
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  padding: 24px; gap: 14px;
+  overflow: hidden;
+}
+.dz {
+  width: 100%;
+  max-width: 680px;
+  aspect-ratio: 16/10;
+  border: 1px dashed #2a2a2a;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  gap: 10px;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+  background: #0c0c0c;
+  transition: border-color .2s;
+}
+.dz:hover, .dz.drag { border-color: #444; }
+.dz.has { border-style: solid; border-color: #1a1a1a; cursor: default; }
+#cvs {
+  position: absolute;
+  inset: 0;
+  width: 100%; height: 100%;
+  object-fit: contain;
+  display: none;
+}
+.di {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 52px;
+  color: #1e1e1e;
+  letter-spacing: 4px;
+}
+.dt { font-size: 11px; color: var(--m); letter-spacing: 3px; }
+.dh { font-size: 9px; color: #333; letter-spacing: 2px; }
+.ul {
+  display: inline-block;
+  padding: 8px 18px;
+  border: 1px solid #2a2a2a;
+  font-size: 10px;
+  letter-spacing: 3px;
+  color: var(--m);
+  cursor: pointer;
+  transition: all .2s;
+  margin-top: 8px;
+}
+.ul:hover { border-color: #555; color: var(--t); }
+#fi { display: none; }
+
+.meta {
+  display: flex; gap: 18px;
+  font-size: 10px;
+  color: var(--m);
+  letter-spacing: 2px;
+  align-items: center;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+.meta b { color: var(--t); font-weight: normal; }
+.rep, .pause-btn {
+  padding: 6px 14px;
+  border: 1px solid var(--b);
+  background: transparent;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 9px;
+  letter-spacing: 2px;
+  color: var(--m);
+  transition: all .15s;
+}
+.rep:hover, .pause-btn:hover { border-color: #555; color: var(--t); }
+.pause-btn.paused { border-color: var(--a2); color: var(--a2); }
+
+/* ── Controls 側 ── */
+.ct {
+  display: flex; flex-direction: column;
+  overflow-y: auto;
+  scrollbar-width: thin;
+}
+.ct::-webkit-scrollbar { width: 3px; }
+.ct::-webkit-scrollbar-thumb { background: var(--b); }
+.sec { padding: 14px 18px; border-bottom: 1px solid var(--b); }
+.sl {
+  font-size: 9px;
+  letter-spacing: 4px;
+  color: var(--m);
+  margin-bottom: 10px;
+  display: flex; align-items: center;
+  gap: 8px;
+}
+.sl::after { content: ''; flex: 1; height: 1px; background: var(--b); }
+
+/* 特效選擇 */
+.eg {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 6px;
+}
+.eb {
+  padding: 10px 4px;
+  border: 1px solid var(--b);
+  background: transparent;
+  cursor: pointer;
+  text-align: center;
+  transition: all .15s;
+}
+.eb:hover { border-color: #444; }
+.eb.on { border-width: 2px; }
+.en {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 13px;
+  letter-spacing: 1.5px;
+  display: block;
+  margin-bottom: 1px;
+}
+.zh { font-size: 8px; letter-spacing: 1px; color: var(--m); }
+
+.c-film.on  { border-color: #f5c842; background: rgba(245,200,66,.05); } .c-film  .en { color: #f5c842; }
+.c-cyber.on { border-color: #00e5ff; background: rgba(0,229,255,.05); } .c-cyber .en { color: #00e5ff; }
+.c-retro.on { border-color: #ff6b00; background: rgba(255,107,0,.05); } .c-retro .en { color: #ff6b00; }
+.c-404.on   { border-color: #ff2244; background: rgba(255,34,68,.05); } .c-404   .en { color: #ff2244; }
+.c-cctv.on  { border-color: #aaffaa; background: rgba(170,255,170,.05); } .c-cctv .en { color: #aaffaa; }
+.c-hack.on  { border-color: #00ff41; background: rgba(0,255,65,.05); } .c-hack .en { color: #00ff41; }
+
+.desc {
+  font-size: 10px;
+  color: var(--m);
+  letter-spacing: 1px;
+  line-height: 1.6;
+  margin-top: 10px;
+  border-left: 2px solid var(--b);
+  padding-left: 10px;
+  min-height: 20px;
+}
+
+/* 滑桿 */
+.rw { display: flex; align-items: center; gap: 10px; margin-top: 8px; }
+.rw label {
+  font-size: 9px;
+  letter-spacing: 2px;
+  color: var(--m);
+  min-width: 86px;
+}
+.rw input[type=range] {
+  flex: 1;
+  -webkit-appearance: none;
+  height: 1px;
+  background: var(--b);
+  outline: none;
+  cursor: pointer;
+}
+.rw input[type=range]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 12px; height: 12px;
+  border-radius: 50%;
+  background: var(--t);
+  cursor: pointer;
+  border: 2px solid var(--bg);
+}
+.vv { font-size: 10px; color: var(--t); min-width: 36px; text-align: right; }
+.hue-slider {
+  background: linear-gradient(90deg, #f00, #ff0, #0f0, #0ff, #00f, #f0f, #f00) !important;
+  height: 4px !important;
+}
+
+/* Toggle */
+.tg {
+  display: flex; align-items: center;
+  gap: 8px;
+  margin-top: 10px;
+  cursor: pointer;
+  user-select: none;
+}
+.tk {
+  width: 32px; height: 16px;
+  border: 1px solid var(--b);
+  border-radius: 8px;
+  position: relative;
+}
+.th {
+  position: absolute;
+  top: 2px; left: 2px;
+  width: 10px; height: 10px;
+  border-radius: 50%;
+  background: var(--m);
+  transition: all .2s;
+}
+.tg.on .tk { border-color: var(--a2); }
+.tg.on .th { left: 18px; background: var(--a2); }
+.tl { font-size: 9px; letter-spacing: 3px; color: var(--m); }
+.tg.on .tl { color: var(--a2); }
+
+/* 按鈕群 */
+.dr { display: flex; gap: 6px; flex-wrap: wrap; }
+.db {
+  padding: 6px 12px;
+  border: 1px solid var(--b);
+  background: transparent;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 10px;
+  letter-spacing: 2px;
+  color: var(--m);
+}
+.db:hover { border-color: #444; color: var(--t); }
+.db.on { border-color: var(--t); color: var(--t); }
+.fn { font-size: 9px; color: var(--m); letter-spacing: 2px; margin-top: 8px; }
+
+/* 匯出按鈕 */
+.xg {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 6px;
+}
+.xb {
+  padding: 12px 6px;
+  border: 1px solid var(--b);
+  background: transparent;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 9px;
+  letter-spacing: 2px;
+  color: var(--t);
+  text-align: center;
+}
+.xb:hover:not(:disabled) { border-color: var(--t); background: rgba(255,255,255,.02); }
+.xb:disabled { opacity: .25; cursor: not-allowed; }
+.fmt {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 20px;
+  letter-spacing: 4px;
+  display: block;
+  margin-bottom: 2px;
+}
+.xb.png-b .fmt { color: #f5c842; }
+.xb.gif-b .fmt { color: var(--a2); }
+.xb.mp4-b .fmt { color: var(--a); }
+
+.pb {
+  width: 100%; height: 1px;
+  background: var(--b);
+  margin-top: 10px;
+  display: none;
+}
+.pf {
+  height: 100%;
+  background: var(--a2);
+  width: 0;
+  transition: width .1s;
+}
+.pt {
+  font-size: 9px;
+  color: var(--m);
+  letter-spacing: 2px;
+  margin-top: 6px;
+  display: none;
+  text-align: center;
+}
+
+.rst {
+  padding: 2px 8px;
+  border: 1px solid var(--b);
+  background: transparent;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 8px;
+  letter-spacing: 2px;
+  color: var(--m);
+}
+.rst:hover { border-color: #555; color: var(--t); }
+
+/* 特效專屬設定區 */
+.fx-opt {
+  margin-top: 10px;
+  padding: 10px;
+  border: 1px solid var(--b);
+  background: rgba(255,255,255,.01);
+  display: none;
+}
+.fx-opt.show { display: block; }
+.fx-opt-label {
+  font-size: 9px;
+  letter-spacing: 3px;
+  color: var(--m);
+  margin-bottom: 6px;
+}
+
+.pal {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 4px;
+  margin-top: 6px;
+}
+.pc {
+  padding: 6px 4px;
+  border: 1px solid var(--b);
+  background: transparent;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 9px;
+  color: var(--m);
+  text-align: center;
+  letter-spacing: 1px;
+}
+.pc:hover { border-color: #444; color: var(--t); }
+.pc.on { border-color: var(--t); color: var(--t); }
+
+.focus-hint {
+  font-size: 9px;
+  color: var(--m);
+  letter-spacing: 1px;
+  margin-top: 6px;
+  line-height: 1.5;
+}
+.focus-hint b { color: var(--a2); }
+
+@media (max-width: 900px) {
+  .lay { grid-template-columns: 1fr; height: auto; }
+  .cv { border-right: none; border-bottom: 1px solid var(--b); min-height: 500px; }
+}
+</style>
+</head>
+
+<body>
+
+<!-- ═══════════════════════════════════════════════
+     [B] HTML STRUCTURE
+     ═══════════════════════════════════════════════ -->
+
+<!-- B1. Header -->
 <header>
-  <div><div class="logo">GLITCH</div><div class="sub">STUDIO · NOISE ENGINE v4</div></div>
-  <div class="hr"><div class="dot"></div>SYSTEM ONLINE</div>
+  <div>
+    <div class="logo">GLITCH</div>
+    <div class="sub">STUDIO · NOISE ENGINE v4</div>
+  </div>
+  <div class="hr">
+    <div class="dot"></div>
+    SYSTEM ONLINE
+  </div>
 </header>
 
 <div class="lay">
+
+  <!-- B2. Canvas 預覽區 -->
   <div class="cv">
     <div class="dz" id="dz">
       <canvas id="cvs"></canvas>
-      <div class="drag-target" id="focus"></div>
       <div id="du">
         <div class="di">UPLOAD</div>
         <div class="dt">拖拉圖片 / 點擊上傳</div>
@@ -117,67 +480,77 @@ header{border-bottom:1px solid var(--b);padding:14px 32px;display:flex;align-ite
       <div>SIZE <b id="mS">—</b></div>
       <div>FX <b id="mF">FILM</b></div>
       <div>FRM <b id="mR">24</b></div>
+      <button class="pause-btn" id="pause" style="display:none">⏸ 暫停</button>
       <button class="rep" id="rep" style="display:none">更換圖片</button>
     </div>
   </div>
 
+  <!-- B3. Controls 控制面板 -->
   <div class="ct">
+
+    <!-- B3.1 特效選擇 -->
     <div class="sec">
       <div class="sl">// 特效選擇</div>
       <div class="eg">
         <button class="eb c-film on" data-fx="film"><span class="en">FILM</span><span class="zh">電影感</span></button>
-        <button class="eb c-cyber" data-fx="cyber"><span class="en">CYBER</span><span class="zh">賽博龐克</span></button>
-        <button class="eb c-retro" data-fx="retro"><span class="en">RETRO</span><span class="zh">復古感</span></button>
-        <button class="eb c-404" data-fx="err"><span class="en">404</span><span class="zh">系統錯誤</span></button>
-        <button class="eb c-cctv" data-fx="cctv"><span class="en">CCTV</span><span class="zh">監視器</span></button>
-        <button class="eb c-hack" data-fx="hack"><span class="en">HACK</span><span class="zh">終端機入侵</span></button>
+        <button class="eb c-cyber"   data-fx="cyber"><span class="en">CYBER</span><span class="zh">賽博龐克</span></button>
+        <button class="eb c-retro"   data-fx="retro"><span class="en">RETRO</span><span class="zh">復古感</span></button>
+        <button class="eb c-404"     data-fx="err"><span class="en">404</span><span class="zh">系統錯誤</span></button>
+        <button class="eb c-cctv"    data-fx="cctv"><span class="en">CCTV</span><span class="zh">監視器</span></button>
+        <button class="eb c-hack"    data-fx="hack"><span class="en">HACK</span><span class="zh">終端機入侵</span></button>
       </div>
       <div class="desc" id="dc">粒子感噪點、膠片刮痕、光暈色差，重現電影老底片質感。</div>
 
-      <!-- CYBER palette -->
+      <!-- 特效專屬設定（動態顯示） -->
+      <div class="fx-opt show" id="opt-film">
+        <div class="fx-opt-label">FILM 專屬設定</div>
+        <div class="tg on" id="barsTog">
+          <div class="tk"><div class="th"></div></div>
+          <div class="tl">上下電影黑邊</div>
+        </div>
+      </div>
+
       <div class="fx-opt" id="opt-cyber">
         <div class="fx-opt-label">CYBER 配色方案</div>
         <div class="pal" id="cyberPal">
           <button class="pc on" data-pal="cm">青/洋紅</button>
-          <button class="pc" data-pal="op">橙/紫</button>
-          <button class="pc" data-pal="gy">綠/黃</button>
-          <button class="pc" data-pal="rb">紅/藍</button>
-          <button class="pc" data-pal="pt">粉/青</button>
+          <button class="pc"    data-pal="op">橙/紫</button>
+          <button class="pc"    data-pal="gy">綠/黃</button>
+          <button class="pc"    data-pal="rb">紅/藍</button>
+          <button class="pc"    data-pal="pt">粉/青</button>
         </div>
       </div>
 
-      <!-- RETRO palette -->
       <div class="fx-opt" id="opt-retro">
         <div class="fx-opt-label">RETRO 色調</div>
         <div class="pal" id="retroPal">
           <button class="pc on" data-pal="warm">暖色</button>
-          <button class="pc" data-pal="cool">冷色</button>
-          <button class="pc" data-pal="sepia">褐色</button>
-          <button class="pc" data-pal="neutral">中性</button>
-          <button class="pc" data-pal="teal">青綠</button>
+          <button class="pc"    data-pal="cool">冷色</button>
+          <button class="pc"    data-pal="sepia">褐色</button>
+          <button class="pc"    data-pal="neutral">中性</button>
+          <button class="pc"    data-pal="teal">青綠</button>
         </div>
       </div>
 
-      <!-- FILM options -->
-      <div class="fx-opt show" id="opt-film">
-        <div class="fx-opt-label">FILM 專屬設定</div>
-        <div class="tg on" id="barsTog"><div class="tk"><div class="th"></div></div><div class="tl">上下電影黑邊</div></div>
-      </div>
-
-      <!-- 404 options -->
       <div class="fx-opt" id="opt-err">
         <div class="fx-opt-label">404 浮水印大小</div>
-        <div class="rw"><label>WATERMARK</label><input type="range" id="errWM" min="0" max="100" value="40"><span class="vv" id="vErrWM">40%</span></div>
+        <div class="rw">
+          <label>WATERMARK</label>
+          <input type="range" id="errWM" min="0" max="100" value="40">
+          <span class="vv" id="vErrWM">40%</span>
+        </div>
       </div>
 
-      <!-- CCTV options -->
       <div class="fx-opt" id="opt-cctv">
         <div class="fx-opt-label">CCTV 設定</div>
-        <div class="tg on" id="cctvCross"><div class="tk"><div class="th"></div></div><div class="tl">中央十字準星</div></div>
+        <div class="tg on" id="cctvCross">
+          <div class="tk"><div class="th"></div></div>
+          <div class="tl">中央十字準星</div>
+        </div>
       </div>
     </div>
 
-    <!-- FOCUS POSITIONING -->
+    <!-- B3.2 焦點位置 -->
     <div class="sec">
       <div class="sl">// 焦點位置（避開主體）</div>
       <div class="dr">
@@ -188,558 +561,1210 @@ header{border-bottom:1px solid var(--b);padding:14px 32px;display:flex;align-ite
         <button class="db" data-focus="br">右下</button>
         <button class="db" data-focus="edge">邊緣環繞</button>
       </div>
-      <div class="focus-hint">特效元素（HUD、光暈、文字）會集中在<b>未選擇的角落</b>，避免蓋住主體。</div>
+      <div class="focus-hint">
+        特效元素（HUD、光暈、文字）會集中在<b>未選擇的角落</b>，避免蓋住主體。
+      </div>
     </div>
 
-    <!-- GRANULAR INTENSITY -->
+    <!-- B3.3 細節強度 -->
     <div class="sec">
       <div class="sl">// 細節強度（獨立調整）</div>
-      <div class="rw"><label>NOISE 噪點</label><input type="range" id="sNO" min="0" max="10" value="5"><span class="vv" id="vNO">5</span></div>
-      <div class="rw"><label>COLOR 色偏</label><input type="range" id="sCO" min="0" max="10" value="5"><span class="vv" id="vCO">5</span></div>
-      <div class="rw"><label>DARKEN 暗化</label><input type="range" id="sDK" min="0" max="10" value="5"><span class="vv" id="vDK">5</span></div>
-      <div class="rw"><label>HUD 元素</label><input type="range" id="sHU" min="0" max="10" value="5"><span class="vv" id="vHU">5</span></div>
-      <div class="rw"><label>SPEED 速度</label><input type="range" id="sSP" min="1" max="10" value="5"><span class="vv" id="vSP">5</span></div>
+      <div class="rw"><label>NOISE 噪點</label>  <input type="range" id="sNO" min="0" max="10" value="5"><span class="vv" id="vNO">5</span></div>
+      <div class="rw"><label>COLOR 色偏</label>  <input type="range" id="sCO" min="0" max="10" value="5"><span class="vv" id="vCO">5</span></div>
+      <div class="rw"><label>DARKEN 暗化</label> <input type="range" id="sDK" min="0" max="10" value="5"><span class="vv" id="vDK">5</span></div>
+      <div class="rw"><label>HUD 元素</label>    <input type="range" id="sHU" min="0" max="10" value="5"><span class="vv" id="vHU">5</span></div>
+      <div class="rw"><label>SPEED 速度</label>  <input type="range" id="sSP" min="1" max="10" value="5"><span class="vv" id="vSP">5</span></div>
       <div style="display:flex;align-items:center;margin-top:8px;gap:8px">
-        <div class="tg on" id="pt" style="margin-top:0"><div class="tk"><div class="th"></div></div><div class="tl">LIVE PREVIEW</div></div>
+        <div class="tg on" id="pt" style="margin-top:0">
+          <div class="tk"><div class="th"></div></div>
+          <div class="tl">LIVE PREVIEW</div>
+        </div>
         <button class="rst" id="rstInt" style="margin-left:auto">RESET 強度</button>
       </div>
     </div>
 
-    <!-- COLOR ADJUSTMENT -->
+    <!-- B3.4 色調調整 -->
     <div class="sec">
       <div class="sl">// 色調調整</div>
-      <div class="rw"><label>HUE</label><input type="range" id="sH" min="-180" max="180" value="0" class="hue-slider"><span class="vv" id="vH">0°</span></div>
-      <div class="rw"><label>SATURATION</label><input type="range" id="sS" min="0" max="200" value="100"><span class="vv" id="vS">100%</span></div>
-      <div style="display:flex;justify-content:flex-end;margin-top:6px"><button class="rst" id="rstColor">RESET 色調</button></div>
+      <div class="rw"><label>HUE</label>        <input type="range" id="sH" min="-180" max="180" value="0" class="hue-slider"><span class="vv" id="vH">0°</span></div>
+      <div class="rw"><label>SATURATION</label> <input type="range" id="sS" min="0" max="200" value="100"><span class="vv" id="vS">100%</span></div>
+      <div style="display:flex;justify-content:flex-end;margin-top:6px">
+        <button class="rst" id="rstColor">RESET 色調</button>
+      </div>
     </div>
 
-    <!-- DURATION -->
+    <!-- B3.5 輸出長度 -->
     <div class="sec">
       <div class="sl">// 輸出長度</div>
       <div class="dr">
         <button class="db on" data-d="2">2s</button>
-        <button class="db" data-d="3">3s</button>
-        <button class="db" data-d="5">5s</button>
-        <button class="db" data-d="8">8s</button>
+        <button class="db"    data-d="3">3s</button>
+        <button class="db"    data-d="5">5s</button>
+        <button class="db"    data-d="8">8s</button>
       </div>
       <div class="fn" id="fnN">預計 24 幀 @ 12fps</div>
     </div>
 
-    <!-- EXPORT -->
+    <!-- B3.6 輸出格式 -->
     <div class="sec">
       <div class="sl">// 輸出格式</div>
       <div class="xg">
+        <button class="xb png-b" id="bP" disabled><span class="fmt">PNG</span>靜態圖片</button>
         <button class="xb gif-b" id="bG" disabled><span class="fmt">GIF</span>動態圖片</button>
         <button class="xb mp4-b" id="bM" disabled><span class="fmt">MP4</span>影片檔案</button>
       </div>
       <div class="pb" id="pb"><div class="pf" id="pf"></div></div>
       <div class="pt" id="ptx">PROCESSING...</div>
     </div>
+
   </div>
 </div>
 
+<!-- ═══════════════════════════════════════════════
+     [C] SCRIPT
+     ═══════════════════════════════════════════════ -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/gif.js/0.2.0/gif.js"></script>
 <script>
-let img=null,fx='film',D=2,L=true,raf=null;
-let NO=5,CO=5,DK=5,HU=5,SP=5,HUE=0,SAT=100;
-let bars=true,cctvCross=true;
-let errWM=40, focusMode='auto', cyberPal='cm', retroPal='warm';
-const FPS=12,$=s=>document.querySelector(s),$$=s=>document.querySelectorAll(s);
-const cv=$('#cvs'),ct=cv.getContext('2d'),dz=$('#dz');
-const cl=v=>Math.max(0,Math.min(255,v|0));
-const cp=(v,a,b)=>Math.max(a,Math.min(b,v));
+'use strict';
 
-// scale helpers - per control (0-10 maps to 0-2)
-const nS=()=>NO/5, coS=()=>CO/5, dkS=()=>DK/5, huS=()=>HU/5;
+// ──────────────────────────────────────────────────
+// C1. 全域狀態
+// ──────────────────────────────────────────────────
 
-$('#fi').onchange=e=>e.target.files[0]&&load(e.target.files[0]);
-dz.ondragover=e=>{e.preventDefault();dz.classList.add('drag')};
-dz.ondragleave=()=>dz.classList.remove('drag');
-dz.ondrop=e=>{e.preventDefault();dz.classList.remove('drag');e.dataTransfer.files[0]&&load(e.dataTransfer.files[0])};
-dz.onclick=e=>{if(!img&&e.target.tagName!=='LABEL'&&e.target.tagName!=='INPUT')$('#fi').click()};
-$('#rep').onclick=()=>$('#fi').click();
+let img = null;         // 已載入的原圖
+let fx  = 'film';       // 當前特效
+let D   = 2;            // 輸出秒數
+let L   = true;         // Live Preview
+let raf = null;
 
-function load(f){
-  const im=new Image();
-  im.onload=()=>{
-    img=im;
-    const sc=Math.min(dz.clientWidth/im.width,dz.clientHeight/im.height,1);
-    cv.width=Math.max(320,Math.round(im.width*sc));
-    cv.height=Math.round(im.height*cv.width/im.width);
-    cv.style.display='block';$('#du').style.display='none';dz.classList.add('has');
-    $('#bG').disabled=$('#bM').disabled=false;
-    $('#rep').style.display='inline-block';
-    $('#mS').textContent=`${cv.width}×${cv.height}`;
+// 細節強度（0-10）
+let NO = 5;  // NOISE
+let CO = 5;  // COLOR
+let DK = 5;  // DARKEN
+let HU = 5;  // HUD
+let SP = 5;  // SPEED
+
+// 色調
+let HUE = 0;
+let SAT = 100;
+
+// 特效專屬
+let bars      = true;
+let cctvCross = true;
+let errWM     = 40;
+let focusMode = 'auto';
+let cyberPal  = 'cm';
+let retroPal  = 'warm';
+
+const FPS = 12;
+
+// ──────────────────────────────────────────────────
+// C2. DOM 快捷與 Canvas
+// ──────────────────────────────────────────────────
+const $  = s => document.querySelector(s);
+const $$ = s => document.querySelectorAll(s);
+const cv = $('#cvs'),
+      ct = cv.getContext('2d'),
+      dz = $('#dz');
+
+// ──────────────────────────────────────────────────
+// C3. 圖片上傳
+// ──────────────────────────────────────────────────
+
+$('#fi').onchange = e => e.target.files[0] && loadImg(e.target.files[0]);
+
+dz.ondragover  = e => { e.preventDefault(); dz.classList.add('drag'); };
+dz.ondragleave = () => dz.classList.remove('drag');
+dz.ondrop = e => {
+  e.preventDefault();
+  dz.classList.remove('drag');
+  if (e.dataTransfer.files[0]) loadImg(e.dataTransfer.files[0]);
+};
+
+dz.onclick = e => {
+  if (!img && e.target.tagName !== 'LABEL' && e.target.tagName !== 'INPUT') {
+    $('#fi').click();
+  }
+};
+
+$('#rep').onclick = () => $('#fi').click();
+
+function loadImg(file) {
+  const im = new Image();
+  im.onload = () => {
+    img = im;
+    const sc = Math.min(dz.clientWidth / im.width, dz.clientHeight / im.height, 1);
+    cv.width  = Math.max(320, Math.round(im.width * sc));
+    cv.height = Math.round(im.height * cv.width / im.width);
+
+    cv.style.display = 'block';
+    $('#du').style.display = 'none';
+    dz.classList.add('has');
+
+    $('#bG').disabled = $('#bM').disabled = $('#bP').disabled = false;
+    $('#rep').style.display   = 'inline-block';
+    $('#pause').style.display = 'inline-block';
+    $('#mS').textContent = `${cv.width}×${cv.height}`;
+
     play();
   };
-  im.src=URL.createObjectURL(f);
+  im.src = URL.createObjectURL(file);
 }
 
-const DS={
-  film:'粒子感噪點、膠片刮痕、光暈色差，重現電影老底片質感。',
-  cyber:'霓虹光暈、掃描線、像素錯位、HEX代碼、Grid網格，賽博龐克風格。',
-  retro:'VHS磁帶橫紋、色彩溢出、類比訊號失真，80年代錄影帶記憶。',
-  err:'系統錯誤警示橫幅、紅色警告邊框、404文字閃爍浮層。',
-  cctv:'監視器時間碼、靜電噪訊、訊號中斷畫面，安全攝影機故障感。',
-  hack:'綠色終端機文字瀑布、代碼入侵覆蓋、ACCESS DENIED警告。'
+// ──────────────────────────────────────────────────
+// C4. 事件監聽
+// ──────────────────────────────────────────────────
+
+// 特效描述
+const DS = {
+  film:  '粒子感噪點、膠片刮痕、光暈色差，重現電影老底片質感。',
+  cyber: '霓虹光暈、掃描線、像素錯位、HEX代碼、Grid網格，賽博龐克風格。',
+  retro: 'VHS磁帶橫紋、色彩溢出、類比訊號失真，80年代錄影帶記憶。',
+  err:   '系統錯誤警示橫幅、紅色警告邊框、404文字閃爍浮層。',
+  cctv:  '監視器時間碼、靜電噪訊、訊號中斷畫面，安全攝影機故障感。',
+  hack:  '綠色終端機文字瀑布、代碼入侵覆蓋、ACCESS DENIED警告。'
 };
-$$('.eb').forEach(b=>b.onclick=function(){
-  $$('.eb').forEach(x=>x.classList.remove('on'));this.classList.add('on');
-  fx=this.dataset.fx;
-  $('#dc').textContent=DS[fx];
-  $('#mF').textContent=(fx==='err'?'404':fx).toUpperCase();
-  $$('.fx-opt').forEach(o=>o.classList.remove('show'));
-  const optEl=$(`#opt-${fx}`);if(optEl)optEl.classList.add('show');
+
+$$('.eb').forEach(b => b.onclick = function() {
+  $$('.eb').forEach(x => x.classList.remove('on'));
+  this.classList.add('on');
+  fx = this.dataset.fx;
+  $('#dc').textContent = DS[fx];
+  $('#mF').textContent = (fx === 'err' ? '404' : fx).toUpperCase();
+
+  $$('.fx-opt').forEach(o => o.classList.remove('show'));
+  const optEl = $(`#opt-${fx}`);
+  if (optEl) optEl.classList.add('show');
 });
 
-// palette buttons
-$$('#cyberPal .pc').forEach(b=>b.onclick=function(){
-  $$('#cyberPal .pc').forEach(x=>x.classList.remove('on'));this.classList.add('on');
-  cyberPal=this.dataset.pal;
+$$('#cyberPal .pc').forEach(b => b.onclick = function() {
+  $$('#cyberPal .pc').forEach(x => x.classList.remove('on'));
+  this.classList.add('on');
+  cyberPal = this.dataset.pal;
 });
-$$('#retroPal .pc').forEach(b=>b.onclick=function(){
-  $$('#retroPal .pc').forEach(x=>x.classList.remove('on'));this.classList.add('on');
-  retroPal=this.dataset.pal;
-});
-
-// sliders
-$('#sNO').oninput=e=>{NO=+e.target.value;$('#vNO').textContent=NO};
-$('#sCO').oninput=e=>{CO=+e.target.value;$('#vCO').textContent=CO};
-$('#sDK').oninput=e=>{DK=+e.target.value;$('#vDK').textContent=DK};
-$('#sHU').oninput=e=>{HU=+e.target.value;$('#vHU').textContent=HU};
-$('#sSP').oninput=e=>{SP=+e.target.value;$('#vSP').textContent=SP};
-$('#sH').oninput=e=>{HUE=+e.target.value;$('#vH').textContent=HUE+'°'};
-$('#sS').oninput=e=>{SAT=+e.target.value;$('#vS').textContent=SAT+'%'};
-$('#errWM').oninput=e=>{errWM=+e.target.value;$('#vErrWM').textContent=errWM+'%'};
-
-$('#rstInt').onclick=()=>{NO=CO=DK=HU=SP=5;['sNO','sCO','sDK','sHU','sSP'].forEach(i=>$('#'+i).value=5);['vNO','vCO','vDK','vHU','vSP'].forEach(i=>$('#'+i).textContent=5)};
-$('#rstColor').onclick=()=>{HUE=0;SAT=100;$('#sH').value=0;$('#sS').value=100;$('#vH').textContent='0°';$('#vS').textContent='100%'};
-
-$('#pt').onclick=function(){L=!L;this.classList.toggle('on',L);if(L&&img)play();else cancelAnimationFrame(raf)};
-$('#barsTog').onclick=function(){bars=!bars;this.classList.toggle('on',bars)};
-$('#cctvCross').onclick=function(){cctvCross=!cctvCross;this.classList.toggle('on',cctvCross)};
-
-// focus buttons
-$$('.db[data-focus]').forEach(b=>b.onclick=function(){
-  $$('.db[data-focus]').forEach(x=>x.classList.remove('on'));this.classList.add('on');
-  focusMode=this.dataset.focus;
+$$('#retroPal .pc').forEach(b => b.onclick = function() {
+  $$('#retroPal .pc').forEach(x => x.classList.remove('on'));
+  this.classList.add('on');
+  retroPal = this.dataset.pal;
 });
 
-$$('.db[data-d]').forEach(b=>b.onclick=function(){
-  $$('.db[data-d]').forEach(x=>x.classList.remove('on'));this.classList.add('on');
-  D=+this.dataset.d;const f=D*FPS;
-  $('#fnN').textContent=`預計 ${f} 幀 @ ${FPS}fps`;$('#mR').textContent=f;
+// 滑桿綁定
+$('#sNO').oninput   = e => { NO = +e.target.value; $('#vNO').textContent = NO; };
+$('#sCO').oninput   = e => { CO = +e.target.value; $('#vCO').textContent = CO; };
+$('#sDK').oninput   = e => { DK = +e.target.value; $('#vDK').textContent = DK; };
+$('#sHU').oninput   = e => { HU = +e.target.value; $('#vHU').textContent = HU; };
+$('#sSP').oninput   = e => { SP = +e.target.value; $('#vSP').textContent = SP; };
+$('#sH').oninput    = e => { HUE = +e.target.value; $('#vH').textContent = HUE + '°'; };
+$('#sS').oninput    = e => { SAT = +e.target.value; $('#vS').textContent = SAT + '%'; };
+$('#errWM').oninput = e => { errWM = +e.target.value; $('#vErrWM').textContent = errWM + '%'; };
+
+// Reset
+$('#rstInt').onclick = () => {
+  NO = CO = DK = HU = SP = 5;
+  ['sNO','sCO','sDK','sHU','sSP'].forEach(i => $('#'+i).value = 5);
+  ['vNO','vCO','vDK','vHU','vSP'].forEach(i => $('#'+i).textContent = 5);
+};
+$('#rstColor').onclick = () => {
+  HUE = 0; SAT = 100;
+  $('#sH').value = 0; $('#sS').value = 100;
+  $('#vH').textContent = '0°'; $('#vS').textContent = '100%';
+};
+
+// Live Preview / Pause
+$('#pt').onclick = function() {
+  L = !L;
+  this.classList.toggle('on', L);
+  if (L && img) play();
+  else cancelAnimationFrame(raf);
+};
+
+$('#pause').onclick = function() {
+  if (this.classList.contains('paused')) {
+    this.classList.remove('paused');
+    this.textContent = '⏸ 暫停';
+    if (L && img) play();
+  } else {
+    this.classList.add('paused');
+    this.textContent = '▶ 繼續';
+    cancelAnimationFrame(raf);
+  }
+};
+
+// 專屬開關
+$('#barsTog').onclick   = function() { bars      = !bars;      this.classList.toggle('on', bars); };
+$('#cctvCross').onclick = function() { cctvCross = !cctvCross; this.classList.toggle('on', cctvCross); };
+
+// 焦點位置
+$$('.db[data-focus]').forEach(b => b.onclick = function() {
+  $$('.db[data-focus]').forEach(x => x.classList.remove('on'));
+  this.classList.add('on');
+  focusMode = this.dataset.focus;
 });
 
-function play(){
+// 輸出長度
+$$('.db[data-d]').forEach(b => b.onclick = function() {
+  $$('.db[data-d]').forEach(x => x.classList.remove('on'));
+  this.classList.add('on');
+  D = +this.dataset.d;
+  const f = D * FPS;
+  $('#fnN').textContent = `預計 ${f} 幀 @ ${FPS}fps`;
+  $('#mR').textContent  = f;
+});
+
+// ──────────────────────────────────────────────────
+// C5. 渲染引擎
+// ──────────────────────────────────────────────────
+
+/** 啟動即時預覽迴圈 */
+function play() {
   cancelAnimationFrame(raf);
-  let la=0,t=0;const iv=1000/(FPS+SP*.8);
-  (function lp(ts){
-    if(!L||!img)return;
-    if(ts-la>iv){draw(ct,cv.width,cv.height,t++);la=ts;}
-    raf=requestAnimationFrame(lp);
+  let last = 0, t = 0;
+  const interval = 1000 / (FPS + SP * 0.8);
+
+  (function loop(ts) {
+    if (!L || !img) return;
+    if (ts - last > interval) {
+      drawFrame(ct, cv.width, cv.height, t++);
+      last = ts;
+    }
+    raf = requestAnimationFrame(loop);
   })(0);
 }
 
-function draw(c,w,h,t){
-  if(!img)return;
-  c.clearRect(0,0,w,h);c.drawImage(img,0,0,w,h);
-  if(HUE!==0||SAT!==100)applyHueSat(c,w,h);
-  FX[fx](c,w,h,t);
+/** 繪製單一幀 */
+function drawFrame(c, w, h, t) {
+  if (!img) return;
+  c.clearRect(0, 0, w, h);
+  c.drawImage(img, 0, 0, w, h);
+  if (HUE !== 0 || SAT !== 100) applyHueSat(c, w, h);
+  FX[fx](c, w, h, t);
 }
 
-function applyHueSat(c,w,h){
-  const id=c.getImageData(0,0,w,h),d=id.data;
-  const hS=HUE/360,sM=SAT/100;
-  for(let i=0;i<d.length;i+=4){
-    let r=d[i]/255,g=d[i+1]/255,b=d[i+2]/255;
-    const mx=Math.max(r,g,b),mn=Math.min(r,g,b),l=(mx+mn)/2;
-    let h2=0,sa=0;
-    if(mx!==mn){const de=mx-mn;sa=l>.5?de/(2-mx-mn):de/(mx+mn);if(mx===r)h2=((g-b)/de+(g<b?6:0))/6;else if(mx===g)h2=((b-r)/de+2)/6;else h2=((r-g)/de+4)/6}
-    h2=(h2+hS+1)%1;
-    sa=Math.min(1,sa*sM);
-    const h2r=(p,q,tt)=>{if(tt<0)tt+=1;if(tt>1)tt-=1;return tt<1/6?p+(q-p)*6*tt:tt<.5?q:tt<2/3?p+(q-p)*(2/3-tt)*6:p};
-    if(!sa){d[i]=d[i+1]=d[i+2]=cl(l*255)}
-    else{const q=l<.5?l*(1+sa):l+sa-l*sa,p=2*l-q;d[i]=cl(h2r(p,q,h2+1/3)*255);d[i+1]=cl(h2r(p,q,h2)*255);d[i+2]=cl(h2r(p,q,h2-1/3)*255)}
+// ──────────────────────────────────────────────────
+// C6. 工具函式
+// ──────────────────────────────────────────────────
+
+/** 限制數值在 0-255 */
+const cl = v => Math.max(0, Math.min(255, v | 0));
+/** 限制數值在指定範圍 */
+const cp = (v, a, b) => Math.max(a, Math.min(b, v));
+
+/** 套用全域色相/飽和度調整 */
+function applyHueSat(c, w, h) {
+  const id = c.getImageData(0, 0, w, h);
+  const d = id.data;
+  const hShift = HUE / 360;
+  const sMul = SAT / 100;
+
+  for (let i = 0; i < d.length; i += 4) {
+    let r = d[i]/255, g = d[i+1]/255, b = d[i+2]/255;
+    const mx = Math.max(r,g,b), mn = Math.min(r,g,b);
+    const l = (mx + mn) / 2;
+    let h2 = 0, sa = 0;
+
+    if (mx !== mn) {
+      const de = mx - mn;
+      sa = l > .5 ? de/(2-mx-mn) : de/(mx+mn);
+      if      (mx === r) h2 = ((g-b)/de + (g<b ? 6 : 0)) / 6;
+      else if (mx === g) h2 = ((b-r)/de + 2) / 6;
+      else               h2 = ((r-g)/de + 4) / 6;
+    }
+    h2 = (h2 + hShift + 1) % 1;
+    sa = Math.min(1, sa * sMul);
+
+    const h2r = (p, q, tt) => {
+      if (tt < 0) tt += 1;
+      if (tt > 1) tt -= 1;
+      return tt < 1/6 ? p+(q-p)*6*tt
+           : tt < .5  ? q
+           : tt < 2/3 ? p+(q-p)*(2/3-tt)*6
+           : p;
+    };
+
+    if (!sa) {
+      d[i] = d[i+1] = d[i+2] = cl(l * 255);
+    } else {
+      const q = l < .5 ? l*(1+sa) : l+sa-l*sa;
+      const p = 2*l - q;
+      d[i]   = cl(h2r(p, q, h2 + 1/3) * 255);
+      d[i+1] = cl(h2r(p, q, h2)       * 255);
+      d[i+2] = cl(h2r(p, q, h2 - 1/3) * 255);
+    }
   }
-  c.putImageData(id,0,0);
+  c.putImageData(id, 0, 0);
 }
 
-function rgbSplit(c,w,h,r){
-  if(r<1)return;
-  const im=c.getImageData(0,0,w,h),ou=new ImageData(w,h);
-  for(let y=0;y<h;y++)for(let x=0;x<w;x++){
-    const i=(y*w+x)*4;
-    ou.data[i]=im.data[(y*w+cp(x+r,0,w-1))*4];
-    ou.data[i+1]=im.data[i+1];
-    ou.data[i+2]=im.data[(y*w+cp(x-r,0,w-1))*4+2];
-    ou.data[i+3]=255;
+/** RGB 色差位移 */
+function rgbSplit(c, w, h, r) {
+  if (r < 1) return;
+  const im = c.getImageData(0, 0, w, h);
+  const ou = new ImageData(w, h);
+
+  for (let y = 0; y < h; y++) {
+    for (let x = 0; x < w; x++) {
+      const i = (y*w + x) * 4;
+      ou.data[i]   = im.data[(y*w + cp(x+r, 0, w-1)) * 4];
+      ou.data[i+1] = im.data[i+1];
+      ou.data[i+2] = im.data[(y*w + cp(x-r, 0, w-1)) * 4 + 2];
+      ou.data[i+3] = 255;
+    }
   }
-  c.putImageData(ou,0,0);
+  c.putImageData(ou, 0, 0);
 }
 
-// FOCUS ZONES: returns where HUD elements should go
-// Returns {tl:bool,tr:bool,bl:bool,br:bool,edge:bool,center:bool}
-function getZones(){
-  const z={tl:true,tr:true,bl:true,br:true,edge:true,center:false};
-  if(focusMode==='tl'){z.tl=false;z.center=false}
-  else if(focusMode==='tr'){z.tr=false;z.center=false}
-  else if(focusMode==='bl'){z.bl=false;z.center=false}
-  else if(focusMode==='br'){z.br=false;z.center=false}
-  else if(focusMode==='edge'){z.edge=true;z.center=false;z.tl=z.tr=z.bl=z.br=true}
+/** 回傳可放置 HUD 元素的區域 */
+function getZones() {
+  const z = { tl: true, tr: true, bl: true, br: true, edge: true, center: false };
+  if      (focusMode === 'tl')   { z.tl = false; z.center = false; }
+  else if (focusMode === 'tr')   { z.tr = false; z.center = false; }
+  else if (focusMode === 'bl')   { z.bl = false; z.center = false; }
+  else if (focusMode === 'br')   { z.br = false; z.center = false; }
+  else if (focusMode === 'edge') { z.edge = true; z.center = false; z.tl = z.tr = z.bl = z.br = true; }
   return z;
 }
 
-// Color palettes
-const PALETTES={
-  cyber:{
-    cm:{p:[0,229,255],s:[255,20,147]},      // cyan/magenta
-    op:{p:[255,120,0],s:[180,50,255]},      // orange/purple
-    gy:{p:[180,255,50],s:[255,230,50]},     // green/yellow
-    rb:{p:[255,50,80],s:[80,120,255]},      // red/blue
-    pt:{p:[255,130,200],s:[100,255,220]}    // pink/teal
+// ──────────────────────────────────────────────────
+// 特效共用 Helpers
+// ──────────────────────────────────────────────────
+
+/**
+ * 逐像素操作 helper - 自動處理 getImageData / putImageData
+ * @param {Function} fn  (d, i) => void  d=data 陣列, i=當前 index
+ */
+function pixelMap(c, w, h, fn) {
+  const id = c.getImageData(0, 0, w, h), d = id.data;
+  for (let i = 0; i < d.length; i += 4) fn(d, i);
+  c.putImageData(id, 0, 0);
+}
+
+/**
+ * 掃描線覆蓋
+ * @param {number} step    行距（px）
+ * @param {number} alpha   黑線透明度
+ */
+function scanLines(c, w, h, step, alpha) {
+  if (alpha <= 0) return;
+  c.fillStyle = `rgba(0,0,0,${alpha})`;
+  for (let y = 0; y < h; y += step) c.fillRect(0, y, w, 1);
+}
+
+/**
+ * 故障錯位條紋 - 隨機擷取水平切片並左右位移
+ * @param {number} count     切片數量
+ * @param {number} range     位移幅度（px）
+ * @param {number} maxLineH  切片最大高度
+ * @param {number} prob      每條線的觸發機率
+ * @param {string|null} tint 位移後的色彩疊加（null = 不疊色）
+ */
+function displaceLines(c, w, h, count, range, maxLineH = 4, prob = 0.5, tint = null) {
+  for (let k = 0; k < count; k++) {
+    if (Math.random() >= prob) continue;
+    const y  = 0 | Math.random() * h;
+    const lh = 1 + (0 | Math.random() * maxLineH);
+    const li = c.getImageData(0, y, w, lh);
+    c.putImageData(li, 0 | (Math.random() - .5) * range, y);
+    if (tint) {
+      c.fillStyle = tint;
+      c.fillRect(0, y, w, lh);
+    }
+  }
+}
+
+/**
+ * 徑向暗角 - 自帶 0.5 上限避免主體被遮蔽
+ * @param {number} intensity  強度縮放（0-2 合理）
+ * @param {number} innerR     內圈起始半徑比例（相對 h）
+ * @param {number} outerR     外圈結束半徑比例（相對 h）
+ */
+function vignette(c, w, h, intensity, innerR = 0.3, outerR = 0.9) {
+  if (intensity <= 0) return;
+  const vg = c.createRadialGradient(w/2, h/2, h*innerR, w/2, h/2, h*outerR);
+  vg.addColorStop(0, 'transparent');
+  vg.addColorStop(1, `rgba(0,0,0,${Math.min(.5, .3 * intensity)})`);
+  c.fillStyle = vg;
+  c.fillRect(0, 0, w, h);
+}
+
+/**
+ * 全畫面顆粒噪點 - 灰階加減
+ * @param {number} amount  振幅（建議 30-90）
+ */
+function grainNoise(c, w, h, amount) {
+  pixelMap(c, w, h, (d, i) => {
+    const g = (Math.random() - .5) * amount;
+    d[i]   = cl(d[i]   + g);
+    d[i+1] = cl(d[i+1] + g);
+    d[i+2] = cl(d[i+2] + g);
+  });
+}
+
+/**
+ * 疏散靜電噪點 - 機率觸發的稀疏雜訊
+ * @param {number} prob    每像素觸發機率（0-1）
+ * @param {number} amount  雜訊振幅
+ */
+function staticNoise(c, w, h, prob, amount) {
+  pixelMap(c, w, h, (d, i) => {
+    if (Math.random() >= prob) return;
+    const n = (Math.random() - .5) * amount;
+    d[i]   = cl(d[i]   + n);
+    d[i+1] = cl(d[i+1] + n);
+    d[i+2] = cl(d[i+2] + n);
+  });
+}
+
+// ──────────────────────────────────────────────────
+// C7. 色盤定義
+// ──────────────────────────────────────────────────
+const PALETTES = {
+  cyber: {
+    cm: { p: [0,229,255],   s: [255,20,147] },
+    op: { p: [255,120,0],   s: [180,50,255] },
+    gy: { p: [180,255,50],  s: [255,230,50] },
+    rb: { p: [255,50,80],   s: [80,120,255] },
+    pt: { p: [255,130,200], s: [100,255,220] }
   },
-  retro:{
-    warm:{tint:[255,100,0],alpha:.08,ch:[255,200,50]},
-    cool:{tint:[30,100,200],alpha:.1,ch:[150,220,255]},
-    sepia:{tint:[120,80,40],alpha:.12,ch:[230,200,150]},
-    neutral:{tint:[200,200,200],alpha:.03,ch:[240,240,240]},
-    teal:{tint:[0,150,150],alpha:.09,ch:[200,255,240]}
+  retro: {
+    warm:    { tint: [255,100,0],   alpha: .08, ch: [255,200,50]  },
+    cool:    { tint: [30,100,200],  alpha: .10, ch: [150,220,255] },
+    sepia:   { tint: [120,80,40],   alpha: .12, ch: [230,200,150] },
+    neutral: { tint: [200,200,200], alpha: .03, ch: [240,240,240] },
+    teal:    { tint: [0,150,150],   alpha: .09, ch: [200,255,240] }
   }
 };
 
-const FX={
-  film(c,w,h,t){
-    const nS=NO/5, dkSc=DK/5, coSc=CO/5, huSc=HU/5;
-    // Grain
-    if(nS>0){
-      const id=c.getImageData(0,0,w,h),d=id.data;
-      for(let i=0;i<d.length;i+=4){const g=(Math.random()-.5)*42*nS;d[i]=cl(d[i]+g);d[i+1]=cl(d[i+1]+g);d[i+2]=cl(d[i+2]+g)}
-      c.putImageData(id,0,0);
-    }
-    // Warm tone
-    if(coSc>0)c.fillStyle=`rgba(245,180,60,${.06*coSc})`,c.fillRect(0,0,w,h);
-    // Vignette (capped)
-    if(dkSc>0){
-      const vg=c.createRadialGradient(w/2,h/2,h*.3,w/2,h/2,h*.9);
-      vg.addColorStop(0,'transparent');vg.addColorStop(1,`rgba(0,0,0,${Math.min(.5,.3*dkSc)})`);
-      c.fillStyle=vg;c.fillRect(0,0,w,h);
-    }
-    // Scratches
-    if(nS>0){
-      for(let k=0;k<(0|2*nS);k++)if(Math.random()<.45){c.strokeStyle=`rgba(255,255,220,${.3+Math.random()*.5})`;c.lineWidth=Math.random()<.5?.5:1;const x=Math.random()*w;c.beginPath();c.moveTo(x,0);c.lineTo(x+(Math.random()-.5)*8,h);c.stroke()}
-      for(let k=0;k<(0|10*nS);k++){c.fillStyle=`rgba(255,255,220,${.3+Math.random()*.4})`;c.fillRect(Math.random()*w,Math.random()*h,1+Math.random()*2,1+Math.random()*2)}
-    }
-    if(nS>0 && Math.random()<.2*nS)c.fillStyle=`rgba(255,240,200,${.05+Math.random()*.08})`,c.fillRect(0,0,w,h);
-    if(coSc>0)rgbSplit(c,w,h,Math.round(2*coSc));
-    if(bars){const bH=Math.round(h*.09);c.fillStyle='#000';c.fillRect(0,0,w,bH);c.fillRect(0,h-bH,w,bH)}
-  },
+// ──────────────────────────────────────────────────
+// C8. 特效實作
+// ──────────────────────────────────────────────────
+const FX = {
 
-  cyber(c,w,h,t){
-    const nS=NO/5, coSc=CO/5, dkSc=DK/5, huSc=HU/5;
-    const zone=getZones();
-    const pal=PALETTES.cyber[cyberPal];
-    const P=pal.p, S=pal.s;
-    const rgbP=(a)=>`rgba(${P[0]},${P[1]},${P[2]},${a})`;
-    const rgbS=(a)=>`rgba(${S[0]},${S[1]},${S[2]},${a})`;
+  // ══════ FILM 電影感 ══════
+  film(c, w, h, t) {
+    const nS = NO/5, dkSc = DK/5, coSc = CO/5;
 
-    // RGB split
-    if(coSc>0)rgbSplit(c,w,h,Math.round(5*coSc));
-    // glitch stripes
-    if(nS>0){
-      for(let i=0;i<(0|5*nS);i++)if(Math.random()<.75){
-        const y=0|Math.random()*h,lh=1+(0|Math.random()*8),id=c.getImageData(0,y,w,lh);
-        c.putImageData(id,0|(Math.random()-.5)*35*nS,y);
-        c.fillStyle=Math.random()<.5?rgbP(.2):rgbS(.2);c.fillRect(0,y,w,lh);
+    // 顆粒噪點
+    if (nS > 0) grainNoise(c, w, h, 42 * nS);
+
+    // 暖色調
+    if (coSc > 0) {
+      c.fillStyle = `rgba(245,180,60,${.06 * coSc})`;
+      c.fillRect(0, 0, w, h);
+    }
+    // 暗角
+    vignette(c, w, h, dkSc);
+
+    // 刮痕 + 灰塵
+    if (nS > 0) {
+      for (let k = 0; k < (0 | 2 * nS); k++) {
+        if (Math.random() < .45) {
+          c.strokeStyle = `rgba(255,255,220,${.3 + Math.random() * .5})`;
+          c.lineWidth = Math.random() < .5 ? .5 : 1;
+          const x = Math.random() * w;
+          c.beginPath();
+          c.moveTo(x, 0);
+          c.lineTo(x + (Math.random() - .5) * 8, h);
+          c.stroke();
+        }
+      }
+      for (let k = 0; k < (0 | 10 * nS); k++) {
+        c.fillStyle = `rgba(255,255,220,${.3 + Math.random() * .4})`;
+        c.fillRect(Math.random() * w, Math.random() * h,
+                   1 + Math.random() * 2, 1 + Math.random() * 2);
       }
     }
-    // scanlines
-    if(dkSc>0)for(let y=0;y<h;y+=3){c.fillStyle=`rgba(0,0,0,${.14*dkSc})`;c.fillRect(0,y,w,1)}
-    // neon grid bottom (respects zone)
-    if(huSc>0 && (zone.bl||zone.br)){
-      const gh=h*.35,gy=h-gh;
-      c.strokeStyle=rgbS(.35);c.lineWidth=1;
-      for(let i=0;i<=10;i++){const yy=gy+gh*(i/10);c.beginPath();c.moveTo(0,yy);c.lineTo(w,yy);c.stroke()}
-      c.strokeStyle=rgbP(.35);
-      for(let i=0;i<=12;i++){const xx=w*(i/12),cx=w/2;c.beginPath();c.moveTo(cx+(xx-cx)*.3,gy);c.lineTo(xx,h);c.stroke()}
+    // 光線閃爍
+    if (nS > 0 && Math.random() < .2 * nS) {
+      c.fillStyle = `rgba(255,240,200,${.05 + Math.random() * .08})`;
+      c.fillRect(0, 0, w, h);
     }
-    // dual corner glows - only in active zones
-    if(zone.tl){const tl=c.createRadialGradient(w*.15,h*.15,0,w*.15,h*.15,w*.35);tl.addColorStop(0,rgbP(.12*huSc));tl.addColorStop(1,'transparent');c.fillStyle=tl;c.fillRect(0,0,w,h)}
-    if(zone.br){const br=c.createRadialGradient(w*.85,h*.85,0,w*.85,h*.85,w*.35);br.addColorStop(0,rgbS(.15*huSc));br.addColorStop(1,'transparent');c.fillStyle=br;c.fillRect(0,0,w,h)}
-    // HEX streams - place in allowed zones
-    if(huSc>0){
-      c.font=`${9+huSc}px 'Share Tech Mono',monospace`;
-      const HX='0123456789ABCDEF';
-      const spots=[];
-      if(zone.tl)spots.push([0,w*.3,0,h*.35]);
-      if(zone.tr)spots.push([w*.7,w,0,h*.35]);
-      if(zone.bl)spots.push([0,w*.3,h*.65,h]);
-      if(zone.br)spots.push([w*.7,w,h*.65,h]);
-      if(spots.length){
-        for(let i=0;i<(0|6*huSc);i++){
-          let st='';for(let j=0;j<8;j++)st+=HX[0|Math.random()*16];
-          const sp=spots[0|Math.random()*spots.length];
-          c.fillStyle=rgbP(.3+Math.random()*.4);
-          c.fillText(st,sp[0]+Math.random()*(sp[1]-sp[0]),sp[2]+Math.random()*(sp[3]-sp[2]));
+    // 色差
+    if (coSc > 0) rgbSplit(c, w, h, Math.round(2 * coSc));
+
+    // 電影黑邊
+    if (bars) {
+      const bH = Math.round(h * .09);
+      c.fillStyle = '#000';
+      c.fillRect(0, 0, w, bH);
+      c.fillRect(0, h - bH, w, bH);
+    }
+  },
+
+  // ══════ CYBER 賽博龐克 ══════
+  cyber(c, w, h, t) {
+    const nS = NO/5, coSc = CO/5, dkSc = DK/5, huSc = HU/5;
+    const zone = getZones();
+    const pal = PALETTES.cyber[cyberPal];
+    const P = pal.p, S = pal.s;
+    const rgbP = a => `rgba(${P[0]},${P[1]},${P[2]},${a})`;
+    const rgbS = a => `rgba(${S[0]},${S[1]},${S[2]},${a})`;
+
+    // RGB 色差
+    if (coSc > 0) rgbSplit(c, w, h, Math.round(5 * coSc));
+
+    // 像素錯位條紋（隨機選主/副色疊加）
+    if (nS > 0) {
+      for (let i = 0; i < (0 | 5 * nS); i++) {
+        if (Math.random() < .75) {
+          const y  = 0 | Math.random() * h;
+          const lh = 1 + (0 | Math.random() * 8);
+          const id = c.getImageData(0, y, w, lh);
+          c.putImageData(id, 0 | (Math.random() - .5) * 35 * nS, y);
+          c.fillStyle = Math.random() < .5 ? rgbP(.2) : rgbS(.2);
+          c.fillRect(0, y, w, lh);
         }
       }
     }
-    // corner HUD brackets
-    if(huSc>0){
-      c.strokeStyle=rgbP(.7*huSc);c.lineWidth=1.5;const bs=24;
-      const corners=[];
-      if(zone.tl)corners.push([10,10,'tl']);
-      if(zone.tr)corners.push([w-10-bs,10,'tr']);
-      if(zone.bl)corners.push([10,h-10-bs,'bl']);
-      if(zone.br)corners.push([w-10-bs,h-10-bs,'br']);
-      corners.forEach(([x,y,p])=>{c.beginPath();if(p==='tl'){c.moveTo(x,y+bs);c.lineTo(x,y);c.lineTo(x+bs,y)}else if(p==='tr'){c.moveTo(x,y);c.lineTo(x+bs,y);c.lineTo(x+bs,y+bs)}else if(p==='bl'){c.moveTo(x,y);c.lineTo(x,y+bs);c.lineTo(x+bs,y+bs)}else{c.moveTo(x+bs,y);c.lineTo(x+bs,y+bs);c.lineTo(x,y+bs)}c.stroke()});
+    // 掃描線
+    scanLines(c, w, h, 3, .14 * dkSc);
+    // 網格地板
+    if (huSc > 0 && (zone.bl || zone.br)) {
+      const gh = h * .35, gy = h - gh;
+      c.strokeStyle = rgbS(.35);
+      c.lineWidth = 1;
+      for (let i = 0; i <= 10; i++) {
+        const yy = gy + gh * (i / 10);
+        c.beginPath(); c.moveTo(0, yy); c.lineTo(w, yy); c.stroke();
+      }
+      c.strokeStyle = rgbP(.35);
+      for (let i = 0; i <= 12; i++) {
+        const xx = w * (i / 12), cx = w / 2;
+        c.beginPath();
+        c.moveTo(cx + (xx - cx) * .3, gy);
+        c.lineTo(xx, h);
+        c.stroke();
+      }
     }
-    // status top text in active zone
-    if(huSc>0){
-      c.fillStyle=rgbP(.85);c.font=`bold ${9+huSc*.5}px 'Share Tech Mono',monospace`;
-      const ts=`[NEO-TOKYO // ${String(0|Math.random()*99).padStart(2,'0')}.${String(0|Math.random()*99).padStart(2,'0')}.77]`;
-      if(zone.tl){c.textAlign='left';c.fillText(ts,18,26);}
-      if(zone.tr){c.textAlign='right';c.fillText(`SYS::${String(0|Math.random()*9999).padStart(4,'0')}`,w-18,26);}
-      c.textAlign='left';
+    // 雙角落光暈
+    if (zone.tl) {
+      const tl = c.createRadialGradient(w*.15, h*.15, 0, w*.15, h*.15, w*.35);
+      tl.addColorStop(0, rgbP(.12 * huSc));
+      tl.addColorStop(1, 'transparent');
+      c.fillStyle = tl; c.fillRect(0, 0, w, h);
     }
-    if(huSc>0 && t%20<3)c.fillStyle=rgbP(.06+Math.random()*.04),c.fillRect(0,0,w,h);
+    if (zone.br) {
+      const br = c.createRadialGradient(w*.85, h*.85, 0, w*.85, h*.85, w*.35);
+      br.addColorStop(0, rgbS(.15 * huSc));
+      br.addColorStop(1, 'transparent');
+      c.fillStyle = br; c.fillRect(0, 0, w, h);
+    }
+    // HEX 代碼流
+    if (huSc > 0) {
+      c.font = `${9 + huSc}px 'Share Tech Mono', monospace`;
+      const HX = '0123456789ABCDEF';
+      const spots = [];
+      if (zone.tl) spots.push([0, w*.3, 0, h*.35]);
+      if (zone.tr) spots.push([w*.7, w, 0, h*.35]);
+      if (zone.bl) spots.push([0, w*.3, h*.65, h]);
+      if (zone.br) spots.push([w*.7, w, h*.65, h]);
+
+      if (spots.length) {
+        for (let i = 0; i < (0 | 6 * huSc); i++) {
+          let st = '';
+          for (let j = 0; j < 8; j++) st += HX[0 | Math.random() * 16];
+          const sp = spots[0 | Math.random() * spots.length];
+          c.fillStyle = rgbP(.3 + Math.random() * .4);
+          c.fillText(st,
+            sp[0] + Math.random() * (sp[1] - sp[0]),
+            sp[2] + Math.random() * (sp[3] - sp[2]));
+        }
+      }
+    }
+    // 四角定位括號
+    if (huSc > 0) {
+      c.strokeStyle = rgbP(.7 * huSc);
+      c.lineWidth = 1.5;
+      const bs = 24;
+      const corners = [];
+      if (zone.tl) corners.push([10, 10, 'tl']);
+      if (zone.tr) corners.push([w-10-bs, 10, 'tr']);
+      if (zone.bl) corners.push([10, h-10-bs, 'bl']);
+      if (zone.br) corners.push([w-10-bs, h-10-bs, 'br']);
+
+      corners.forEach(([x, y, p]) => {
+        c.beginPath();
+        if (p === 'tl')      { c.moveTo(x, y+bs);  c.lineTo(x, y);    c.lineTo(x+bs, y); }
+        else if (p === 'tr') { c.moveTo(x, y);     c.lineTo(x+bs, y); c.lineTo(x+bs, y+bs); }
+        else if (p === 'bl') { c.moveTo(x, y);     c.lineTo(x, y+bs); c.lineTo(x+bs, y+bs); }
+        else                 { c.moveTo(x+bs, y);  c.lineTo(x+bs, y+bs); c.lineTo(x, y+bs); }
+        c.stroke();
+      });
+    }
+    // 頂部狀態列
+    if (huSc > 0) {
+      c.fillStyle = rgbP(.85);
+      c.font = `bold ${9 + huSc * .5}px 'Share Tech Mono', monospace`;
+      const ts = `[NEO-TOKYO // ${String(0|Math.random()*99).padStart(2,'0')}.${String(0|Math.random()*99).padStart(2,'0')}.77]`;
+      if (zone.tl) { c.textAlign = 'left';  c.fillText(ts, 18, 26); }
+      if (zone.tr) { c.textAlign = 'right'; c.fillText(`SYS::${String(0|Math.random()*9999).padStart(4,'0')}`, w-18, 26); }
+      c.textAlign = 'left';
+    }
+    // 閃光
+    if (huSc > 0 && t % 20 < 3) {
+      c.fillStyle = rgbP(.06 + Math.random() * .04);
+      c.fillRect(0, 0, w, h);
+    }
   },
 
-  retro(c,w,h,t){
-    const nS=NO/5, coSc=CO/5, huSc=HU/5;
-    const pal=PALETTES.retro[retroPal];
-    // Color grade
-    if(coSc>0){
-      const id=c.getImageData(0,0,w,h),d=id.data;
-      if(retroPal==='sepia'){
-        for(let i=0;i<d.length;i+=4){const r=d[i],g=d[i+1],b=d[i+2];d[i]=cl(r*.393+g*.769+b*.189);d[i+1]=cl(r*.349+g*.686+b*.168);d[i+2]=cl(r*.272+g*.534+b*.131)}
-      } else if(retroPal==='cool'){
-        for(let i=0;i<d.length;i+=4){d[i]=cl(d[i]*.9);d[i+1]=cl(d[i+1]*.95);d[i+2]=cl(d[i+2]*1.15)}
-      } else if(retroPal==='teal'){
-        for(let i=0;i<d.length;i+=4){d[i]=cl(d[i]*.85);d[i+1]=cl(d[i+1]*1.05);d[i+2]=cl(d[i+2]*1.05)}
-      } else if(retroPal==='neutral'){
-        for(let i=0;i<d.length;i+=4){const a=(d[i]+d[i+1]+d[i+2])/3;d[i]=cl(d[i]*.7+a*.3);d[i+1]=cl(d[i+1]*.7+a*.3);d[i+2]=cl(d[i+2]*.7+a*.3)}
+  // ══════ RETRO 復古 ══════
+  retro(c, w, h, t) {
+    const nS = NO/5, coSc = CO/5, huSc = HU/5;
+    const pal = PALETTES.retro[retroPal];
+
+    // 色彩分級（依色盤套不同公式）
+    if (coSc > 0) {
+      // 各色盤的通道變換函式：(r,g,b,avg) => [r, g, b]
+      const GRADE = {
+        sepia:   (r,g,b) => [r*.393+g*.769+b*.189, r*.349+g*.686+b*.168, r*.272+g*.534+b*.131],
+        cool:    (r,g,b) => [r*.9,  g*.95, b*1.15],
+        teal:    (r,g,b) => [r*.85, g*1.05, b*1.05],
+        neutral: (r,g,b,a) => [r*.7+a*.3, g*.7+a*.3, b*.7+a*.3],
+        warm:    (r,g,b) => [r*1.1, g*.95, b*.8]
+      };
+      const grade = GRADE[retroPal] || GRADE.warm;
+      pixelMap(c, w, h, (d, i) => {
+        const r = d[i], g = d[i+1], b = d[i+2];
+        const [nr, ng, nb] = grade(r, g, b, (r+g+b)/3);
+        d[i] = cl(nr); d[i+1] = cl(ng); d[i+2] = cl(nb);
+      });
+    }
+    // 雜訊色帶（紅綠藍通道各別振幅） + 追蹤線
+    if (nS > 0) {
+      for (let i = 0; i < (0 | 7 * nS); i++) {
+        const y = 0 | Math.random() * h;
+        const bh = 1 + (0 | Math.random() * 4);
+        const bi = c.getImageData(0, y, w, bh), bd = bi.data;
+        for (let j = 0; j < bd.length; j += 4) {
+          bd[j]   = cl(bd[j]   + (Math.random() - .5) * 90 * nS);
+          bd[j+1] = cl(bd[j+1] + (Math.random() - .5) * 45 * nS);
+          bd[j+2] = cl(bd[j+2] + (Math.random() - .5) * 35 * nS);
+        }
+        c.putImageData(bi, 0 | (Math.random() - .5) * 25 * nS, y);
+      }
+      // 亮白追蹤線
+      for (let i = 0; i < (0 | 2 * nS); i++) {
+        const y = 0 | Math.random() * h;
+        const bh = 2 + (0 | Math.random() * 6);
+        c.fillStyle = `rgba(255,255,255,${.2 + Math.random() * .3})`;
+        c.fillRect(0, y, w, bh);
+      }
+    }
+    // 掃描線
+    scanLines(c, w, h, 2, .15);
+    // 色差
+    if (coSc > 0) rgbSplit(c, w, h, Math.round(6 * coSc));
+    // 色調疊加
+    if (coSc > 0) {
+      c.fillStyle = `rgba(${pal.tint.join(',')},${pal.alpha * coSc})`;
+      c.fillRect(0, 0, w, h);
+    }
+    // VHS 字幕
+    if (huSc > 0) {
+      const zone = getZones();
+      c.fillStyle = `rgba(${pal.ch.join(',')},.85)`;
+      c.font = `bold ${11 + huSc}px VT323, monospace`;
+      const n = new Date();
+
+      if (zone.tl) {
+        c.textAlign = 'left';
+        c.fillText(`▶ PLAY  SP  ${n.getFullYear()}.${String(n.getMonth()+1).padStart(2,'0')}.${String(n.getDate()).padStart(2,'0')}`, 8, 20);
+      }
+      if (zone.tr) {
+        c.textAlign = 'right';
+        c.fillText(`${String(n.getHours()).padStart(2,'0')}:${String(n.getMinutes()).padStart(2,'0')}:${String((n.getSeconds()+t)%60).padStart(2,'0')}`, w-8, 20);
+      }
+      if (zone.bl) {
+        c.textAlign = 'left';
+        c.fillText(`AM  STEREO  SP  TAPE-01`, 8, h-12);
+      }
+      c.textAlign = 'left';
+    }
+  },
+
+  // ══════ 404 系統錯誤 ══════
+  err(c, w, h, t) {
+    const nS = NO/5, coSc = CO/5, huSc = HU/5, dkSc = DK/5;
+
+    if (coSc > 0) rgbSplit(c, w, h, Math.round(3 * coSc));
+
+    // 紅色邊框
+    if (huSc > 0) {
+      c.strokeStyle = `rgba(255,20,50,${.9 + Math.sin(t * .5) * .1})`;
+      c.lineWidth = Math.max(3, 0 | 6 * huSc);
+      c.strokeRect(0, 0, w, h);
+    }
+    // 故障條紋（紅色疊加）
+    if (nS > 0) {
+      displaceLines(c, w, h,
+        0 | 2 * nS,                                          // 條數
+        30 * nS,                                             // 位移幅度
+        10,                                                  // 最大高度
+        .6,                                                  // 觸發機率
+        `rgba(255,0,0,${.25 + Math.random() * .3})`);        // 紅色疊加
+    }
+    // 404 浮水印
+    if (errWM > 0) {
+      const wmSize = h * .55 * (errWM / 100);
+      if (wmSize > 10) {
+        c.save();
+        c.globalAlpha = Math.min(.28, .12 + .08 * Math.abs(Math.sin(t * .3)));
+        c.font = `bold ${0 | wmSize}px 'Bebas Neue', monospace`;
+        c.fillStyle = '#ff2244';
+        c.textAlign = 'center';
+        c.textBaseline = 'middle';
+
+        let px = w/2, py = h/2;
+        if      (focusMode === 'tl') { px = w*.72; py = h*.72; }
+        else if (focusMode === 'tr') { px = w*.28; py = h*.72; }
+        else if (focusMode === 'bl') { px = w*.72; py = h*.28; }
+        else if (focusMode === 'br') { px = w*.28; py = h*.28; }
+
+        c.fillText('404', px, py);
+        c.restore();
+      }
+    }
+    // 警示橫幅
+    if (huSc > 0) {
+      const bh = 0 | 28 + huSc * 4;
+      if (t % 6 < 3) {
+        c.fillStyle = 'rgba(255,20,50,.92)';
+        c.fillRect(0, 0, w, bh);
+        c.fillStyle = '#fff';
       } else {
-        for(let i=0;i<d.length;i+=4){d[i]=cl(d[i]*1.1);d[i+1]=cl(d[i+1]*.95);d[i+2]=cl(d[i+2]*.8)}
+        c.fillStyle = 'rgba(255,255,255,.92)';
+        c.fillRect(0, 0, w, bh);
+        c.fillStyle = '#ff2244';
       }
-      c.putImageData(id,0,0);
+      c.font = `bold ${0 | 10 + huSc}px monospace`;
+      c.textAlign = 'center';
+      c.textBaseline = 'middle';
+      c.fillText('⚠ SYSTEM ERROR — 404 NOT FOUND — DATA CORRUPTED ⚠', w/2, bh/2);
+
+      // 底部狀態列
+      c.fillStyle = 'rgba(0,0,0,.8)';
+      c.fillRect(0, h-22, w, 22);
+      c.fillStyle = '#ff4466';
+      c.font = '9px monospace';
+      c.textAlign = 'left';
+      c.textBaseline = 'middle';
+      c.fillText(`ERR_CODE: 0xF404 | MEMORY DUMP FAILED | ${new Date().toISOString().slice(0,19)}`, 10, h-11);
+      c.textBaseline = 'alphabetic';
+
+      // 關閉按鈕
+      const zone = getZones();
+      if (zone.tr) {
+        c.fillStyle = 'rgba(255,20,50,.9)';
+        c.fillRect(w-38, bh+8, 28, 16);
+        c.fillStyle = '#fff';
+        c.font = 'bold 10px monospace';
+        c.textAlign = 'center';
+        c.textBaseline = 'middle';
+        c.fillText('× CLOSE', w-24, bh+17);
+        c.textAlign = 'left';
+        c.textBaseline = 'alphabetic';
+      }
     }
-    // noise bands
-    if(nS>0){
-      for(let i=0;i<(0|7*nS);i++){const y=0|Math.random()*h,bh=1+(0|Math.random()*4),bi=c.getImageData(0,y,w,bh),bd=bi.data;for(let j=0;j<bd.length;j+=4){bd[j]=cl(bd[j]+(Math.random()-.5)*90*nS);bd[j+1]=cl(bd[j+1]+(Math.random()-.5)*45*nS);bd[j+2]=cl(bd[j+2]+(Math.random()-.5)*35*nS)}c.putImageData(bi,0|(Math.random()-.5)*25*nS,y)}
-      for(let i=0;i<(0|2*nS);i++){const y=0|Math.random()*h,bh=2+(0|Math.random()*6);c.fillStyle=`rgba(255,255,255,${.2+Math.random()*.3})`;c.fillRect(0,y,w,bh)}
-    }
-    // scanlines
-    for(let y=0;y<h;y+=2){c.fillStyle='rgba(0,0,0,.15)';c.fillRect(0,y,w,1)}
-    if(coSc>0)rgbSplit(c,w,h,Math.round(6*coSc));
-    // tint overlay
-    if(coSc>0)c.fillStyle=`rgba(${pal.tint.join(',')},${pal.alpha*coSc})`,c.fillRect(0,0,w,h);
-    // VHS text (based on zone)
-    if(huSc>0){
-      const zone=getZones();
-      c.fillStyle=`rgba(${pal.ch.join(',')},.85)`;c.font=`bold ${11+huSc}px VT323,monospace`;
-      const n=new Date();
-      if(zone.tl){c.textAlign='left';c.fillText(`▶ PLAY  SP  ${n.getFullYear()}.${String(n.getMonth()+1).padStart(2,'0')}.${String(n.getDate()).padStart(2,'0')}`,8,20)}
-      if(zone.tr){c.textAlign='right';c.fillText(`${String(n.getHours()).padStart(2,'0')}:${String(n.getMinutes()).padStart(2,'0')}:${String((n.getSeconds()+t)%60).padStart(2,'0')}`,w-8,20)}
-      if(zone.bl){c.textAlign='left';c.fillText(`AM  STEREO  SP  TAPE-01`,8,h-12)}
-      c.textAlign='left';
-    }
+    // 掃描線
+    scanLines(c, w, h, 3, .06 * dkSc);
   },
 
-  err(c,w,h,t){
-    const nS=NO/5, coSc=CO/5, huSc=HU/5, dkSc=DK/5;
-    if(coSc>0)rgbSplit(c,w,h,Math.round(3*coSc));
-    // border
-    if(huSc>0){c.strokeStyle=`rgba(255,20,50,${.9+Math.sin(t*.5)*.1})`;c.lineWidth=Math.max(3,0|6*huSc);c.strokeRect(0,0,w,h)}
-    // stripes
-    if(nS>0)for(let k=0;k<(0|2*nS);k++)if(Math.random()<.6){const y=0|Math.random()*h,lh=2+(0|Math.random()*10),si=c.getImageData(0,y,w,lh);c.putImageData(si,0|(Math.random()-.5)*30*nS,y);c.fillStyle=`rgba(255,0,0,${.25+Math.random()*.3})`;c.fillRect(0,y,w,lh)}
-    // 404 watermark - customizable size via errWM (0-100%)
-    if(errWM>0){
-      const wmSize=h*.55*(errWM/100);
-      if(wmSize>10){
-        c.save();c.globalAlpha=Math.min(.28,.12+.08*Math.abs(Math.sin(t*.3)));
-        c.font=`bold ${0|wmSize}px 'Bebas Neue',monospace`;c.fillStyle='#ff2244';c.textAlign='center';c.textBaseline='middle';
-        // place based on focus
-        let px=w/2, py=h/2;
-        if(focusMode==='tl'){px=w*.72;py=h*.72}
-        else if(focusMode==='tr'){px=w*.28;py=h*.72}
-        else if(focusMode==='bl'){px=w*.72;py=h*.28}
-        else if(focusMode==='br'){px=w*.28;py=h*.28}
-        c.fillText('404',px,py);c.restore();
-      }
-    }
-    // banner
-    if(huSc>0){
-      const bh=0|28+huSc*4;
-      if(t%6<3){c.fillStyle='rgba(255,20,50,.92)';c.fillRect(0,0,w,bh);c.fillStyle='#fff'}
-      else{c.fillStyle='rgba(255,255,255,.92)';c.fillRect(0,0,w,bh);c.fillStyle='#ff2244'}
-      c.font=`bold ${0|10+huSc}px monospace`;c.textAlign='center';c.textBaseline='middle';
-      c.fillText('⚠ SYSTEM ERROR — 404 NOT FOUND — DATA CORRUPTED ⚠',w/2,bh/2);
-      c.fillStyle='rgba(0,0,0,.8)';c.fillRect(0,h-22,w,22);
-      c.fillStyle='#ff4466';c.font='9px monospace';c.textAlign='left';c.textBaseline='middle';
-      c.fillText(`ERR_CODE: 0xF404 | MEMORY DUMP FAILED | ${new Date().toISOString().slice(0,19)}`,10,h-11);
-      c.textBaseline='alphabetic';
-      // close btn based on zone
-      const zone=getZones();
-      if(zone.tr){
-        c.fillStyle='rgba(255,20,50,.9)';c.fillRect(w-38,bh+8,28,16);
-        c.fillStyle='#fff';c.font='bold 10px monospace';c.textAlign='center';c.textBaseline='middle';
-        c.fillText('× CLOSE',w-24,bh+17);c.textAlign='left';c.textBaseline='alphabetic';
-      }
-    }
-    if(dkSc>0)for(let y=0;y<h;y+=3){c.fillStyle=`rgba(0,0,0,${.06*dkSc})`;c.fillRect(0,y,w,1)}
-  },
+  // ══════ CCTV 監視器 ══════
+  cctv(c, w, h, t) {
+    const nS = NO/5, coSc = CO/5, dkSc = DK/5, huSc = HU/5;
+    const zone = getZones();
 
-  cctv(c,w,h,t){
-    const nS=NO/5, coSc=CO/5, dkSc=DK/5, huSc=HU/5;
-    const zone=getZones();
-    // green tint (via CO)
-    if(coSc>0){
-      const id=c.getImageData(0,0,w,h),d=id.data;
-      for(let i=0;i<d.length;i+=4){const a=(d[i]+d[i+1]+d[i+2])/3,m=.6*coSc;d[i]=cl(d[i]*(1-m)+a*m*.75);d[i+1]=cl(d[i+1]*(1-m)+a*m*1.2);d[i+2]=cl(d[i+2]*(1-m)+a*m*.7)}
-      c.putImageData(id,0,0);
+    // 綠色偏調（去飽和並拉綠）
+    if (coSc > 0) {
+      const m = .6 * coSc;
+      pixelMap(c, w, h, (d, i) => {
+        const a = (d[i] + d[i+1] + d[i+2]) / 3;
+        d[i]   = cl(d[i]   * (1-m) + a * m * .75);
+        d[i+1] = cl(d[i+1] * (1-m) + a * m * 1.2);
+        d[i+2] = cl(d[i+2] * (1-m) + a * m * .7);
+      });
     }
-    // scanlines
-    if(dkSc>0)for(let y=0;y<h;y+=2){c.fillStyle=`rgba(0,0,0,${.18*dkSc})`;c.fillRect(0,y,w,1)}
-    // grain
-    if(nS>0){
-      const nId=c.getImageData(0,0,w,h),nd=nId.data;
-      for(let i=0;i<nd.length;i+=4)if(Math.random()<.3*nS){const n=(Math.random()-.5)*80*nS;nd[i]=cl(nd[i]+n);nd[i+1]=cl(nd[i+1]+n);nd[i+2]=cl(nd[i+2]+n)}
-      c.putImageData(nId,0,0);
-      for(let k=0;k<(0|3*nS);k++)if(Math.random()<.4){const y=0|Math.random()*h,bh=2+(0|Math.random()*10),bi=c.getImageData(0,y,w,bh),bd=bi.data;for(let j=0;j<bd.length;j+=4){const n=Math.random()*255*nS;bd[j]=cl(n*.8);bd[j+1]=cl(n);bd[j+2]=cl(n*.7);bd[j+3]=255}c.putImageData(bi,0|(Math.random()-.5)*20,y)}
+    // 掃描線
+    scanLines(c, w, h, 2, .18 * dkSc);
+
+    // 靜電噪點 + 雜訊色帶
+    if (nS > 0) {
+      staticNoise(c, w, h, .3 * nS, 80 * nS);
+
+      // 全雜訊切片（純色帶覆蓋）
+      for (let k = 0; k < (0 | 3 * nS); k++) {
+        if (Math.random() < .4) {
+          const y = 0 | Math.random() * h;
+          const bh = 2 + (0 | Math.random() * 10);
+          const bi = c.getImageData(0, y, w, bh), bd = bi.data;
+          for (let j = 0; j < bd.length; j += 4) {
+            const n = Math.random() * 255 * nS;
+            bd[j]   = cl(n * .8);
+            bd[j+1] = cl(n);
+            bd[j+2] = cl(n * .7);
+            bd[j+3] = 255;
+          }
+          c.putImageData(bi, 0 | (Math.random() - .5) * 20, y);
+        }
+      }
     }
-    if(nS>0 && Math.random()<.1*nS){c.fillStyle='rgba(0,0,0,.9)';const by=0|Math.random()*(h-40);c.fillRect(0,by,w,15+(0|Math.random()*25));c.fillStyle='rgba(150,200,150,.7)';c.font=`${10+huSc}px VT323,monospace`;c.fillText('--- SIGNAL LOST ---',12,by+18)}
+    // 訊號中斷
+    if (nS > 0 && Math.random() < .1 * nS) {
+      c.fillStyle = 'rgba(0,0,0,.9)';
+      const by = 0 | Math.random() * (h - 40);
+      c.fillRect(0, by, w, 15 + (0 | Math.random() * 25));
+      c.fillStyle = 'rgba(150,200,150,.7)';
+      c.font = `${10 + huSc}px VT323, monospace`;
+      c.fillText('--- SIGNAL LOST ---', 12, by + 18);
+    }
     // HUD
-    if(huSc>0){
-      const n=new Date();const ts=`${String(n.getHours()).padStart(2,'0')}:${String(n.getMinutes()).padStart(2,'0')}:${String((n.getSeconds()+t)%60).padStart(2,'0')}`;
-      c.fillStyle='rgba(150,255,150,.9)';c.font=`bold ${11+huSc}px VT323,monospace`;
-      if(zone.tl){c.textAlign='left';c.fillText('CAM-01',10,18);c.fillText(`${n.getFullYear()}-${String(n.getMonth()+1).padStart(2,'0')}-${String(n.getDate()).padStart(2,'0')} ${ts}`,10,34)}
-      if(zone.tr){if(t%8<4){c.fillStyle='rgba(255,50,50,.95)';c.beginPath();c.arc(w-48,14,5,0,Math.PI*2);c.fill()}c.fillStyle='rgba(255,50,50,.95)';c.font=`bold ${10+huSc}px monospace`;c.textAlign='right';c.fillText('● REC',w-10,18)}
-      c.textAlign='left';
-      // crosshair (toggleable)
-      if(cctvCross){
-        const cx=w/2,cy=h/2,crs=15;
-        c.strokeStyle='rgba(150,255,150,.4)';c.lineWidth=1;
-        c.beginPath();c.moveTo(cx-crs,cy);c.lineTo(cx+crs,cy);c.moveTo(cx,cy-crs);c.lineTo(cx,cy+crs);c.stroke();
+    if (huSc > 0) {
+      const n = new Date();
+      const ts = `${String(n.getHours()).padStart(2,'0')}:${String(n.getMinutes()).padStart(2,'0')}:${String((n.getSeconds()+t)%60).padStart(2,'0')}`;
+
+      c.fillStyle = 'rgba(150,255,150,.9)';
+      c.font = `bold ${11 + huSc}px VT323, monospace`;
+
+      if (zone.tl) {
+        c.textAlign = 'left';
+        c.fillText('CAM-01', 10, 18);
+        c.fillText(`${n.getFullYear()}-${String(n.getMonth()+1).padStart(2,'0')}-${String(n.getDate()).padStart(2,'0')} ${ts}`, 10, 34);
       }
-      // bottom bar (in bottom zone)
-      if(zone.bl||zone.br){
-        c.fillStyle='rgba(0,20,0,.75)';c.fillRect(0,h-22,w,22);
-        c.fillStyle='rgba(150,255,150,.85)';c.font=`${9+huSc*.5}px VT323,monospace`;
-        c.fillText(`LOC: SECTOR 04-A | CH:01/16 | MOTION: ${Math.random()<.3?'DETECTED':'NONE'}`,10,h-8);
+      if (zone.tr) {
+        if (t % 8 < 4) {
+          c.fillStyle = 'rgba(255,50,50,.95)';
+          c.beginPath();
+          c.arc(w-48, 14, 5, 0, Math.PI*2);
+          c.fill();
+        }
+        c.fillStyle = 'rgba(255,50,50,.95)';
+        c.font = `bold ${10 + huSc}px monospace`;
+        c.textAlign = 'right';
+        c.fillText('● REC', w-10, 18);
+      }
+      c.textAlign = 'left';
+
+      // 中央十字準星
+      if (cctvCross) {
+        const cx = w/2, cy = h/2, crs = 15;
+        c.strokeStyle = 'rgba(150,255,150,.4)';
+        c.lineWidth = 1;
+        c.beginPath();
+        c.moveTo(cx-crs, cy); c.lineTo(cx+crs, cy);
+        c.moveTo(cx, cy-crs); c.lineTo(cx, cy+crs);
+        c.stroke();
+      }
+      // 底部資訊列
+      if (zone.bl || zone.br) {
+        c.fillStyle = 'rgba(0,20,0,.75)';
+        c.fillRect(0, h-22, w, 22);
+        c.fillStyle = 'rgba(150,255,150,.85)';
+        c.font = `${9 + huSc * .5}px VT323, monospace`;
+        c.fillText(`LOC: SECTOR 04-A | CH:01/16 | MOTION: ${Math.random() < .3 ? 'DETECTED' : 'NONE'}`, 10, h-8);
       }
     }
-    // vignette capped
-    if(dkSc>0){const vg=c.createRadialGradient(w/2,h/2,h*.3,w/2,h/2,h*.85);vg.addColorStop(0,'transparent');vg.addColorStop(1,`rgba(0,0,0,${Math.min(.5,.3*dkSc)})`);c.fillStyle=vg;c.fillRect(0,0,w,h)}
+    // 暗角（略緊一點）
+    vignette(c, w, h, dkSc, 0.3, 0.85);
   },
 
-  hack(c,w,h,t){
-    const nS=NO/5, coSc=CO/5, dkSc=DK/5, huSc=HU/5;
-    const zone=getZones();
-    // darkening (capped)
-    if(dkSc>0)c.fillStyle=`rgba(0,10,0,${Math.min(.5,.3+.04*dkSc)})`,c.fillRect(0,0,w,h);
-    if(coSc>0)c.fillStyle=`rgba(0,80,30,${.08*coSc})`,c.fillRect(0,0,w,h);
-    // matrix rain - density by huSc, placed in zones
-    if(huSc>0){
-      c.font=`bold ${11+huSc}px monospace`;
-      const ch='ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789@#$%&アカサタナハマヤラワ';
-      // Zone-based matrix rain: skip where focus isn't
-      const spots=[];
-      if(zone.tl)spots.push([0,w*.35,0,h*.4]);
-      if(zone.tr)spots.push([w*.65,w,0,h*.4]);
-      if(zone.bl)spots.push([0,w*.35,h*.6,h]);
-      if(zone.br)spots.push([w*.65,w,h*.6,h]);
-      if(focusMode==='edge')spots.push([0,w*.2,0,h],[w*.8,w,0,h],[0,w,0,h*.15],[0,w,h*.85,h]);
-      if(spots.length===0)spots.push([0,w,0,h]);
-      for(let i=0;i<(0|50*huSc);i++){
-        const sp=spots[0|Math.random()*spots.length];
-        const x=sp[0]+Math.random()*(sp[1]-sp[0]);
-        const y=sp[2]+Math.random()*(sp[3]-sp[2]);
-        const a=.15+Math.random()*.7;
-        c.fillStyle=`rgba(0,255,65,${a})`;c.fillText(ch[0|Math.random()*ch.length],x,y);
-      }
-      for(let i=0;i<(0|8*huSc);i++){const sp=spots[0|Math.random()*spots.length];c.fillStyle=`rgba(200,255,220,${.7+Math.random()*.3})`;c.fillText(ch[0|Math.random()*ch.length],sp[0]+Math.random()*(sp[1]-sp[0]),sp[2]+Math.random()*(sp[3]-sp[2]))}
-    }
-    // alert box (optional based on HU - if HU low, hide box; if high, show)
-    if(huSc>=0.6){
-      const bw=Math.min(w*.75,460),bh=66,bx=(w-bw)/2;
-      // position alert box in safe area
-      let by=(h-bh)/2;
-      if(focusMode==='tl')by=h-bh-20;
-      else if(focusMode==='tr')by=h-bh-20;
-      else if(focusMode==='bl')by=20;
-      else if(focusMode==='br')by=20;
+  // ══════ HACK 終端機入侵 ══════
+  hack(c, w, h, t) {
+    const nS = NO/5, coSc = CO/5, dkSc = DK/5, huSc = HU/5;
+    const zone = getZones();
 
-      if(t%12<5){
-        c.fillStyle='rgba(0,0,0,.88)';c.fillRect(bx,by,bw,bh);
-        c.strokeStyle='rgba(255,30,30,.95)';c.lineWidth=2;c.strokeRect(bx,by,bw,bh);
-        c.fillStyle='rgba(255,30,30,.98)';c.font=`bold ${16+huSc*2}px 'Bebas Neue',monospace`;
-        c.textAlign='center';c.textBaseline='middle';c.fillText('⛔ ACCESS DENIED',w/2,by+bh/2-8);
-        c.fillStyle='rgba(255,100,100,.9)';c.font=`${9+huSc}px monospace`;
-        c.fillText('UNAUTHORIZED ACCESS ATTEMPT DETECTED',w/2,by+bh/2+12);
-        c.textAlign='left';c.textBaseline='alphabetic';
-      }else if(t%12<10){
-        c.fillStyle='rgba(0,0,0,.85)';c.fillRect(bx,by,bw,bh);
-        c.strokeStyle='rgba(0,255,65,.85)';c.lineWidth=1;c.strokeRect(bx,by,bw,bh);
-        c.fillStyle='rgba(0,255,65,.98)';c.font=`bold ${14+huSc}px monospace`;
-        c.textAlign='center';c.textBaseline='middle';c.fillText(`> BREACHING FIREWALL... ${0|Math.random()*100}%`,w/2,by+bh/2-8);
-        c.fillStyle='rgba(0,255,65,.75)';c.font=`${9+huSc}px monospace`;
-        c.fillText('[████████░░] DECRYPTING PAYLOAD',w/2,by+bh/2+12);
-        c.textAlign='left';c.textBaseline='alphabetic';
+    // 暗化（上限 0.5）
+    if (dkSc > 0) {
+      c.fillStyle = `rgba(0,10,0,${Math.min(.5, .3 + .04 * dkSc)})`;
+      c.fillRect(0, 0, w, h);
+    }
+    // 綠色疊加
+    if (coSc > 0) {
+      c.fillStyle = `rgba(0,80,30,${.08 * coSc})`;
+      c.fillRect(0, 0, w, h);
+    }
+    // Matrix 字元雨
+    if (huSc > 0) {
+      c.font = `bold ${11 + huSc}px monospace`;
+      const ch = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789@#$%&アカサタナハマヤラワ';
+      const spots = [];
+      if (zone.tl) spots.push([0, w*.35, 0, h*.4]);
+      if (zone.tr) spots.push([w*.65, w, 0, h*.4]);
+      if (zone.bl) spots.push([0, w*.35, h*.6, h]);
+      if (zone.br) spots.push([w*.65, w, h*.6, h]);
+      if (focusMode === 'edge') {
+        spots.push([0, w*.2, 0, h], [w*.8, w, 0, h],
+                   [0, w, 0, h*.15], [0, w, h*.85, h]);
+      }
+      if (spots.length === 0) spots.push([0, w, 0, h]);
+
+      // 暗綠字
+      for (let i = 0; i < (0 | 50 * huSc); i++) {
+        const sp = spots[0 | Math.random() * spots.length];
+        const x = sp[0] + Math.random() * (sp[1] - sp[0]);
+        const y = sp[2] + Math.random() * (sp[3] - sp[2]);
+        c.fillStyle = `rgba(0,255,65,${.15 + Math.random() * .7})`;
+        c.fillText(ch[0 | Math.random() * ch.length], x, y);
+      }
+      // 亮白頭部字
+      for (let i = 0; i < (0 | 8 * huSc); i++) {
+        const sp = spots[0 | Math.random() * spots.length];
+        c.fillStyle = `rgba(200,255,220,${.7 + Math.random() * .3})`;
+        c.fillText(ch[0 | Math.random() * ch.length],
+          sp[0] + Math.random() * (sp[1] - sp[0]),
+          sp[2] + Math.random() * (sp[3] - sp[2]));
       }
     }
-    // top/bottom bars based on zone
-    if(huSc>0){
-      if(zone.tl||zone.tr){
-        c.fillStyle='rgba(0,20,0,.88)';c.fillRect(0,0,w,22);
-        c.fillStyle='rgba(0,255,65,.95)';c.font=`bold ${9+huSc*.5}px monospace`;
-        if(zone.tl){c.textAlign='left';c.fillText('[ROOT@TARGET:~$ EXPLOIT_RUNNING]',10,15)}
-        if(zone.tr){c.textAlign='right';c.fillText(`PID:${String(0|Math.random()*9999).padStart(4,'0')}  UID:0`,w-10,15)}
-        c.textAlign='left';
-      }
-      if(zone.bl||zone.br){
-        c.fillStyle='rgba(0,20,0,.88)';c.fillRect(0,h-22,w,22);
-        c.fillStyle='rgba(0,255,65,.8)';c.font=`${9+huSc*.5}px monospace`;
-        const lg=['INJECTING SHELLCODE','BYPASSING 2FA','DUMPING CREDENTIALS','PATCHING KERNEL','UPLOADING TROJAN','ESCALATING PRIVILEGES'];
-        c.fillText(`> ${lg[t%lg.length]}... [${new Date().toISOString().slice(11,19)}]`,10,h-8);
+    // ACCESS DENIED 警示
+    if (huSc >= 0.6) {
+      const bw = Math.min(w * .75, 460);
+      const bh = 66;
+      const bx = (w - bw) / 2;
+      let by = (h - bh) / 2;
+
+      if (focusMode === 'tl' || focusMode === 'tr') by = h - bh - 20;
+      else if (focusMode === 'bl' || focusMode === 'br') by = 20;
+
+      if (t % 12 < 5) {
+        c.fillStyle = 'rgba(0,0,0,.88)';
+        c.fillRect(bx, by, bw, bh);
+        c.strokeStyle = 'rgba(255,30,30,.95)';
+        c.lineWidth = 2;
+        c.strokeRect(bx, by, bw, bh);
+        c.fillStyle = 'rgba(255,30,30,.98)';
+        c.font = `bold ${16 + huSc * 2}px 'Bebas Neue', monospace`;
+        c.textAlign = 'center';
+        c.textBaseline = 'middle';
+        c.fillText('⛔ ACCESS DENIED', w/2, by + bh/2 - 8);
+        c.fillStyle = 'rgba(255,100,100,.9)';
+        c.font = `${9 + huSc}px monospace`;
+        c.fillText('UNAUTHORIZED ACCESS ATTEMPT DETECTED', w/2, by + bh/2 + 12);
+        c.textAlign = 'left';
+        c.textBaseline = 'alphabetic';
+      } else if (t % 12 < 10) {
+        c.fillStyle = 'rgba(0,0,0,.85)';
+        c.fillRect(bx, by, bw, bh);
+        c.strokeStyle = 'rgba(0,255,65,.85)';
+        c.lineWidth = 1;
+        c.strokeRect(bx, by, bw, bh);
+        c.fillStyle = 'rgba(0,255,65,.98)';
+        c.font = `bold ${14 + huSc}px monospace`;
+        c.textAlign = 'center';
+        c.textBaseline = 'middle';
+        c.fillText(`> BREACHING FIREWALL... ${0 | Math.random() * 100}%`, w/2, by + bh/2 - 8);
+        c.fillStyle = 'rgba(0,255,65,.75)';
+        c.font = `${9 + huSc}px monospace`;
+        c.fillText('[████████░░] DECRYPTING PAYLOAD', w/2, by + bh/2 + 12);
+        c.textAlign = 'left';
+        c.textBaseline = 'alphabetic';
       }
     }
-    // glitch lines
-    if(nS>0)for(let k=0;k<(0|2*nS);k++)if(Math.random()<.5){const y=0|Math.random()*h,lh=1+(0|Math.random()*4),li=c.getImageData(0,y,w,lh);c.putImageData(li,0|(Math.random()-.5)*30*nS,y)}
+    // 頂/底狀態列
+    if (huSc > 0) {
+      if (zone.tl || zone.tr) {
+        c.fillStyle = 'rgba(0,20,0,.88)';
+        c.fillRect(0, 0, w, 22);
+        c.fillStyle = 'rgba(0,255,65,.95)';
+        c.font = `bold ${9 + huSc * .5}px monospace`;
+        if (zone.tl) {
+          c.textAlign = 'left';
+          c.fillText('[ROOT@TARGET:~$ EXPLOIT_RUNNING]', 10, 15);
+        }
+        if (zone.tr) {
+          c.textAlign = 'right';
+          c.fillText(`PID:${String(0 | Math.random() * 9999).padStart(4,'0')}  UID:0`, w-10, 15);
+        }
+        c.textAlign = 'left';
+      }
+      if (zone.bl || zone.br) {
+        c.fillStyle = 'rgba(0,20,0,.88)';
+        c.fillRect(0, h-22, w, 22);
+        c.fillStyle = 'rgba(0,255,65,.8)';
+        c.font = `${9 + huSc * .5}px monospace`;
+        const lg = ['INJECTING SHELLCODE', 'BYPASSING 2FA', 'DUMPING CREDENTIALS',
+                    'PATCHING KERNEL', 'UPLOADING TROJAN', 'ESCALATING PRIVILEGES'];
+        c.fillText(`> ${lg[t % lg.length]}... [${new Date().toISOString().slice(11,19)}]`, 10, h-8);
+      }
+    }
+    // 故障線
+    if (nS > 0) displaceLines(c, w, h, 0 | 2 * nS, 30 * nS, 4, .5);
   }
 };
 
-function prog(p,tx){
-  const b=$('#pb'),f=$('#pf'),t=$('#ptx');
-  b.style.display='block';t.style.display='block';f.style.width=p+'%';t.textContent=tx;
-  if(p>=100)setTimeout(()=>{b.style.display='none';t.style.display='none'},2500);
+// ──────────────────────────────────────────────────
+// C9. 匯出功能
+// ──────────────────────────────────────────────────
+
+/** 顯示進度 */
+function prog(p, tx) {
+  const bar = $('#pb'), fill = $('#pf'), txt = $('#ptx');
+  bar.style.display = 'block';
+  txt.style.display = 'block';
+  fill.style.width  = p + '%';
+  txt.textContent   = tx;
+  if (p >= 100) {
+    setTimeout(() => {
+      bar.style.display = 'none';
+      txt.style.display = 'none';
+    }, 2500);
+  }
 }
-function dis(v){$('#bG').disabled=v;$('#bM').disabled=v}
 
-$('#bG').onclick=async()=>{
-  if(!img)return;dis(true);cancelAnimationFrame(raf);
-  const w=cv.width,h=cv.height,tf=D*FPS;
-  prog(0,'GIF 產生中...');
-  const o=document.createElement('canvas');o.width=w;o.height=h;const oc=o.getContext('2d');
-  const g=new GIF({workers:2,quality:8,width:w,height:h,workerScript:'https://cdnjs.cloudflare.com/ajax/libs/gif.js/0.2.0/gif.worker.js'});
-  for(let f=0;f<tf;f++){draw(oc,w,h,f);g.addFrame(o,{copy:true,delay:1000/FPS|0});prog(0|f/tf*50,`渲染 ${f+1}/${tf}`);await new Promise(r=>setTimeout(r,0))}
-  g.on('progress',p=>prog(50+(0|p*50),'GIF 壓縮中...'));
-  g.on('finished',b=>{const u=URL.createObjectURL(b),a=document.createElement('a');a.href=u;a.download=`glitch_${fx}.gif`;a.click();prog(100,'下載完成！');dis(false);L&&play()});
-  g.render();
+/** 停用匯出按鈕 */
+function dis(v) {
+  $('#bG').disabled = v;
+  $('#bM').disabled = v;
+  $('#bP').disabled = v;
+}
+
+// ── PNG 匯出 ──
+$('#bP').onclick = () => {
+  if (!img) return;
+  cv.toBlob(b => {
+    const u = URL.createObjectURL(b);
+    const a = document.createElement('a');
+    a.href = u;
+    a.download = `glitch_${fx}.png`;
+    a.click();
+    prog(100, 'PNG 下載完成！');
+  }, 'image/png');
 };
 
-$('#bM').onclick=async()=>{
-  if(!img)return;dis(true);cancelAnimationFrame(raf);
-  const w=cv.width,h=cv.height,tf=D*FPS;
-  prog(0,'MP4 產生中...');
-  const o=document.createElement('canvas');o.width=w;o.height=h;const oc=o.getContext('2d');
-  const st=o.captureStream(FPS),ck=[];
-  const mm=MediaRecorder.isTypeSupported('video/mp4')?'video/mp4':MediaRecorder.isTypeSupported('video/webm;codecs=vp9')?'video/webm;codecs=vp9':'video/webm';
-  const r=new MediaRecorder(st,{mimeType:mm,videoBitsPerSecond:4e6});
-  r.ondataavailable=e=>e.data.size&&ck.push(e.data);
-  r.onstop=()=>{const ex=mm.startsWith('video/mp4')?'mp4':'webm',b=new Blob(ck,{type:mm}),u=URL.createObjectURL(b),a=document.createElement('a');a.href=u;a.download=`glitch_${fx}.${ex}`;a.click();prog(100,`下載完成！(${ex.toUpperCase()})`);dis(false);L&&play()};
-  r.start();
-  for(let f=0;f<tf;f++){draw(oc,w,h,f);prog(0|f/tf*90,`渲染 ${f+1}/${tf}`);await new Promise(rs=>setTimeout(rs,1000/FPS|0))}
-  prog(95,'封裝中...');r.stop();
+// ── GIF Worker 預載（繞過 CORS） ──
+let gifWorkerBlobURL = null;
+async function getWorkerURL() {
+  if (gifWorkerBlobURL) return gifWorkerBlobURL;
+  try {
+    const res = await fetch('https://cdnjs.cloudflare.com/ajax/libs/gif.js/0.2.0/gif.worker.js');
+    if (!res.ok) throw new Error('fetch failed');
+    const code = await res.text();
+    const blob = new Blob([code], { type: 'application/javascript' });
+    gifWorkerBlobURL = URL.createObjectURL(blob);
+    return gifWorkerBlobURL;
+  } catch (e) {
+    return 'https://cdnjs.cloudflare.com/ajax/libs/gif.js/0.2.0/gif.worker.js';
+  }
+}
+
+// ── GIF 匯出 ──
+$('#bG').onclick = async () => {
+  if (!img) return;
+  dis(true);
+  cancelAnimationFrame(raf);
+
+  const w = cv.width, h = cv.height;
+  const totalFrames = D * FPS;
+
+  prog(0, '準備 worker...');
+
+  try {
+    const workerURL = await getWorkerURL();
+    prog(2, 'GIF 產生中...');
+
+    const off = document.createElement('canvas');
+    off.width = w; off.height = h;
+    const offCtx = off.getContext('2d');
+
+    const g = new GIF({
+      workers: 2,
+      quality: 8,
+      width: w, height: h,
+      workerScript: workerURL
+    });
+
+    // 60 秒 watchdog
+    let finished = false;
+    const watchdog = setTimeout(() => {
+      if (!finished) {
+        prog(100, '⚠ 超時失敗，請重試或用 MP4');
+        dis(false);
+        if (L) play();
+      }
+    }, 60000);
+
+    g.on('progress', p => prog(50 + (0 | p * 50), 'GIF 壓縮中...'));
+    g.on('abort', () => {
+      finished = true;
+      clearTimeout(watchdog);
+      prog(100, '⚠ 已取消');
+      dis(false);
+      if (L) play();
+    });
+    g.on('finished', b => {
+      finished = true;
+      clearTimeout(watchdog);
+      const u = URL.createObjectURL(b);
+      const a = document.createElement('a');
+      a.href = u;
+      a.download = `glitch_${fx}.gif`;
+      a.click();
+      prog(100, '下載完成！');
+      dis(false);
+      if (L) play();
+    });
+
+    for (let f = 0; f < totalFrames; f++) {
+      drawFrame(offCtx, w, h, f);
+      g.addFrame(off, { copy: true, delay: 1000 / FPS | 0 });
+      prog(0 | f / totalFrames * 50, `渲染 ${f+1}/${totalFrames}`);
+      await new Promise(r => setTimeout(r, 0));
+    }
+    g.render();
+
+  } catch (e) {
+    console.error(e);
+    prog(100, '⚠ 失敗: ' + e.message);
+    dis(false);
+    if (L) play();
+  }
 };
-</script></body></html>
+
+// ── MP4 匯出 ──
+$('#bM').onclick = async () => {
+  if (!img) return;
+  dis(true);
+  cancelAnimationFrame(raf);
+
+  const w = cv.width, h = cv.height;
+  const totalFrames = D * FPS;
+
+  prog(0, 'MP4 產生中...');
+
+  const off = document.createElement('canvas');
+  off.width = w; off.height = h;
+  const offCtx = off.getContext('2d');
+
+  const stream = off.captureStream(FPS);
+  const chunks = [];
+  const mimeType = MediaRecorder.isTypeSupported('video/mp4') ? 'video/mp4'
+                 : MediaRecorder.isTypeSupported('video/webm;codecs=vp9') ? 'video/webm;codecs=vp9'
+                 : 'video/webm';
+  const rec = new MediaRecorder(stream, {
+    mimeType: mimeType,
+    videoBitsPerSecond: 4e6
+  });
+
+  rec.ondataavailable = e => e.data.size && chunks.push(e.data);
+  rec.onstop = () => {
+    const ext = mimeType.startsWith('video/mp4') ? 'mp4' : 'webm';
+    const blob = new Blob(chunks, { type: mimeType });
+    const u = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = u;
+    a.download = `glitch_${fx}.${ext}`;
+    a.click();
+    prog(100, `下載完成！(${ext.toUpperCase()})`);
+    dis(false);
+    if (L) play();
+  };
+
+  rec.start();
+  for (let f = 0; f < totalFrames; f++) {
+    drawFrame(offCtx, w, h, f);
+    prog(0 | f / totalFrames * 90, `渲染 ${f+1}/${totalFrames}`);
+    await new Promise(r => setTimeout(r, 1000 / FPS | 0));
+  }
+  prog(95, '封裝中...');
+  rec.stop();
+};
+
+</script>
+</body>
+</html>
