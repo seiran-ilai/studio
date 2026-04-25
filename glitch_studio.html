@@ -45,9 +45,9 @@
 
 :root {
   --bg: #0a0a0a;
-  --b:  #1f1f1f;
-  --t:  #e8e4dc;
-  --m:  #555;
+  --b:  #2a2a2a;       /* 邊框（提亮） */
+  --t:  #e8e4dc;       /* 主文字 */
+  --m:  #888;          /* 次要文字（提亮，原 #555 太暗） */
   --a:  #ff2244;
   --a2: #00ffcc;
 }
@@ -105,12 +105,12 @@ header {
   transform: translateX(-2px);
   opacity: .5;
 }
-.sub { font-size: 9px; letter-spacing: 5px; color: var(--m); }
+.sub { font-size: 11px; letter-spacing: 5px; color: var(--m); }
 .hr {
   margin-left: auto;
   display: flex; align-items: center;
   gap: 8px;
-  font-size: 10px;
+  font-size: 12px;
   color: var(--m);
   letter-spacing: 2px;
 }
@@ -166,13 +166,13 @@ header {
   color: #1e1e1e;
   letter-spacing: 4px;
 }
-.dt { font-size: 11px; color: var(--m); letter-spacing: 3px; }
-.dh { font-size: 9px; color: #333; letter-spacing: 2px; }
+.dt { font-size: 13px; color: var(--m); letter-spacing: 3px; }
+.dh { font-size: 11px; color: #333; letter-spacing: 2px; }
 .ul {
   display: inline-block;
   padding: 8px 18px;
   border: 1px solid #2a2a2a;
-  font-size: 10px;
+  font-size: 12px;
   letter-spacing: 3px;
   color: var(--m);
   cursor: pointer;
@@ -184,7 +184,7 @@ header {
 
 .meta {
   display: flex; gap: 18px;
-  font-size: 10px;
+  font-size: 12px;
   color: var(--m);
   letter-spacing: 2px;
   align-items: center;
@@ -198,7 +198,7 @@ header {
   background: transparent;
   cursor: pointer;
   font-family: inherit;
-  font-size: 9px;
+  font-size: 11px;
   letter-spacing: 2px;
   color: var(--m);
   transition: all .15s;
@@ -216,7 +216,7 @@ header {
 .ct::-webkit-scrollbar-thumb { background: var(--b); }
 .sec { padding: 14px 18px; border-bottom: 1px solid var(--b); }
 .sl {
-  font-size: 9px;
+  font-size: 11px;
   letter-spacing: 4px;
   color: var(--m);
   margin-bottom: 10px;
@@ -248,7 +248,7 @@ header {
   display: block;
   margin-bottom: 1px;
 }
-.zh { font-size: 8px; letter-spacing: 1px; color: var(--m); }
+.zh { font-size: 10px; letter-spacing: 1px; color: var(--m); }
 
 .c-film.on  { border-color: #f5c842; background: rgba(245,200,66,.05); } .c-film  .en { color: #f5c842; }
 .c-cyber.on { border-color: #00e5ff; background: rgba(0,229,255,.05); } .c-cyber .en { color: #00e5ff; }
@@ -258,7 +258,7 @@ header {
 .c-hack.on  { border-color: #00ff41; background: rgba(0,255,65,.05); } .c-hack .en { color: #00ff41; }
 
 .desc {
-  font-size: 10px;
+  font-size: 12px;
   color: var(--m);
   letter-spacing: 1px;
   line-height: 1.6;
@@ -271,7 +271,7 @@ header {
 /* 滑桿 */
 .rw { display: flex; align-items: center; gap: 10px; margin-top: 8px; }
 .rw label {
-  font-size: 9px;
+  font-size: 11px;
   letter-spacing: 2px;
   color: var(--m);
   min-width: 86px;
@@ -292,7 +292,7 @@ header {
   cursor: pointer;
   border: 2px solid var(--bg);
 }
-.vv { font-size: 10px; color: var(--t); min-width: 36px; text-align: right; }
+.vv { font-size: 12px; color: var(--t); min-width: 36px; text-align: right; }
 .hue-slider {
   background: linear-gradient(90deg, #f00, #ff0, #0f0, #0ff, #00f, #f0f, #f00) !important;
   height: 4px !important;
@@ -322,7 +322,7 @@ header {
 }
 .tg.on .tk { border-color: var(--a2); }
 .tg.on .th { left: 18px; background: var(--a2); }
-.tl { font-size: 9px; letter-spacing: 3px; color: var(--m); }
+.tl { font-size: 11px; letter-spacing: 3px; color: var(--m); }
 .tg.on .tl { color: var(--a2); }
 
 /* 按鈕群 */
@@ -333,13 +333,13 @@ header {
   background: transparent;
   cursor: pointer;
   font-family: inherit;
-  font-size: 10px;
+  font-size: 12px;
   letter-spacing: 2px;
   color: var(--m);
 }
 .db:hover { border-color: #444; color: var(--t); }
 .db.on { border-color: var(--t); color: var(--t); }
-.fn { font-size: 9px; color: var(--m); letter-spacing: 2px; margin-top: 8px; }
+.fn { font-size: 11px; color: var(--m); letter-spacing: 2px; margin-top: 8px; }
 
 /* 文字疊加區 */
 .txt-input {
@@ -349,7 +349,7 @@ header {
   border: 1px solid var(--b);
   color: var(--t);
   font-family: 'Share Tech Mono', monospace;
-  font-size: 11px;
+  font-size: 13px;
   letter-spacing: 1px;
   margin-top: 6px;
   outline: none;
@@ -370,7 +370,7 @@ header {
   background: transparent;
   cursor: pointer;
   font-family: inherit;
-  font-size: 10px;
+  font-size: 12px;
   letter-spacing: 3px;
   color: var(--m);
 }
@@ -400,7 +400,7 @@ header {
 .fb small { font-size: 7px; color: var(--m); display: block; margin-top: 3px; letter-spacing: 1px; font-family:'Share Tech Mono',monospace; }
 
 .drag-hint {
-  font-size: 9px;
+  font-size: 11px;
   color: var(--m);
   letter-spacing: 1px;
   margin-top: 6px;
@@ -448,7 +448,7 @@ header {
   background: transparent;
   cursor: pointer;
   font-family: inherit;
-  font-size: 9px;
+  font-size: 11px;
   letter-spacing: 1px;
   color: var(--m);
 }
@@ -467,7 +467,7 @@ header {
   background: transparent;
   cursor: pointer;
   font-family: inherit;
-  font-size: 9px;
+  font-size: 11px;
   letter-spacing: 2px;
   color: var(--t);
   text-align: center;
@@ -498,7 +498,7 @@ header {
   transition: width .1s;
 }
 .pt {
-  font-size: 9px;
+  font-size: 11px;
   color: var(--m);
   letter-spacing: 2px;
   margin-top: 6px;
@@ -512,7 +512,7 @@ header {
   background: transparent;
   cursor: pointer;
   font-family: inherit;
-  font-size: 8px;
+  font-size: 10px;
   letter-spacing: 2px;
   color: var(--m);
 }
@@ -528,7 +528,7 @@ header {
 }
 .fx-opt.show { display: block; }
 .fx-opt-label {
-  font-size: 9px;
+  font-size: 11px;
   letter-spacing: 3px;
   color: var(--m);
   margin-bottom: 6px;
@@ -546,7 +546,7 @@ header {
   background: transparent;
   cursor: pointer;
   font-family: inherit;
-  font-size: 9px;
+  font-size: 11px;
   color: var(--m);
   text-align: center;
   letter-spacing: 1px;
@@ -555,7 +555,7 @@ header {
 .pc.on { border-color: var(--t); color: var(--t); }
 
 .focus-hint {
-  font-size: 9px;
+  font-size: 11px;
   color: var(--m);
   letter-spacing: 1px;
   margin-top: 6px;
@@ -780,7 +780,23 @@ header {
       </div>
     </div>
 
-    <!-- B3.6 輸出長度 -->
+    <!-- B3.6 輸出解析度 -->
+    <div class="sec">
+      <div class="sl">// 輸出解析度</div>
+      <div class="dr">
+        <button class="db on" data-res="preview">預覽尺寸</button>
+        <button class="db"    data-res="original">原圖尺寸</button>
+        <button class="db"    data-res="custom">自訂寬度</button>
+      </div>
+      <div class="rw" id="resCustomRow" style="display:none">
+        <label>WIDTH</label>
+        <input type="range" id="resCustomW" min="320" max="3840" step="10" value="1080">
+        <span class="vv" id="vResCustomW">1080</span>
+      </div>
+      <div class="fn" id="resInfo">輸出 — × — px（檔案小、處理快）</div>
+    </div>
+
+    <!-- B3.7 輸出長度 -->
     <div class="sec">
       <div class="sl">// 輸出長度</div>
       <div class="dr">
@@ -792,7 +808,7 @@ header {
       <div class="fn" id="fnN">預計 24 幀 @ 12fps</div>
     </div>
 
-    <!-- B3.6 輸出格式 -->
+    <!-- B3.8 輸出格式 -->
     <div class="sec">
       <div class="sl">// 輸出格式</div>
       <div class="xg">
@@ -823,6 +839,8 @@ let fx  = 'film';       // 當前特效
 let D   = 2;            // 輸出秒數
 let L   = true;         // Live Preview
 let raf = null;
+let resMode = 'preview'; // 輸出解析度：'preview' | 'original' | 'custom'
+let resCustom = 1080;    // 自訂寬度（custom 模式用）
 
 // 細節強度（0-10）
 let NO = 5;  // NOISE
@@ -926,6 +944,7 @@ function loadImg(file) {
     $('#rep').style.display   = 'inline-block';
     $('#pause').style.display = 'inline-block';
     $('#mS').textContent = `${cv.width}×${cv.height}`;
+    updateResInfo();
 
     play();
   };
@@ -1158,6 +1177,51 @@ const cvObserver = setInterval(() => {
   if (txt.text && img) dz.classList.add('has-text');
   else dz.classList.remove('has-text');
 }, 300);
+
+// 輸出解析度
+$$('.db[data-res]').forEach(b => b.onclick = function() {
+  $$('.db[data-res]').forEach(x => x.classList.remove('on'));
+  this.classList.add('on');
+  resMode = this.dataset.res;
+  $('#resCustomRow').style.display = (resMode === 'custom') ? 'flex' : 'none';
+  updateResInfo();
+});
+
+$('#resCustomW').oninput = e => {
+  resCustom = +e.target.value;
+  $('#vResCustomW').textContent = resCustom;
+  updateResInfo();
+};
+
+/** 計算當前模式的輸出尺寸 */
+function getOutputSize() {
+  if (!img) return { w: cv.width, h: cv.height };
+  if (resMode === 'original') {
+    return { w: img.naturalWidth, h: img.naturalHeight };
+  }
+  if (resMode === 'custom') {
+    const w = resCustom;
+    const h = Math.round(img.naturalHeight * w / img.naturalWidth);
+    return { w, h };
+  }
+  return { w: cv.width, h: cv.height }; // preview
+}
+
+/** 更新解析度提示文字 */
+function updateResInfo() {
+  const el = $('#resInfo');
+  if (!img) {
+    el.textContent = '請先上傳圖片';
+    return;
+  }
+  const { w, h } = getOutputSize();
+  const tags = {
+    preview:  '檔案小、處理快',
+    original: '原始解析度、檔案最大',
+    custom:   '自訂寬度、等比縮放'
+  };
+  el.textContent = `輸出 ${w} × ${h} px（${tags[resMode]}）`;
+}
 
 // 輸出長度
 $$('.db[data-d]').forEach(b => b.onclick = function() {
@@ -2045,13 +2109,20 @@ function dis(v) {
 // ── PNG 匯出 ──
 $('#bP').onclick = () => {
   if (!img) return;
-  cv.toBlob(b => {
+  const { w, h } = getOutputSize();
+  // 繪一張靜態幀到目標解析度
+  const off = document.createElement('canvas');
+  off.width = w; off.height = h;
+  const offCtx = off.getContext('2d');
+  drawFrame(offCtx, w, h, 0);
+
+  off.toBlob(b => {
     const u = URL.createObjectURL(b);
     const a = document.createElement('a');
     a.href = u;
-    a.download = `glitch_${fx}.png`;
+    a.download = `glitch_${fx}_${w}x${h}.png`;
     a.click();
-    prog(100, 'PNG 下載完成！');
+    prog(100, `PNG ${w}×${h} 下載完成！`);
   }, 'image/png');
 };
 
@@ -2077,10 +2148,10 @@ $('#bG').onclick = async () => {
   dis(true);
   cancelAnimationFrame(raf);
 
-  const w = cv.width, h = cv.height;
+  const { w, h } = getOutputSize();
   const totalFrames = D * FPS;
 
-  prog(0, '準備 worker...');
+  prog(0, `準備 worker... (${w}×${h})`);
 
   try {
     const workerURL = await getWorkerURL();
@@ -2121,7 +2192,7 @@ $('#bG').onclick = async () => {
       const u = URL.createObjectURL(b);
       const a = document.createElement('a');
       a.href = u;
-      a.download = `glitch_${fx}.gif`;
+      a.download = `glitch_${fx}_${w}x${h}.gif`;
       a.click();
       prog(100, '下載完成！');
       dis(false);
@@ -2150,10 +2221,10 @@ $('#bM').onclick = async () => {
   dis(true);
   cancelAnimationFrame(raf);
 
-  const w = cv.width, h = cv.height;
+  const { w, h } = getOutputSize();
   const totalFrames = D * FPS;
 
-  prog(0, 'MP4 產生中...');
+  prog(0, `MP4 產生中... (${w}×${h})`);
 
   const off = document.createElement('canvas');
   off.width = w; off.height = h;
@@ -2164,9 +2235,12 @@ $('#bM').onclick = async () => {
   const mimeType = MediaRecorder.isTypeSupported('video/mp4') ? 'video/mp4'
                  : MediaRecorder.isTypeSupported('video/webm;codecs=vp9') ? 'video/webm;codecs=vp9'
                  : 'video/webm';
+  // 依解析度動態調整 bitrate（避免大圖糊掉）
+  const pixelCount = w * h;
+  const bitrate = Math.max(2e6, Math.min(20e6, pixelCount * 0.15));
   const rec = new MediaRecorder(stream, {
     mimeType: mimeType,
-    videoBitsPerSecond: 4e6
+    videoBitsPerSecond: bitrate
   });
 
   rec.ondataavailable = e => e.data.size && chunks.push(e.data);
@@ -2176,9 +2250,9 @@ $('#bM').onclick = async () => {
     const u = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = u;
-    a.download = `glitch_${fx}.${ext}`;
+    a.download = `glitch_${fx}_${w}x${h}.${ext}`;
     a.click();
-    prog(100, `下載完成！(${ext.toUpperCase()})`);
+    prog(100, `下載完成！(${ext.toUpperCase()} ${w}×${h})`);
     dis(false);
     if (L) play();
   };
