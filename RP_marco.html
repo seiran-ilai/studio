@@ -64,20 +64,16 @@
     html.ui-xlarge .app { margin-right: 460px; }
   }
 
-  /* UI 切換器 */
+  /* UI 切換器（面板頂端整行） */
   .ui-scale-switch {
-    position: absolute;
-    top: 0;
-    right: 0;
     display: flex;
     align-items: center;
     gap: 6px;
-    padding: 6px 8px;
+    padding: 8px 12px;
     background: rgba(28, 37, 70, 0.6);
     border: 1px solid var(--border-subtle);
     border-radius: 3px;
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
+    margin: -4px -4px 18px;
   }
   .ui-scale-label {
     font-family: var(--font-display);
@@ -85,16 +81,16 @@
     letter-spacing: 0.15em;
     text-transform: uppercase;
     color: var(--text-muted);
-    margin-right: 4px;
+    margin-right: auto;
   }
   .ui-scale-btn {
     background: transparent;
     border: 1px solid transparent;
     border-radius: 2px;
-    padding: 4px 10px;
+    padding: 4px 14px;
     color: var(--text-secondary);
     font-family: var(--font-body);
-    font-size: 0.78rem;
+    font-size: 0.82rem;
     cursor: pointer;
     transition: all 0.15s ease;
   }
@@ -108,13 +104,91 @@
     background: rgba(125, 214, 255, 0.15);
   }
 
-  @media (max-width: 760px) {
+  /* 快捷鍵說明（可摺疊） */
+  .hotkey-help {
+    margin-bottom: 22px;
+    background: rgba(28, 37, 70, 0.45);
+    border: 1px solid var(--border-subtle);
+    border-radius: 3px;
+    overflow: hidden;
+  }
+  .hotkey-help summary {
+    cursor: pointer;
+    padding: 10px 14px;
+    font-family: var(--font-display);
+    font-size: 0.78rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--aether-blue);
+    user-select: none;
+    list-style: none;
+    transition: background 0.15s ease;
+  }
+  .hotkey-help summary::-webkit-details-marker { display: none; }
+  .hotkey-help summary:hover {
+    background: rgba(125, 214, 255, 0.06);
+  }
+  .hotkey-help[open] summary {
+    border-bottom: 1px dashed var(--border-subtle);
+  }
+  .hotkey-list {
+    padding: 12px 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .hotkey-item {
+    display: flex;
+    align-items: baseline;
+    gap: 16px;
+    flex-wrap: wrap;
+    padding: 4px 0;
+  }
+  .hotkey-keys {
+    flex: 0 0 auto;
+    min-width: 180px;
+    color: var(--text-primary);
+    font-family: var(--font-body);
+    font-size: 0.88rem;
+  }
+  .hotkey-desc {
+    flex: 1;
+    color: var(--text-secondary);
+    font-family: var(--font-body);
+    font-size: 0.86rem;
+    line-height: 1.5;
+  }
+  .hotkey-list kbd {
+    font-family: var(--font-mono);
+    font-style: normal;
+    background: rgba(125,214,255,0.12);
+    color: var(--aether-blue);
+    border: 1px solid rgba(125,214,255,0.25);
+    padding: 1px 7px;
+    border-radius: 3px;
+    font-size: 0.82em;
+  }
+  .hotkey-list code {
+    font-family: var(--font-mono);
+    font-style: normal;
+    background: rgba(240,213,137,0.1);
+    color: var(--aether-gold);
+    padding: 1px 5px;
+    border-radius: 2px;
+    font-size: 0.85em;
+  }
+
+  @media (max-width: 600px) {
     .ui-scale-switch {
-      position: relative;
-      top: auto;
-      right: auto;
-      margin-top: 16px;
-      justify-content: center;
+      flex-wrap: wrap;
+    }
+    .ui-scale-label {
+      flex: 0 0 100%;
+      margin-bottom: 4px;
+    }
+    .hotkey-keys {
+      min-width: auto;
+      flex: 0 0 100%;
     }
   }
 
@@ -1043,34 +1117,55 @@
     <div class="header-mark">FFXIV Roleplay Macro Helper</div>
     <h1>RP 向巨集小幫手</h1>
     <div class="subtitle">為 <span class="accent">FF14 角色扮演</span> 而生的巨集工具</div>
+  </header>
 
-    <!-- UI 大小切換 -->
+  <!-- 主面板 -->
+  <section class="panel">
+    <!-- 介面大小切換（面板最頂端） -->
     <div class="ui-scale-switch" id="uiScaleSwitch">
       <span class="ui-scale-label">介面大小</span>
       <button class="ui-scale-btn active" data-scale="default">預設</button>
       <button class="ui-scale-btn" data-scale="large">大</button>
       <button class="ui-scale-btn" data-scale="xlarge">最大</button>
     </div>
-  </header>
 
-  <!-- 主面板 -->
-  <section class="panel">
     <div class="panel-title"><span class="num">i</span>巨集編輯器</div>
     <p class="panel-desc">
-      直接在下方文字框輸入內容；下方所有功能會直接寫入文字框。<br/>
-      ✦ <span style="color: var(--aether-mint);">自動補全</span>：輸入 <kbd>/</kbd>＋字（例：<kbd>/擁</kbd>）跳出建議 → <kbd>Tab</kbd>/<kbd>Enter</kbd> 補全
-      → <span style="color: var(--aether-violet);">再按 <kbd>Tab</kbd> 加 motion</span>，按 <kbd>Backspace</kbd> 一次刪掉 motion。<br/>
-      ✦ <span style="color: var(--aether-gold);">換行繼承</span>：在含頻道前綴的行（如 <code>/s 早安</code>）按 <kbd>Enter</kbd>，新行會自動補上同個頻道；按 <kbd>Backspace</kbd> 一次刪除前綴。<br/>
-      ✦ <span style="color: var(--aether-rose);">行末快捷</span>：在「行末」按 <kbd>Tab</kbd> 加上 <code>&lt;wait.X&gt;</code>，1 秒內接著按 <kbd>1</kbd>~<kbd>9</kbd> 可改秒數。<br/>
-      ✦ <span style="color: var(--aether-gold);">目標快捷</span>：打 <kbd>t</kbd> 後按 <kbd>Tab</kbd> 直接轉成 <code>&lt;t&gt;</code>（會替換當前目標名稱）。
+      直接在文字框輸入內容；下方所有功能會直接寫入文字框。
     </p>
+
+    <!-- 快捷鍵說明（可摺疊） -->
+    <details class="hotkey-help">
+      <summary>◆ 快捷鍵說明（點擊展開）</summary>
+      <div class="hotkey-list">
+        <div class="hotkey-item">
+          <span class="hotkey-keys"><kbd>/</kbd> + 字</span>
+          <span class="hotkey-desc">跳出動作建議；<kbd>Tab</kbd> / <kbd>Enter</kbd> 補全；<kbd>↑↓</kbd> 切換</span>
+        </div>
+        <div class="hotkey-item">
+          <span class="hotkey-keys">補全後再按 <kbd>Tab</kbd></span>
+          <span class="hotkey-desc">在動作後加 <code>motion</code>；按 <kbd>Backspace</kbd> 一次刪掉</span>
+        </div>
+        <div class="hotkey-item">
+          <span class="hotkey-keys"><kbd>Enter</kbd> 換行</span>
+          <span class="hotkey-desc">含頻道的行（如 <code>/s 早安</code>）會自動繼承頻道；<kbd>Backspace</kbd> 一次刪除前綴</span>
+        </div>
+        <div class="hotkey-item">
+          <span class="hotkey-keys">行末按 <kbd>Tab</kbd></span>
+          <span class="hotkey-desc">加上 <code>&lt;wait.X&gt;</code>；1 秒內接著按 <kbd>1</kbd>~<kbd>9</kbd> 可改秒數</span>
+        </div>
+        <div class="hotkey-item">
+          <span class="hotkey-keys"><kbd>t</kbd> + <kbd>Tab</kbd></span>
+          <span class="hotkey-desc">直接轉成 <code>&lt;t&gt;</code>（會替換為當前目標名稱）</span>
+        </div>
+      </div>
+    </details>
 
     <!-- 等待 wait.X -->
     <div class="sub-section pre-editor">
       <div class="sub-section-title">等待 ＜wait.X＞</div>
       <p class="sub-desc">
-        選擇預設秒數，下方「在每行末加上」與 <kbd>Tab</kbd> 快捷加 wait 都會用此秒數。<br/>
-        ✦ 在編輯區「行末」按 <kbd>Tab</kbd> 可直接加上 <code>&lt;wait.X&gt;</code>。
+        選擇預設秒數，下方按鈕與 Tab 快捷加 wait 都會用此秒數。
       </p>
       <div class="wait-num-row" id="waitNumRow">
         <button class="wait-num" data-secs="1">1</button>
@@ -1109,8 +1204,7 @@
     <div class="sub-section">
       <div class="sub-section-title">統一頻道</div>
       <p class="sub-desc">
-        點任一頻道按鈕，會把作用範圍內每行的開頭頻道指令統一替換或加上。<br/>
-        在文字框「選取多行」可只變動選取範圍；不選取則套用至所有行。
+        套用至作用範圍內每行的開頭頻道指令；在文字框選取多行可只變動選取範圍，不選取則套用至所有行。
       </p>
       <div class="scope-indicator global" id="scopeIndicator">
         <span class="scope-icon">◇</span>
