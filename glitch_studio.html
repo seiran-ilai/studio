@@ -83,8 +83,8 @@ header {
 }
 .logo {
   font-family: 'Bebas Neue', sans-serif;
-  font-size: 30px;
-  letter-spacing: 6px;
+  font-size: 32px;
+  letter-spacing: 4px;
   position: relative;
   line-height: 1;
 }
@@ -105,14 +105,14 @@ header {
   transform: translateX(-2px);
   opacity: .5;
 }
-.sub { font-size: 11px; letter-spacing: 5px; color: var(--m); }
+.sub { font-size: 12px; letter-spacing: 2px; color: var(--m); }
 .hr {
   margin-left: auto;
   display: flex; align-items: center;
   gap: 8px;
-  font-size: 12px;
+  font-size: 13px;
   color: var(--m);
-  letter-spacing: 2px;
+  letter-spacing: 1px;
 }
 .dot {
   width: 6px; height: 6px;
@@ -125,7 +125,7 @@ header {
 /* ── Layout ── */
 .lay {
   display: grid;
-  grid-template-columns: 1fr 360px;
+  grid-template-columns: 1fr 400px;
   height: calc(100vh - 61px);
 }
 
@@ -164,16 +164,16 @@ header {
   font-family: 'Bebas Neue', sans-serif;
   font-size: 52px;
   color: #1e1e1e;
-  letter-spacing: 4px;
+  letter-spacing: 2px;
 }
-.dt { font-size: 13px; color: var(--m); letter-spacing: 3px; }
-.dh { font-size: 11px; color: #333; letter-spacing: 2px; }
+.dt { font-size: 14px; color: var(--m); letter-spacing: 1.5px; }
+.dh { font-size: 12px; color: #333; letter-spacing: 1px; }
 .ul {
   display: inline-block;
-  padding: 8px 18px;
+  padding: 10px 22px;
   border: 1px solid #2a2a2a;
-  font-size: 12px;
-  letter-spacing: 3px;
+  font-size: 13px;
+  letter-spacing: 1.5px;
   color: var(--m);
   cursor: pointer;
   transition: all .2s;
@@ -184,22 +184,22 @@ header {
 
 .meta {
   display: flex; gap: 18px;
-  font-size: 12px;
+  font-size: 13px;
   color: var(--m);
-  letter-spacing: 2px;
+  letter-spacing: 1px;
   align-items: center;
   flex-wrap: wrap;
   justify-content: center;
 }
 .meta b { color: var(--t); font-weight: normal; }
 .rep, .pause-btn {
-  padding: 6px 14px;
+  padding: 8px 16px;
   border: 1px solid var(--b);
   background: transparent;
   cursor: pointer;
   font-family: inherit;
-  font-size: 11px;
-  letter-spacing: 2px;
+  font-size: 12px;
+  letter-spacing: 1px;
   color: var(--m);
   transition: all .15s;
 }
@@ -214,14 +214,15 @@ header {
 }
 .ct::-webkit-scrollbar { width: 3px; }
 .ct::-webkit-scrollbar-thumb { background: var(--b); }
-.sec { padding: 14px 18px; border-bottom: 1px solid var(--b); }
+.sec { padding: 16px 20px; border-bottom: 1px solid var(--b); }
 .sl {
-  font-size: 11px;
-  letter-spacing: 4px;
-  color: var(--m);
-  margin-bottom: 10px;
+  font-size: 12px;
+  letter-spacing: 2px;
+  color: var(--t);
+  margin-bottom: 12px;
   display: flex; align-items: center;
   gap: 8px;
+  font-weight: bold;
 }
 .sl::after { content: ''; flex: 1; height: 1px; background: var(--b); }
 
@@ -243,12 +244,12 @@ header {
 .eb.on { border-width: 2px; }
 .en {
   font-family: 'Bebas Neue', sans-serif;
-  font-size: 13px;
+  font-size: 16px;
   letter-spacing: 1.5px;
   display: block;
   margin-bottom: 1px;
 }
-.zh { font-size: 10px; letter-spacing: 1px; color: var(--m); }
+.zh { font-size: 11px; letter-spacing: 1px; color: var(--m); }
 
 .c-film.on  { border-color: #f5c842; background: rgba(245,200,66,.05); } .c-film  .en { color: #f5c842; }
 .c-cyber.on { border-color: #00e5ff; background: rgba(0,229,255,.05); } .c-cyber .en { color: #00e5ff; }
@@ -258,7 +259,7 @@ header {
 .c-hack.on  { border-color: #00ff41; background: rgba(0,255,65,.05); } .c-hack .en { color: #00ff41; }
 
 .desc {
-  font-size: 12px;
+  font-size: 13px;
   color: var(--m);
   letter-spacing: 1px;
   line-height: 1.6;
@@ -271,10 +272,10 @@ header {
 /* 滑桿 */
 .rw { display: flex; align-items: center; gap: 10px; margin-top: 8px; }
 .rw label {
-  font-size: 11px;
-  letter-spacing: 2px;
+  font-size: 12px;
+  letter-spacing: 0.5px;
   color: var(--m);
-  min-width: 86px;
+  min-width: 100px;
 }
 .rw input[type=range] {
   flex: 1;
@@ -292,7 +293,7 @@ header {
   cursor: pointer;
   border: 2px solid var(--bg);
 }
-.vv { font-size: 12px; color: var(--t); min-width: 36px; text-align: right; }
+.vv { font-size: 13px; color: var(--t); min-width: 36px; text-align: right; }
 .hue-slider {
   background: linear-gradient(90deg, #f00, #ff0, #0f0, #0ff, #00f, #f0f, #f00) !important;
   height: 4px !important;
@@ -307,7 +308,7 @@ header {
   user-select: none;
 }
 .tk {
-  width: 32px; height: 16px;
+  width: 38px; height: 20px;
   border: 1px solid var(--b);
   border-radius: 8px;
   position: relative;
@@ -315,41 +316,41 @@ header {
 .th {
   position: absolute;
   top: 2px; left: 2px;
-  width: 10px; height: 10px;
+  width: 14px; height: 14px;
   border-radius: 50%;
   background: var(--m);
   transition: all .2s;
 }
 .tg.on .tk { border-color: var(--a2); }
-.tg.on .th { left: 18px; background: var(--a2); }
-.tl { font-size: 11px; letter-spacing: 3px; color: var(--m); }
+.tg.on .th { left: 20px; background: var(--a2); }
+.tl { font-size: 12px; letter-spacing: 1px; color: var(--m); }
 .tg.on .tl { color: var(--a2); }
 
 /* 按鈕群 */
 .dr { display: flex; gap: 6px; flex-wrap: wrap; }
 .db {
-  padding: 6px 12px;
+  padding: 8px 14px;
   border: 1px solid var(--b);
   background: transparent;
   cursor: pointer;
   font-family: inherit;
-  font-size: 12px;
-  letter-spacing: 2px;
+  font-size: 13px;
+  letter-spacing: 0.5px;
   color: var(--m);
 }
 .db:hover { border-color: #444; color: var(--t); }
 .db.on { border-color: var(--t); color: var(--t); }
-.fn { font-size: 11px; color: var(--m); letter-spacing: 2px; margin-top: 8px; }
+.fn { font-size: 12px; color: var(--m); letter-spacing: 1px; margin-top: 8px; }
 
 /* 文字疊加區 */
 .txt-input {
   width: 100%;
-  padding: 8px 10px;
+  padding: 10px 12px;
   background: #0c0c0c;
   border: 1px solid var(--b);
   color: var(--t);
   font-family: 'Share Tech Mono', monospace;
-  font-size: 13px;
+  font-size: 14px;
   letter-spacing: 1px;
   margin-top: 6px;
   outline: none;
@@ -365,13 +366,13 @@ header {
 }
 .lang-tab {
   flex: 1;
-  padding: 8px 4px;
+  padding: 10px 4px;
   border: 1px solid var(--b);
   background: transparent;
   cursor: pointer;
   font-family: inherit;
-  font-size: 12px;
-  letter-spacing: 3px;
+  font-size: 13px;
+  letter-spacing: 1px;
   color: var(--m);
 }
 .lang-tab:hover { border-color: #444; color: var(--t); }
@@ -385,11 +386,11 @@ header {
 }
 .font-grid.hidden { display: none; }
 .fb {
-  padding: 10px 2px;
+  padding: 12px 2px;
   border: 1px solid var(--b);
   background: transparent;
   cursor: pointer;
-  font-size: 12px;
+  font-size: 14px;
   color: var(--m);
   text-align: center;
   line-height: 1.1;
@@ -397,10 +398,10 @@ header {
 }
 .fb:hover { border-color: #444; color: var(--t); }
 .fb.on { border-color: var(--a2); color: var(--t); }
-.fb small { font-size: 7px; color: var(--m); display: block; margin-top: 3px; letter-spacing: 1px; font-family:'Share Tech Mono',monospace; }
+.fb small { font-size: 9px; color: var(--m); display: block; margin-top: 3px; letter-spacing: 1px; font-family:'Share Tech Mono',monospace; }
 
 .drag-hint {
-  font-size: 11px;
+  font-size: 12px;
   color: var(--m);
   letter-spacing: 1px;
   margin-top: 6px;
@@ -421,7 +422,7 @@ header {
   flex-wrap: wrap;
 }
 .swatch {
-  width: 22px; height: 22px;
+  width: 26px; height: 26px;
   border: 1px solid var(--b);
   cursor: pointer;
   padding: 0;
@@ -429,7 +430,7 @@ header {
 .swatch:hover { border-color: #aaa; }
 .swatch.on { border-color: var(--t); border-width: 2px; }
 .color-picker {
-  width: 22px; height: 22px;
+  width: 26px; height: 26px;
   border: 1px solid var(--b);
   background: transparent;
   cursor: pointer;
@@ -443,12 +444,12 @@ header {
   margin-top: 6px;
 }
 .eff-b {
-  padding: 6px 2px;
+  padding: 8px 2px;
   border: 1px solid var(--b);
   background: transparent;
   cursor: pointer;
   font-family: inherit;
-  font-size: 11px;
+  font-size: 12px;
   letter-spacing: 1px;
   color: var(--m);
 }
@@ -467,8 +468,8 @@ header {
   background: transparent;
   cursor: pointer;
   font-family: inherit;
-  font-size: 11px;
-  letter-spacing: 2px;
+  font-size: 13px;
+  letter-spacing: 1px;
   color: var(--t);
   text-align: center;
 }
@@ -476,8 +477,8 @@ header {
 .xb:disabled { opacity: .25; cursor: not-allowed; }
 .fmt {
   font-family: 'Bebas Neue', sans-serif;
-  font-size: 20px;
-  letter-spacing: 4px;
+  font-size: 24px;
+  letter-spacing: 2px;
   display: block;
   margin-bottom: 2px;
 }
@@ -498,22 +499,22 @@ header {
   transition: width .1s;
 }
 .pt {
-  font-size: 11px;
+  font-size: 12px;
   color: var(--m);
-  letter-spacing: 2px;
+  letter-spacing: 1px;
   margin-top: 6px;
   display: none;
   text-align: center;
 }
 
 .rst {
-  padding: 2px 8px;
+  padding: 4px 10px;
   border: 1px solid var(--b);
   background: transparent;
   cursor: pointer;
   font-family: inherit;
-  font-size: 10px;
-  letter-spacing: 2px;
+  font-size: 11px;
+  letter-spacing: 1px;
   color: var(--m);
 }
 .rst:hover { border-color: #555; color: var(--t); }
@@ -528,10 +529,11 @@ header {
 }
 .fx-opt.show { display: block; }
 .fx-opt-label {
-  font-size: 11px;
-  letter-spacing: 3px;
-  color: var(--m);
-  margin-bottom: 6px;
+  font-size: 12px;
+  letter-spacing: 1px;
+  color: var(--t);
+  margin-bottom: 8px;
+  font-weight: bold;
 }
 
 .pal {
@@ -541,12 +543,12 @@ header {
   margin-top: 6px;
 }
 .pc {
-  padding: 6px 4px;
+  padding: 8px 4px;
   border: 1px solid var(--b);
   background: transparent;
   cursor: pointer;
   font-family: inherit;
-  font-size: 11px;
+  font-size: 12px;
   color: var(--m);
   text-align: center;
   letter-spacing: 1px;
@@ -555,7 +557,7 @@ header {
 .pc.on { border-color: var(--t); color: var(--t); }
 
 .focus-hint {
-  font-size: 11px;
+  font-size: 12px;
   color: var(--m);
   letter-spacing: 1px;
   margin-top: 6px;
@@ -784,8 +786,8 @@ header {
     <div class="sec">
       <div class="sl">// 輸出解析度</div>
       <div class="dr">
-        <button class="db on" data-res="preview">預覽尺寸</button>
-        <button class="db"    data-res="original">原圖尺寸</button>
+        <button class="db"    data-res="original">原圖</button>
+        <button class="db on" data-res="recommended">建議</button>
         <button class="db"    data-res="custom">自訂寬度</button>
       </div>
       <div class="rw" id="resCustomRow" style="display:none">
@@ -805,7 +807,7 @@ header {
         <button class="db"    data-d="5">5s</button>
         <button class="db"    data-d="8">8s</button>
       </div>
-      <div class="fn" id="fnN">預計 24 幀 @ 12fps</div>
+      <div class="fn" id="fnN">預計 30 幀 @ 15fps</div>
     </div>
 
     <!-- B3.8 輸出格式 -->
@@ -839,7 +841,7 @@ let fx  = 'film';       // 當前特效
 let D   = 2;            // 輸出秒數
 let L   = true;         // Live Preview
 let raf = null;
-let resMode = 'preview'; // 輸出解析度：'preview' | 'original' | 'custom'
+let resMode = 'recommended'; // 'original' | 'recommended' | 'custom'
 let resCustom = 1080;    // 自訂寬度（custom 模式用）
 
 // 細節強度（0-10）
@@ -895,7 +897,7 @@ const FONTS = {
   'tw-naikai': { css: "'NaikaiFont', sans-serif",        weight: '400' }
 };
 
-const FPS = 12;
+const FPS = 15;  // 12→15 提升流暢感（PNG 拉到 24-30 fps 雜訊太密反而髒）
 
 // ──────────────────────────────────────────────────
 // C2. DOM 快捷與 Canvas
@@ -928,13 +930,29 @@ dz.onclick = e => {
 
 $('#rep').onclick = () => $('#fi').click();
 
+/**
+ * 計算「建議尺寸」 - Threads 上傳優化
+ * 規則：寬度上限 1080，等比保持原圖比例（避免變形）
+ * 直幅 → 接近 9:16 / 橫幅 → 寬 1080
+ * 小於 1080 寬的圖直接用原尺寸
+ */
+function getRecommendedSize(srcW, srcH) {
+  const MAX_W = 1080;
+  if (srcW <= MAX_W) return { w: srcW, h: srcH };
+  const w = MAX_W;
+  const h = Math.round(srcH * MAX_W / srcW);
+  return { w, h };
+}
+
 function loadImg(file) {
   const im = new Image();
   im.onload = () => {
     img = im;
-    const sc = Math.min(dz.clientWidth / im.width, dz.clientHeight / im.height, 1);
-    cv.width  = Math.max(320, Math.round(im.width * sc));
-    cv.height = Math.round(im.height * cv.width / im.width);
+    // canvas 內部解析度 = 建議尺寸（這就是預覽 = 輸出的關鍵）
+    const rec = getRecommendedSize(im.naturalWidth, im.naturalHeight);
+    cv.width  = rec.w;
+    cv.height = rec.h;
+    // CSS 顯示尺寸由瀏覽器自動縮放（透過 object-fit: contain）
 
     cv.style.display = 'block';
     $('#du').style.display = 'none';
@@ -1204,7 +1222,8 @@ function getOutputSize() {
     const h = Math.round(img.naturalHeight * w / img.naturalWidth);
     return { w, h };
   }
-  return { w: cv.width, h: cv.height }; // preview
+  // recommended：直接用 canvas 內部尺寸（loadImg 時已經設成建議尺寸）
+  return { w: cv.width, h: cv.height };
 }
 
 /** 更新解析度提示文字 */
@@ -1216,11 +1235,11 @@ function updateResInfo() {
   }
   const { w, h } = getOutputSize();
   const tags = {
-    preview:  '檔案小、處理快',
-    original: '原始解析度、檔案最大',
-    custom:   '自訂寬度、等比縮放'
+    original:    '原始解析度（檔案最大）',
+    recommended: '預覽即輸出（適合 Threads / 社群上傳）',
+    custom:      '等比縮放到指定寬度'
   };
-  el.textContent = `輸出 ${w} × ${h} px（${tags[resMode]}）`;
+  el.textContent = `輸出 ${w} × ${h} px ・ ${tags[resMode]}`;
 }
 
 // 輸出長度
@@ -1256,12 +1275,24 @@ function play() {
 /** 繪製單一幀 */
 function drawFrame(c, w, h, t) {
   if (!img) return;
+  // 繪製原圖時用高品質縮放
+  c.imageSmoothingEnabled = true;
+  c.imageSmoothingQuality = 'high';
   c.clearRect(0, 0, w, h);
   c.drawImage(img, 0, 0, w, h);
+  // 之後的特效操作關掉 smoothing，保持像素銳利
+  c.imageSmoothingEnabled = false;
   if (HUE !== 0 || SAT !== 100) applyHueSat(c, w, h);
   FX[fx](c, w, h, t);
   if (txt.text) drawText(c, w, h, t);
 }
+
+/**
+ * 全域 UI 縮放係數
+ * 基準：680px = 1.0x（HUD 視覺密度基準）
+ * 1920 寬下 ≈ 2.82x，瀏覽器顯示時縮回 ~680 視覺與原來一致
+ */
+const SK = w => Math.max(1, w / 680);
 
 // ──────────────────────────────────────────────────
 // C6. 工具函式
@@ -1361,14 +1392,16 @@ function pixelMap(c, w, h, fn) {
 }
 
 /**
- * 掃描線覆蓋
- * @param {number} step    行距（px）
+ * 掃描線覆蓋（自動依寬度縮放間距，保持視覺一致）
+ * @param {number} step    行距（基準 680px 寬下的 px）
  * @param {number} alpha   黑線透明度
  */
 function scanLines(c, w, h, step, alpha) {
   if (alpha <= 0) return;
+  const sk = SK(w);
+  const realStep = Math.max(2, Math.round(step * sk));
   c.fillStyle = `rgba(0,0,0,${alpha})`;
-  for (let y = 0; y < h; y += step) c.fillRect(0, y, w, 1);
+  for (let y = 0; y < h; y += realStep) c.fillRect(0, y, w, Math.max(1, sk * 0.5));
 }
 
 /**
@@ -1532,6 +1565,7 @@ const FX = {
 
   // ══════ FILM 電影感 ══════
   film(c, w, h, t) {
+    const sk = SK(w);
     const nS = NO/5, dkSc = DK/5, coSc = CO/5;
 
     // 顆粒噪點
@@ -1550,7 +1584,7 @@ const FX = {
       for (let k = 0; k < (0 | 2 * nS); k++) {
         if (Math.random() < .45) {
           c.strokeStyle = `rgba(255,255,220,${.3 + Math.random() * .5})`;
-          c.lineWidth = Math.random() < .5 ? .5 : 1;
+          c.lineWidth = (Math.random() < .5 ? .5 : 1) * sk;
           const x = Math.random() * w;
           c.beginPath();
           c.moveTo(x, 0);
@@ -1561,7 +1595,7 @@ const FX = {
       for (let k = 0; k < (0 | 10 * nS); k++) {
         c.fillStyle = `rgba(255,255,220,${.3 + Math.random() * .4})`;
         c.fillRect(Math.random() * w, Math.random() * h,
-                   1 + Math.random() * 2, 1 + Math.random() * 2);
+                   (1 + Math.random() * 2) * sk, (1 + Math.random() * 2) * sk);
       }
     }
     // 光線閃爍
@@ -1583,6 +1617,7 @@ const FX = {
 
   // ══════ CYBER 賽博龐克 ══════
   cyber(c, w, h, t) {
+    const sk = SK(w);
     const nS = NO/5, coSc = CO/5, dkSc = DK/5, huSc = HU/5;
     const zone = getZones();
     const pal = PALETTES.cyber[cyberPal];
@@ -1641,7 +1676,7 @@ const FX = {
     }
     // HEX 代碼流
     if (huSc > 0) {
-      c.font = `${9 + huSc}px 'Share Tech Mono', monospace`;
+      c.font = `${(9 * (0.7 + huSc * 0.5)) * sk}px 'Share Tech Mono', monospace`;
       const HX = '0123456789ABCDEF';
       const spots = [];
       if (zone.tl) spots.push([0, w*.3, 0, h*.35]);
@@ -1650,7 +1685,7 @@ const FX = {
       if (zone.br) spots.push([w*.7, w, h*.65, h]);
 
       if (spots.length) {
-        for (let i = 0; i < (0 | 6 * huSc); i++) {
+        for (let i = 0; i < (0 | 12 * huSc); i++) {
           let st = '';
           for (let j = 0; j < 8; j++) st += HX[0 | Math.random() * 16];
           const sp = spots[0 | Math.random() * spots.length];
@@ -1664,13 +1699,14 @@ const FX = {
     // 四角定位括號
     if (huSc > 0) {
       c.strokeStyle = rgbP(.7 * huSc);
-      c.lineWidth = 1.5;
-      const bs = 24;
+      c.lineWidth = (1 + huSc * 1.5) * sk;        // HU=0:1 / HU=10:4
+      const bs = (16 + huSc * 12) * sk;            // HU=0:16 / HU=10:40
+      const pad = 10 * sk;
       const corners = [];
-      if (zone.tl) corners.push([10, 10, 'tl']);
-      if (zone.tr) corners.push([w-10-bs, 10, 'tr']);
-      if (zone.bl) corners.push([10, h-10-bs, 'bl']);
-      if (zone.br) corners.push([w-10-bs, h-10-bs, 'br']);
+      if (zone.tl) corners.push([pad, pad, 'tl']);
+      if (zone.tr) corners.push([w-pad-bs, pad, 'tr']);
+      if (zone.bl) corners.push([pad, h-pad-bs, 'bl']);
+      if (zone.br) corners.push([w-pad-bs, h-pad-bs, 'br']);
 
       corners.forEach(([x, y, p]) => {
         c.beginPath();
@@ -1684,10 +1720,10 @@ const FX = {
     // 頂部狀態列
     if (huSc > 0) {
       c.fillStyle = rgbP(.85);
-      c.font = `bold ${9 + huSc * .5}px 'Share Tech Mono', monospace`;
+      c.font = `bold ${(9 * (0.7 + huSc * 0.4)) * sk}px 'Share Tech Mono', monospace`;
       const ts = `[NEO-TOKYO // ${String(0|Math.random()*99).padStart(2,'0')}.${String(0|Math.random()*99).padStart(2,'0')}.77]`;
-      if (zone.tl) { c.textAlign = 'left';  c.fillText(ts, 18, 26); }
-      if (zone.tr) { c.textAlign = 'right'; c.fillText(`SYS::${String(0|Math.random()*9999).padStart(4,'0')}`, w-18, 26); }
+      if (zone.tl) { c.textAlign = 'left';  c.fillText(ts, 18*sk, 26*sk); }
+      if (zone.tr) { c.textAlign = 'right'; c.fillText(`SYS::${String(0|Math.random()*9999).padStart(4,'0')}`, w-18*sk, 26*sk); }
       c.textAlign = 'left';
     }
     // 閃光
@@ -1699,6 +1735,7 @@ const FX = {
 
   // ══════ RETRO 復古 ══════
   retro(c, w, h, t) {
+    const sk = SK(w);
     const nS = NO/5, coSc = CO/5, huSc = HU/5;
     const pal = PALETTES.retro[retroPal];
 
@@ -1753,20 +1790,20 @@ const FX = {
     if (huSc > 0) {
       const zone = getZones();
       c.fillStyle = `rgba(${pal.ch.join(',')},.85)`;
-      c.font = `bold ${11 + huSc}px VT323, monospace`;
+      c.font = `bold ${(11 * (0.7 + huSc * 0.5)) * sk}px VT323, monospace`;
       const n = new Date();
 
       if (zone.tl) {
         c.textAlign = 'left';
-        c.fillText(`▶ PLAY  SP  ${n.getFullYear()}.${String(n.getMonth()+1).padStart(2,'0')}.${String(n.getDate()).padStart(2,'0')}`, 8, 20);
+        c.fillText(`▶ PLAY  SP  ${n.getFullYear()}.${String(n.getMonth()+1).padStart(2,'0')}.${String(n.getDate()).padStart(2,'0')}`, 8*sk, 20*sk);
       }
       if (zone.tr) {
         c.textAlign = 'right';
-        c.fillText(`${String(n.getHours()).padStart(2,'0')}:${String(n.getMinutes()).padStart(2,'0')}:${String((n.getSeconds()+t)%60).padStart(2,'0')}`, w-8, 20);
+        c.fillText(`${String(n.getHours()).padStart(2,'0')}:${String(n.getMinutes()).padStart(2,'0')}:${String((n.getSeconds()+t)%60).padStart(2,'0')}`, w-8*sk, 20*sk);
       }
       if (zone.bl) {
         c.textAlign = 'left';
-        c.fillText(`AM  STEREO  SP  TAPE-01`, 8, h-12);
+        c.fillText(`AM  STEREO  SP  TAPE-01`, 8*sk, h-12*sk);
       }
       c.textAlign = 'left';
     }
@@ -1774,6 +1811,7 @@ const FX = {
 
   // ══════ 404 系統錯誤 ══════
   err(c, w, h, t) {
+    const sk = SK(w);
     const nS = NO/5, coSc = CO/5, huSc = HU/5, dkSc = DK/5;
 
     if (coSc > 0) rgbSplit(c, w, h, Math.round(3 * coSc));
@@ -1781,7 +1819,7 @@ const FX = {
     // 紅色邊框
     if (huSc > 0) {
       c.strokeStyle = `rgba(255,20,50,${.9 + Math.sin(t * .5) * .1})`;
-      c.lineWidth = Math.max(3, 0 | 6 * huSc);
+      c.lineWidth = Math.max(3, 0 | 10 * huSc);
       c.strokeRect(0, 0, w, h);
     }
     // 故障條紋（紅色疊加）
@@ -1816,7 +1854,7 @@ const FX = {
     }
     // 警示橫幅
     if (huSc > 0) {
-      const bh = 0 | 28 + huSc * 4;
+      const bh = (0 | 28 + huSc * 4) * sk;
       if (t % 6 < 3) {
         c.fillStyle = 'rgba(255,20,50,.92)';
         c.fillRect(0, 0, w, bh);
@@ -1826,31 +1864,33 @@ const FX = {
         c.fillRect(0, 0, w, bh);
         c.fillStyle = '#ff2244';
       }
-      c.font = `bold ${0 | 10 + huSc}px monospace`;
+      c.font = `bold ${(0 | 10 + huSc) * sk}px monospace`;
       c.textAlign = 'center';
       c.textBaseline = 'middle';
       c.fillText('⚠ SYSTEM ERROR — 404 NOT FOUND — DATA CORRUPTED ⚠', w/2, bh/2);
 
       // 底部狀態列
+      const sbH = (16 + huSc * 8) * sk;  // HU=0:16 / HU=10:32
       c.fillStyle = 'rgba(0,0,0,.8)';
-      c.fillRect(0, h-22, w, 22);
+      c.fillRect(0, h-sbH, w, sbH);
       c.fillStyle = '#ff4466';
-      c.font = '9px monospace';
+      c.font = `${9 * sk}px monospace`;
       c.textAlign = 'left';
       c.textBaseline = 'middle';
-      c.fillText(`ERR_CODE: 0xF404 | MEMORY DUMP FAILED | ${new Date().toISOString().slice(0,19)}`, 10, h-11);
+      c.fillText(`ERR_CODE: 0xF404 | MEMORY DUMP FAILED | ${new Date().toISOString().slice(0,19)}`, 10*sk, h-sbH/2);
       c.textBaseline = 'alphabetic';
 
       // 關閉按鈕
       const zone = getZones();
       if (zone.tr) {
+        const btnW = 38 * sk, btnH = 16 * sk;
         c.fillStyle = 'rgba(255,20,50,.9)';
-        c.fillRect(w-38, bh+8, 28, 16);
+        c.fillRect(w-btnW-10*sk, bh+8*sk, btnW, btnH);
         c.fillStyle = '#fff';
-        c.font = 'bold 10px monospace';
+        c.font = `bold ${10 * sk}px monospace`;
         c.textAlign = 'center';
         c.textBaseline = 'middle';
-        c.fillText('× CLOSE', w-24, bh+17);
+        c.fillText('× CLOSE', w-btnW/2-10*sk, bh+8*sk+btnH/2);
         c.textAlign = 'left';
         c.textBaseline = 'alphabetic';
       }
@@ -1861,6 +1901,7 @@ const FX = {
 
   // ══════ CCTV 監視器 ══════
   cctv(c, w, h, t) {
+    const sk = SK(w);
     const nS = NO/5, coSc = CO/5, dkSc = DK/5, huSc = HU/5;
     const zone = getZones();
 
@@ -1901,11 +1942,11 @@ const FX = {
     // 訊號中斷
     if (nS > 0 && Math.random() < .1 * nS) {
       c.fillStyle = 'rgba(0,0,0,.9)';
-      const by = 0 | Math.random() * (h - 40);
-      c.fillRect(0, by, w, 15 + (0 | Math.random() * 25));
+      const by = 0 | Math.random() * (h - 40 * sk);
+      c.fillRect(0, by, w, (15 + (0 | Math.random() * 25)) * sk);
       c.fillStyle = 'rgba(150,200,150,.7)';
-      c.font = `${10 + huSc}px VT323, monospace`;
-      c.fillText('--- SIGNAL LOST ---', 12, by + 18);
+      c.font = `${(10 * (0.7 + huSc * 0.5)) * sk}px VT323, monospace`;
+      c.fillText('--- SIGNAL LOST ---', 12*sk, by + 18*sk);
     }
     // HUD
     if (huSc > 0) {
@@ -1913,32 +1954,32 @@ const FX = {
       const ts = `${String(n.getHours()).padStart(2,'0')}:${String(n.getMinutes()).padStart(2,'0')}:${String((n.getSeconds()+t)%60).padStart(2,'0')}`;
 
       c.fillStyle = 'rgba(150,255,150,.9)';
-      c.font = `bold ${11 + huSc}px VT323, monospace`;
+      c.font = `bold ${(11 * (0.7 + huSc * 0.5)) * sk}px VT323, monospace`;
 
       if (zone.tl) {
         c.textAlign = 'left';
-        c.fillText('CAM-01', 10, 18);
-        c.fillText(`${n.getFullYear()}-${String(n.getMonth()+1).padStart(2,'0')}-${String(n.getDate()).padStart(2,'0')} ${ts}`, 10, 34);
+        c.fillText('CAM-01', 10*sk, 18*sk);
+        c.fillText(`${n.getFullYear()}-${String(n.getMonth()+1).padStart(2,'0')}-${String(n.getDate()).padStart(2,'0')} ${ts}`, 10*sk, 34*sk);
       }
       if (zone.tr) {
         if (t % 8 < 4) {
           c.fillStyle = 'rgba(255,50,50,.95)';
           c.beginPath();
-          c.arc(w-48, 14, 5, 0, Math.PI*2);
+          c.arc(w-48*sk, 14*sk, 5*sk, 0, Math.PI*2);
           c.fill();
         }
         c.fillStyle = 'rgba(255,50,50,.95)';
-        c.font = `bold ${10 + huSc}px monospace`;
+        c.font = `bold ${(10 * (0.7 + huSc * 0.5)) * sk}px monospace`;
         c.textAlign = 'right';
-        c.fillText('● REC', w-10, 18);
+        c.fillText('● REC', w-10*sk, 18*sk);
       }
       c.textAlign = 'left';
 
       // 中央十字準星
       if (cctvCross) {
-        const cx = w/2, cy = h/2, crs = 15;
+        const cx = w/2, cy = h/2, crs = 15 * sk;
         c.strokeStyle = 'rgba(150,255,150,.4)';
-        c.lineWidth = 1;
+        c.lineWidth = 1 * sk;
         c.beginPath();
         c.moveTo(cx-crs, cy); c.lineTo(cx+crs, cy);
         c.moveTo(cx, cy-crs); c.lineTo(cx, cy+crs);
@@ -1946,11 +1987,12 @@ const FX = {
       }
       // 底部資訊列
       if (zone.bl || zone.br) {
+        const sbH = (16 + huSc * 8) * sk;  // HU=0:16 / HU=10:32
         c.fillStyle = 'rgba(0,20,0,.75)';
-        c.fillRect(0, h-22, w, 22);
+        c.fillRect(0, h-sbH, w, sbH);
         c.fillStyle = 'rgba(150,255,150,.85)';
-        c.font = `${9 + huSc * .5}px VT323, monospace`;
-        c.fillText(`LOC: SECTOR 04-A | CH:01/16 | MOTION: ${Math.random() < .3 ? 'DETECTED' : 'NONE'}`, 10, h-8);
+        c.font = `${(9 * (0.7 + huSc * 0.4)) * sk}px VT323, monospace`;
+        c.fillText(`LOC: SECTOR 04-A | CH:01/16 | MOTION: ${Math.random() < .3 ? 'DETECTED' : 'NONE'}`, 10*sk, h-8*sk);
       }
     }
     // 暗角（略緊一點）
@@ -1959,6 +2001,7 @@ const FX = {
 
   // ══════ HACK 終端機入侵 ══════
   hack(c, w, h, t) {
+    const sk = SK(w);
     const nS = NO/5, coSc = CO/5, dkSc = DK/5, huSc = HU/5;
     const zone = getZones();
 
@@ -1974,7 +2017,7 @@ const FX = {
     }
     // Matrix 字元雨
     if (huSc > 0) {
-      c.font = `bold ${11 + huSc}px monospace`;
+      c.font = `bold ${(11 * (0.7 + huSc * 0.5)) * sk}px monospace`;
       const ch = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789@#$%&アカサタナハマヤラワ';
       const spots = [];
       if (zone.tl) spots.push([0, w*.35, 0, h*.4]);
@@ -1987,8 +2030,11 @@ const FX = {
       }
       if (spots.length === 0) spots.push([0, w, 0, h]);
 
+      // 字元雨密度也按面積縮放
+      const matrixCount = (0 | 100 * huSc) * Math.max(1, sk * sk * 0.5);
+
       // 暗綠字
-      for (let i = 0; i < (0 | 50 * huSc); i++) {
+      for (let i = 0; i < matrixCount; i++) {
         const sp = spots[0 | Math.random() * spots.length];
         const x = sp[0] + Math.random() * (sp[1] - sp[0]);
         const y = sp[2] + Math.random() * (sp[3] - sp[2]);
@@ -1996,7 +2042,7 @@ const FX = {
         c.fillText(ch[0 | Math.random() * ch.length], x, y);
       }
       // 亮白頭部字
-      for (let i = 0; i < (0 | 8 * huSc); i++) {
+      for (let i = 0; i < (0 | 16 * huSc) * Math.max(1, sk); i++) {
         const sp = spots[0 | Math.random() * spots.length];
         c.fillStyle = `rgba(200,255,220,${.7 + Math.random() * .3})`;
         c.fillText(ch[0 | Math.random() * ch.length],
@@ -2006,73 +2052,76 @@ const FX = {
     }
     // ACCESS DENIED 警示
     if (huSc >= 0.6) {
-      const bw = Math.min(w * .75, 460);
-      const bh = 66;
+      // 警示框大小也跟著 HU 強度變化
+      const huBoost = 0.7 + huSc * 0.5;
+      const bw = Math.min(w * .75, 460 * sk * huBoost);
+      const bh = 66 * sk * huBoost;
       const bx = (w - bw) / 2;
       let by = (h - bh) / 2;
 
-      if (focusMode === 'tl' || focusMode === 'tr') by = h - bh - 20;
-      else if (focusMode === 'bl' || focusMode === 'br') by = 20;
+      if (focusMode === 'tl' || focusMode === 'tr') by = h - bh - 20*sk;
+      else if (focusMode === 'bl' || focusMode === 'br') by = 20*sk;
 
       if (t % 12 < 5) {
         c.fillStyle = 'rgba(0,0,0,.88)';
         c.fillRect(bx, by, bw, bh);
         c.strokeStyle = 'rgba(255,30,30,.95)';
-        c.lineWidth = 2;
+        c.lineWidth = 2 * sk;
         c.strokeRect(bx, by, bw, bh);
         c.fillStyle = 'rgba(255,30,30,.98)';
-        c.font = `bold ${16 + huSc * 2}px 'Bebas Neue', monospace`;
+        c.font = `bold ${(16 * (0.7 + huSc * 0.6)) * sk}px 'Bebas Neue', monospace`;
         c.textAlign = 'center';
         c.textBaseline = 'middle';
-        c.fillText('⛔ ACCESS DENIED', w/2, by + bh/2 - 8);
+        c.fillText('⛔ ACCESS DENIED', w/2, by + bh/2 - 8*sk);
         c.fillStyle = 'rgba(255,100,100,.9)';
-        c.font = `${9 + huSc}px monospace`;
-        c.fillText('UNAUTHORIZED ACCESS ATTEMPT DETECTED', w/2, by + bh/2 + 12);
+        c.font = `${(9 * (0.7 + huSc * 0.5)) * sk}px monospace`;
+        c.fillText('UNAUTHORIZED ACCESS ATTEMPT DETECTED', w/2, by + bh/2 + 12*sk);
         c.textAlign = 'left';
         c.textBaseline = 'alphabetic';
       } else if (t % 12 < 10) {
         c.fillStyle = 'rgba(0,0,0,.85)';
         c.fillRect(bx, by, bw, bh);
         c.strokeStyle = 'rgba(0,255,65,.85)';
-        c.lineWidth = 1;
+        c.lineWidth = 1 * sk;
         c.strokeRect(bx, by, bw, bh);
         c.fillStyle = 'rgba(0,255,65,.98)';
-        c.font = `bold ${14 + huSc}px monospace`;
+        c.font = `bold ${(14 * (0.7 + huSc * 0.5)) * sk}px monospace`;
         c.textAlign = 'center';
         c.textBaseline = 'middle';
-        c.fillText(`> BREACHING FIREWALL... ${0 | Math.random() * 100}%`, w/2, by + bh/2 - 8);
+        c.fillText(`> BREACHING FIREWALL... ${0 | Math.random() * 100}%`, w/2, by + bh/2 - 8*sk);
         c.fillStyle = 'rgba(0,255,65,.75)';
-        c.font = `${9 + huSc}px monospace`;
-        c.fillText('[████████░░] DECRYPTING PAYLOAD', w/2, by + bh/2 + 12);
+        c.font = `${(9 * (0.7 + huSc * 0.5)) * sk}px monospace`;
+        c.fillText('[████████░░] DECRYPTING PAYLOAD', w/2, by + bh/2 + 12*sk);
         c.textAlign = 'left';
         c.textBaseline = 'alphabetic';
       }
     }
     // 頂/底狀態列
     if (huSc > 0) {
+      const sbH = (16 + huSc * 8) * sk;  // HU=0:16 / HU=10:32
       if (zone.tl || zone.tr) {
         c.fillStyle = 'rgba(0,20,0,.88)';
-        c.fillRect(0, 0, w, 22);
+        c.fillRect(0, 0, w, sbH);
         c.fillStyle = 'rgba(0,255,65,.95)';
-        c.font = `bold ${9 + huSc * .5}px monospace`;
+        c.font = `bold ${(9 * (0.7 + huSc * 0.4)) * sk}px monospace`;
         if (zone.tl) {
           c.textAlign = 'left';
-          c.fillText('[ROOT@TARGET:~$ EXPLOIT_RUNNING]', 10, 15);
+          c.fillText('[ROOT@TARGET:~$ EXPLOIT_RUNNING]', 10*sk, 15*sk);
         }
         if (zone.tr) {
           c.textAlign = 'right';
-          c.fillText(`PID:${String(0 | Math.random() * 9999).padStart(4,'0')}  UID:0`, w-10, 15);
+          c.fillText(`PID:${String(0 | Math.random() * 9999).padStart(4,'0')}  UID:0`, w-10*sk, 15*sk);
         }
         c.textAlign = 'left';
       }
       if (zone.bl || zone.br) {
         c.fillStyle = 'rgba(0,20,0,.88)';
-        c.fillRect(0, h-22, w, 22);
+        c.fillRect(0, h-sbH, w, sbH);
         c.fillStyle = 'rgba(0,255,65,.8)';
-        c.font = `${9 + huSc * .5}px monospace`;
+        c.font = `${(9 * (0.7 + huSc * 0.4)) * sk}px monospace`;
         const lg = ['INJECTING SHELLCODE', 'BYPASSING 2FA', 'DUMPING CREDENTIALS',
                     'PATCHING KERNEL', 'UPLOADING TROJAN', 'ESCALATING PRIVILEGES'];
-        c.fillText(`> ${lg[t % lg.length]}... [${new Date().toISOString().slice(11,19)}]`, 10, h-8);
+        c.fillText(`> ${lg[t % lg.length]}... [${new Date().toISOString().slice(11,19)}]`, 10*sk, h-8*sk);
       }
     }
     // 故障線
@@ -2110,11 +2159,25 @@ function dis(v) {
 $('#bP').onclick = () => {
   if (!img) return;
   const { w, h } = getOutputSize();
-  // 繪一張靜態幀到目標解析度
+
+  // 「建議」模式直接抓 cv 內容，不重畫（最快、最一致）
+  if (resMode === 'recommended') {
+    cv.toBlob(b => {
+      const u = URL.createObjectURL(b);
+      const a = document.createElement('a');
+      a.href = u;
+      a.download = `glitch_${fx}_${w}x${h}.png`;
+      a.click();
+      prog(100, `PNG ${w}×${h} 下載完成！`);
+    }, 'image/png');
+    return;
+  }
+
+  // 原圖/自訂：在目標解析度重新繪製（用 t=15 避免起始幀的單薄感）
   const off = document.createElement('canvas');
   off.width = w; off.height = h;
   const offCtx = off.getContext('2d');
-  drawFrame(offCtx, w, h, 0);
+  drawFrame(offCtx, w, h, 15);
 
   off.toBlob(b => {
     const u = URL.createObjectURL(b);
@@ -2162,13 +2225,14 @@ $('#bG').onclick = async () => {
     const offCtx = off.getContext('2d');
 
     const g = new GIF({
-      workers: 2,
-      quality: 8,
+      workers: 4,
+      quality: 5,    // 平衡品質與速度（1=最高但極慢，10=快但糊）
       width: w, height: h,
       workerScript: workerURL
     });
 
-    // 60 秒 watchdog
+    // Watchdog 時間：依解析度動態調整（大圖需要更久）
+    const wdMs = Math.max(60000, w * h * 0.05);  // 1920x1080 ≈ 100s
     let finished = false;
     const watchdog = setTimeout(() => {
       if (!finished) {
@@ -2176,7 +2240,7 @@ $('#bG').onclick = async () => {
         dis(false);
         if (L) play();
       }
-    }, 60000);
+    }, wdMs);
 
     g.on('progress', p => prog(50 + (0 | p * 50), 'GIF 壓縮中...'));
     g.on('abort', () => {
@@ -2230,14 +2294,45 @@ $('#bM').onclick = async () => {
   off.width = w; off.height = h;
   const offCtx = off.getContext('2d');
 
-  const stream = off.captureStream(FPS);
   const chunks = [];
   const mimeType = MediaRecorder.isTypeSupported('video/mp4') ? 'video/mp4'
                  : MediaRecorder.isTypeSupported('video/webm;codecs=vp9') ? 'video/webm;codecs=vp9'
                  : 'video/webm';
-  // 依解析度動態調整 bitrate（避免大圖糊掉）
+  // 高品質 bitrate
   const pixelCount = w * h;
-  const bitrate = Math.max(2e6, Math.min(20e6, pixelCount * 0.15));
+  const bitrate = Math.max(4e6, Math.min(40e6, pixelCount * 0.4));
+
+  // ─── 階段 1：預渲染所有幀到 ImageBitmap 陣列 ───
+  // 記憶體保護：超過 600MB 預估值改用即時編碼模式
+  const estMB = totalFrames * w * h * 4 / 1024 / 1024;
+  const useTwoPhase = estMB <= 600;
+
+  if (useTwoPhase) {
+    prog(0, `階段 1/2 預渲染 (${w}×${h})...`);
+  } else {
+    prog(0, `即時編碼模式 (${w}×${h}, 大檔案)...`);
+  }
+
+  const frames = [];
+  const tempCanvas = document.createElement('canvas');
+  tempCanvas.width = w; tempCanvas.height = h;
+  const tempCtx = tempCanvas.getContext('2d');
+
+  if (useTwoPhase) {
+    for (let f = 0; f < totalFrames; f++) {
+      drawFrame(tempCtx, w, h, f);
+      const bitmap = await createImageBitmap(tempCanvas);
+      frames.push(bitmap);
+      prog(0 | f / totalFrames * 60, `渲染幀 ${f+1}/${totalFrames}`);
+      if (f % 3 === 0) await new Promise(r => setTimeout(r, 0));
+    }
+  }
+
+  // ─── 階段 2：播放預渲染幀給 MediaRecorder（精準 12fps）───
+  prog(60, '階段 2/2 編碼影片...');
+  const stream = off.captureStream(0);
+  const track = stream.getVideoTracks()[0];
+
   const rec = new MediaRecorder(stream, {
     mimeType: mimeType,
     videoBitsPerSecond: bitrate
@@ -2245,6 +2340,9 @@ $('#bM').onclick = async () => {
 
   rec.ondataavailable = e => e.data.size && chunks.push(e.data);
   rec.onstop = () => {
+    // 釋放 ImageBitmap 記憶體
+    frames.forEach(b => b.close && b.close());
+
     const ext = mimeType.startsWith('video/mp4') ? 'mp4' : 'webm';
     const blob = new Blob(chunks, { type: mimeType });
     const u = URL.createObjectURL(blob);
@@ -2258,12 +2356,30 @@ $('#bM').onclick = async () => {
   };
 
   rec.start();
+  const frameMs = 1000 / FPS;
+
+  // 用精準時間排程播放每一幀
   for (let f = 0; f < totalFrames; f++) {
-    drawFrame(offCtx, w, h, f);
-    prog(0 | f / totalFrames * 90, `渲染 ${f+1}/${totalFrames}`);
-    await new Promise(r => setTimeout(r, 1000 / FPS | 0));
+    const target = performance.now() + frameMs;
+
+    if (useTwoPhase) {
+      // 兩階段模式：直接繪預渲染好的 bitmap（快）
+      offCtx.drawImage(frames[f], 0, 0);
+    } else {
+      // 即時模式：當下渲染（大檔案保護模式）
+      drawFrame(offCtx, w, h, f);
+    }
+
+    if (track.requestFrame) track.requestFrame();
+    prog(60 + (0 | f / totalFrames * 35), `編碼 ${f+1}/${totalFrames}`);
+
+    // 等到下一幀的時間點（即時模式可能本身已經超過時間，那就不等）
+    const wait = target - performance.now();
+    if (wait > 0) await new Promise(r => setTimeout(r, wait));
   }
-  prog(95, '封裝中...');
+  // 額外等 2 個 frameMs 確保最後一幀被捕獲
+  await new Promise(r => setTimeout(r, frameMs * 2));
+  prog(98, '封裝中...');
   rec.stop();
 };
 
