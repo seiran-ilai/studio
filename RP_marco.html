@@ -49,6 +49,75 @@
 
   * { box-sizing: border-box; margin: 0; padding: 0; }
 
+  /* ===== UI 縮放 ===== */
+  html { font-size: 16px; transition: font-size 0.2s ease; }
+  html.ui-large { font-size: 18px; }
+  html.ui-xlarge { font-size: 20px; }
+
+  /* 大尺寸時主面板寬度同步調大 */
+  html.ui-large .app { max-width: 1100px; }
+  html.ui-xlarge .app { max-width: 1240px; }
+  html.ui-large .emote-floater { width: 360px; }
+  html.ui-xlarge .emote-floater { width: 400px; }
+  @media (min-width: 1380px) {
+    html.ui-large .app { margin-right: 420px; }
+    html.ui-xlarge .app { margin-right: 460px; }
+  }
+
+  /* UI 切換器 */
+  .ui-scale-switch {
+    position: absolute;
+    top: 0;
+    right: 0;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 8px;
+    background: rgba(28, 37, 70, 0.6);
+    border: 1px solid var(--border-subtle);
+    border-radius: 3px;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+  }
+  .ui-scale-label {
+    font-family: var(--font-display);
+    font-size: 0.7rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin-right: 4px;
+  }
+  .ui-scale-btn {
+    background: transparent;
+    border: 1px solid transparent;
+    border-radius: 2px;
+    padding: 4px 10px;
+    color: var(--text-secondary);
+    font-family: var(--font-body);
+    font-size: 0.78rem;
+    cursor: pointer;
+    transition: all 0.15s ease;
+  }
+  .ui-scale-btn:hover {
+    color: var(--aether-blue);
+    background: rgba(125, 214, 255, 0.08);
+  }
+  .ui-scale-btn.active {
+    color: var(--aether-blue);
+    border-color: var(--aether-blue);
+    background: rgba(125, 214, 255, 0.15);
+  }
+
+  @media (max-width: 760px) {
+    .ui-scale-switch {
+      position: relative;
+      top: auto;
+      right: auto;
+      margin-top: 16px;
+      justify-content: center;
+    }
+  }
+
   html, body {
     background: var(--bg-deep);
     color: var(--text-primary);
@@ -974,6 +1043,14 @@
     <div class="header-mark">FFXIV Roleplay Macro Helper</div>
     <h1>RP 向巨集小幫手</h1>
     <div class="subtitle">為 <span class="accent">FF14 角色扮演</span> 而生的巨集工具</div>
+
+    <!-- UI 大小切換 -->
+    <div class="ui-scale-switch" id="uiScaleSwitch">
+      <span class="ui-scale-label">介面大小</span>
+      <button class="ui-scale-btn active" data-scale="default">預設</button>
+      <button class="ui-scale-btn" data-scale="large">大</button>
+      <button class="ui-scale-btn" data-scale="xlarge">最大</button>
+    </div>
   </header>
 
   <!-- 主面板 -->
@@ -2128,6 +2205,27 @@ function showToast(msg, isError = false) {
 }
 
 /* =================== 啟動 =================== */
+/* =================== UI 大小切換 =================== */
+function applyUiScale(scale) {
+  const html = document.documentElement;
+  html.classList.remove('ui-large', 'ui-xlarge');
+  if (scale === 'large') html.classList.add('ui-large');
+  else if (scale === 'xlarge') html.classList.add('ui-xlarge');
+  // 更新按鈕狀態
+  document.querySelectorAll('.ui-scale-btn').forEach((b) => {
+    b.classList.toggle('active', b.dataset.scale === scale);
+  });
+  try {
+    localStorage.setItem('uiScale', scale);
+  } catch {}
+}
+
+document.querySelectorAll('.ui-scale-btn').forEach((b) => {
+  b.onclick = () => {
+    applyUiScale(b.dataset.scale);
+  };
+});
+
 function init() {
   renderChannels();
   renderCatTabs();
@@ -2136,6 +2234,14 @@ function init() {
   updateSecLabels();
   updateLineCount();
   updateScopeIndicator();
+
+  // 還原 UI 大小設定
+  try {
+    const saved = localStorage.getItem('uiScale');
+    if (saved && ['default', 'large', 'xlarge'].includes(saved)) {
+      applyUiScale(saved);
+    }
+  } catch {}
 }
 init();
 </script>
