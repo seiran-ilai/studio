@@ -12,31 +12,34 @@
      以太風格 — FF14 巨集生成器（極簡版）
      ============================================ */
   :root {
-    --bg-deep: #0a0e1a;
-    --bg-mid: #131a2e;
-    --bg-soft: #1a2340;
-    --bg-card: rgba(26, 35, 64, 0.55);
-    --bg-card-solid: #1a2340;
+    /* 整體調亮 — 不那麼黑了 */
+    --bg-deep: #131830;
+    --bg-mid: #1c2546;
+    --bg-soft: #25325b;
+    --bg-card: rgba(40, 52, 88, 0.75);
+    --bg-card-solid: #25325b;
 
-    --aether-blue: #5dc6ff;
-    --aether-blue-dim: #3a7da8;
-    --aether-violet: #b794f4;
-    --aether-gold: #e8c87a;
-    --aether-rose: #ff9ec7;
-    --aether-mint: #7eecc8;
+    --aether-blue: #7dd6ff;
+    --aether-blue-dim: #4a94c0;
+    --aether-violet: #c5a6ff;
+    --aether-gold: #f0d589;
+    --aether-rose: #ffb0d3;
+    --aether-mint: #92f0d3;
 
-    --text-primary: #e8eaf3;
-    --text-secondary: #a8b1c8;
-    --text-muted: #6b7592;
-    --text-faint: #4a5475;
+    /* 文字提亮 — 之前太暗的那些往上拉一階 */
+    --text-primary: #f5f7ff;
+    --text-secondary: #d8dff5;
+    --text-muted: #a8b2d2;
+    --text-faint: #8088ad;
 
-    --border-subtle: rgba(93, 198, 255, 0.12);
-    --border-soft: rgba(93, 198, 255, 0.22);
-    --border-bright: rgba(93, 198, 255, 0.5);
+    /* 邊線加強 — 從 0.12 提到 0.22 */
+    --border-subtle: rgba(125, 214, 255, 0.22);
+    --border-soft: rgba(125, 214, 255, 0.35);
+    --border-bright: rgba(125, 214, 255, 0.65);
 
-    --glow-blue: 0 0 20px rgba(93, 198, 255, 0.35);
-    --glow-violet: 0 0 24px rgba(183, 148, 244, 0.4);
-    --glow-gold: 0 0 18px rgba(232, 200, 122, 0.4);
+    --glow-blue: 0 0 22px rgba(125, 214, 255, 0.4);
+    --glow-violet: 0 0 26px rgba(197, 166, 255, 0.45);
+    --glow-gold: 0 0 20px rgba(240, 213, 137, 0.45);
 
     --font-display: 'Cinzel', 'Noto Serif TC', serif;
     --font-serif: 'Cormorant Garamond', 'Noto Serif TC', serif;
@@ -60,10 +63,10 @@
     position: fixed;
     inset: 0;
     background:
-      radial-gradient(ellipse 80% 60% at 15% 0%, rgba(93, 198, 255, 0.18), transparent 60%),
-      radial-gradient(ellipse 70% 50% at 85% 100%, rgba(183, 148, 244, 0.15), transparent 60%),
-      radial-gradient(ellipse 50% 40% at 50% 50%, rgba(232, 200, 122, 0.05), transparent 70%),
-      linear-gradient(180deg, #0a0e1a 0%, #0d1224 50%, #0a0e1a 100%);
+      radial-gradient(ellipse 80% 60% at 15% 0%, rgba(125, 214, 255, 0.22), transparent 60%),
+      radial-gradient(ellipse 70% 50% at 85% 100%, rgba(197, 166, 255, 0.18), transparent 60%),
+      radial-gradient(ellipse 50% 40% at 50% 50%, rgba(240, 213, 137, 0.07), transparent 70%),
+      linear-gradient(180deg, #131830 0%, #1a2042 50%, #131830 100%);
     z-index: -2;
     pointer-events: none;
   }
@@ -133,7 +136,7 @@
     background-clip: text;
     color: transparent;
     margin-bottom: 12px;
-    text-shadow: 0 0 60px rgba(93, 198, 255, 0.3);
+    text-shadow: 0 0 60px rgba(125, 214, 255, 0.3);
   }
   .header .subtitle {
     font-family: var(--font-serif);
@@ -152,7 +155,7 @@
     height: 24px;
     transform: rotate(45deg);
     border: 1px solid var(--aether-blue-dim);
-    background: rgba(93, 198, 255, 0.1);
+    background: rgba(125, 214, 255, 0.1);
     box-shadow: var(--glow-blue);
   }
   .crystal-deco.left { left: -8px; top: 30%; animation: float 4s ease-in-out infinite; }
@@ -203,15 +206,15 @@
   .panel-desc {
     font-family: var(--font-serif);
     font-style: italic;
-    color: var(--text-muted);
-    font-size: 0.95rem;
+    color: var(--text-secondary);
+    font-size: 0.98rem;
     margin-bottom: 22px;
-    line-height: 1.55;
+    line-height: 1.6;
   }
   .panel-desc kbd {
     font-family: var(--font-mono);
     font-style: normal;
-    background: rgba(93,198,255,0.1);
+    background: rgba(125,214,255,0.1);
     color: var(--aether-blue);
     padding: 1px 6px;
     border-radius: 2px;
@@ -220,7 +223,7 @@
   .panel-desc code {
     font-family: var(--font-mono);
     font-style: normal;
-    background: rgba(232,200,122,0.1);
+    background: rgba(240,213,137,0.1);
     color: var(--aether-gold);
     padding: 1px 5px;
     border-radius: 2px;
@@ -230,13 +233,13 @@
   /* ===== 主編輯文字框 ===== */
   .macro-editor {
     width: 100%;
-    background: linear-gradient(135deg, rgba(10, 14, 26, 0.95), rgba(19, 26, 46, 0.95));
+    background: linear-gradient(135deg, rgba(28, 37, 70, 0.95), rgba(37, 50, 91, 0.95));
     border: 1px solid var(--border-soft);
     border-radius: 3px;
     padding: 18px 20px;
     color: var(--text-primary);
     font-family: var(--font-mono);
-    font-size: 0.95rem;
+    font-size: 1rem;
     line-height: 1.7;
     outline: none;
     resize: vertical;
@@ -245,12 +248,13 @@
   }
   .macro-editor:focus {
     border-color: var(--aether-blue);
-    box-shadow: 0 0 0 1px rgba(93, 198, 255, 0.2), 0 0 24px rgba(93, 198, 255, 0.15);
+    box-shadow: 0 0 0 1px rgba(125, 214, 255, 0.3), 0 0 24px rgba(125, 214, 255, 0.2);
   }
   .macro-editor::placeholder {
-    color: var(--text-faint);
+    color: var(--text-muted);
     font-family: var(--font-serif);
     font-style: italic;
+    opacity: 0.85;
   }
   .macro-editor::-webkit-scrollbar { width: 8px; }
   .macro-editor::-webkit-scrollbar-track { background: transparent; }
@@ -268,8 +272,8 @@
   .line-count {
     font-family: var(--font-serif);
     font-style: italic;
-    color: var(--text-muted);
-    font-size: 0.85rem;
+    color: var(--text-secondary);
+    font-size: 0.9rem;
     flex-shrink: 0;
     margin-right: auto;
   }
@@ -278,13 +282,13 @@
 
   /* ===== 按鈕 (chip) ===== */
   .chip {
-    background: rgba(13, 18, 36, 0.7);
+    background: rgba(28, 37, 70, 0.75);
     border: 1px solid var(--border-subtle);
     border-radius: 2px;
     padding: 8px 14px;
-    color: var(--text-secondary);
+    color: var(--text-primary);
     font-family: var(--font-body);
-    font-size: 0.86rem;
+    font-size: 0.9rem;
     cursor: pointer;
     transition: all 0.15s ease;
     user-select: none;
@@ -293,17 +297,17 @@
   .chip:hover {
     border-color: var(--border-bright);
     color: var(--aether-blue);
-    background: rgba(93, 198, 255, 0.08);
+    background: rgba(125, 214, 255, 0.08);
   }
   .chip.gold:hover {
     border-color: var(--aether-gold);
     color: var(--aether-gold);
-    background: rgba(232, 200, 122, 0.08);
+    background: rgba(240, 213, 137, 0.08);
   }
   .chip.violet:hover {
     border-color: var(--aether-violet);
     color: var(--aether-violet);
-    background: rgba(183, 148, 244, 0.08);
+    background: rgba(197, 166, 255, 0.08);
   }
   .chip.danger {
     color: rgba(255, 122, 156, 0.85);
@@ -315,7 +319,7 @@
     background: rgba(255, 100, 130, 0.08);
   }
   .chip.primary {
-    background: rgba(93, 198, 255, 0.12);
+    background: rgba(125, 214, 255, 0.12);
     color: var(--aether-blue);
     border-color: var(--aether-blue);
     font-family: var(--font-display);
@@ -325,7 +329,7 @@
     padding: 9px 18px;
   }
   .chip.primary:hover {
-    background: rgba(93, 198, 255, 0.22);
+    background: rgba(125, 214, 255, 0.22);
     box-shadow: var(--glow-blue);
   }
 
@@ -343,13 +347,13 @@
   }
   .sub-section-title {
     font-family: var(--font-display);
-    font-size: 0.86rem;
-    font-weight: 500;
+    font-size: 0.92rem;
+    font-weight: 600;
     letter-spacing: 0.18em;
     text-transform: uppercase;
     color: var(--aether-blue);
-    margin-bottom: 4px;
-    opacity: 0.9;
+    margin-bottom: 6px;
+    opacity: 1;
     display: flex;
     align-items: center;
     gap: 10px;
@@ -357,15 +361,15 @@
   .sub-desc {
     font-family: var(--font-serif);
     font-style: italic;
-    color: var(--text-muted);
-    font-size: 0.88rem;
+    color: var(--text-secondary);
+    font-size: 0.92rem;
     margin-bottom: 14px;
-    line-height: 1.5;
+    line-height: 1.55;
   }
   .sub-desc kbd {
     font-family: var(--font-mono);
     font-style: normal;
-    background: rgba(93,198,255,0.1);
+    background: rgba(125,214,255,0.1);
     color: var(--aether-blue);
     padding: 1px 6px;
     border-radius: 2px;
@@ -374,7 +378,7 @@
   .sub-desc code {
     font-family: var(--font-mono);
     font-style: normal;
-    background: rgba(232,200,122,0.1);
+    background: rgba(240,213,137,0.1);
     color: var(--aether-gold);
     padding: 1px 5px;
     border-radius: 2px;
@@ -388,36 +392,37 @@
     gap: 8px;
   }
   .chan-btn {
-    background: rgba(13, 18, 36, 0.7);
+    background: rgba(28, 37, 70, 0.75);
     border: 1px solid var(--border-subtle);
     border-radius: 3px;
     padding: 10px 8px;
     cursor: pointer;
     transition: all 0.15s ease;
-    color: var(--text-secondary);
+    color: var(--text-primary);
     font-family: var(--font-body);
     text-align: center;
   }
   .chan-btn:hover {
     border-color: var(--aether-blue);
-    background: rgba(93, 198, 255, 0.12);
+    background: rgba(125, 214, 255, 0.15);
     color: var(--aether-blue);
     transform: translateY(-1px);
     box-shadow: var(--glow-blue);
   }
   .chan-btn .name {
-    font-size: 0.82rem;
+    font-size: 0.86rem;
     font-weight: 500;
     margin-bottom: 2px;
   }
   .chan-btn .cmd {
     font-family: var(--font-mono);
-    font-size: 0.7rem;
-    color: var(--text-muted);
+    font-size: 0.74rem;
+    color: var(--text-secondary);
+    opacity: 0.85;
   }
   .chan-btn:hover .cmd {
     color: var(--aether-blue);
-    opacity: 0.85;
+    opacity: 1;
   }
 
   /* 選擇範圍提示 */
@@ -427,8 +432,8 @@
     gap: 8px;
     padding: 8px 12px;
     margin-bottom: 12px;
-    background: rgba(232, 200, 122, 0.08);
-    border: 1px solid rgba(232, 200, 122, 0.3);
+    background: rgba(240, 213, 137, 0.08);
+    border: 1px solid rgba(240, 213, 137, 0.3);
     border-radius: 3px;
     color: var(--aether-gold);
     font-family: var(--font-serif);
@@ -440,9 +445,9 @@
     font-style: normal;
   }
   .scope-indicator.global {
-    background: rgba(93, 198, 255, 0.06);
-    border-color: rgba(93, 198, 255, 0.2);
-    color: var(--text-muted);
+    background: rgba(125, 214, 255, 0.08);
+    border-color: rgba(125, 214, 255, 0.25);
+    color: var(--text-secondary);
   }
 
   /* ===== 等待 wait 區 ===== */
@@ -454,13 +459,13 @@
     margin-bottom: 12px;
   }
   .wait-num {
-    background: rgba(13, 18, 36, 0.7);
+    background: rgba(28, 37, 70, 0.75);
     border: 1px solid var(--border-subtle);
     border-radius: 2px;
     padding: 6px 12px;
-    color: var(--text-secondary);
+    color: var(--text-primary);
     font-family: var(--font-mono);
-    font-size: 0.88rem;
+    font-size: 0.92rem;
     cursor: pointer;
     transition: all 0.15s ease;
     min-width: 38px;
@@ -468,16 +473,16 @@
   .wait-num:hover {
     border-color: var(--aether-violet);
     color: var(--aether-violet);
-    background: rgba(183, 148, 244, 0.08);
+    background: rgba(197, 166, 255, 0.08);
   }
   .wait-num.active {
     border-color: var(--aether-violet);
     color: var(--aether-violet);
-    background: rgba(183, 148, 244, 0.18);
+    background: rgba(197, 166, 255, 0.18);
     box-shadow: var(--glow-violet);
   }
   .wait-input {
-    background: rgba(13, 18, 36, 0.7);
+    background: rgba(28, 37, 70, 0.75);
     border: 1px solid var(--border-subtle);
     border-radius: 2px;
     padding: 6px 10px;
@@ -490,7 +495,11 @@
   }
   .wait-input:focus {
     border-color: var(--aether-violet);
-    box-shadow: 0 0 0 1px rgba(183, 148, 244, 0.2);
+    box-shadow: 0 0 0 1px rgba(197, 166, 255, 0.2);
+  }
+  .wait-input::placeholder {
+    color: var(--text-muted);
+    opacity: 0.85;
   }
 
   .wait-actions, .channel-unify-row {
@@ -515,7 +524,7 @@
     -webkit-backdrop-filter: blur(16px);
     border: 1px solid var(--border-soft);
     border-radius: 4px;
-    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.55), 0 0 24px rgba(93, 198, 255, 0.12);
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.55), 0 0 24px rgba(125, 214, 255, 0.12);
     z-index: 50;
     display: flex;
     flex-direction: column;
@@ -537,7 +546,7 @@
     pointer-events: none;
   }
   .emote-floater:hover {
-    box-shadow: 0 12px 48px rgba(0, 0, 0, 0.65), 0 0 28px rgba(93, 198, 255, 0.2);
+    box-shadow: 0 12px 48px rgba(0, 0, 0, 0.65), 0 0 28px rgba(125, 214, 255, 0.2);
   }
 
   /* 自訂 resize handle */
@@ -575,7 +584,7 @@
   }
   .emote-resize-handle.left:hover,
   .emote-resize-handle.bottom:hover {
-    background: rgba(93, 198, 255, 0.15);
+    background: rgba(125, 214, 255, 0.15);
   }
   /* 拖曳中游標保持 */
   body.emote-resizing {
@@ -593,12 +602,12 @@
     cursor: pointer;
     user-select: none;
     border-bottom: 1px solid var(--border-subtle);
-    background: rgba(13, 18, 36, 0.7);
+    background: rgba(28, 37, 70, 0.75);
     transition: background 0.15s ease;
     flex-shrink: 0;
   }
   .emote-floater-header:hover {
-    background: rgba(93, 198, 255, 0.05);
+    background: rgba(125, 214, 255, 0.05);
   }
   .emote-floater-title {
     font-family: var(--font-display);
@@ -625,7 +634,7 @@
   }
   .emote-floater-toggle:hover {
     border-color: var(--aether-blue);
-    background: rgba(93, 198, 255, 0.12);
+    background: rgba(125, 214, 255, 0.12);
   }
   .emote-floater.collapsed {
     height: auto !important;
@@ -653,8 +662,8 @@
   .emote-floater-desc {
     font-family: var(--font-serif);
     font-style: italic;
-    color: var(--text-muted);
-    font-size: 0.82rem;
+    color: var(--text-secondary);
+    font-size: 0.86rem;
     margin-bottom: 12px;
     line-height: 1.4;
     flex-shrink: 0;
@@ -689,7 +698,7 @@
   .emote-search {
     flex: 1;
     min-width: 200px;
-    background: rgba(13, 18, 36, 0.7);
+    background: rgba(28, 37, 70, 0.75);
     border: 1px solid var(--border-subtle);
     border-radius: 3px;
     padding: 9px 12px;
@@ -700,13 +709,14 @@
     transition: all 0.15s ease;
   }
   .emote-search::placeholder {
-    color: var(--text-faint);
+    color: var(--text-muted);
     font-style: italic;
     font-family: var(--font-serif);
+    opacity: 0.85;
   }
   .emote-search:focus {
     border-color: var(--aether-blue);
-    box-shadow: 0 0 0 1px rgba(93, 198, 255, 0.2);
+    box-shadow: 0 0 0 1px rgba(125, 214, 255, 0.2);
   }
   .motion-toggle {
     display: inline-flex;
@@ -714,13 +724,13 @@
     gap: 8px;
     cursor: pointer;
     font-family: var(--font-body);
-    font-size: 0.85rem;
-    color: var(--text-secondary);
+    font-size: 0.9rem;
+    color: var(--text-primary);
     user-select: none;
     padding: 5px 10px;
     border: 1px solid var(--border-subtle);
     border-radius: 2px;
-    background: rgba(13, 18, 36, 0.7);
+    background: rgba(28, 37, 70, 0.75);
     transition: all 0.15s ease;
   }
   .motion-toggle:hover { border-color: var(--border-bright); }
@@ -733,7 +743,7 @@
   .motion-toggle.checked {
     color: var(--aether-violet);
     border-color: var(--aether-violet);
-    background: rgba(183, 148, 244, 0.08);
+    background: rgba(197, 166, 255, 0.08);
   }
 
   .cat-tabs {
@@ -747,17 +757,17 @@
     border: 1px solid var(--border-subtle);
     border-radius: 2px;
     padding: 5px 11px;
-    color: var(--text-muted);
+    color: var(--text-secondary);
     font-family: var(--font-body);
-    font-size: 0.78rem;
+    font-size: 0.82rem;
     cursor: pointer;
     transition: all 0.15s ease;
   }
-  .cat-tab:hover { color: var(--text-secondary); border-color: var(--border-soft); }
+  .cat-tab:hover { color: var(--text-primary); border-color: var(--border-bright); }
   .cat-tab.active {
     color: var(--aether-blue);
     border-color: var(--aether-blue);
-    background: rgba(93, 198, 255, 0.08);
+    background: rgba(125, 214, 255, 0.12);
   }
   .emote-grid {
     display: grid;
@@ -772,32 +782,32 @@
   .emote-grid::-webkit-scrollbar-thumb { background: var(--border-soft); border-radius: 3px; }
   .emote-grid::-webkit-scrollbar-thumb:hover { background: var(--aether-blue-dim); }
   .emote-btn {
-    background: rgba(13, 18, 36, 0.6);
+    background: rgba(28, 37, 70, 0.65);
     border: 1px solid var(--border-subtle);
     border-radius: 2px;
     padding: 7px 5px;
     cursor: pointer;
     transition: all 0.15s ease;
-    color: var(--text-secondary);
+    color: var(--text-primary);
     font-family: var(--font-body);
-    font-size: 0.8rem;
+    font-size: 0.84rem;
     text-align: center;
     line-height: 1.3;
   }
   .emote-btn:hover {
     border-color: var(--aether-violet);
-    background: rgba(183, 148, 244, 0.1);
+    background: rgba(197, 166, 255, 0.15);
     color: var(--aether-violet);
     box-shadow: var(--glow-violet);
   }
   .emote-btn .en {
     display: block;
     font-family: var(--font-mono);
-    font-size: 0.65rem;
-    color: var(--text-faint);
+    font-size: 0.68rem;
+    color: var(--text-muted);
     margin-top: 2px;
   }
-  .emote-btn:hover .en { color: var(--aether-violet); opacity: 0.7; }
+  .emote-btn:hover .en { color: var(--aether-violet); opacity: 0.85; }
   .emote-empty {
     grid-column: 1 / -1;
     text-align: center;
@@ -814,7 +824,7 @@
     border: 1px solid var(--border-bright);
     border-radius: 3px;
     padding: 4px;
-    box-shadow: 0 8px 28px rgba(0, 0, 0, 0.6), 0 0 16px rgba(93, 198, 255, 0.25);
+    box-shadow: 0 8px 28px rgba(0, 0, 0, 0.6), 0 0 16px rgba(125, 214, 255, 0.25);
     z-index: 60;
     max-height: 280px;
     overflow-y: auto;
@@ -839,11 +849,11 @@
     line-height: 1.3;
   }
   .ac-item:hover, .ac-item.selected {
-    background: rgba(93, 198, 255, 0.15);
+    background: rgba(125, 214, 255, 0.15);
     color: var(--text-primary);
   }
   .ac-item.selected {
-    background: rgba(93, 198, 255, 0.22);
+    background: rgba(125, 214, 255, 0.22);
     box-shadow: inset 2px 0 0 var(--aether-blue);
   }
   .ac-item .ac-cn {
@@ -877,7 +887,7 @@
   .ac-hint kbd {
     font-family: var(--font-mono);
     font-style: normal;
-    background: rgba(93,198,255,0.1);
+    background: rgba(125,214,255,0.1);
     color: var(--aether-blue);
     padding: 1px 5px;
     border-radius: 2px;
@@ -929,14 +939,14 @@
   .helper {
     font-family: var(--font-serif);
     font-style: italic;
-    font-size: 0.78rem;
-    color: var(--text-faint);
+    font-size: 0.85rem;
+    color: var(--text-muted);
     line-height: 1.6;
   }
   .helper code {
     font-family: var(--font-mono);
     font-style: normal;
-    background: rgba(93, 198, 255, 0.08);
+    background: rgba(125, 214, 255, 0.08);
     color: var(--aether-blue);
     padding: 1px 5px;
     border-radius: 2px;
@@ -945,7 +955,7 @@
   .helper kbd {
     font-family: var(--font-mono);
     font-style: normal;
-    background: rgba(93,198,255,0.1);
+    background: rgba(125,214,255,0.1);
     color: var(--aether-blue);
     padding: 1px 5px;
     border-radius: 2px;
@@ -974,7 +984,8 @@
       ✦ <span style="color: var(--aether-mint);">自動補全</span>：輸入 <kbd>/</kbd>＋字（例：<kbd>/擁</kbd>）跳出建議 → <kbd>Tab</kbd>/<kbd>Enter</kbd> 補全
       → <span style="color: var(--aether-violet);">再按 <kbd>Tab</kbd> 加 motion</span>，按 <kbd>Backspace</kbd> 一次刪掉 motion。<br/>
       ✦ <span style="color: var(--aether-gold);">換行繼承</span>：在含頻道前綴的行（如 <code>/s 早安</code>）按 <kbd>Enter</kbd>，新行會自動補上同個頻道；按 <kbd>Backspace</kbd> 一次刪除前綴。<br/>
-      ✦ <span style="color: var(--aether-rose);">行末快捷</span>：在「行末」按 <kbd>Tab</kbd> 加上 <code>&lt;wait.X&gt;</code>，1 秒內接著按 <kbd>1</kbd>~<kbd>9</kbd> 可改秒數。
+      ✦ <span style="color: var(--aether-rose);">行末快捷</span>：在「行末」按 <kbd>Tab</kbd> 加上 <code>&lt;wait.X&gt;</code>，1 秒內接著按 <kbd>1</kbd>~<kbd>9</kbd> 可改秒數。<br/>
+      ✦ <span style="color: var(--aether-gold);">目標快捷</span>：打 <kbd>t</kbd> 後按 <kbd>Tab</kbd> 直接轉成 <code>&lt;t&gt;</code>（會替換當前目標名稱）。
     </p>
 
     <!-- 等待 wait.X -->
@@ -1012,7 +1023,6 @@
       <!-- 編輯器底部 -->
       <div class="editor-footer">
         <span class="line-count" id="lineCount">0 / 15 行</span>
-        <button class="chip gold" id="insertTarget">&lt;t&gt; 插入目標</button>
         <button class="chip primary" id="copyBtn">⎘ 複製巨集</button>
         <button class="chip danger" id="clearBtn">✕ 清空全部</button>
       </div>
@@ -1348,10 +1358,7 @@ $('clearAllWait').onclick = () => {
 
 $('clearAllChannels').onclick = clearAllChannels;
 
-/* =================== <t> 插入 / 清空 / 複製 =================== */
-$('insertTarget').onclick = () => {
-  insertAtCursor('<t>');
-};
+/* =================== 清空 / 複製 =================== */
 $('clearBtn').onclick = () => {
   if (editor.value.trim() === '') {
     showToast('已是空的', true);
@@ -2023,14 +2030,39 @@ editor.addEventListener('keydown', (e) => {
   }
 
   // Tab 加 wait（行末，非劇內、無 popup、未選取）
+  // 也處理 t + Tab → <t>
   if (e.key === 'Tab' && !e.shiftKey && !e.ctrlKey && !e.metaKey && !e.altKey) {
     const pos = editor.selectionStart;
     const sel = editor.selectionEnd;
     if (pos === sel) {
       // 一律阻止 Tab 預設行為（避免失焦）
       e.preventDefault();
-      // 檢查是否處於「行末」(下一個字元為換行或文字結尾)
       const text = editor.value;
+
+      // 優先處理：t + Tab → <t>
+      // 條件：游標前一字元是 't'，且 't' 之前不是英文字母（避免 it、at、bot 誤觸）
+      if (pos > 0 && text[pos - 1] === 't') {
+        const beforeT = pos >= 2 ? text[pos - 2] : '';
+        const isStandaloneT = (pos === 1) || /[\s\n>]/.test(beforeT) || beforeT === '';
+        if (isStandaloneT) {
+          // 把 't' 換成 '<t>'
+          const before = text.slice(0, pos - 1);
+          const after = text.slice(pos);
+          const insertion = '<t>';
+          editor.value = before + insertion + after;
+          const newPos = (pos - 1) + insertion.length;
+          editor.setSelectionRange(newPos, newPos);
+          clearLastCompletion();
+          clearLastInherit();
+          clearLastWaitInsert();
+          _skipNextInput = true;
+          updateLineCount();
+          showToast('已插入 <t>');
+          return;
+        }
+      }
+
+      // 否則：檢查是否處於「行末」(下一個字元為換行或文字結尾)
       const isLineEnd = (pos === text.length) || (text[pos] === '\n');
       if (!isLineEnd) {
         // 不是行末 — 什麼都不做
