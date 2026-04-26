@@ -45,11 +45,12 @@
 
 :root {
   --bg: #0a0a0a;
-  --b:  #2a2a2a;       /* 邊框（提亮） */
-  --t:  #e8e4dc;       /* 主文字 */
-  --m:  #888;          /* 次要文字（提亮，原 #555 太暗） */
+  --b:  #2a2a2a;
+  --t:  #e8e4dc;
+  --m:  #888;
   --a:  #ff2244;
   --a2: #00ffcc;
+  --scale: 1;
 }
 
 * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -114,6 +115,35 @@ header {
   color: var(--m);
   letter-spacing: 1px;
 }
+
+/* UI 縮放控制 */
+.ui-scale {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.ui-scale-label {
+  font-size: 11px;
+  color: var(--m);
+  letter-spacing: 2px;
+  margin-right: 4px;
+}
+.us-b {
+  padding: 5px 12px;
+  border: 1px solid var(--b);
+  background: transparent;
+  cursor: pointer;
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 1px;
+  color: var(--m);
+  transition: all .15s;
+}
+.us-b:hover { border-color: #555; color: var(--t); }
+.us-b.on { border-color: var(--a2); color: var(--a2); }
+/* ui-scale 存在時，hr 改用普通 margin */
+.ui-scale + .hr { margin-left: 16px; }
 .dot {
   width: 6px; height: 6px;
   border-radius: 50%;
@@ -125,7 +155,7 @@ header {
 /* ── Layout ── */
 .lay {
   display: grid;
-  grid-template-columns: 1fr 400px;
+  grid-template-columns: 1fr calc(400px * var(--scale));
   height: calc(100vh - 61px);
 }
 
@@ -211,6 +241,17 @@ header {
   display: flex; flex-direction: column;
   overflow-y: auto;
   scrollbar-width: thin;
+  /* 縮放整個控制面板 */
+  zoom: var(--scale);
+  /* Firefox 不支援 zoom 但會忽略 - 改用 transform fallback */
+}
+@-moz-document url-prefix() {
+  .ct {
+    transform: scale(var(--scale));
+    transform-origin: top left;
+    width: calc(100% / var(--scale));
+    height: calc(100% / var(--scale));
+  }
 }
 .ct::-webkit-scrollbar { width: 3px; }
 .ct::-webkit-scrollbar-thumb { background: var(--b); }
@@ -583,6 +624,12 @@ header {
   <div>
     <div class="logo">GLITCH</div>
     <div class="sub">STUDIO · NOISE ENGINE v4</div>
+  </div>
+  <div class="ui-scale">
+    <span class="ui-scale-label">UI</span>
+    <button class="us-b on" data-scale="1">預設</button>
+    <button class="us-b" data-scale="1.25">大</button>
+    <button class="us-b" data-scale="1.5">最大</button>
   </div>
   <div class="hr">
     <div class="dot"></div>
@@ -1057,6 +1104,13 @@ $$('.db[data-focus]').forEach(b => b.onclick = function() {
   $$('.db[data-focus]').forEach(x => x.classList.remove('on'));
   this.classList.add('on');
   focusMode = this.dataset.focus;
+});
+
+// ─── UI 縮放 ───
+$$('.us-b').forEach(b => b.onclick = function() {
+  $$('.us-b').forEach(x => x.classList.remove('on'));
+  this.classList.add('on');
+  document.documentElement.style.setProperty('--scale', this.dataset.scale);
 });
 
 // ─── 文字疊加 ───
