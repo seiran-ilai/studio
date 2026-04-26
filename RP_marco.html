@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>RP 向巨集小幫手 · FF14 V3 </title>
+<title>RP 向巨集小幫手 · FF14</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600;700&family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=Noto+Serif+TC:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
@@ -1199,7 +1199,7 @@
 
   /* ===== 自動完成 popup ===== */
   .autocomplete-popup {
-    position: absolute;
+    position: fixed;
     background: var(--bg-card-solid);
     border: 1px solid var(--border-bright);
     border-radius: 3px;
@@ -2149,21 +2149,92 @@ function showAutoComplete(tokenInfo) {
 
   document.body.appendChild(popup);
   positionAutoComplete();
+  // 第二次定位 — 確保 popup 渲染後尺寸正確（用於上下方判斷）
+  requestAnimationFrame(positionAutoComplete);
+}
+
+/**
+ * 取得 textarea 中游標的實際 (left, top, height) 像素位置（相對於 viewport）。
+ * 透過建立鏡像 div 計算。
+ */
+function getTextareaCaretCoords(ta) {
+  const cs = window.getComputedStyle(ta);
+  // 鏡像 div
+  const div = document.createElement('div');
+  const properties = [
+    'boxSizing','width','height','overflowX','overflowY',
+    'borderTopWidth','borderRightWidth','borderBottomWidth','borderLeftWidth',
+    'borderStyle','paddingTop','paddingRight','paddingBottom','paddingLeft',
+    'fontStyle','fontVariant','fontWeight','fontStretch','fontSize','fontSizeAdjust',
+    'lineHeight','fontFamily','textAlign','textTransform','textIndent','textDecoration',
+    'letterSpacing','wordSpacing','tabSize','MozTabSize','whiteSpace','wordWrap'
+  ];
+  properties.forEach((p) => { div.style[p] = cs[p]; });
+  div.style.position = 'absolute';
+  div.style.visibility = 'hidden';
+  div.style.whiteSpace = 'pre-wrap';
+  div.style.wordWrap = 'break-word';
+  div.style.top = '0';
+  div.style.left = '-9999px';
+
+  // 把游標位置之前的文字塞進去
+  const pos = ta.selectionStart;
+  const value = ta.value.substring(0, pos);
+  // 處理結尾換行（避免最後一個 \n 被忽略高度）
+  div.textContent = value;
+  // 加一個 span 標記游標位置
+  const span = document.createElement('span');
+  span.textContent = ta.value.substring(pos) || '.';
+  div.appendChild(span);
+
+  document.body.appendChild(div);
+  const spanRect = span.getBoundingClientRect();
+  const taRect = ta.getBoundingClientRect();
+  // span 在 div 內的相對位置 = 游標在 ta 內的相對位置
+  // 但因為 div 是 absolute 在外面的，要算 div 內的 offset
+  const divRect = div.getBoundingClientRect();
+  const offsetTop = spanRect.top - divRect.top;
+  const offsetLeft = spanRect.left - divRect.left;
+  const lineHeight = parseFloat(cs.lineHeight) || parseFloat(cs.fontSize) * 1.2;
+  document.body.removeChild(div);
+
+  return {
+    top: taRect.top + offsetTop - ta.scrollTop,   // 游標所在行的「上緣」
+    left: taRect.left + offsetLeft - ta.scrollLeft,
+    lineHeight: lineHeight
+  };
 }
 
 function positionAutoComplete() {
   if (!ac.popup) return;
-  // 簡單放在 editor 下方
-  const r = editor.getBoundingClientRect();
-  ac.popup.style.top = (r.top + window.scrollY + Math.min(80, r.height)) + 'px';
-  ac.popup.style.left = (r.left + window.scrollX + 20) + 'px';
-  setTimeout(() => {
-    if (!ac.popup) return;
-    const pr = ac.popup.getBoundingClientRect();
-    if (pr.right > window.innerWidth - 12) {
-      ac.popup.style.left = (window.innerWidth - pr.width - 12 + window.scrollX) + 'px';
-    }
-  }, 0);
+  const taRect = editor.getBoundingClientRect();
+  const caret = getTextareaCaretCoords(editor);
+  const popupHeight = ac.popup.offsetHeight || 240;
+  const popupWidth = ac.popup.offsetWidth || 280;
+  const margin = 6;
+
+  // 預計放在游標行下方
+  let top = caret.top + caret.lineHeight + margin;
+  let left = caret.left;
+
+  // 如果下方放不下，改放上方
+  if (top + popupHeight > window.innerHeight - 12) {
+    top = caret.top - popupHeight - margin;
+  }
+  // 上方也放不下（極端情況），就強制放在可視範圍頂端
+  if (top < 12) top = 12;
+
+  // 左邊不要超出 textarea 範圍太多 / 不要超出視窗右邊
+  if (left + popupWidth > window.innerWidth - 12) {
+    left = window.innerWidth - popupWidth - 12;
+  }
+  if (left < taRect.left) left = taRect.left;
+  if (left < 12) left = 12;
+
+  // popup 是 fixed 定位，不需要加 scrollY/scrollX
+  ac.popup.style.position = 'fixed';
+  ac.popup.style.top = top + 'px';
+  ac.popup.style.left = left + 'px';
 }
 
 function highlightMatch(label, query, matchType) {
