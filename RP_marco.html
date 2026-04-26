@@ -1766,9 +1766,9 @@ waitCustom.addEventListener('input', (e) => {
 });
 
 /* 在作用範圍每行末加上 <wait.X> */
-/* 判斷是否為「倒數行」(內容只有「數字 + <wait.1>」，可選 <se.X> 後綴) — 用於防呆 */
+/* 判斷是否為「倒數行」(內容只有「數字 [<se.X>] <wait.1>」) — 用於防呆 */
 function isCountdownLine(line) {
-  return /^\s*\d+\s+<wait\.1>(\s+<se\.\d+>)?\s*$/.test(line);
+  return /^\s*\d+(\s+<se\.\d+>)?\s+<wait\.1>\s*$/.test(line);
 }
 
 $('applyBatchWait').onclick = () => {
@@ -2723,11 +2723,11 @@ const MINI_TOOLS = [
         return;
       }
       const seVal = (inputs.se.value || '').trim();
-      const seSuffix = seVal ? ` <se.${seVal}>` : '';
-      // 產生 n, n-1, ..., 1 每行加 <wait.1> [<se.X>]
+      const seSegment = seVal ? ` <se.${seVal}>` : '';
+      // 產生 n, n-1, ..., 1 每行加 <se.X> <wait.1>（wait 永遠在最後）
       const lines = [];
       for (let i = n; i >= 1; i--) {
-        lines.push(`${i} <wait.1>${seSuffix}`);
+        lines.push(`${i}${seSegment} <wait.1>`);
       }
       const block = lines.join('\n');
       const cur = editor.value;
