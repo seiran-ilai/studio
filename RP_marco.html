@@ -1766,42 +1766,64 @@ waitCustom.addEventListener('input', (e) => {
 });
 
 /* 在作用範圍每行末加上 <wait.X> */
+/* 判斷是否為「倒數行」(內容只有「數字 + <wait.1>」，可選 <se.X> 後綴) — 用於防呆 */
+function isCountdownLine(line) {
+  return /^\s*\d+\s+<wait\.1>(\s+<se\.\d+>)?\s*$/.test(line);
+}
+
 $('applyBatchWait').onclick = () => {
   const v = state.waitValue || '2';
   const indices = getActiveLineIndices();
   const lines = getEditorLines();
   let changed = 0;
+  let skippedCountdown = 0;
   indices.forEach((i) => {
     const line = lines[i];
     if (line === undefined) return;
     if (line.trim() === '') return;
+    if (isCountdownLine(line)) {
+      skippedCountdown++;
+      return;
+    }
     // 移除既有尾端 <wait.X>
     const stripped = line.replace(/\s*<wait\.[^>]+>\s*$/, '');
     lines[i] = stripped + ' <wait.' + v + '>';
     changed++;
   });
   setEditorLines(lines);
-  if (changed === 0) {
+  if (changed === 0 && skippedCountdown === 0) {
     showToast('沒有可套用的行', true);
   } else {
     const range = getSelectionLineRange();
-    showToast(`已在${range ? '選取的' : '所有'} ${changed} 行末加上 <wait.${v}>`);
+    let msg = `已在${range ? '選取的' : '所有'} ${changed} 行末加上 <wait.${v}>`;
+    if (skippedCountdown > 0) msg += `（${skippedCountdown} 行倒數行跳過）`;
+    showToast(msg);
   }
 };
 
-/* 清空全部 wait（無視選取，全文清空） */
+/* 清空全部 wait（無視選取，全文清空；倒數行的 wait.1 保留） */
 $('clearAllWait').onclick = () => {
   const lines = getEditorLines();
   let count = 0;
+  let skippedCountdown = 0;
   lines.forEach((line, i) => {
+    if (isCountdownLine(line)) {
+      skippedCountdown++;
+      return;  // 倒數行的 wait.1 不動
+    }
     if (/\s*<wait\.[^>]+>\s*$/.test(line)) {
       lines[i] = line.replace(/\s*<wait\.[^>]+>\s*$/, '');
       count++;
     }
   });
   setEditorLines(lines);
-  if (count === 0) showToast('沒有 <wait.X> 可清空', true);
-  else showToast(`已清空 ${count} 個 <wait.X>`);
+  if (count === 0 && skippedCountdown === 0) {
+    showToast('沒有 <wait.X> 可清空', true);
+  } else {
+    let msg = `已清空 ${count} 個 <wait.X>`;
+    if (skippedCountdown > 0) msg += `（${skippedCountdown} 行倒數行保留）`;
+    showToast(msg);
+  }
 };
 
 $('clearAllChannels').onclick = clearAllChannels;
@@ -2548,6 +2570,11 @@ editor.addEventListener('keydown', (e) => {
       if (currentLine.trim() === '') {
         return;
       }
+      // 防呆：倒數行已有 <wait.1>，不再加
+      if (isCountdownLine(currentLine)) {
+        showToast('倒數行已有 <wait.1>', true);
+        return;
+      }
       const secs = state.waitValue || '2';
       const insertion = ' <wait.' + secs + '>';
       const before = text.slice(0, pos);
@@ -2657,6 +2684,62 @@ const MINI_TOOLS = [
         { value: 'off', label: '關閉 (off)' }
       ], prefix: ' ' }
     ]
+  },
+  {
+    id: 'countdown',
+    name: '倒數秒數',
+    desc: '產生倒數行（如 5 4 3 2 1），每行附帶 <wait.1>；可選音效（每行末加 <se.X>）。',
+    fields: [
+      { key: 'secs', label: '從幾秒倒數', required: true, placeholder: '例：3 或 5', type: 'number' },
+      { key: 'se', label: '音效', required: false, type: 'select', options: [
+        { value: '', label: '無音效' },
+        { value: '1', label: '<se.1>' },
+        { value: '2', label: '<se.2>' },
+        { value: '3', label: '<se.3>' },
+        { value: '4', label: '<se.4>' },
+        { value: '5', label: '<se.5>' },
+        { value: '6', label: '<se.6>' },
+        { value: '7', label: '<se.7>' },
+        { value: '8', label: '<se.8>' },
+        { value: '9', label: '<se.9>' },
+        { value: '10', label: '<se.10>' },
+        { value: '11', label: '<se.11>' },
+        { value: '12', label: '<se.12>' },
+        { value: '13', label: '<se.13>' },
+        { value: '14', label: '<se.14>' },
+        { value: '15', label: '<se.15>' },
+        { value: '16', label: '<se.16>' }
+      ]}
+    ],
+    customSubmit: (inputs) => {
+      const raw = (inputs.secs.value || '').trim();
+      const n = parseInt(raw, 10);
+      if (!n || n < 1) {
+        showToast('請輸入大於 0 的整數', true);
+        return;
+      }
+      if (n > 30) {
+        showToast('倒數秒數不能超過 30', true);
+        return;
+      }
+      const seVal = (inputs.se.value || '').trim();
+      const seSuffix = seVal ? ` <se.${seVal}>` : '';
+      // 產生 n, n-1, ..., 1 每行加 <wait.1> [<se.X>]
+      const lines = [];
+      for (let i = n; i >= 1; i--) {
+        lines.push(`${i} <wait.1>${seSuffix}`);
+      }
+      const block = lines.join('\n');
+      const cur = editor.value;
+      let prefix = '';
+      if (cur.length > 0 && !cur.endsWith('\n')) prefix = '\n';
+      editor.value = cur + prefix + block;
+      updateLineCount();
+      editor.focus();
+      const pos = editor.value.length;
+      editor.setSelectionRange(pos, pos);
+      showToast(`已新增 ${n} 行倒數${seVal ? ` (含 <se.${seVal}>)` : ''}`);
+    }
   }
 ];
 
@@ -2797,6 +2880,12 @@ function buildMiniToolOutput(tool, inputs) {
 }
 
 function submitMiniTool(tool, inputs) {
+  // 自訂提交函數（可覆蓋預設行為，用於多行/特殊邏輯的工具）
+  if (typeof tool.customSubmit === 'function') {
+    tool.customSubmit(inputs);
+    return;
+  }
+
   const result = buildMiniToolOutput(tool, inputs);
   if (!result) {
     showToast('請填寫必填欄位', true);
