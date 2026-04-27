@@ -3,35 +3,27 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>GLITCH STUDIO v4</title>
+<title>GLITCH STUDIO</title>
 
 <!-- ═══════════════════════════════════════════════════════════════════
-     GLITCH STUDIO v4
-     用途: 為遊戲角色照片加上動態 Glitch 特效，匯出 PNG / GIF / MP4
-     ═══════════════════════════════════════════════════════════════════
-     目錄：
-     [A] STYLES         樣式定義
-     [B] HTML STRUCTURE 介面骨架
-     [C] SCRIPT
-         C1. 全域狀態
-         C2. DOM 快捷與 Canvas
-         C3. 圖片上傳
-         C4. 事件監聽
-         C5. 渲染引擎
-         C6. 工具函式
-         C7. 色盤定義
-         C8. 特效實作 FX.{film, cyber, retro, err, cctv, hack}
-         C9. 匯出功能（PNG / GIF / MP4）
+     GLITCH STUDIO - 清爽重寫版
+     結構：
+     [A] STYLES
+     [B] HTML
+     [C] JS
+         C1 全域狀態
+         C2 圖片上傳
+         C3 控制元件監聽
+         C4 渲染引擎
+         C5 工具函式
+         C6 特效實作
+         C7 文字繪製
+         C8 匯出 PNG/GIF/MP4
      ═══════════════════════════════════════════════════════════════════ -->
 
 <style>
-/* ═══════════════════════════════════════════════
-   [A] STYLES
-   ═══════════════════════════════════════════════ */
-
 @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Bebas+Neue&family=VT323&family=Orbitron:wght@700&family=Major+Mono+Display&family=Press+Start+2P&family=Noto+Sans+JP:wght@900&family=Noto+Serif+JP:wght@700&family=M+PLUS+Rounded+1c:wght@700&family=Zen+Maru+Gothic:wght@700&family=Huninn&display=swap');
 
-/* 自訂中文字體（Google Fonts 沒有，從 jsdelivr 載入） */
 @font-face {
   font-family: 'ChenYuluoyan';
   src: url('https://cdn.jsdelivr.net/gh/Chenyu-otf/chenyuluoyan_thin/ChenYuluoyan-2.0-Thin.ttf') format('truetype');
@@ -50,7 +42,7 @@
   --m:  #888;
   --a:  #ff2244;
   --a2: #00ffcc;
-  --scale: 1;
+  --ui-scale: 1.375;
 }
 
 * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -60,31 +52,28 @@ html, body {
   background: var(--bg);
   color: var(--t);
   font-family: 'Share Tech Mono', monospace;
-  overflow-x: hidden;
+  overflow: hidden;
 }
 
 body::before {
   content: '';
-  position: fixed;
-  inset: 0;
-  background: repeating-linear-gradient(0deg,
-    transparent, transparent 3px,
-    rgba(0,0,0,.06) 3px, rgba(0,0,0,.06) 4px);
+  position: fixed; inset: 0;
+  background: repeating-linear-gradient(0deg, transparent, transparent 3px, rgba(0,0,0,.05) 3px, rgba(0,0,0,.05) 4px);
   pointer-events: none;
   z-index: 9999;
 }
 
-/* ── Header ── */
+/* Header */
 header {
-  border-bottom: 1px solid var(--b);
-  padding: 14px 32px;
   display: flex;
   align-items: center;
   gap: 16px;
+  padding: 12px 24px;
+  border-bottom: 1px solid var(--b);
 }
 .logo {
   font-family: 'Bebas Neue', sans-serif;
-  font-size: 32px;
+  font-size: 28px;
   letter-spacing: 4px;
   position: relative;
   line-height: 1;
@@ -94,42 +83,33 @@ header {
   position: absolute;
   top: 0; left: 0;
 }
-.logo::before {
-  color: #ff2244;
-  clip-path: inset(0 0 55% 0);
-  transform: translateX(2px);
-  opacity: .7;
-}
-.logo::after {
-  color: #00ffcc;
-  clip-path: inset(55% 0 0 0);
-  transform: translateX(-2px);
-  opacity: .5;
-}
-.sub { font-size: 12px; letter-spacing: 2px; color: var(--m); }
-.hr {
-  margin-left: auto;
-  display: flex; align-items: center;
-  gap: 8px;
-  font-size: 13px;
-  color: var(--m);
-  letter-spacing: 1px;
-}
+.logo::before { color: #ff2244; clip-path: inset(0 0 55% 0); transform: translateX(2px); opacity: .7; }
+.logo::after  { color: #00ffcc; clip-path: inset(55% 0 0 0); transform: translateX(-2px); opacity: .5; }
+.sub { font-size: 11px; letter-spacing: 2px; color: var(--m); }
 
-/* UI 縮放控制 */
-.ui-scale {
+.dot {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: var(--a2);
+  animation: bl 2s infinite;
+  margin-left: 16px;
+}
+@keyframes bl { 0%,100% {opacity:1} 50% {opacity:.2} }
+
+/* UI 大小切換 */
+.ui-size {
   margin-left: auto;
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 4px;
 }
-.ui-scale-label {
-  font-size: 11px;
+.ui-size-label {
+  font-size: 10px;
   color: var(--m);
   letter-spacing: 2px;
-  margin-right: 4px;
+  margin-right: 8px;
 }
-.us-b {
+.us-btn {
   padding: 5px 12px;
   border: 1px solid var(--b);
   background: transparent;
@@ -140,185 +120,262 @@ header {
   color: var(--m);
   transition: all .15s;
 }
-.us-b:hover { border-color: #555; color: var(--t); }
-.us-b.on { border-color: var(--a2); color: var(--a2); }
-/* ui-scale 存在時，hr 改用普通 margin */
-.ui-scale + .hr { margin-left: 16px; }
-.dot {
-  width: 6px; height: 6px;
-  border-radius: 50%;
-  background: var(--a2);
-  animation: bl 2s infinite;
-}
-@keyframes bl { 0%,100% {opacity:1} 50% {opacity:.2} }
+.us-btn:hover { border-color: #555; color: var(--t); }
+.us-btn.on { border-color: var(--a2); color: var(--a2); }
 
-/* ── Layout ── */
+/* Main layout */
 .lay {
-  display: grid;
-  grid-template-columns: 1fr calc(400px * var(--scale));
-  height: calc(100vh - 61px);
+  display: flex;
+  height: calc(100vh - 53px);
 }
 
-/* ── Canvas 側 ── */
-.cv {
+/* Preview side */
+.preview {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
   border-right: 1px solid var(--b);
-  display: flex; flex-direction: column;
-  align-items: center; justify-content: center;
-  padding: 24px; gap: 14px;
+  gap: 12px;
   overflow: hidden;
 }
-.dz {
+.canvas-wrap {
   width: 100%;
-  max-width: 680px;
-  aspect-ratio: 16/10;
-  border: 1px dashed #2a2a2a;
-  display: flex; flex-direction: column;
-  align-items: center; justify-content: center;
-  gap: 10px;
-  cursor: pointer;
+  height: 100%;
+  max-width: 900px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   position: relative;
-  overflow: hidden;
   background: #0c0c0c;
-  transition: border-color .2s;
+  border: 1px dashed #2a2a2a;
 }
-.dz:hover, .dz.drag { border-color: #444; }
-.dz.has { border-style: solid; border-color: #1a1a1a; cursor: default; }
+.canvas-wrap.has { border-style: solid; border-color: #1a1a1a; }
 #cvs {
-  position: absolute;
-  inset: 0;
-  width: 100%; height: 100%;
+  max-width: 100%;
+  max-height: 100%;
   object-fit: contain;
   display: none;
+  touch-action: none;
 }
-.di {
+.upload-prompt {
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: center;
+}
+.upload-prompt h2 {
   font-family: 'Bebas Neue', sans-serif;
-  font-size: 52px;
+  font-size: 48px;
+  letter-spacing: 6px;
   color: #1e1e1e;
-  letter-spacing: 2px;
 }
-.dt { font-size: 14px; color: var(--m); letter-spacing: 1.5px; }
-.dh { font-size: 12px; color: #333; letter-spacing: 1px; }
-.ul {
-  display: inline-block;
-  padding: 10px 22px;
-  border: 1px solid #2a2a2a;
-  font-size: 13px;
-  letter-spacing: 1.5px;
-  color: var(--m);
+.upload-prompt p { color: var(--m); font-size: 12px; letter-spacing: 2px; }
+.upload-prompt label {
+  margin-top: 12px;
+  padding: 10px 20px;
+  border: 1px solid var(--b);
   cursor: pointer;
-  transition: all .2s;
-  margin-top: 8px;
+  letter-spacing: 2px;
+  font-size: 12px;
+  color: var(--m);
+  transition: all .15s;
 }
-.ul:hover { border-color: #555; color: var(--t); }
+.upload-prompt label:hover { border-color: var(--a2); color: var(--a2); }
 #fi { display: none; }
 
 .meta {
-  display: flex; gap: 18px;
-  font-size: 13px;
+  display: flex;
+  gap: 14px;
+  font-size: 11px;
   color: var(--m);
   letter-spacing: 1px;
   align-items: center;
-  flex-wrap: wrap;
-  justify-content: center;
 }
 .meta b { color: var(--t); font-weight: normal; }
-.rep, .pause-btn {
-  padding: 8px 16px;
+.meta button {
+  padding: 6px 12px;
   border: 1px solid var(--b);
   background: transparent;
   cursor: pointer;
   font-family: inherit;
-  font-size: 12px;
-  letter-spacing: 1px;
+  font-size: 11px;
   color: var(--m);
-  transition: all .15s;
 }
-.rep:hover, .pause-btn:hover { border-color: #555; color: var(--t); }
-.pause-btn.paused { border-color: var(--a2); color: var(--a2); }
+.meta button:hover { border-color: var(--a2); color: var(--a2); }
 
-/* ── Controls 側 ── */
-.ct {
-  display: flex; flex-direction: column;
-  overflow-y: auto;
-  scrollbar-width: thin;
-  /* 縮放整個控制面板 */
-  zoom: var(--scale);
-  /* Firefox 不支援 zoom 但會忽略 - 改用 transform fallback */
-}
-@-moz-document url-prefix() {
-  .ct {
-    transform: scale(var(--scale));
-    transform-origin: top left;
-    width: calc(100% / var(--scale));
-    height: calc(100% / var(--scale));
-  }
-}
-.ct::-webkit-scrollbar { width: 3px; }
-.ct::-webkit-scrollbar-thumb { background: var(--b); }
-.sec { padding: 16px 20px; border-bottom: 1px solid var(--b); }
-.sl {
-  font-size: 12px;
-  letter-spacing: 2px;
-  color: var(--t);
-  margin-bottom: 12px;
-  display: flex; align-items: center;
-  gap: 8px;
-  font-weight: bold;
-}
-.sl::after { content: ''; flex: 1; height: 1px; background: var(--b); }
-
-/* 特效選擇 */
-.eg {
-  display: grid;
-  grid-template-columns: 1fr 1fr 1fr;
+/* 影片剪輯時間軸 */
+.trim-bar {
+  width: 100%;
+  max-width: 900px;
+  display: flex;
+  flex-direction: column;
   gap: 6px;
 }
-.eb {
-  padding: 10px 4px;
+.trim-track {
+  position: relative;
+  height: 28px;
+  background: #1a1a1a;
+  border: 1px solid var(--b);
+  cursor: pointer;
+  user-select: none;
+}
+.trim-range {
+  position: absolute;
+  top: 0; bottom: 0;
+  background: rgba(0, 255, 204, 0.15);
+  border-left: 2px solid var(--a2);
+  border-right: 2px solid var(--a2);
+  pointer-events: none;
+}
+.trim-handle {
+  position: absolute;
+  top: -3px; bottom: -3px;
+  width: 14px;
+  background: var(--a2);
+  cursor: ew-resize;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.trim-handle::before {
+  content: '';
+  width: 2px; height: 14px;
+  background: #000;
+  opacity: 0.5;
+}
+.trim-start { transform: translateX(-100%); }
+.trim-end   { transform: translateX(0); }
+.trim-playhead {
+  position: absolute;
+  top: -2px; bottom: -2px;
+  width: 2px;
+  background: var(--a);
+  pointer-events: none;
+  z-index: 1;
+  transition: left .05s linear;
+}
+.trim-info {
+  display: flex;
+  justify-content: space-between;
+  font-size: 10px;
+  color: var(--m);
+  letter-spacing: 1px;
+}
+.trim-info span:nth-child(2) { color: var(--a2); }
+
+/* Controls panel */
+.controls {
+  width: calc(360px * var(--ui-scale, 1));
+  background: var(--bg);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.controls-inner {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  zoom: var(--ui-scale, 1);
+}
+.tabs {
+  display: flex;
+  border-bottom: 1px solid var(--b);
+}
+.tab {
+  flex: 1;
+  padding: 12px;
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  color: var(--m);
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 13px;
+  letter-spacing: 2px;
+  transition: all .15s;
+}
+.tab:hover { color: var(--t); }
+.tab.on { color: var(--a2); border-bottom-color: var(--a2); }
+
+.panel {
+  flex: 1;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  display: none;
+}
+.panel.on { display: block; }
+.panel::-webkit-scrollbar { width: 4px; }
+.panel::-webkit-scrollbar-thumb { background: var(--b); }
+
+.section {
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--b);
+}
+.section h3 {
+  font-size: 11px;
+  letter-spacing: 2px;
+  color: var(--a2);
+  margin-bottom: 10px;
+  font-weight: bold;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.section h3::before { content: '//'; color: var(--m); }
+
+/* Effect chooser */
+.effects {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 4px;
+}
+.effects button {
+  padding: 8px 4px;
   border: 1px solid var(--b);
   background: transparent;
   cursor: pointer;
   text-align: center;
+  font-family: inherit;
   transition: all .15s;
 }
-.eb:hover { border-color: #444; }
-.eb.on { border-width: 2px; }
-.en {
+.effects button:hover { border-color: #444; }
+.effects button.on { border-width: 2px; }
+.fx-label {
   font-family: 'Bebas Neue', sans-serif;
-  font-size: 16px;
-  letter-spacing: 1.5px;
+  font-size: 14px;
+  letter-spacing: 1px;
   display: block;
-  margin-bottom: 1px;
+  color: var(--t);
 }
-.zh { font-size: 11px; letter-spacing: 1px; color: var(--m); }
+.fx-zh { font-size: 9px; letter-spacing: 1px; color: var(--m); }
 
-.c-film.on  { border-color: #f5c842; background: rgba(245,200,66,.05); } .c-film  .en { color: #f5c842; }
-.c-cyber.on { border-color: #00e5ff; background: rgba(0,229,255,.05); } .c-cyber .en { color: #00e5ff; }
-.c-retro.on { border-color: #ff6b00; background: rgba(255,107,0,.05); } .c-retro .en { color: #ff6b00; }
-.c-404.on   { border-color: #ff2244; background: rgba(255,34,68,.05); } .c-404   .en { color: #ff2244; }
-.c-cctv.on  { border-color: #aaffaa; background: rgba(170,255,170,.05); } .c-cctv .en { color: #aaffaa; }
-.c-hack.on  { border-color: #00ff41; background: rgba(0,255,65,.05); } .c-hack .en { color: #00ff41; }
+.fx-film.on  { border-color: #f5c842; background: rgba(245,200,66,.05); } .fx-film  .fx-label { color: #f5c842; }
+.fx-cyber.on { border-color: #00e5ff; background: rgba(0,229,255,.05); } .fx-cyber .fx-label { color: #00e5ff; }
+.fx-retro.on { border-color: #ff6b00; background: rgba(255,107,0,.05); } .fx-retro .fx-label { color: #ff6b00; }
+.fx-err.on   { border-color: #ff2244; background: rgba(255,34,68,.05); } .fx-err   .fx-label { color: #ff2244; }
+.fx-cctv.on  { border-color: #aaffaa; background: rgba(170,255,170,.05); } .fx-cctv .fx-label { color: #aaffaa; }
+.fx-hack.on  { border-color: #00ff41; background: rgba(0,255,65,.05); } .fx-hack .fx-label { color: #00ff41; }
 
-.desc {
-  font-size: 13px;
+/* Sliders */
+.slider {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 8px;
+}
+.slider label {
+  font-size: 11px;
   color: var(--m);
   letter-spacing: 1px;
-  line-height: 1.6;
-  margin-top: 10px;
-  border-left: 2px solid var(--b);
-  padding-left: 10px;
-  min-height: 20px;
+  min-width: 76px;
 }
-
-/* 滑桿 */
-.rw { display: flex; align-items: center; gap: 10px; margin-top: 8px; }
-.rw label {
-  font-size: 12px;
-  letter-spacing: 0.5px;
-  color: var(--m);
-  min-width: 100px;
-}
-.rw input[type=range] {
+.slider input[type=range] {
   flex: 1;
   -webkit-appearance: none;
   height: 1px;
@@ -326,7 +383,7 @@ header {
   outline: none;
   cursor: pointer;
 }
-.rw input[type=range]::-webkit-slider-thumb {
+.slider input[type=range]::-webkit-slider-thumb {
   -webkit-appearance: none;
   width: 12px; height: 12px;
   border-radius: 50%;
@@ -334,222 +391,25 @@ header {
   cursor: pointer;
   border: 2px solid var(--bg);
 }
-.vv { font-size: 13px; color: var(--t); min-width: 36px; text-align: right; }
+.slider .val {
+  font-size: 11px;
+  color: var(--t);
+  min-width: 40px;
+  text-align: right;
+}
 .hue-slider {
   background: linear-gradient(90deg, #f00, #ff0, #0f0, #0ff, #00f, #f0f, #f00) !important;
   height: 4px !important;
 }
 
-/* Toggle */
-.tg {
-  display: flex; align-items: center;
-  gap: 8px;
-  margin-top: 10px;
-  cursor: pointer;
-  user-select: none;
-}
-.tk {
-  width: 38px; height: 20px;
-  border: 1px solid var(--b);
-  border-radius: 8px;
-  position: relative;
-}
-.th {
-  position: absolute;
-  top: 2px; left: 2px;
-  width: 14px; height: 14px;
-  border-radius: 50%;
-  background: var(--m);
-  transition: all .2s;
-}
-.tg.on .tk { border-color: var(--a2); }
-.tg.on .th { left: 20px; background: var(--a2); }
-.tl { font-size: 12px; letter-spacing: 1px; color: var(--m); }
-.tg.on .tl { color: var(--a2); }
-
-/* 按鈕群 */
-.dr { display: flex; gap: 6px; flex-wrap: wrap; }
-.db {
-  padding: 8px 14px;
-  border: 1px solid var(--b);
-  background: transparent;
-  cursor: pointer;
-  font-family: inherit;
-  font-size: 13px;
-  letter-spacing: 0.5px;
-  color: var(--m);
-}
-.db:hover { border-color: #444; color: var(--t); }
-.db.on { border-color: var(--t); color: var(--t); }
-.fn { font-size: 12px; color: var(--m); letter-spacing: 1px; margin-top: 8px; }
-
-/* 文字疊加區 */
-.txt-input {
-  width: 100%;
-  padding: 10px 12px;
-  background: #0c0c0c;
-  border: 1px solid var(--b);
-  color: var(--t);
-  font-family: 'Share Tech Mono', monospace;
-  font-size: 14px;
-  letter-spacing: 1px;
-  margin-top: 6px;
-  outline: none;
-  transition: border-color .15s;
-}
-.txt-input:focus { border-color: var(--a2); }
-.txt-input::placeholder { color: #333; }
-
-.lang-tabs {
-  display: flex;
+/* Button rows */
+.btn-row {
+  display: grid;
   gap: 4px;
   margin-top: 6px;
 }
-.lang-tab {
-  flex: 1;
-  padding: 10px 4px;
-  border: 1px solid var(--b);
-  background: transparent;
-  cursor: pointer;
-  font-family: inherit;
-  font-size: 13px;
-  letter-spacing: 1px;
-  color: var(--m);
-}
-.lang-tab:hover { border-color: #444; color: var(--t); }
-.lang-tab.on { border-color: var(--a2); color: var(--a2); }
-
-.font-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 4px;
-  margin-top: 6px;
-}
-.font-grid.hidden { display: none; }
-.fb {
-  padding: 12px 2px;
-  border: 1px solid var(--b);
-  background: transparent;
-  cursor: pointer;
-  font-size: 14px;
-  color: var(--m);
-  text-align: center;
-  line-height: 1.1;
-  transition: all .15s;
-}
-.fb:hover { border-color: #444; color: var(--t); }
-.fb.on { border-color: var(--a2); color: var(--t); }
-.fb small { font-size: 9px; color: var(--m); display: block; margin-top: 3px; letter-spacing: 1px; font-family:'Share Tech Mono',monospace; }
-
-.drag-hint {
-  font-size: 12px;
-  color: var(--m);
-  letter-spacing: 1px;
-  margin-top: 6px;
-  line-height: 1.5;
-}
-.drag-hint b { color: var(--a2); }
-
-/* 文字在預覽畫布上的拖曳游標 */
-.dz.has-text { cursor: grab; }
-.dz.has-text:active { cursor: grabbing; }
-.dz.dragging-text { cursor: grabbing !important; }
-
-.color-row {
-  display: flex;
-  gap: 6px;
-  align-items: center;
-  margin-top: 8px;
-  flex-wrap: wrap;
-}
-.swatch {
-  width: 26px; height: 26px;
-  border: 1px solid var(--b);
-  cursor: pointer;
-  padding: 0;
-}
-.swatch:hover { border-color: #aaa; }
-.swatch.on { border-color: var(--t); border-width: 2px; }
-.color-picker {
-  width: 26px; height: 26px;
-  border: 1px solid var(--b);
-  background: transparent;
-  cursor: pointer;
-  padding: 0;
-}
-
-.effect-btns {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 4px;
-  margin-top: 6px;
-}
-.eff-b {
-  padding: 8px 2px;
-  border: 1px solid var(--b);
-  background: transparent;
-  cursor: pointer;
-  font-family: inherit;
-  font-size: 12px;
-  letter-spacing: 1px;
-  color: var(--m);
-}
-.eff-b:hover { border-color: #444; color: var(--t); }
-.eff-b.on { border-color: var(--a2); color: var(--a2); }
-
-/* 匯出按鈕 */
-.xg {
-  display: grid;
-  grid-template-columns: 1fr 1fr 1fr;
-  gap: 6px;
-}
-.xb {
-  padding: 12px 6px;
-  border: 1px solid var(--b);
-  background: transparent;
-  cursor: pointer;
-  font-family: inherit;
-  font-size: 13px;
-  letter-spacing: 1px;
-  color: var(--t);
-  text-align: center;
-}
-.xb:hover:not(:disabled) { border-color: var(--t); background: rgba(255,255,255,.02); }
-.xb:disabled { opacity: .25; cursor: not-allowed; }
-.fmt {
-  font-family: 'Bebas Neue', sans-serif;
-  font-size: 24px;
-  letter-spacing: 2px;
-  display: block;
-  margin-bottom: 2px;
-}
-.xb.png-b .fmt { color: #f5c842; }
-.xb.gif-b .fmt { color: var(--a2); }
-.xb.mp4-b .fmt { color: var(--a); }
-
-.pb {
-  width: 100%; height: 1px;
-  background: var(--b);
-  margin-top: 10px;
-  display: none;
-}
-.pf {
-  height: 100%;
-  background: var(--a2);
-  width: 0;
-  transition: width .1s;
-}
-.pt {
-  font-size: 12px;
-  color: var(--m);
-  letter-spacing: 1px;
-  margin-top: 6px;
-  display: none;
-  text-align: center;
-}
-
-.rst {
-  padding: 4px 10px;
+.btn-row button {
+  padding: 8px 6px;
   border: 1px solid var(--b);
   background: transparent;
   cursor: pointer;
@@ -557,819 +417,1287 @@ header {
   font-size: 11px;
   letter-spacing: 1px;
   color: var(--m);
+  transition: all .15s;
 }
-.rst:hover { border-color: #555; color: var(--t); }
+.btn-row button:hover { border-color: #444; color: var(--t); }
+.btn-row button.on { border-color: var(--a2); color: var(--a2); }
 
-/* 特效專屬設定區 */
-.fx-opt {
-  margin-top: 10px;
-  padding: 10px;
+/* Toggle */
+.toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+  cursor: pointer;
+  user-select: none;
+}
+.toggle .knob {
+  width: 32px; height: 16px;
   border: 1px solid var(--b);
-  background: rgba(255,255,255,.01);
-  display: none;
+  border-radius: 8px;
+  position: relative;
 }
-.fx-opt.show { display: block; }
-.fx-opt-label {
-  font-size: 12px;
+.toggle .dot2 {
+  position: absolute;
+  top: 1px; left: 1px;
+  width: 12px; height: 12px;
+  border-radius: 50%;
+  background: var(--m);
+  transition: all .2s;
+}
+.toggle.on .knob { border-color: var(--a2); }
+.toggle.on .dot2 { left: 17px; background: var(--a2); }
+.toggle span:not(.knob):not(.dot2) {
+  font-size: 11px;
   letter-spacing: 1px;
+  color: var(--m);
+}
+.toggle.on span:not(.knob):not(.dot2) { color: var(--a2); }
+
+/* Text input */
+textarea.txt-input {
+  width: 100%;
+  padding: 8px 10px;
+  background: #0c0c0c;
+  border: 1px solid var(--b);
   color: var(--t);
-  margin-bottom: 8px;
-  font-weight: bold;
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 13px;
+  margin-top: 4px;
+  outline: none;
+  resize: vertical;
+  min-height: 60px;
+  line-height: 1.5;
+}
+textarea.txt-input:focus { border-color: var(--a2); }
+
+/* Color swatches */
+.swatches {
+  display: flex;
+  gap: 6px;
+  margin-top: 6px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+.sw {
+  width: 24px; height: 24px;
+  border: 1px solid var(--b);
+  cursor: pointer;
+  padding: 0;
+}
+.sw:hover { border-color: #aaa; }
+.sw.on { border-color: var(--t); border-width: 2px; }
+.color-pick {
+  width: 24px; height: 24px;
+  border: 1px solid var(--b);
+  background: transparent;
+  cursor: pointer;
+  padding: 0;
 }
 
-.pal {
+/* Font grid */
+.fonts {
   display: grid;
-  grid-template-columns: repeat(5, 1fr);
+  grid-template-columns: 1fr 1fr 1fr;
   gap: 4px;
   margin-top: 6px;
 }
-.pc {
-  padding: 8px 4px;
+.fonts.hidden { display: none; }
+.fonts button {
+  padding: 10px 2px;
+  border: 1px solid var(--b);
+  background: transparent;
+  cursor: pointer;
+  font-size: 13px;
+  color: var(--m);
+  text-align: center;
+  line-height: 1.1;
+  transition: all .15s;
+}
+.fonts button small {
+  display: block;
+  font-size: 8px;
+  font-family: 'Share Tech Mono', monospace;
+  color: var(--m);
+  margin-top: 2px;
+  letter-spacing: 1px;
+}
+.fonts button:hover { border-color: #444; color: var(--t); }
+.fonts button.on { border-color: var(--a2); color: var(--t); }
+
+/* Export buttons */
+.export {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 4px;
+}
+.export button {
+  padding: 12px 4px;
   border: 1px solid var(--b);
   background: transparent;
   cursor: pointer;
   font-family: inherit;
-  font-size: 12px;
-  color: var(--m);
-  text-align: center;
+  font-size: 10px;
+  color: var(--t);
   letter-spacing: 1px;
 }
-.pc:hover { border-color: #444; color: var(--t); }
-.pc.on { border-color: var(--t); color: var(--t); }
+.export button:hover:not(:disabled) { border-color: var(--t); }
+.export button:disabled { opacity: .3; cursor: not-allowed; }
+.export .big {
+  display: block;
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 22px;
+  letter-spacing: 3px;
+  margin-bottom: 2px;
+}
+.export .png .big { color: #f5c842; }
+.export .gif .big { color: var(--a2); }
+.export .mp4 .big { color: var(--a); }
 
-.focus-hint {
-  font-size: 12px;
+.progress {
+  width: 100%;
+  height: 1px;
+  background: var(--b);
+  margin-top: 10px;
+  display: none;
+}
+.progress-bar {
+  height: 100%;
+  background: var(--a2);
+  width: 0;
+  transition: width .1s;
+}
+.progress-text {
+  font-size: 10px;
   color: var(--m);
   letter-spacing: 1px;
   margin-top: 6px;
+  display: none;
+  text-align: center;
+}
+
+.hint {
+  font-size: 10px;
+  color: var(--m);
+  margin-top: 8px;
   line-height: 1.5;
 }
-.focus-hint b { color: var(--a2); }
+.hint b { color: var(--a2); }
 
-@media (max-width: 900px) {
-  .lay { grid-template-columns: 1fr; height: auto; }
-  .cv { border-right: none; border-bottom: 1px solid var(--b); min-height: 500px; }
+/* 段落清單 */
+.txt-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 8px;
+}
+.txt-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 8px;
+  border: 1px solid var(--b);
+  background: #0c0c0c;
+  cursor: pointer;
+  transition: all .15s;
+  font-size: 11px;
+  color: var(--m);
+}
+.txt-row:hover { border-color: #555; color: var(--t); }
+.txt-row.on {
+  border-color: var(--a2);
+  color: var(--a2);
+  background: rgba(0,255,204,0.05);
+}
+.txt-row .preview {
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-family: 'Share Tech Mono', monospace;
+}
+.txt-row .preview.empty { color: var(--m); font-style: italic; }
+.txt-row .del {
+  background: transparent;
+  border: 1px solid var(--b);
+  color: var(--m);
+  padding: 0 6px;
+  font-family: inherit;
+  cursor: pointer;
+  font-size: 11px;
+  line-height: 1;
+  height: 20px;
+}
+.txt-row .del:hover { color: var(--a); border-color: var(--a); }
+
+.txt-row .layer-btn {
+  background: transparent;
+  border: 1px solid var(--b);
+  color: var(--m);
+  padding: 0 4px;
+  font-family: inherit;
+  cursor: pointer;
+  font-size: 9px;
+  line-height: 1;
+  height: 20px;
+  width: 20px;
+}
+.txt-row .layer-btn:hover:not(:disabled) { color: var(--a2); border-color: var(--a2); }
+.txt-row .layer-btn:disabled { opacity: 0.25; cursor: not-allowed; }
+
+.add-txt {
+  width: 100%;
+  padding: 8px;
+  border: 1px dashed var(--b);
+  background: transparent;
+  color: var(--m);
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 12px;
+  letter-spacing: 1px;
+  transition: all .15s;
+}
+.add-txt:hover { border-color: var(--a2); color: var(--a2); }
+
+/* Inline 編輯器（蓋在畫布上） */
+.inline-editor {
+  position: absolute;
+  border: 2px solid var(--a2);
+  background: rgba(0,0,0,0.85);
+  color: white;
+  padding: 4px 8px;
+  font-family: inherit;
+  outline: none;
+  resize: none;
+  z-index: 100;
+  box-shadow: 0 0 20px rgba(0,255,204,0.4);
+  text-align: center;
+  line-height: 1.2;
+  border-radius: 2px;
+}
+
+@media (max-width: 800px) {
+  .lay { flex-direction: column; height: auto; }
+  .preview { border-right: none; border-bottom: 1px solid var(--b); min-height: 400px; }
+  .controls { width: 100%; }
 }
 </style>
 </head>
-
 <body>
 
-<!-- ═══════════════════════════════════════════════
-     [B] HTML STRUCTURE
-     ═══════════════════════════════════════════════ -->
-
-<!-- B1. Header -->
 <header>
   <div>
     <div class="logo">GLITCH</div>
-    <div class="sub">STUDIO · NOISE ENGINE v4</div>
+    <div class="sub">STUDIO · NOISE ENGINE</div>
   </div>
-  <div class="ui-scale">
-    <span class="ui-scale-label">UI</span>
-    <button class="us-b on" data-scale="1">預設</button>
-    <button class="us-b" data-scale="1.25">大</button>
-    <button class="us-b" data-scale="1.5">最大</button>
+  <div class="ui-size">
+    <span class="ui-size-label">UI</span>
+    <button class="us-btn" data-size="1.1">小</button>
+    <button class="us-btn on" data-size="1.375">預設</button>
+    <button class="us-btn" data-size="1.65">大</button>
   </div>
-  <div class="hr">
-    <div class="dot"></div>
-    SYSTEM ONLINE
-  </div>
+  <div class="dot"></div>
 </header>
 
 <div class="lay">
 
-  <!-- B2. Canvas 預覽區 -->
-  <div class="cv">
-    <div class="dz" id="dz">
+  <!-- 預覽區 -->
+  <div class="preview">
+    <div class="canvas-wrap" id="dz">
       <canvas id="cvs"></canvas>
-      <div id="du">
-        <div class="di">UPLOAD</div>
-        <div class="dt">拖拉圖片 / 點擊上傳</div>
-        <div class="dh">JPG · PNG · WEBP · GIF</div>
-        <label class="ul" for="fi">CHOOSE FILE</label>
-        <input type="file" id="fi" accept="image/*">
+      <div class="upload-prompt" id="uploadPrompt">
+        <h2>UPLOAD</h2>
+        <p>拖拉圖片或影片 / 點擊上傳</p>
+        <label for="fi">選擇檔案</label>
+        <input type="file" id="fi" accept="image/*,video/*">
+        <div style="margin-top:8px;font-size:9px;color:#444;letter-spacing:1px">JPG · PNG · WEBP · MP4 · WEBM · MOV</div>
       </div>
     </div>
+
+    <!-- 影片剪輯時間軸（影片時才顯示） -->
+    <div class="trim-bar" id="trimBar" style="display:none">
+      <div class="trim-track">
+        <div class="trim-range" id="trimRange"></div>
+        <div class="trim-handle trim-start" id="trimStart"></div>
+        <div class="trim-handle trim-end" id="trimEnd"></div>
+        <div class="trim-playhead" id="trimPlayhead"></div>
+      </div>
+      <div class="trim-info">
+        <span id="trimStartTime">0.0s</span>
+        <span id="trimDur">總長 0.0s</span>
+        <span id="trimEndTime">0.0s</span>
+      </div>
+    </div>
+
     <div class="meta">
-      <div>SIZE <b id="mS">—</b></div>
-      <div>FX <b id="mF">FILM</b></div>
-      <div>FRM <b id="mR">24</b></div>
-      <button class="pause-btn" id="pause" style="display:none">⏸ 暫停</button>
-      <button class="rep" id="rep" style="display:none">更換圖片</button>
+      <span>SIZE <b id="metaSize">—</b></span>
+      <span>FX <b id="metaFx">FILM</b></span>
+      <button id="btnReplace" style="display:none">更換</button>
+      <button id="btnPause" style="display:none">⏸ 暫停</button>
     </div>
   </div>
 
-  <!-- B3. Controls 控制面板 -->
-  <div class="ct">
+  <!-- 控制面板 -->
+  <div class="controls">
+    <div class="controls-inner">
+    <div class="tabs">
+      <button class="tab on" data-tab="fx">特效</button>
+      <button class="tab" data-tab="text">文字</button>
+      <button class="tab" data-tab="output">輸出</button>
+    </div>
 
-    <!-- B3.1 特效選擇 -->
-    <div class="sec">
-      <div class="sl">// 特效選擇</div>
-      <div class="eg">
-        <button class="eb c-film on" data-fx="film"><span class="en">FILM</span><span class="zh">電影感</span></button>
-        <button class="eb c-cyber"   data-fx="cyber"><span class="en">CYBER</span><span class="zh">賽博龐克</span></button>
-        <button class="eb c-retro"   data-fx="retro"><span class="en">RETRO</span><span class="zh">復古感</span></button>
-        <button class="eb c-404"     data-fx="err"><span class="en">404</span><span class="zh">系統錯誤</span></button>
-        <button class="eb c-cctv"    data-fx="cctv"><span class="en">CCTV</span><span class="zh">監視器</span></button>
-        <button class="eb c-hack"    data-fx="hack"><span class="en">HACK</span><span class="zh">終端機入侵</span></button>
-      </div>
-      <div class="desc" id="dc">粒子感噪點、膠片刮痕、光暈色差，重現電影老底片質感。</div>
-
-      <!-- 特效專屬設定（動態顯示） -->
-      <div class="fx-opt show" id="opt-film">
-        <div class="fx-opt-label">FILM 專屬設定</div>
-        <div class="tg on" id="barsTog">
-          <div class="tk"><div class="th"></div></div>
-          <div class="tl">上下電影黑邊</div>
+    <!-- 特效 panel -->
+    <div class="panel on" data-panel="fx">
+      <div class="section">
+        <h3>特效選擇</h3>
+        <div class="effects">
+          <button class="fx-film on" data-fx="film"><span class="fx-label">FILM</span><span class="fx-zh">電影感</span></button>
+          <button class="fx-cyber" data-fx="cyber"><span class="fx-label">CYBER</span><span class="fx-zh">賽博龐克</span></button>
+          <button class="fx-retro" data-fx="retro"><span class="fx-label">RETRO</span><span class="fx-zh">復古</span></button>
+          <button class="fx-err"  data-fx="err"><span class="fx-label">404</span><span class="fx-zh">錯誤</span></button>
+          <button class="fx-cctv" data-fx="cctv"><span class="fx-label">CCTV</span><span class="fx-zh">監視器</span></button>
+          <button class="fx-hack" data-fx="hack"><span class="fx-label">HACK</span><span class="fx-zh">入侵</span></button>
         </div>
       </div>
 
-      <div class="fx-opt" id="opt-cyber">
-        <div class="fx-opt-label">CYBER 配色方案</div>
-        <div class="pal" id="cyberPal">
-          <button class="pc on" data-pal="cm">青/洋紅</button>
-          <button class="pc"    data-pal="op">橙/紫</button>
-          <button class="pc"    data-pal="gy">綠/黃</button>
-          <button class="pc"    data-pal="rb">紅/藍</button>
-          <button class="pc"    data-pal="pt">粉/青</button>
+      <div class="section">
+        <h3>細節強度</h3>
+        <div class="slider"><label>NOISE 噪點</label><input type="range" id="sNO" min="0" max="10" value="5"><span class="val" id="vNO">5</span></div>
+        <div class="slider"><label>COLOR 色偏</label><input type="range" id="sCO" min="0" max="10" value="5"><span class="val" id="vCO">5</span></div>
+        <div class="slider"><label>DARKEN 暗化</label><input type="range" id="sDK" min="0" max="10" value="5"><span class="val" id="vDK">5</span></div>
+        <div class="slider"><label>HUD 元素</label><input type="range" id="sHU" min="0" max="10" value="5"><span class="val" id="vHU">5</span></div>
+        <div class="slider"><label>SPEED 速度</label><input type="range" id="sSP" min="1" max="10" value="5"><span class="val" id="vSP">5</span></div>
+      </div>
+
+      <div class="section">
+        <h3>焦點位置（避開主體）</h3>
+        <div class="btn-row" style="grid-template-columns:repeat(3,1fr)">
+          <button class="on" data-focus="auto">自動</button>
+          <button data-focus="tl">左上</button>
+          <button data-focus="tr">右上</button>
+          <button data-focus="bl">左下</button>
+          <button data-focus="br">右下</button>
+          <button data-focus="edge">邊緣</button>
         </div>
       </div>
 
-      <div class="fx-opt" id="opt-retro">
-        <div class="fx-opt-label">RETRO 色調</div>
-        <div class="pal" id="retroPal">
-          <button class="pc on" data-pal="warm">暖色</button>
-          <button class="pc"    data-pal="cool">冷色</button>
-          <button class="pc"    data-pal="sepia">褐色</button>
-          <button class="pc"    data-pal="neutral">中性</button>
-          <button class="pc"    data-pal="teal">青綠</button>
+      <div class="section">
+        <h3>色調調整</h3>
+        <div class="slider"><label>HUE</label><input type="range" id="sHUE" min="-180" max="180" value="0" class="hue-slider"><span class="val" id="vHUE">0°</span></div>
+        <div class="slider"><label>SATURATION</label><input type="range" id="sSAT" min="0" max="200" value="100"><span class="val" id="vSAT">100%</span></div>
+      </div>
+    </div>
+
+    <!-- 文字 panel -->
+    <div class="panel" data-panel="text">
+      <div class="section">
+        <h3>段落清單</h3>
+        <div class="txt-list" id="txtList"></div>
+        <button class="add-txt" id="addTxt">+ 新增段落</button>
+        <div class="hint">💡 雙擊畫面文字可<b>直接編輯</b>內容</div>
+      </div>
+
+      <div class="section">
+        <h3>文字內容</h3>
+        <textarea class="txt-input" id="txtText" placeholder="輸入文字（支援多行）" maxlength="200" rows="3"></textarea>
+      </div>
+
+      <div class="section">
+        <h3>字體</h3>
+        <div class="btn-row" style="grid-template-columns:1fr 1fr">
+          <button class="lang-btn on" data-lang="en">English</button>
+          <button class="lang-btn" data-lang="jp">中 / 日</button>
+        </div>
+
+        <div class="fonts" id="fontsEn">
+          <button class="on" data-font="orbitron" style="font-family:'Orbitron'">CYBER<small>科技</small></button>
+          <button data-font="tech" style="font-family:'Share Tech Mono'">TERM<small>科技</small></button>
+          <button data-font="vt" style="font-family:'VT323'">RETRO<small>復古</small></button>
+          <button data-font="major" style="font-family:'Major Mono Display'">MONO<small>復古</small></button>
+          <button data-font="bebas" style="font-family:'Bebas Neue'">BEBAS<small>海報</small></button>
+          <button data-font="pixel" style="font-family:'Press Start 2P';font-size:9px">PIXEL<small>像素</small></button>
+        </div>
+        <div class="fonts hidden" id="fontsJp">
+          <button data-font="jp-sans" style="font-family:'Noto Sans JP';font-weight:900">黑體<small>SANS</small></button>
+          <button data-font="jp-serif" style="font-family:'Noto Serif JP';font-weight:700">明朝<small>SERIF</small></button>
+          <button data-font="jp-round" style="font-family:'M PLUS Rounded 1c';font-weight:700">圓體<small>MPLUS</small></button>
+          <button data-font="jp-maru" style="font-family:'Zen Maru Gothic';font-weight:700">圓黑<small>ZENMARU</small></button>
+          <button data-font="huninn" style="font-family:'Huninn'">粉圓<small>HUNINN</small></button>
+          <button data-font="chenyu" style="font-family:'ChenYuluoyan'">手寫<small>辰宇</small></button>
+          <button data-font="naikai" style="font-family:'NaikaiFont'">內海<small>瀨戶風</small></button>
         </div>
       </div>
 
-      <div class="fx-opt" id="opt-err">
-        <div class="fx-opt-label">404 浮水印大小</div>
-        <div class="rw">
-          <label>WATERMARK</label>
-          <input type="range" id="errWM" min="0" max="100" value="40">
-          <span class="vv" id="vErrWM">40%</span>
+      <div class="section">
+        <h3>樣式</h3>
+        <div class="slider"><label>大小</label><input type="range" id="txtSize" min="12" max="160" value="42"><span class="val" id="vTxtSize">42</span></div>
+        <div class="slider"><label>透明度</label><input type="range" id="txtOpacity" min="20" max="100" value="90"><span class="val" id="vTxtOpacity">90%</span></div>
+        <div class="slider"><label>行距</label><input type="range" id="txtLineH" min="80" max="200" value="120"><span class="val" id="vTxtLineH">1.2</span></div>
+        <div class="slider"><label>字距</label><input type="range" id="txtLetterSp" min="-5" max="20" value="0"><span class="val" id="vTxtLetterSp">0</span></div>
+        <div class="slider"><label>描邊</label><input type="range" id="txtStroke" min="0" max="15" value="4"><span class="val" id="vTxtStroke">4%</span></div>
+        <div class="slider"><label>旋轉</label><input type="range" id="txtRotate" min="-180" max="180" value="0"><span class="val" id="vTxtRotate">0°</span></div>
+
+        <div style="display:flex;gap:6px;margin-top:8px">
+          <button class="style-btn" data-style="bold" style="flex:1;padding:6px;border:1px solid var(--b);background:transparent;color:var(--m);cursor:pointer;font-family:inherit"><b>B</b></button>
+          <button class="style-btn" data-style="italic" style="flex:1;padding:6px;border:1px solid var(--b);background:transparent;color:var(--m);cursor:pointer;font-family:inherit"><i>I</i></button>
+          <button class="style-btn" data-style="underline" style="flex:1;padding:6px;border:1px solid var(--b);background:transparent;color:var(--m);cursor:pointer;font-family:inherit"><u>U</u></button>
+          <button class="style-btn" data-style="shadow" style="flex:1;padding:6px;border:1px solid var(--b);background:transparent;color:var(--m);cursor:pointer;font-family:inherit;font-size:11px">陰影</button>
         </div>
       </div>
 
-      <div class="fx-opt" id="opt-cctv">
-        <div class="fx-opt-label">CCTV 設定</div>
-        <div class="tg on" id="cctvCross">
-          <div class="tk"><div class="th"></div></div>
-          <div class="tl">中央十字準星</div>
+      <div class="section">
+        <h3>對齊（多行段落）</h3>
+        <div class="btn-row align-h" id="alignH" style="grid-template-columns:repeat(3,1fr)">
+          <button class="align-btn" data-align="left">置左 ⇤</button>
+          <button class="align-btn on" data-align="center">置中 ↔</button>
+          <button class="align-btn" data-align="right">置右 ⇥</button>
+        </div>
+        <div class="btn-row align-v" id="alignV" style="grid-template-columns:repeat(3,1fr);display:none">
+          <button class="valign-btn" data-valign="top">置頂 ⇡</button>
+          <button class="valign-btn on" data-valign="middle">置中 ↕</button>
+          <button class="valign-btn" data-valign="bottom">置底 ⇣</button>
+        </div>
+      </div>
+
+      <div class="section">
+        <h3>位置</h3>
+        <div class="slider"><label>X 軸</label><input type="range" id="txtX" min="0" max="100" value="50"><span class="val" id="vTxtX">50%</span></div>
+        <div class="slider"><label>Y 軸</label><input type="range" id="txtY" min="0" max="100" value="50"><span class="val" id="vTxtY">50%</span></div>
+        <div class="hint">💡 在預覽畫面上 <b>直接拖曳</b> 文字也可調整位置</div>
+      </div>
+
+      <div class="section">
+        <h3>顏色</h3>
+        <div class="swatches">
+          <button class="sw on" data-color="#ffffff" style="background:#ffffff"></button>
+          <button class="sw" data-color="#000000" style="background:#000000"></button>
+          <button class="sw" data-color="#ff2244" style="background:#ff2244"></button>
+          <button class="sw" data-color="#00ffcc" style="background:#00ffcc"></button>
+          <button class="sw" data-color="#f5c842" style="background:#f5c842"></button>
+          <button class="sw" data-color="#00ff41" style="background:#00ff41"></button>
+          <button class="sw" data-color="#ff6b00" style="background:#ff6b00"></button>
+          <input type="color" class="color-pick" id="txtColor" value="#ffffff">
+        </div>
+      </div>
+
+      <div class="section">
+        <h3>進階：背景 / 外光 / 邊框</h3>
+
+        <label class="toggle" id="bgEnableToggle">
+          <span class="knob"><span class="dot2"></span></span>
+          <span>背景色塊</span>
+        </label>
+        <div class="slider"><label>背景顏色</label><input type="color" id="txtBgColor" value="#000000" style="height:24px;border:1px solid var(--b);background:transparent;cursor:pointer;flex:1"></div>
+        <div class="slider"><label>背景透明</label><input type="range" id="txtBgOpacity" min="0" max="100" value="60"><span class="val" id="vTxtBgOpacity">60%</span></div>
+        <div class="slider"><label>背景留白</label><input type="range" id="txtBgPad" min="0" max="40" value="10"><span class="val" id="vTxtBgPad">10</span></div>
+
+        <label class="toggle" id="glowToggle" style="margin-top:14px">
+          <span class="knob"><span class="dot2"></span></span>
+          <span>外光（Glow）</span>
+        </label>
+        <div class="slider"><label>外光強度</label><input type="range" id="txtGlow" min="0" max="40" value="15"><span class="val" id="vTxtGlow">15</span></div>
+
+        <label class="toggle" id="borderToggle" style="margin-top:14px">
+          <span class="knob"><span class="dot2"></span></span>
+          <span>外框</span>
+        </label>
+        <div class="slider"><label>外框粗細</label><input type="range" id="txtBorderW" min="1" max="6" value="2"><span class="val" id="vTxtBorderW">2px</span></div>
+
+        <label class="toggle" id="verticalToggle" style="margin-top:14px">
+          <span class="knob"><span class="dot2"></span></span>
+          <span>垂直書寫</span>
+        </label>
+      </div>
+
+      <div class="section">
+        <h3>動態效果</h3>
+        <div class="btn-row" style="grid-template-columns:repeat(4,1fr)">
+          <button class="effect-btn on" data-effect="none">無</button>
+          <button class="effect-btn" data-effect="flicker">閃爍</button>
+          <button class="effect-btn" data-effect="rgb">色差</button>
+          <button class="effect-btn" data-effect="type">打字機</button>
         </div>
       </div>
     </div>
 
-    <!-- B3.2 焦點位置 -->
-    <div class="sec">
-      <div class="sl">// 焦點位置（避開主體）</div>
-      <div class="dr">
-        <button class="db on" data-focus="auto">自動</button>
-        <button class="db" data-focus="tl">左上</button>
-        <button class="db" data-focus="tr">右上</button>
-        <button class="db" data-focus="bl">左下</button>
-        <button class="db" data-focus="br">右下</button>
-        <button class="db" data-focus="edge">邊緣環繞</button>
-      </div>
-      <div class="focus-hint">
-        特效元素（HUD、光暈、文字）會集中在<b>未選擇的角落</b>，避免蓋住主體。
-      </div>
-    </div>
-
-    <!-- B3.3 細節強度 -->
-    <div class="sec">
-      <div class="sl">// 細節強度（獨立調整）</div>
-      <div class="rw"><label>NOISE 噪點</label>  <input type="range" id="sNO" min="0" max="10" value="5"><span class="vv" id="vNO">5</span></div>
-      <div class="rw"><label>COLOR 色偏</label>  <input type="range" id="sCO" min="0" max="10" value="5"><span class="vv" id="vCO">5</span></div>
-      <div class="rw"><label>DARKEN 暗化</label> <input type="range" id="sDK" min="0" max="10" value="5"><span class="vv" id="vDK">5</span></div>
-      <div class="rw"><label>HUD 元素</label>    <input type="range" id="sHU" min="0" max="10" value="5"><span class="vv" id="vHU">5</span></div>
-      <div class="rw"><label>SPEED 速度</label>  <input type="range" id="sSP" min="1" max="10" value="5"><span class="vv" id="vSP">5</span></div>
-      <div style="display:flex;align-items:center;margin-top:8px;gap:8px">
-        <div class="tg on" id="pt" style="margin-top:0">
-          <div class="tk"><div class="th"></div></div>
-          <div class="tl">LIVE PREVIEW</div>
+    <!-- 輸出 panel -->
+    <div class="panel" data-panel="output">
+      <div class="section">
+        <h3>輸出解析度</h3>
+        <div class="btn-row" style="grid-template-columns:repeat(3,1fr)">
+          <button class="res-btn" data-res="original">原圖</button>
+          <button class="res-btn on" data-res="recommended">建議</button>
+          <button class="res-btn" data-res="custom">自訂</button>
         </div>
-        <button class="rst" id="rstInt" style="margin-left:auto">RESET 強度</button>
+        <div class="slider" id="customWidthRow" style="display:none">
+          <label>寬度</label>
+          <input type="range" id="customWidth" min="320" max="3840" step="10" value="1080">
+          <span class="val" id="vCustomWidth">1080</span>
+        </div>
+        <div class="hint" id="resInfo">請先上傳圖片</div>
+      </div>
+
+      <div class="section" id="durSection">
+        <h3>輸出長度</h3>
+        <div class="btn-row" style="grid-template-columns:repeat(4,1fr)">
+          <button class="dur-btn on" data-d="2">2s</button>
+          <button class="dur-btn" data-d="3">3s</button>
+          <button class="dur-btn" data-d="5">5s</button>
+          <button class="dur-btn" data-d="8">8s</button>
+        </div>
+        <div class="hint" id="frameInfo">預計 30 幀 @ 15fps</div>
+      </div>
+
+      <div class="section">
+        <h3>影片畫質（GIF / MP4）</h3>
+        <div class="btn-row" style="grid-template-columns:repeat(4,1fr)">
+          <button class="qual-btn" data-qual="low">低</button>
+          <button class="qual-btn on" data-qual="standard">標準</button>
+          <button class="qual-btn" data-qual="high">高</button>
+          <button class="qual-btn" data-qual="ultra">極致</button>
+        </div>
+        <div class="hint" id="qualInfo">標準：1080p ≈ 4–8 Mbps（適合社群上傳）</div>
+      </div>
+
+      <div class="section">
+        <h3>輸出格式</h3>
+        <div class="export">
+          <button class="png" id="btnPng" disabled><span class="big">PNG</span>靜態圖片</button>
+          <button class="gif" id="btnGif" disabled><span class="big">GIF</span>動態圖片</button>
+          <button class="mp4" id="btnMp4" disabled><span class="big">MP4</span>影片檔案</button>
+        </div>
+        <div class="progress" id="progBar"><div class="progress-bar" id="progFill"></div></div>
+        <div class="progress-text" id="progText">處理中...</div>
       </div>
     </div>
-
-    <!-- B3.4 色調調整 -->
-    <div class="sec">
-      <div class="sl">// 色調調整</div>
-      <div class="rw"><label>HUE</label>        <input type="range" id="sH" min="-180" max="180" value="0" class="hue-slider"><span class="vv" id="vH">0°</span></div>
-      <div class="rw"><label>SATURATION</label> <input type="range" id="sS" min="0" max="200" value="100"><span class="vv" id="vS">100%</span></div>
-      <div style="display:flex;justify-content:flex-end;margin-top:6px">
-        <button class="rst" id="rstColor">RESET 色調</button>
-      </div>
-    </div>
-
-    <!-- B3.5 文字疊加 -->
-    <div class="sec">
-      <div class="sl">// 文字疊加</div>
-      <input type="text" class="txt-input" id="txtInput" placeholder="輸入文字（留空則不顯示）" maxlength="40">
-
-      <div class="fx-opt-label" style="margin-top:12px">字體語言</div>
-      <div class="lang-tabs">
-        <button class="lang-tab on" data-lang="en">ENGLISH</button>
-        <button class="lang-tab" data-lang="zh">中文 / 日文</button>
-      </div>
-
-      <!-- 英文字體 -->
-      <div class="font-grid" id="fontGridEn">
-        <button class="fb on" data-font="orbitron" style="font-family:'Orbitron',sans-serif">CYBER<small>科技</small></button>
-        <button class="fb" data-font="tech" style="font-family:'Share Tech Mono',monospace">TERM<small>科技</small></button>
-        <button class="fb" data-font="vt" style="font-family:'VT323',monospace">RETRO<small>科技</small></button>
-        <button class="fb" data-font="major" style="font-family:'Major Mono Display',monospace">MONO<small>復古</small></button>
-        <button class="fb" data-font="bebas" style="font-family:'Bebas Neue',sans-serif">BEBAS<small>海報</small></button>
-        <button class="fb" data-font="pixel" style="font-family:'Press Start 2P',cursive;font-size:9px">PIXEL<small>像素</small></button>
-      </div>
-
-      <!-- 中日文字體（日文字體 + 台灣自訂字體） -->
-      <div class="font-grid hidden" id="fontGridZh">
-        <button class="fb" data-font="jp-sans" style="font-family:'Noto Sans JP',sans-serif;font-weight:900">黑體<small>NOTO SANS</small></button>
-        <button class="fb" data-font="jp-serif" style="font-family:'Noto Serif JP',serif;font-weight:700">明朝<small>NOTO SERIF</small></button>
-        <button class="fb" data-font="jp-round" style="font-family:'M PLUS Rounded 1c',sans-serif;font-weight:700">圓體<small>M PLUS</small></button>
-        <button class="fb" data-font="jp-maru" style="font-family:'Zen Maru Gothic',sans-serif;font-weight:700">圓黑<small>ZEN MARU</small></button>
-        <button class="fb" data-font="tw-huninn" style="font-family:'Huninn',sans-serif">粉圓<small>JF OPEN</small></button>
-        <button class="fb" data-font="tw-chenyu" style="font-family:'ChenYuluoyan',cursive">手寫<small>辰宇落雁</small></button>
-        <button class="fb" data-font="tw-naikai" style="font-family:'NaikaiFont',sans-serif">內海<small>瀨戶風</small></button>
-      </div>
-
-      <div class="fx-opt-label" style="margin-top:12px">大小 / 透明度</div>
-      <div class="rw"><label>SIZE</label><input type="range" id="txtSize" min="12" max="160" value="42"><span class="vv" id="vTxtSize">42</span></div>
-      <div class="rw"><label>OPACITY</label><input type="range" id="txtOpacity" min="20" max="100" value="90"><span class="vv" id="vTxtOpacity">90%</span></div>
-      <div class="drag-hint">
-        💡 在預覽畫布上<b>直接拖曳</b>文字調整位置
-        <button class="rst" id="txtResetPos" style="margin-left:8px">置中</button>
-      </div>
-
-      <div class="fx-opt-label" style="margin-top:12px">顏色</div>
-      <div class="color-row">
-        <button class="swatch on" data-color="#ffffff" style="background:#ffffff"></button>
-        <button class="swatch" data-color="#000000" style="background:#000000"></button>
-        <button class="swatch" data-color="#ff2244" style="background:#ff2244"></button>
-        <button class="swatch" data-color="#00ffcc" style="background:#00ffcc"></button>
-        <button class="swatch" data-color="#f5c842" style="background:#f5c842"></button>
-        <button class="swatch" data-color="#00ff41" style="background:#00ff41"></button>
-        <button class="swatch" data-color="#ff6b00" style="background:#ff6b00"></button>
-        <input type="color" class="color-picker" id="txtColor" value="#ffffff" title="自訂顏色">
-      </div>
-
-      <div class="fx-opt-label" style="margin-top:12px">動態效果</div>
-      <div class="effect-btns" id="txtEffects">
-        <button class="eff-b on" data-eff="none">無</button>
-        <button class="eff-b" data-eff="flicker">閃爍</button>
-        <button class="eff-b" data-eff="rgb">色差</button>
-        <button class="eff-b" data-eff="type">打字機</button>
-      </div>
-    </div>
-
-    <!-- B3.6 輸出解析度 -->
-    <div class="sec">
-      <div class="sl">// 輸出解析度</div>
-      <div class="dr">
-        <button class="db"    data-res="original">原圖</button>
-        <button class="db on" data-res="recommended">建議</button>
-        <button class="db"    data-res="custom">自訂寬度</button>
-      </div>
-      <div class="rw" id="resCustomRow" style="display:none">
-        <label>WIDTH</label>
-        <input type="range" id="resCustomW" min="320" max="3840" step="10" value="1080">
-        <span class="vv" id="vResCustomW">1080</span>
-      </div>
-      <div class="fn" id="resInfo">輸出 — × — px（檔案小、處理快）</div>
-    </div>
-
-    <!-- B3.7 輸出長度 -->
-    <div class="sec">
-      <div class="sl">// 輸出長度</div>
-      <div class="dr">
-        <button class="db on" data-d="2">2s</button>
-        <button class="db"    data-d="3">3s</button>
-        <button class="db"    data-d="5">5s</button>
-        <button class="db"    data-d="8">8s</button>
-      </div>
-      <div class="fn" id="fnN">預計 30 幀 @ 15fps</div>
-    </div>
-
-    <!-- B3.8 輸出格式 -->
-    <div class="sec">
-      <div class="sl">// 輸出格式</div>
-      <div class="xg">
-        <button class="xb png-b" id="bP" disabled><span class="fmt">PNG</span>靜態圖片</button>
-        <button class="xb gif-b" id="bG" disabled><span class="fmt">GIF</span>動態圖片</button>
-        <button class="xb mp4-b" id="bM" disabled><span class="fmt">MP4</span>影片檔案</button>
-      </div>
-      <div class="pb" id="pb"><div class="pf" id="pf"></div></div>
-      <div class="pt" id="ptx">PROCESSING...</div>
-    </div>
-
+    </div><!-- /controls-inner -->
   </div>
 </div>
 
-<!-- ═══════════════════════════════════════════════
-     [C] SCRIPT
-     ═══════════════════════════════════════════════ -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/gif.js/0.2.0/gif.js"></script>
 <script>
 'use strict';
 
-// ──────────────────────────────────────────────────
-// C1. 全域狀態
-// ──────────────────────────────────────────────────
+// ═══════════════════════════════════════════
+// C1 全域狀態
+// ═══════════════════════════════════════════
+const FPS = 15;
 
-let img = null;         // 已載入的原圖
-let fx  = 'film';       // 當前特效
-let D   = 2;            // 輸出秒數
-let L   = true;         // Live Preview
-let raf = null;
-let resMode = 'recommended'; // 'original' | 'recommended' | 'custom'
-let resCustom = 1080;    // 自訂寬度（custom 模式用）
+// 預設段落範本
+function newTxt(overrides = {}) {
+  return {
+    id: Date.now() + Math.random(),
+    text: '',
+    font: 'orbitron',
+    lang: 'en',
+    x: 0.5, y: 0.5,
+    size: 42,
+    opacity: 90,
+    lineH: 1.2,
+    letterSpacing: 0,
+    strokeWidth: 0.04,
+    color: '#ffffff',
+    align: 'center',
+    valign: 'middle',           // 垂直書寫專用：top / middle / bottom
+    bold: false, italic: false, underline: false, shadow: false,
+    rotate: 0,                  // -180~180 度
+    bgEnable: false,            // 背景色塊
+    bgColor: '#000000',
+    bgOpacity: 60,              // 0~100
+    bgPad: 10,                  // px
+    glow: false,                // 外光
+    glowSize: 15,               // 0~40
+    border: false,              // 外框
+    borderW: 2,                 // px
+    vertical: false,            // 垂直書寫
+    effect: 'none',
+    ...overrides
+  };
+}
 
-// 細節強度（0-10）
-let NO = 5;  // NOISE
-let CO = 5;  // COLOR
-let DK = 5;  // DARKEN
-let HU = 5;  // HUD
-let SP = 5;  // SPEED
+const state = {
+  img: null,                    // 圖片（HTMLImageElement）
+  video: null,                  // 影片（HTMLVideoElement）
+  isVideo: false,               // 當前媒體是否為影片
+  trimStart: 0,                 // 影片剪輯起點（秒）
+  trimEnd: 0,                   // 影片剪輯終點（秒，0 表示用影片總長）
+  fx: 'film',
+  duration: 2,
+  resMode: 'recommended',
+  customWidth: 1080,
+  quality: 'standard',          // 'low' | 'standard' | 'high' | 'ultra'
+  livePreview: true,
+  paused: false,
+  raf: null,
+
+  // 強度 0-10
+  NO: 5, CO: 5, DK: 5, HU: 5, SP: 5,
+  HUE: 0, SAT: 100,
+  focusMode: 'auto',
+
+  // 多段文字
+  txts: [newTxt()],
+  selectedTxt: 0
+};
+
+/** 取得當前選中的文字段落 */
+function curTxt() { return state.txts[state.selectedTxt]; }
+
+const FONTS = {
+  orbitron: { css: "'Orbitron', sans-serif", weight: '700' },
+  tech: { css: "'Share Tech Mono', monospace", weight: '400' },
+  vt: { css: "'VT323', monospace", weight: '400' },
+  major: { css: "'Major Mono Display', monospace", weight: '400' },
+  bebas: { css: "'Bebas Neue', sans-serif", weight: '400' },
+  pixel: { css: "'Press Start 2P', cursive", weight: '400' },
+  'jp-sans': { css: "'Noto Sans JP', sans-serif", weight: '900' },
+  'jp-serif': { css: "'Noto Serif JP', serif", weight: '700' },
+  'jp-round': { css: "'M PLUS Rounded 1c', sans-serif", weight: '700' },
+  'jp-maru': { css: "'Zen Maru Gothic', sans-serif", weight: '700' },
+  huninn: { css: "'Huninn', sans-serif", weight: '400' },
+  chenyu: { css: "'ChenYuluoyan', cursive", weight: '400' },
+  naikai: { css: "'NaikaiFont', sans-serif", weight: '400' }
+};
+
+const $ = s => document.querySelector(s);
+const $$ = s => Array.from(document.querySelectorAll(s));
+const cv = $('#cvs');
+const ctx = cv.getContext('2d');
+const dz = $('#dz');
+
+// ═══════════════════════════════════════════
+// C2 媒體上傳（圖片 / 影片）
+// ═══════════════════════════════════════════
+$('#fi').addEventListener('change', e => {
+  if (e.target.files[0]) loadFile(e.target.files[0]);
+});
+
+dz.addEventListener('dragover', e => { e.preventDefault(); dz.style.borderColor = '#444'; });
+dz.addEventListener('dragleave', () => dz.style.borderColor = '');
+dz.addEventListener('drop', e => {
+  e.preventDefault();
+  dz.style.borderColor = '';
+  if (e.dataTransfer.files[0]) loadFile(e.dataTransfer.files[0]);
+});
+
+$('#btnReplace').addEventListener('click', () => $('#fi').click());
+
+/** 共用：套用媒體尺寸並啟用 UI */
+function setupMedia(naturalW, naturalH) {
+  const rec = recommendedSize(naturalW, naturalH);
+  cv.width = rec.w;
+  cv.height = rec.h;
+  cv.style.display = 'block';
+  $('#uploadPrompt').style.display = 'none';
+  dz.classList.add('has');
+  $('#btnPng').disabled = $('#btnGif').disabled = $('#btnMp4').disabled = false;
+  $('#btnReplace').style.display = 'inline-block';
+  $('#btnPause').style.display = 'inline-block';
+  $('#metaSize').textContent = `${cv.width}×${cv.height}`;
+
+  // 影片不需要「輸出長度」設定（直接用影片時長）
+  const durSec = $('#durSection');
+  if (durSec) durSec.style.display = state.isVideo ? 'none' : 'block';
+
+  updateResInfo();
+  play();
+}
+
+/** 釋放當前媒體資源 */
+function clearMedia() {
+  if (state.video) {
+    state.video.pause();
+    URL.revokeObjectURL(state.video.src);
+    state.video = null;
+  }
+  if (state.img) {
+    URL.revokeObjectURL(state.img.src);
+    state.img = null;
+  }
+  state.isVideo = false;
+}
+
+// ─── 影片時間軸（剪輯起訖點 + 播放頭） ───
+function initTrimBar() {
+  const v = state.video;
+  if (!v) return;
+
+  $('#trimDur').textContent = `總長 ${v.duration.toFixed(1)}s`;
+  updateTrimUI();
+
+  // 播放頭跟著影片時間更新
+  if (window._trimRaf) cancelAnimationFrame(window._trimRaf);
+  const updatePlayhead = () => {
+    if (!state.isVideo || !state.video) return;
+    const pct = (state.video.currentTime / state.video.duration) * 100;
+    $('#trimPlayhead').style.left = pct + '%';
+    // 播放到結尾自動跳回起點（loop 邏輯）
+    if (state.video.currentTime >= state.trimEnd && !state.video.paused) {
+      state.video.currentTime = state.trimStart;
+    }
+    window._trimRaf = requestAnimationFrame(updatePlayhead);
+  };
+  updatePlayhead();
+}
+
+function updateTrimUI() {
+  const v = state.video;
+  if (!v) return;
+  const startPct = (state.trimStart / v.duration) * 100;
+  const endPct = (state.trimEnd / v.duration) * 100;
+  $('#trimRange').style.left = startPct + '%';
+  $('#trimRange').style.width = (endPct - startPct) + '%';
+  $('#trimStart').style.left = startPct + '%';
+  $('#trimEnd').style.left = endPct + '%';
+  $('#trimStartTime').textContent = state.trimStart.toFixed(1) + 's';
+  $('#trimEndTime').textContent = state.trimEnd.toFixed(1) + 's';
+  $('#trimDur').textContent = `剪輯 ${(state.trimEnd - state.trimStart).toFixed(1)}s`;
+}
+
+// 拖曳起訖點
+let trimDrag = null;
+const trimTrack = document.querySelector('.trim-track');
+
+['#trimStart', '#trimEnd'].forEach(sel => {
+  const el = document.querySelector(sel);
+  if (!el) return;
+  el.addEventListener('pointerdown', e => {
+    e.stopPropagation();
+    trimDrag = { type: sel === '#trimStart' ? 'start' : 'end' };
+    el.setPointerCapture(e.pointerId);
+  });
+});
+
+document.addEventListener('pointermove', e => {
+  if (!trimDrag || !state.video) return;
+  const r = trimTrack.getBoundingClientRect();
+  const pct = Math.max(0, Math.min(1, (e.clientX - r.left) / r.width));
+  const t = pct * state.video.duration;
+  if (trimDrag.type === 'start') {
+    state.trimStart = Math.min(t, state.trimEnd - 0.1);
+    if (state.video.currentTime < state.trimStart) state.video.currentTime = state.trimStart;
+  } else {
+    state.trimEnd = Math.max(t, state.trimStart + 0.1);
+  }
+  updateTrimUI();
+});
+
+document.addEventListener('pointerup', () => { trimDrag = null; });
+
+// 點擊時間軸跳到該位置
+trimTrack && trimTrack.addEventListener('click', e => {
+  if (!state.video || trimDrag) return;
+  if (e.target.classList.contains('trim-handle')) return;
+  const r = trimTrack.getBoundingClientRect();
+  const pct = (e.clientX - r.left) / r.width;
+  state.video.currentTime = pct * state.video.duration;
+});
+
+function loadFile(file) {
+  clearMedia();
+
+  if (file.type.startsWith('video/')) {
+    loadVideo(file);
+  } else if (file.type.startsWith('image/')) {
+    loadImage(file);
+  } else {
+    alert('不支援的檔案格式，請上傳圖片或影片');
+  }
+}
+
+function loadImage(file) {
+  const img = new Image();
+  img.onload = () => {
+    state.img = img;
+    state.isVideo = false;
+    setupMedia(img.naturalWidth, img.naturalHeight);
+    $('#metaFx').textContent = state.fx === 'err' ? '404' : state.fx.toUpperCase();
+    $('#trimBar').style.display = 'none';
+  };
+  img.src = URL.createObjectURL(file);
+}
+
+function loadVideo(file) {
+  const v = document.createElement('video');
+  v.muted = true;             // 必須靜音才能 autoplay
+  v.loop = true;              // 自動循環
+  v.playsInline = true;
+  v.crossOrigin = 'anonymous';
+
+  v.onloadedmetadata = () => {
+    state.video = v;
+    state.isVideo = true;
+    state.trimStart = 0;
+    state.trimEnd = v.duration;
+    setupMedia(v.videoWidth, v.videoHeight);
+
+    // 顯示影片時長到 meta
+    const dur = v.duration.toFixed(1);
+    $('#metaSize').textContent = `${cv.width}×${cv.height} · ${dur}s`;
+
+    // 顯示時間軸並初始化
+    $('#trimBar').style.display = 'flex';
+    initTrimBar();
+
+    v.play().catch(err => {
+      console.warn('autoplay failed:', err);
+    });
+  };
+
+  v.onerror = () => {
+    alert('影片載入失敗，請檢查格式（支援 MP4 / WebM / MOV）');
+  };
+
+  v.src = URL.createObjectURL(file);
+  v.load();
+}
+
+function recommendedSize(w, h) {
+  const MAX = 1080;
+  if (w <= MAX) return { w, h };
+  return { w: MAX, h: Math.round(h * MAX / w) };
+}
+
+// ═══════════════════════════════════════════
+// C3 控制元件監聽
+// ═══════════════════════════════════════════
+
+// Tabs
+$$('.tab').forEach(b => b.addEventListener('click', () => {
+  $$('.tab').forEach(x => x.classList.remove('on'));
+  b.classList.add('on');
+  $$('.panel').forEach(p => p.classList.remove('on'));
+  $(`.panel[data-panel="${b.dataset.tab}"]`).classList.add('on');
+}));
+
+// UI 大小
+$$('.us-btn').forEach(b => b.addEventListener('click', () => {
+  $$('.us-btn').forEach(x => x.classList.remove('on'));
+  b.classList.add('on');
+  document.documentElement.style.setProperty('--ui-scale', b.dataset.size);
+}));
+
+// ─── 段落清單管理 ───
+function renderTxtList() {
+  const list = $('#txtList');
+  list.innerHTML = '';
+  state.txts.forEach((tx, i) => {
+    const row = document.createElement('div');
+    row.className = 'txt-row' + (i === state.selectedTxt ? ' on' : '');
+    const preview = (tx.text || '(空白段落)').replace(/\n/g, ' ').slice(0, 24);
+    const isEmpty = !tx.text;
+    const isFirst = i === 0;
+    const isLast = i === state.txts.length - 1;
+    row.innerHTML = `
+      <span class="preview${isEmpty ? ' empty' : ''}">${i+1}. ${preview}</span>
+      <button class="layer-btn" data-act="up"   ${isFirst ? 'disabled' : ''} title="上移（往背景）">▲</button>
+      <button class="layer-btn" data-act="down" ${isLast  ? 'disabled' : ''} title="下移（往前景）">▼</button>
+      <button class="del" title="刪除">×</button>
+    `;
+    row.addEventListener('click', e => {
+      if (e.target.tagName === 'BUTTON') return;
+      state.selectedTxt = i;
+      syncEditorFromCurrent();
+      renderTxtList();
+    });
+
+    // 上移：跟前一個交換
+    row.querySelector('[data-act="up"]').addEventListener('click', e => {
+      e.stopPropagation();
+      if (i === 0) return;
+      [state.txts[i-1], state.txts[i]] = [state.txts[i], state.txts[i-1]];
+      // 跟著移動選中
+      if (state.selectedTxt === i)        state.selectedTxt = i - 1;
+      else if (state.selectedTxt === i-1) state.selectedTxt = i;
+      renderTxtList();
+    });
+
+    // 下移：跟後一個交換
+    row.querySelector('[data-act="down"]').addEventListener('click', e => {
+      e.stopPropagation();
+      if (i === state.txts.length - 1) return;
+      [state.txts[i+1], state.txts[i]] = [state.txts[i], state.txts[i+1]];
+      if (state.selectedTxt === i)        state.selectedTxt = i + 1;
+      else if (state.selectedTxt === i+1) state.selectedTxt = i;
+      renderTxtList();
+    });
+
+    row.querySelector('.del').addEventListener('click', e => {
+      e.stopPropagation();
+      if (state.txts.length === 1) {
+        state.txts[0] = newTxt();
+      } else {
+        state.txts.splice(i, 1);
+        if (state.selectedTxt >= state.txts.length) state.selectedTxt = state.txts.length - 1;
+      }
+      syncEditorFromCurrent();
+      renderTxtList();
+    });
+    list.appendChild(row);
+  });
+}
+
+$('#addTxt').addEventListener('click', () => {
+  // 新段繼承當前語言設定，文字內容空白
+  const cur = curTxt();
+  const newOne = newTxt({ lang: cur.lang });
+  state.txts.push(newOne);
+  state.selectedTxt = state.txts.length - 1;
+  syncEditorFromCurrent();
+  renderTxtList();
+  $('#txtText').focus();
+});
+
+/** 把目前選中段落的所有設定同步到右側編輯器 UI */
+function syncEditorFromCurrent() {
+  const tx = curTxt();
+  $('#txtText').value = tx.text;
+  $('#txtSize').value = tx.size; $('#vTxtSize').textContent = tx.size;
+  $('#txtOpacity').value = tx.opacity; $('#vTxtOpacity').textContent = tx.opacity + '%';
+  $('#txtLineH').value = tx.lineH * 100; $('#vTxtLineH').textContent = tx.lineH.toFixed(1);
+  $('#txtLetterSp').value = tx.letterSpacing; $('#vTxtLetterSp').textContent = tx.letterSpacing;
+  $('#txtStroke').value = tx.strokeWidth * 100; $('#vTxtStroke').textContent = (tx.strokeWidth * 100 | 0) + '%';
+  $('#txtRotate').value = tx.rotate; $('#vTxtRotate').textContent = tx.rotate + '°';
+  $('#txtX').value = tx.x * 100; $('#vTxtX').textContent = (tx.x * 100 | 0) + '%';
+  $('#txtY').value = tx.y * 100; $('#vTxtY').textContent = (tx.y * 100 | 0) + '%';
+  $('#txtColor').value = tx.color;
+  $('#txtBgColor').value = tx.bgColor;
+  $('#txtBgOpacity').value = tx.bgOpacity; $('#vTxtBgOpacity').textContent = tx.bgOpacity + '%';
+  $('#txtBgPad').value = tx.bgPad; $('#vTxtBgPad').textContent = tx.bgPad;
+  $('#txtGlow').value = tx.glowSize; $('#vTxtGlow').textContent = tx.glowSize;
+  $('#txtBorderW').value = tx.borderW; $('#vTxtBorderW').textContent = tx.borderW + 'px';
+
+  // 更新所有按鈕狀態
+  $$('.lang-btn').forEach(b => b.classList.toggle('on', b.dataset.lang === tx.lang));
+  if (tx.lang === 'en') { $('#fontsEn').classList.remove('hidden'); $('#fontsJp').classList.add('hidden'); }
+  else { $('#fontsEn').classList.add('hidden'); $('#fontsJp').classList.remove('hidden'); }
+  $$('#fontsEn button, #fontsJp button').forEach(b => b.classList.toggle('on', b.dataset.font === tx.font));
+  $$('.align-btn').forEach(b => b.classList.toggle('on', b.dataset.align === tx.align));
+  $$('.valign-btn').forEach(b => b.classList.toggle('on', b.dataset.valign === (tx.valign || 'middle')));
+  $$('.effect-btn').forEach(b => b.classList.toggle('on', b.dataset.effect === tx.effect));
+  $$('.sw').forEach(b => b.classList.toggle('on', b.dataset.color === tx.color));
+
+  // Style buttons
+  ['bold', 'italic', 'underline', 'shadow'].forEach(s => {
+    const btn = $(`.style-btn[data-style="${s}"]`);
+    if (btn) {
+      btn.style.borderColor = tx[s] ? 'var(--a2)' : 'var(--b)';
+      btn.style.color = tx[s] ? 'var(--a2)' : 'var(--m)';
+    }
+  });
+
+  // Toggles
+  ['bgEnable', 'glow', 'border', 'vertical'].forEach(k => {
+    const tg = { bgEnable: '#bgEnableToggle', glow: '#glowToggle', border: '#borderToggle', vertical: '#verticalToggle' }[k];
+    const el = $(tg);
+    if (el) el.classList.toggle('on', tx[k]);
+  });
+
+  // 依垂直書寫狀態切換對齊按鈕組
+  if (typeof updateAlignVisibility === 'function') updateAlignVisibility();
+}
+
+renderTxtList();
+
+// 特效切換
+$$('[data-fx]').forEach(b => b.addEventListener('click', () => {
+  $$('[data-fx]').forEach(x => x.classList.remove('on'));
+  b.classList.add('on');
+  state.fx = b.dataset.fx;
+  $('#metaFx').textContent = state.fx === 'err' ? '404' : state.fx.toUpperCase();
+}));
+
+// 強度滑桿
+['NO','CO','DK','HU','SP'].forEach(k => {
+  $(`#s${k}`).addEventListener('input', e => {
+    state[k] = +e.target.value;
+    $(`#v${k}`).textContent = e.target.value;
+  });
+});
 
 // 色調
-let HUE = 0;
-let SAT = 100;
+$('#sHUE').addEventListener('input', e => { state.HUE = +e.target.value; $('#vHUE').textContent = e.target.value + '°'; });
+$('#sSAT').addEventListener('input', e => { state.SAT = +e.target.value; $('#vSAT').textContent = e.target.value + '%'; });
 
-// 特效專屬
-let bars      = true;
-let cctvCross = true;
-let errWM     = 40;
-let focusMode = 'auto';
-let cyberPal  = 'cm';
-let retroPal  = 'warm';
+// 焦點
+$$('[data-focus]').forEach(b => b.addEventListener('click', () => {
+  $$('[data-focus]').forEach(x => x.classList.remove('on'));
+  b.classList.add('on');
+  state.focusMode = b.dataset.focus;
+}));
 
-// 文字疊加
-let txt = {
-  text:    '',
-  font:    'orbitron',
-  lang:    'en',          // 'en' / 'zh'
-  x:       0.5,           // 0-1 比例座標（相對 canvas）
-  y:       0.5,
-  size:    42,
-  opacity: 90,
-  color:   '#ffffff',
-  effect:  'none'
-};
-
-// 字體對照表 - 分英文 / 中日文
-// 中日文組包含日文字體（漢字覆蓋最完整）+ 台灣自訂字體
-const FONTS = {
-  // 英文（6）
-  orbitron: { css: "'Orbitron', sans-serif",         weight: '700' },
-  tech:     { css: "'Share Tech Mono', monospace",   weight: '400' },
-  vt:       { css: "'VT323', monospace",             weight: '400' },
-  major:    { css: "'Major Mono Display', monospace", weight: '400' },
-  bebas:    { css: "'Bebas Neue', sans-serif",       weight: '400' },
-  pixel:    { css: "'Press Start 2P', cursive",      weight: '400' },
-  // 日文字體（4）
-  'jp-sans':  { css: "'Noto Sans JP', sans-serif",      weight: '900' },
-  'jp-serif': { css: "'Noto Serif JP', serif",          weight: '700' },
-  'jp-round': { css: "'M PLUS Rounded 1c', sans-serif", weight: '700' },
-  'jp-maru':  { css: "'Zen Maru Gothic', sans-serif",   weight: '700' },
-  // 台灣自訂字體（3）
-  'tw-huninn': { css: "'Huninn', sans-serif",            weight: '400' },
-  'tw-chenyu': { css: "'ChenYuluoyan', cursive",         weight: '400' },
-  'tw-naikai': { css: "'NaikaiFont', sans-serif",        weight: '400' }
-};
-
-const FPS = 15;  // 12→15 提升流暢感（PNG 拉到 24-30 fps 雜訊太密反而髒）
-
-// ──────────────────────────────────────────────────
-// C2. DOM 快捷與 Canvas
-// ──────────────────────────────────────────────────
-const $  = s => document.querySelector(s);
-const $$ = s => document.querySelectorAll(s);
-const cv = $('#cvs'),
-      ct = cv.getContext('2d'),
-      dz = $('#dz');
-
-// ──────────────────────────────────────────────────
-// C3. 圖片上傳
-// ──────────────────────────────────────────────────
-
-$('#fi').onchange = e => e.target.files[0] && loadImg(e.target.files[0]);
-
-dz.ondragover  = e => { e.preventDefault(); dz.classList.add('drag'); };
-dz.ondragleave = () => dz.classList.remove('drag');
-dz.ondrop = e => {
-  e.preventDefault();
-  dz.classList.remove('drag');
-  if (e.dataTransfer.files[0]) loadImg(e.dataTransfer.files[0]);
-};
-
-dz.onclick = e => {
-  if (!img && e.target.tagName !== 'LABEL' && e.target.tagName !== 'INPUT') {
-    $('#fi').click();
-  }
-};
-
-$('#rep').onclick = () => $('#fi').click();
-
-/**
- * 計算「建議尺寸」 - Threads 上傳優化
- * 規則：寬度上限 1080，等比保持原圖比例（避免變形）
- * 直幅 → 接近 9:16 / 橫幅 → 寬 1080
- * 小於 1080 寬的圖直接用原尺寸
- */
-function getRecommendedSize(srcW, srcH) {
-  const MAX_W = 1080;
-  if (srcW <= MAX_W) return { w: srcW, h: srcH };
-  const w = MAX_W;
-  const h = Math.round(srcH * MAX_W / srcW);
-  return { w, h };
-}
-
-function loadImg(file) {
-  const im = new Image();
-  im.onload = () => {
-    img = im;
-    // canvas 內部解析度 = 建議尺寸（這就是預覽 = 輸出的關鍵）
-    const rec = getRecommendedSize(im.naturalWidth, im.naturalHeight);
-    cv.width  = rec.w;
-    cv.height = rec.h;
-    // CSS 顯示尺寸由瀏覽器自動縮放（透過 object-fit: contain）
-
-    cv.style.display = 'block';
-    $('#du').style.display = 'none';
-    dz.classList.add('has');
-
-    $('#bG').disabled = $('#bM').disabled = $('#bP').disabled = false;
-    $('#rep').style.display   = 'inline-block';
-    $('#pause').style.display = 'inline-block';
-    $('#mS').textContent = `${cv.width}×${cv.height}`;
-    updateResInfo();
-
-    play();
-  };
-  im.src = URL.createObjectURL(file);
-}
-
-// ──────────────────────────────────────────────────
-// C4. 事件監聽
-// ──────────────────────────────────────────────────
-
-// 特效描述
-const DS = {
-  film:  '粒子感噪點、膠片刮痕、光暈色差，重現電影老底片質感。',
-  cyber: '霓虹光暈、掃描線、像素錯位、HEX代碼、Grid網格，賽博龐克風格。',
-  retro: 'VHS磁帶橫紋、色彩溢出、類比訊號失真，80年代錄影帶記憶。',
-  err:   '系統錯誤警示橫幅、紅色警告邊框、404文字閃爍浮層。',
-  cctv:  '監視器時間碼、靜電噪訊、訊號中斷畫面，安全攝影機故障感。',
-  hack:  '綠色終端機文字瀑布、代碼入侵覆蓋、ACCESS DENIED警告。'
-};
-
-$$('.eb').forEach(b => b.onclick = function() {
-  $$('.eb').forEach(x => x.classList.remove('on'));
-  this.classList.add('on');
-  fx = this.dataset.fx;
-  $('#dc').textContent = DS[fx];
-  $('#mF').textContent = (fx === 'err' ? '404' : fx).toUpperCase();
-
-  $$('.fx-opt').forEach(o => o.classList.remove('show'));
-  const optEl = $(`#opt-${fx}`);
-  if (optEl) optEl.classList.add('show');
+// 文字
+$('#txtText').addEventListener('input', e => {
+  curTxt().text = e.target.value;
+  renderTxtList();
+});
+$('#txtSize').addEventListener('input', e => { curTxt().size = +e.target.value; $('#vTxtSize').textContent = e.target.value; });
+$('#txtOpacity').addEventListener('input', e => { curTxt().opacity = +e.target.value; $('#vTxtOpacity').textContent = e.target.value + '%'; });
+$('#txtLineH').addEventListener('input', e => { curTxt().lineH = +e.target.value / 100; $('#vTxtLineH').textContent = curTxt().lineH.toFixed(1); });
+$('#txtLetterSp').addEventListener('input', e => { curTxt().letterSpacing = +e.target.value; $('#vTxtLetterSp').textContent = e.target.value; });
+$('#txtStroke').addEventListener('input', e => { curTxt().strokeWidth = +e.target.value / 100; $('#vTxtStroke').textContent = e.target.value + '%'; });
+$('#txtRotate').addEventListener('input', e => { curTxt().rotate = +e.target.value; $('#vTxtRotate').textContent = e.target.value + '°'; });
+$('#txtX').addEventListener('input', e => { curTxt().x = +e.target.value / 100; $('#vTxtX').textContent = e.target.value + '%'; });
+$('#txtY').addEventListener('input', e => { curTxt().y = +e.target.value / 100; $('#vTxtY').textContent = e.target.value + '%'; });
+$('#txtColor').addEventListener('input', e => {
+  curTxt().color = e.target.value;
+  $$('.sw').forEach(x => x.classList.remove('on'));
 });
 
-$$('#cyberPal .pc').forEach(b => b.onclick = function() {
-  $$('#cyberPal .pc').forEach(x => x.classList.remove('on'));
-  this.classList.add('on');
-  cyberPal = this.dataset.pal;
+// 進階：背景 / glow / 外框 / 垂直
+$('#txtBgColor').addEventListener('input', e => curTxt().bgColor = e.target.value);
+$('#txtBgOpacity').addEventListener('input', e => { curTxt().bgOpacity = +e.target.value; $('#vTxtBgOpacity').textContent = e.target.value + '%'; });
+$('#txtBgPad').addEventListener('input', e => { curTxt().bgPad = +e.target.value; $('#vTxtBgPad').textContent = e.target.value; });
+$('#txtGlow').addEventListener('input', e => { curTxt().glowSize = +e.target.value; $('#vTxtGlow').textContent = e.target.value; });
+$('#txtBorderW').addEventListener('input', e => { curTxt().borderW = +e.target.value; $('#vTxtBorderW').textContent = e.target.value + 'px'; });
+
+// Toggles 切換
+[['bgEnableToggle', 'bgEnable'], ['glowToggle', 'glow'], ['borderToggle', 'border'], ['verticalToggle', 'vertical']].forEach(([id, key]) => {
+  const el = $('#' + id);
+  if (el) el.addEventListener('click', () => {
+    curTxt()[key] = !curTxt()[key];
+    el.classList.toggle('on', curTxt()[key]);
+    if (key === 'vertical') updateAlignVisibility();
+  });
 });
-$$('#retroPal .pc').forEach(b => b.onclick = function() {
-  $$('#retroPal .pc').forEach(x => x.classList.remove('on'));
-  this.classList.add('on');
-  retroPal = this.dataset.pal;
-});
 
-// 滑桿綁定
-$('#sNO').oninput   = e => { NO = +e.target.value; $('#vNO').textContent = NO; };
-$('#sCO').oninput   = e => { CO = +e.target.value; $('#vCO').textContent = CO; };
-$('#sDK').oninput   = e => { DK = +e.target.value; $('#vDK').textContent = DK; };
-$('#sHU').oninput   = e => { HU = +e.target.value; $('#vHU').textContent = HU; };
-$('#sSP').oninput   = e => { SP = +e.target.value; $('#vSP').textContent = SP; };
-$('#sH').oninput    = e => { HUE = +e.target.value; $('#vH').textContent = HUE + '°'; };
-$('#sS').oninput    = e => { SAT = +e.target.value; $('#vS').textContent = SAT + '%'; };
-$('#errWM').oninput = e => { errWM = +e.target.value; $('#vErrWM').textContent = errWM + '%'; };
-
-// Reset
-$('#rstInt').onclick = () => {
-  NO = CO = DK = HU = SP = 5;
-  ['sNO','sCO','sDK','sHU','sSP'].forEach(i => $('#'+i).value = 5);
-  ['vNO','vCO','vDK','vHU','vSP'].forEach(i => $('#'+i).textContent = 5);
-};
-$('#rstColor').onclick = () => {
-  HUE = 0; SAT = 100;
-  $('#sH').value = 0; $('#sS').value = 100;
-  $('#vH').textContent = '0°'; $('#vS').textContent = '100%';
-};
-
-// Live Preview / Pause
-$('#pt').onclick = function() {
-  L = !L;
-  this.classList.toggle('on', L);
-  if (L && img) play();
-  else cancelAnimationFrame(raf);
-};
-
-$('#pause').onclick = function() {
-  if (this.classList.contains('paused')) {
-    this.classList.remove('paused');
-    this.textContent = '⏸ 暫停';
-    if (L && img) play();
+// 字體語言切換
+$$('.lang-btn').forEach(b => b.addEventListener('click', () => {
+  $$('.lang-btn').forEach(x => x.classList.remove('on'));
+  b.classList.add('on');
+  curTxt().lang = b.dataset.lang;
+  if (b.dataset.lang === 'en') {
+    $('#fontsEn').classList.remove('hidden');
+    $('#fontsJp').classList.add('hidden');
   } else {
-    this.classList.add('paused');
-    this.textContent = '▶ 繼續';
-    cancelAnimationFrame(raf);
+    $('#fontsEn').classList.add('hidden');
+    $('#fontsJp').classList.remove('hidden');
   }
-};
+}));
 
-// 專屬開關
-$('#barsTog').onclick   = function() { bars      = !bars;      this.classList.toggle('on', bars); };
-$('#cctvCross').onclick = function() { cctvCross = !cctvCross; this.classList.toggle('on', cctvCross); };
+// 字體選擇
+$$('#fontsEn button, #fontsJp button').forEach(b => b.addEventListener('click', () => {
+  b.parentElement.querySelectorAll('button').forEach(x => x.classList.remove('on'));
+  b.classList.add('on');
+  curTxt().font = b.dataset.font;
+}));
 
-// 焦點位置
-$$('.db[data-focus]').forEach(b => b.onclick = function() {
-  $$('.db[data-focus]').forEach(x => x.classList.remove('on'));
-  this.classList.add('on');
-  focusMode = this.dataset.focus;
-});
+// 字體樣式
+$$('.style-btn').forEach(b => b.addEventListener('click', () => {
+  const k = b.dataset.style;
+  curTxt()[k] = !curTxt()[k];
+  b.style.borderColor = curTxt()[k] ? 'var(--a2)' : 'var(--b)';
+  b.style.color = curTxt()[k] ? 'var(--a2)' : 'var(--m)';
+}));
 
-// ─── UI 縮放 ───
-$$('.us-b').forEach(b => b.onclick = function() {
-  $$('.us-b').forEach(x => x.classList.remove('on'));
-  this.classList.add('on');
-  document.documentElement.style.setProperty('--scale', this.dataset.scale);
-});
+// 對齊
+$$('.align-btn').forEach(b => b.addEventListener('click', () => {
+  $$('.align-btn').forEach(x => x.classList.remove('on'));
+  b.classList.add('on');
+  curTxt().align = b.dataset.align;
+}));
 
-// ─── 文字疊加 ───
-$('#txtInput').oninput   = e => { txt.text    = e.target.value; };
-$('#txtSize').oninput    = e => { txt.size    = +e.target.value; $('#vTxtSize').textContent    = txt.size; };
-$('#txtOpacity').oninput = e => { txt.opacity = +e.target.value; $('#vTxtOpacity').textContent = txt.opacity + '%'; };
-$('#txtColor').oninput   = e => {
-  txt.color = e.target.value;
-  $$('.swatch').forEach(x => x.classList.remove('on'));
-};
+// 垂直書寫對齊（置頂/中/底）
+$$('.valign-btn').forEach(b => b.addEventListener('click', () => {
+  $$('.valign-btn').forEach(x => x.classList.remove('on'));
+  b.classList.add('on');
+  curTxt().valign = b.dataset.valign;
+}));
 
-// 判斷字體是否屬於中日文組（jp- 或 tw- 前綴）
-const isZhFont = f => f.startsWith('jp-') || f.startsWith('tw-');
-
-// 語言 tab 切換
-$$('.lang-tab').forEach(b => b.onclick = function() {
-  $$('.lang-tab').forEach(x => x.classList.remove('on'));
-  this.classList.add('on');
-  txt.lang = this.dataset.lang;
-
-  if (txt.lang === 'en') {
-    $('#fontGridEn').classList.remove('hidden');
-    $('#fontGridZh').classList.add('hidden');
-    // 若當前是中日文字體，切回第一個英文字體
-    if (!isZhFont(txt.font)) return;
-    const first = $('#fontGridEn .fb');
-    $$('#fontGridEn .fb').forEach(x => x.classList.remove('on'));
-    first.classList.add('on');
-    txt.font = first.dataset.font;
-  } else {
-    $('#fontGridEn').classList.add('hidden');
-    $('#fontGridZh').classList.remove('hidden');
-    if (isZhFont(txt.font)) return;
-    const first = $('#fontGridZh .fb');
-    $$('#fontGridZh .fb').forEach(x => x.classList.remove('on'));
-    first.classList.add('on');
-    txt.font = first.dataset.font;
-  }
-});
-
-// 字體選擇（兩組共用）
-$$('.fb').forEach(b => b.onclick = function() {
-  // 只取消同一 grid 內的 on
-  this.parentElement.querySelectorAll('.fb').forEach(x => x.classList.remove('on'));
-  this.classList.add('on');
-  txt.font = this.dataset.font;
-});
+/** 依目前是否垂直書寫切換對齊按鈕組 */
+function updateAlignVisibility() {
+  const isV = curTxt().vertical;
+  $('#alignH').style.display = isV ? 'none' : 'grid';
+  $('#alignV').style.display = isV ? 'grid' : 'none';
+}
 
 // 顏色色票
-$$('.swatch').forEach(b => b.onclick = function() {
-  $$('.swatch').forEach(x => x.classList.remove('on'));
-  this.classList.add('on');
-  txt.color = this.dataset.color;
-  $('#txtColor').value = txt.color;
-});
+$$('.sw').forEach(b => b.addEventListener('click', () => {
+  $$('.sw').forEach(x => x.classList.remove('on'));
+  b.classList.add('on');
+  curTxt().color = b.dataset.color;
+  $('#txtColor').value = b.dataset.color;
+}));
 
 // 動態效果
-$$('.eff-b').forEach(b => b.onclick = function() {
-  $$('.eff-b').forEach(x => x.classList.remove('on'));
-  this.classList.add('on');
-  txt.effect = this.dataset.eff;
-});
+$$('.effect-btn').forEach(b => b.addEventListener('click', () => {
+  $$('.effect-btn').forEach(x => x.classList.remove('on'));
+  b.classList.add('on');
+  curTxt().effect = b.dataset.effect;
+}));
 
-// 置中按鈕
-$('#txtResetPos').onclick = () => { txt.x = 0.5; txt.y = 0.5; };
+// 解析度
+$$('.res-btn').forEach(b => b.addEventListener('click', () => {
+  $$('.res-btn').forEach(x => x.classList.remove('on'));
+  b.classList.add('on');
+  state.resMode = b.dataset.res;
+  $('#customWidthRow').style.display = b.dataset.res === 'custom' ? 'flex' : 'none';
+  updateResInfo();
+}));
 
-// ─── 文字拖曳（直接在 canvas 上） ───
-let dragging = false, dragOff = { x: 0, y: 0 };
-
-/** 事件座標轉 canvas 內部比例座標 (0-1) */
-function eventToCanvasPos(e) {
-  const r = cv.getBoundingClientRect();
-  const cx = (e.touches ? e.touches[0].clientX : e.clientX) - r.left;
-  const cy = (e.touches ? e.touches[0].clientY : e.clientY) - r.top;
-  // canvas 內部像素座標
-  const ix = cx * (cv.width / r.width);
-  const iy = cy * (cv.height / r.height);
-  return { x: ix / cv.width, y: iy / cv.height, ix, iy };
-}
-
-/** 檢查事件位置是否落在文字附近 */
-function hitTest(e) {
-  if (!txt.text || !img) return false;
-  const p = eventToCanvasPos(e);
-  // 允許 ±(size*2) 的容差（因為文字寬度難精算）
-  const tol = Math.max(30, txt.size * 0.8) / cv.width;
-  const tolY = Math.max(30, txt.size) / cv.height;
-  return Math.abs(p.x - txt.x) < tol * 3 && Math.abs(p.y - txt.y) < tolY;
-}
-
-cv.addEventListener('mousedown', e => {
-  if (!hitTest(e)) return;
-  dragging = true;
-  const p = eventToCanvasPos(e);
-  dragOff.x = p.x - txt.x;
-  dragOff.y = p.y - txt.y;
-  dz.classList.add('dragging-text');
-  e.preventDefault();
-});
-
-window.addEventListener('mousemove', e => {
-  if (!dragging) return;
-  const p = eventToCanvasPos(e);
-  txt.x = Math.max(0, Math.min(1, p.x - dragOff.x));
-  txt.y = Math.max(0, Math.min(1, p.y - dragOff.y));
-});
-
-window.addEventListener('mouseup', () => {
-  if (!dragging) return;
-  dragging = false;
-  dz.classList.remove('dragging-text');
-});
-
-// 觸控支援
-cv.addEventListener('touchstart', e => {
-  if (!hitTest(e)) return;
-  dragging = true;
-  const p = eventToCanvasPos(e);
-  dragOff.x = p.x - txt.x;
-  dragOff.y = p.y - txt.y;
-  e.preventDefault();
-}, { passive: false });
-
-window.addEventListener('touchmove', e => {
-  if (!dragging) return;
-  const p = eventToCanvasPos(e);
-  txt.x = Math.max(0, Math.min(1, p.x - dragOff.x));
-  txt.y = Math.max(0, Math.min(1, p.y - dragOff.y));
-  e.preventDefault();
-}, { passive: false });
-
-window.addEventListener('touchend', () => { dragging = false; });
-
-// 當有文字時，canvas 顯示 grab 游標
-const cvObserver = setInterval(() => {
-  if (txt.text && img) dz.classList.add('has-text');
-  else dz.classList.remove('has-text');
-}, 300);
-
-// 輸出解析度
-$$('.db[data-res]').forEach(b => b.onclick = function() {
-  $$('.db[data-res]').forEach(x => x.classList.remove('on'));
-  this.classList.add('on');
-  resMode = this.dataset.res;
-  $('#resCustomRow').style.display = (resMode === 'custom') ? 'flex' : 'none';
+$('#customWidth').addEventListener('input', e => {
+  state.customWidth = +e.target.value;
+  $('#vCustomWidth').textContent = e.target.value;
   updateResInfo();
 });
 
-$('#resCustomW').oninput = e => {
-  resCustom = +e.target.value;
-  $('#vResCustomW').textContent = resCustom;
-  updateResInfo();
+// 長度
+$$('.dur-btn').forEach(b => b.addEventListener('click', () => {
+  $$('.dur-btn').forEach(x => x.classList.remove('on'));
+  b.classList.add('on');
+  state.duration = +b.dataset.d;
+  $('#frameInfo').textContent = `預計 ${state.duration * FPS} 幀 @ ${FPS}fps`;
+}));
+
+// 影片畫質
+const QUALITY_INFO = {
+  low:      { mul: 0.6,  gifQ: 8, label: '低：檔案小、畫質粗糙' },
+  standard: { mul: 1.5,  gifQ: 5, label: '標準：1080p ≈ 4–8 Mbps（適合社群上傳）' },
+  high:     { mul: 3.0,  gifQ: 3, label: '高：1080p ≈ 16 Mbps（清晰銳利）' },
+  ultra:    { mul: 6.0,  gifQ: 1, label: '極致：1080p ≈ 32 Mbps（檔案大、近似無損）' }
 };
 
-/** 計算當前模式的輸出尺寸 */
-function getOutputSize() {
-  if (!img) return { w: cv.width, h: cv.height };
-  if (resMode === 'original') {
-    return { w: img.naturalWidth, h: img.naturalHeight };
-  }
-  if (resMode === 'custom') {
-    const w = resCustom;
-    const h = Math.round(img.naturalHeight * w / img.naturalWidth);
-    return { w, h };
-  }
-  // recommended：直接用 canvas 內部尺寸（loadImg 時已經設成建議尺寸）
-  return { w: cv.width, h: cv.height };
+$$('.qual-btn').forEach(b => b.addEventListener('click', () => {
+  $$('.qual-btn').forEach(x => x.classList.remove('on'));
+  b.classList.add('on');
+  state.quality = b.dataset.qual;
+  $('#qualInfo').textContent = QUALITY_INFO[state.quality].label;
+}));
+
+/** 依品質計算 MP4 bitrate（每像素 bit 數）*/
+function getBitrate(w, h) {
+  const baseRate = 0.4;  // 每像素 bit 數的基準
+  const mul = QUALITY_INFO[state.quality].mul;
+  const target = w * h * baseRate * mul;
+  return Math.max(2e6, Math.min(80e6, target));
 }
 
-/** 更新解析度提示文字 */
-function updateResInfo() {
-  const el = $('#resInfo');
-  if (!img) {
-    el.textContent = '請先上傳圖片';
-    return;
+// 暫停
+$('#btnPause').addEventListener('click', () => {
+  state.paused = !state.paused;
+  $('#btnPause').textContent = state.paused ? '▶ 繼續' : '⏸ 暫停';
+  if (state.video) {
+    if (state.paused) state.video.pause();
+    else state.video.play().catch(() => {});
   }
-  const { w, h } = getOutputSize();
-  const tags = {
-    original:    '原始解析度（檔案最大）',
-    recommended: '預覽即輸出（適合 Threads / 社群上傳）',
-    custom:      '等比縮放到指定寬度'
-  };
-  el.textContent = `輸出 ${w} × ${h} px ・ ${tags[resMode]}`;
-}
-
-// 輸出長度
-$$('.db[data-d]').forEach(b => b.onclick = function() {
-  $$('.db[data-d]').forEach(x => x.classList.remove('on'));
-  this.classList.add('on');
-  D = +this.dataset.d;
-  const f = D * FPS;
-  $('#fnN').textContent = `預計 ${f} 幀 @ ${FPS}fps`;
-  $('#mR').textContent  = f;
+  if (state.paused) cancelAnimationFrame(state.raf);
+  else play();
 });
 
-// ──────────────────────────────────────────────────
-// C5. 渲染引擎
-// ──────────────────────────────────────────────────
-
-/** 啟動即時預覽迴圈 */
+// ═══════════════════════════════════════════
+// C4 渲染引擎
+// ═══════════════════════════════════════════
 function play() {
-  cancelAnimationFrame(raf);
+  cancelAnimationFrame(state.raf);
   let last = 0, t = 0;
-  const interval = 1000 / (FPS + SP * 0.8);
-
-  (function loop(ts) {
-    if (!L || !img) return;
-    if (ts - last > interval) {
-      drawFrame(ct, cv.width, cv.height, t++);
+  const interval = 1000 / (FPS + state.SP * 0.8);
+  const loop = ts => {
+    const src = state.isVideo ? state.video : state.img;
+    if (state.paused || !src) return;
+    // 影片時：每幀都跑（因為 video 持續更新）
+    if (state.isVideo) {
+      drawFrame(ctx, cv.width, cv.height, t++);
+    } else if (ts - last > interval) {
+      drawFrame(ctx, cv.width, cv.height, t++);
       last = ts;
     }
-    raf = requestAnimationFrame(loop);
-  })(0);
+    state.raf = requestAnimationFrame(loop);
+  };
+  state.raf = requestAnimationFrame(loop);
 }
 
-/** 繪製單一幀 */
 function drawFrame(c, w, h, t) {
-  if (!img) return;
-  // 繪製原圖時用高品質縮放
+  const src = state.isVideo ? state.video : state.img;
+  if (!src) return;
   c.imageSmoothingEnabled = true;
   c.imageSmoothingQuality = 'high';
   c.clearRect(0, 0, w, h);
-  c.drawImage(img, 0, 0, w, h);
-  // 之後的特效操作關掉 smoothing，保持像素銳利
+  c.drawImage(src, 0, 0, w, h);
   c.imageSmoothingEnabled = false;
-  if (HUE !== 0 || SAT !== 100) applyHueSat(c, w, h);
-  FX[fx](c, w, h, t);
-  if (txt.text) drawText(c, w, h, t);
+
+  if (state.HUE !== 0 || state.SAT !== 100) applyHueSat(c, w, h);
+  FX[state.fx](c, w, h, t);
+  state.txts.forEach(tx => {
+    if (tx.text) drawText(c, w, h, t, tx);
+  });
 }
 
-/**
- * 全域 UI 縮放係數
- * 基準：680px = 1.0x（HUD 視覺密度基準）
- * 1920 寬下 ≈ 2.82x，瀏覽器顯示時縮回 ~680 視覺與原來一致
- */
+function redrawNow() {
+  const src = state.isVideo ? state.video : state.img;
+  if (src) drawFrame(ctx, cv.width, cv.height, (performance.now() / 60) | 0);
+}
+
+// ═══════════════════════════════════════════
+// C5 工具函式
+// ═══════════════════════════════════════════
+const cl = v => Math.max(0, Math.min(255, v | 0));
+const cp = (v, a, b) => Math.max(a, Math.min(b, v));
 const SK = w => Math.max(1, w / 680);
 
-// ──────────────────────────────────────────────────
-// C6. 工具函式
-// ──────────────────────────────────────────────────
+function pixelMap(c, w, h, fn) {
+  const id = c.getImageData(0, 0, w, h);
+  const d = id.data;
+  for (let i = 0; i < d.length; i += 4) fn(d, i);
+  c.putImageData(id, 0, 0);
+}
 
-/** 限制數值在 0-255 */
-const cl = v => Math.max(0, Math.min(255, v | 0));
-/** 限制數值在指定範圍 */
-const cp = (v, a, b) => Math.max(a, Math.min(b, v));
+function scanLines(c, w, h, step, alpha) {
+  if (alpha <= 0) return;
+  const sk = SK(w);
+  const real = Math.max(2, Math.round(step * sk));
+  c.fillStyle = `rgba(0,0,0,${alpha})`;
+  for (let y = 0; y < h; y += real) c.fillRect(0, y, w, Math.max(1, sk * 0.5));
+}
 
-/** 套用全域色相/飽和度調整 */
+function displaceLines(c, w, h, count, range, maxH, prob, tint) {
+  for (let k = 0; k < count; k++) {
+    if (Math.random() >= prob) continue;
+    const y = 0 | Math.random() * h;
+    const lh = 1 + (0 | Math.random() * maxH);
+    const li = c.getImageData(0, y, w, lh);
+    c.putImageData(li, 0 | (Math.random() - .5) * range, y);
+    if (tint) {
+      c.fillStyle = tint;
+      c.fillRect(0, y, w, lh);
+    }
+  }
+}
+
+function vignette(c, w, h, intensity, innerR, outerR) {
+  if (intensity <= 0) return;
+  const vg = c.createRadialGradient(w/2, h/2, h*innerR, w/2, h/2, h*outerR);
+  vg.addColorStop(0, 'transparent');
+  vg.addColorStop(1, `rgba(0,0,0,${Math.min(.5, .3 * intensity)})`);
+  c.fillStyle = vg;
+  c.fillRect(0, 0, w, h);
+}
+
+function rgbSplit(c, w, h, r) {
+  if (r < 1) return;
+  const im = c.getImageData(0, 0, w, h);
+  const ou = new ImageData(w, h);
+  for (let y = 0; y < h; y++) {
+    for (let x = 0; x < w; x++) {
+      const i = (y*w + x) * 4;
+      ou.data[i]   = im.data[(y*w + cp(x+r, 0, w-1)) * 4];
+      ou.data[i+1] = im.data[i+1];
+      ou.data[i+2] = im.data[(y*w + cp(x-r, 0, w-1)) * 4 + 2];
+      ou.data[i+3] = 255;
+    }
+  }
+  c.putImageData(ou, 0, 0);
+}
+
 function applyHueSat(c, w, h) {
   const id = c.getImageData(0, 0, w, h);
   const d = id.data;
-  const hShift = HUE / 360;
-  const sMul = SAT / 100;
-
+  const hShift = state.HUE / 360;
+  const sMul = state.SAT / 100;
   for (let i = 0; i < d.length; i += 4) {
     let r = d[i]/255, g = d[i+1]/255, b = d[i+2]/255;
     const mx = Math.max(r,g,b), mn = Math.min(r,g,b);
     const l = (mx + mn) / 2;
     let h2 = 0, sa = 0;
-
     if (mx !== mn) {
       const de = mx - mn;
       sa = l > .5 ? de/(2-mx-mn) : de/(mx+mn);
@@ -1379,16 +1707,10 @@ function applyHueSat(c, w, h) {
     }
     h2 = (h2 + hShift + 1) % 1;
     sa = Math.min(1, sa * sMul);
-
     const h2r = (p, q, tt) => {
-      if (tt < 0) tt += 1;
-      if (tt > 1) tt -= 1;
-      return tt < 1/6 ? p+(q-p)*6*tt
-           : tt < .5  ? q
-           : tt < 2/3 ? p+(q-p)*(2/3-tt)*6
-           : p;
+      if (tt < 0) tt += 1; if (tt > 1) tt -= 1;
+      return tt < 1/6 ? p+(q-p)*6*tt : tt < .5 ? q : tt < 2/3 ? p+(q-p)*(2/3-tt)*6 : p;
     };
-
     if (!sa) {
       d[i] = d[i+1] = d[i+2] = cl(l * 255);
     } else {
@@ -1402,238 +1724,40 @@ function applyHueSat(c, w, h) {
   c.putImageData(id, 0, 0);
 }
 
-/** RGB 色差位移 */
-function rgbSplit(c, w, h, r) {
-  if (r < 1) return;
-  const im = c.getImageData(0, 0, w, h);
-  const ou = new ImageData(w, h);
-
-  for (let y = 0; y < h; y++) {
-    for (let x = 0; x < w; x++) {
-      const i = (y*w + x) * 4;
-      ou.data[i]   = im.data[(y*w + cp(x+r, 0, w-1)) * 4];
-      ou.data[i+1] = im.data[i+1];
-      ou.data[i+2] = im.data[(y*w + cp(x-r, 0, w-1)) * 4 + 2];
-      ou.data[i+3] = 255;
-    }
-  }
-  c.putImageData(ou, 0, 0);
-}
-
-/** 回傳可放置 HUD 元素的區域 */
 function getZones() {
-  const z = { tl: true, tr: true, bl: true, br: true, edge: true, center: false };
-  if      (focusMode === 'tl')   { z.tl = false; z.center = false; }
-  else if (focusMode === 'tr')   { z.tr = false; z.center = false; }
-  else if (focusMode === 'bl')   { z.bl = false; z.center = false; }
-  else if (focusMode === 'br')   { z.br = false; z.center = false; }
-  else if (focusMode === 'edge') { z.edge = true; z.center = false; z.tl = z.tr = z.bl = z.br = true; }
+  const m = state.focusMode;
+  const z = { tl: true, tr: true, bl: true, br: true };
+  if (m === 'tl') z.tl = false;
+  else if (m === 'tr') z.tr = false;
+  else if (m === 'bl') z.bl = false;
+  else if (m === 'br') z.br = false;
   return z;
 }
 
-// ──────────────────────────────────────────────────
-// 特效共用 Helpers
-// ──────────────────────────────────────────────────
-
-/**
- * 逐像素操作 helper - 自動處理 getImageData / putImageData
- * @param {Function} fn  (d, i) => void  d=data 陣列, i=當前 index
- */
-function pixelMap(c, w, h, fn) {
-  const id = c.getImageData(0, 0, w, h), d = id.data;
-  for (let i = 0; i < d.length; i += 4) fn(d, i);
-  c.putImageData(id, 0, 0);
-}
-
-/**
- * 掃描線覆蓋（自動依寬度縮放間距，保持視覺一致）
- * @param {number} step    行距（基準 680px 寬下的 px）
- * @param {number} alpha   黑線透明度
- */
-function scanLines(c, w, h, step, alpha) {
-  if (alpha <= 0) return;
-  const sk = SK(w);
-  const realStep = Math.max(2, Math.round(step * sk));
-  c.fillStyle = `rgba(0,0,0,${alpha})`;
-  for (let y = 0; y < h; y += realStep) c.fillRect(0, y, w, Math.max(1, sk * 0.5));
-}
-
-/**
- * 故障錯位條紋 - 隨機擷取水平切片並左右位移
- * @param {number} count     切片數量
- * @param {number} range     位移幅度（px）
- * @param {number} maxLineH  切片最大高度
- * @param {number} prob      每條線的觸發機率
- * @param {string|null} tint 位移後的色彩疊加（null = 不疊色）
- */
-function displaceLines(c, w, h, count, range, maxLineH = 4, prob = 0.5, tint = null) {
-  for (let k = 0; k < count; k++) {
-    if (Math.random() >= prob) continue;
-    const y  = 0 | Math.random() * h;
-    const lh = 1 + (0 | Math.random() * maxLineH);
-    const li = c.getImageData(0, y, w, lh);
-    c.putImageData(li, 0 | (Math.random() - .5) * range, y);
-    if (tint) {
-      c.fillStyle = tint;
-      c.fillRect(0, y, w, lh);
-    }
-  }
-}
-
-/**
- * 徑向暗角 - 自帶 0.5 上限避免主體被遮蔽
- * @param {number} intensity  強度縮放（0-2 合理）
- * @param {number} innerR     內圈起始半徑比例（相對 h）
- * @param {number} outerR     外圈結束半徑比例（相對 h）
- */
-function vignette(c, w, h, intensity, innerR = 0.3, outerR = 0.9) {
-  if (intensity <= 0) return;
-  const vg = c.createRadialGradient(w/2, h/2, h*innerR, w/2, h/2, h*outerR);
-  vg.addColorStop(0, 'transparent');
-  vg.addColorStop(1, `rgba(0,0,0,${Math.min(.5, .3 * intensity)})`);
-  c.fillStyle = vg;
-  c.fillRect(0, 0, w, h);
-}
-
-/**
- * 全畫面顆粒噪點 - 灰階加減
- * @param {number} amount  振幅（建議 30-90）
- */
-function grainNoise(c, w, h, amount) {
-  pixelMap(c, w, h, (d, i) => {
-    const g = (Math.random() - .5) * amount;
-    d[i]   = cl(d[i]   + g);
-    d[i+1] = cl(d[i+1] + g);
-    d[i+2] = cl(d[i+2] + g);
-  });
-}
-
-/**
- * 疏散靜電噪點 - 機率觸發的稀疏雜訊
- * @param {number} prob    每像素觸發機率（0-1）
- * @param {number} amount  雜訊振幅
- */
-function staticNoise(c, w, h, prob, amount) {
-  pixelMap(c, w, h, (d, i) => {
-    if (Math.random() >= prob) return;
-    const n = (Math.random() - .5) * amount;
-    d[i]   = cl(d[i]   + n);
-    d[i+1] = cl(d[i+1] + n);
-    d[i+2] = cl(d[i+2] + n);
-  });
-}
-
-/**
- * 文字疊加繪製
- * 使用 x/y 比例座標 (0-1)，以文字中心為定位點
- */
-function drawText(c, w, h, t) {
-  // 打字機效果：逐字顯示
-  let text = txt.text;
-  if (txt.effect === 'type') {
-    const totalFrames = D * FPS;
-    const progress = (t % totalFrames) / totalFrames;
-    const chars = Math.ceil(text.length * Math.min(1, progress * 1.3));
-    text = text.slice(0, chars);
-    if (t % 4 < 2 && chars < txt.text.length + 1) text += '_';
-  }
-  if (!text) return;
-
-  const f = FONTS[txt.font] || FONTS.orbitron;
-  c.save();
-  c.font = `${f.weight} ${txt.size}px ${f.css}`;
-  c.textAlign = 'center';
-  c.textBaseline = 'middle';
-
-  // 比例座標 → 像素座標
-  const x = txt.x * w;
-  const y = txt.y * h;
-
-  // 動態效果
-  let alpha = txt.opacity / 100;
-
-  if (txt.effect === 'flicker') {
-    if (Math.random() < 0.12) alpha *= 0.25;
-    else if (Math.random() < 0.08) alpha *= 0.6;
-  }
-
-  c.globalAlpha = alpha;
-
-  if (txt.effect === 'rgb') {
-    // RGB 色差
-    const off = Math.max(2, txt.size * 0.04);
-    const wobble = Math.sin(t * 0.3) * off;
-    c.globalCompositeOperation = 'screen';
-    c.fillStyle = '#ff0040';
-    c.fillText(text, x + wobble, y);
-    c.fillStyle = '#00ffee';
-    c.fillText(text, x - wobble, y);
-    c.globalCompositeOperation = 'source-over';
-    c.fillStyle = txt.color;
-    c.fillText(text, x, y);
-  } else {
-    // 自動描邊
-    const rgb = hexToRgb(txt.color);
-    const isLight = rgb && (rgb.r + rgb.g + rgb.b) > 380;
-    c.strokeStyle = isLight ? 'rgba(0,0,0,0.6)' : 'rgba(255,255,255,0.6)';
-    c.lineWidth = Math.max(1, txt.size * 0.04);
-    c.lineJoin = 'round';
-    c.strokeText(text, x, y);
-    c.fillStyle = txt.color;
-    c.fillText(text, x, y);
-  }
-
-  c.restore();
-}
-
-/** Hex 轉 RGB */
 function hexToRgb(hex) {
   const m = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
   return m ? { r: parseInt(m[1], 16), g: parseInt(m[2], 16), b: parseInt(m[3], 16) } : null;
 }
 
-// ──────────────────────────────────────────────────
-// C7. 色盤定義
-// ──────────────────────────────────────────────────
-const PALETTES = {
-  cyber: {
-    cm: { p: [0,229,255],   s: [255,20,147] },
-    op: { p: [255,120,0],   s: [180,50,255] },
-    gy: { p: [180,255,50],  s: [255,230,50] },
-    rb: { p: [255,50,80],   s: [80,120,255] },
-    pt: { p: [255,130,200], s: [100,255,220] }
-  },
-  retro: {
-    warm:    { tint: [255,100,0],   alpha: .08, ch: [255,200,50]  },
-    cool:    { tint: [30,100,200],  alpha: .10, ch: [150,220,255] },
-    sepia:   { tint: [120,80,40],   alpha: .12, ch: [230,200,150] },
-    neutral: { tint: [200,200,200], alpha: .03, ch: [240,240,240] },
-    teal:    { tint: [0,150,150],   alpha: .09, ch: [200,255,240] }
-  }
-};
-
-// ──────────────────────────────────────────────────
-// C8. 特效實作
-// ──────────────────────────────────────────────────
+// ═══════════════════════════════════════════
+// C6 特效實作
+// ═══════════════════════════════════════════
 const FX = {
-
-  // ══════ FILM 電影感 ══════
   film(c, w, h, t) {
     const sk = SK(w);
-    const nS = NO/5, dkSc = DK/5, coSc = CO/5;
+    const nS = state.NO/5, dkSc = state.DK/5, coSc = state.CO/5;
 
-    // 顆粒噪點
-    if (nS > 0) grainNoise(c, w, h, 42 * nS);
-
-    // 暖色調
+    if (nS > 0) {
+      pixelMap(c, w, h, (d, i) => {
+        const g = (Math.random() - .5) * 42 * nS;
+        d[i] = cl(d[i] + g); d[i+1] = cl(d[i+1] + g); d[i+2] = cl(d[i+2] + g);
+      });
+    }
     if (coSc > 0) {
       c.fillStyle = `rgba(245,180,60,${.06 * coSc})`;
       c.fillRect(0, 0, w, h);
     }
-    // 暗角
-    vignette(c, w, h, dkSc);
-
-    // 刮痕 + 灰塵
+    vignette(c, w, h, dkSc, 0.3, 0.9);
     if (nS > 0) {
       for (let k = 0; k < (0 | 2 * nS); k++) {
         if (Math.random() < .45) {
@@ -1646,122 +1770,46 @@ const FX = {
           c.stroke();
         }
       }
-      for (let k = 0; k < (0 | 10 * nS); k++) {
-        c.fillStyle = `rgba(255,255,220,${.3 + Math.random() * .4})`;
-        c.fillRect(Math.random() * w, Math.random() * h,
-                   (1 + Math.random() * 2) * sk, (1 + Math.random() * 2) * sk);
-      }
     }
-    // 光線閃爍
-    if (nS > 0 && Math.random() < .2 * nS) {
-      c.fillStyle = `rgba(255,240,200,${.05 + Math.random() * .08})`;
-      c.fillRect(0, 0, w, h);
-    }
-    // 色差
     if (coSc > 0) rgbSplit(c, w, h, Math.round(2 * coSc));
-
-    // 電影黑邊
-    if (bars) {
-      const bH = Math.round(h * .09);
-      c.fillStyle = '#000';
-      c.fillRect(0, 0, w, bH);
-      c.fillRect(0, h - bH, w, bH);
-    }
+    // 黑邊
+    const bH = Math.round(h * .09);
+    c.fillStyle = '#000';
+    c.fillRect(0, 0, w, bH);
+    c.fillRect(0, h - bH, w, bH);
   },
 
-  // ══════ CYBER 賽博龐克 ══════
   cyber(c, w, h, t) {
     const sk = SK(w);
-    const nS = NO/5, coSc = CO/5, dkSc = DK/5, huSc = HU/5;
+    const nS = state.NO/5, coSc = state.CO/5, dkSc = state.DK/5, huSc = state.HU/5;
     const zone = getZones();
-    const pal = PALETTES.cyber[cyberPal];
-    const P = pal.p, S = pal.s;
-    const rgbP = a => `rgba(${P[0]},${P[1]},${P[2]},${a})`;
-    const rgbS = a => `rgba(${S[0]},${S[1]},${S[2]},${a})`;
 
-    // RGB 色差
     if (coSc > 0) rgbSplit(c, w, h, Math.round(5 * coSc));
 
-    // 像素錯位條紋（隨機選主/副色疊加）
     if (nS > 0) {
       for (let i = 0; i < (0 | 5 * nS); i++) {
         if (Math.random() < .75) {
-          const y  = 0 | Math.random() * h;
+          const y = 0 | Math.random() * h;
           const lh = 1 + (0 | Math.random() * 8);
           const id = c.getImageData(0, y, w, lh);
           c.putImageData(id, 0 | (Math.random() - .5) * 35 * nS, y);
-          c.fillStyle = Math.random() < .5 ? rgbP(.2) : rgbS(.2);
+          c.fillStyle = Math.random() < .5 ? `rgba(0,229,255,.2)` : `rgba(255,20,147,.2)`;
           c.fillRect(0, y, w, lh);
         }
       }
     }
-    // 掃描線
     scanLines(c, w, h, 3, .14 * dkSc);
-    // 網格地板
-    if (huSc > 0 && (zone.bl || zone.br)) {
-      const gh = h * .35, gy = h - gh;
-      c.strokeStyle = rgbS(.35);
-      c.lineWidth = 1;
-      for (let i = 0; i <= 10; i++) {
-        const yy = gy + gh * (i / 10);
-        c.beginPath(); c.moveTo(0, yy); c.lineTo(w, yy); c.stroke();
-      }
-      c.strokeStyle = rgbP(.35);
-      for (let i = 0; i <= 12; i++) {
-        const xx = w * (i / 12), cx = w / 2;
-        c.beginPath();
-        c.moveTo(cx + (xx - cx) * .3, gy);
-        c.lineTo(xx, h);
-        c.stroke();
-      }
-    }
-    // 雙角落光暈
-    if (zone.tl) {
-      const tl = c.createRadialGradient(w*.15, h*.15, 0, w*.15, h*.15, w*.35);
-      tl.addColorStop(0, rgbP(.12 * huSc));
-      tl.addColorStop(1, 'transparent');
-      c.fillStyle = tl; c.fillRect(0, 0, w, h);
-    }
-    if (zone.br) {
-      const br = c.createRadialGradient(w*.85, h*.85, 0, w*.85, h*.85, w*.35);
-      br.addColorStop(0, rgbS(.15 * huSc));
-      br.addColorStop(1, 'transparent');
-      c.fillStyle = br; c.fillRect(0, 0, w, h);
-    }
-    // HEX 代碼流
-    if (huSc > 0) {
-      c.font = `${(9 * (0.7 + huSc * 0.5)) * sk}px 'Share Tech Mono', monospace`;
-      const HX = '0123456789ABCDEF';
-      const spots = [];
-      if (zone.tl) spots.push([0, w*.3, 0, h*.35]);
-      if (zone.tr) spots.push([w*.7, w, 0, h*.35]);
-      if (zone.bl) spots.push([0, w*.3, h*.65, h]);
-      if (zone.br) spots.push([w*.7, w, h*.65, h]);
 
-      if (spots.length) {
-        for (let i = 0; i < (0 | 12 * huSc); i++) {
-          let st = '';
-          for (let j = 0; j < 8; j++) st += HX[0 | Math.random() * 16];
-          const sp = spots[0 | Math.random() * spots.length];
-          c.fillStyle = rgbP(.3 + Math.random() * .4);
-          c.fillText(st,
-            sp[0] + Math.random() * (sp[1] - sp[0]),
-            sp[2] + Math.random() * (sp[3] - sp[2]));
-        }
-      }
-    }
-    // 四角定位括號
     if (huSc > 0) {
-      c.strokeStyle = rgbP(.7 * huSc);
-      c.lineWidth = (1 + huSc * 1.5) * sk;        // HU=0:1 / HU=10:4
-      const bs = (16 + huSc * 12) * sk;            // HU=0:16 / HU=10:40
+      c.strokeStyle = `rgba(0,229,255,${.7 * huSc})`;
+      c.lineWidth = (1 + huSc) * sk;
+      const bs = (16 + huSc * 12) * sk;
       const pad = 10 * sk;
       const corners = [];
       if (zone.tl) corners.push([pad, pad, 'tl']);
       if (zone.tr) corners.push([w-pad-bs, pad, 'tr']);
       if (zone.bl) corners.push([pad, h-pad-bs, 'bl']);
       if (zone.br) corners.push([w-pad-bs, h-pad-bs, 'br']);
-
       corners.forEach(([x, y, p]) => {
         c.beginPath();
         if (p === 'tl')      { c.moveTo(x, y+bs);  c.lineTo(x, y);    c.lineTo(x+bs, y); }
@@ -1770,196 +1818,94 @@ const FX = {
         else                 { c.moveTo(x+bs, y);  c.lineTo(x+bs, y+bs); c.lineTo(x, y+bs); }
         c.stroke();
       });
-    }
-    // 頂部狀態列
-    if (huSc > 0) {
-      c.fillStyle = rgbP(.85);
-      c.font = `bold ${(9 * (0.7 + huSc * 0.4)) * sk}px 'Share Tech Mono', monospace`;
-      const ts = `[NEO-TOKYO // ${String(0|Math.random()*99).padStart(2,'0')}.${String(0|Math.random()*99).padStart(2,'0')}.77]`;
-      if (zone.tl) { c.textAlign = 'left';  c.fillText(ts, 18*sk, 26*sk); }
-      if (zone.tr) { c.textAlign = 'right'; c.fillText(`SYS::${String(0|Math.random()*9999).padStart(4,'0')}`, w-18*sk, 26*sk); }
+
+      c.font = `bold ${(9 + huSc * 4) * sk}px 'Share Tech Mono', monospace`;
+      c.fillStyle = `rgba(0,229,255,.85)`;
+      if (zone.tl) { c.textAlign = 'left'; c.fillText(`[NEO-TOKYO // ${(0|Math.random()*99).toString().padStart(2,'0')}.77]`, 18*sk, 26*sk); }
+      if (zone.tr) { c.textAlign = 'right'; c.fillText(`SYS::${(0|Math.random()*9999).toString().padStart(4,'0')}`, w-18*sk, 26*sk); }
       c.textAlign = 'left';
-    }
-    // 閃光
-    if (huSc > 0 && t % 20 < 3) {
-      c.fillStyle = rgbP(.06 + Math.random() * .04);
-      c.fillRect(0, 0, w, h);
     }
   },
 
-  // ══════ RETRO 復古 ══════
   retro(c, w, h, t) {
     const sk = SK(w);
-    const nS = NO/5, coSc = CO/5, huSc = HU/5;
-    const pal = PALETTES.retro[retroPal];
+    const nS = state.NO/5, coSc = state.CO/5, huSc = state.HU/5;
 
-    // 色彩分級（依色盤套不同公式）
     if (coSc > 0) {
-      // 各色盤的通道變換函式：(r,g,b,avg) => [r, g, b]
-      const GRADE = {
-        sepia:   (r,g,b) => [r*.393+g*.769+b*.189, r*.349+g*.686+b*.168, r*.272+g*.534+b*.131],
-        cool:    (r,g,b) => [r*.9,  g*.95, b*1.15],
-        teal:    (r,g,b) => [r*.85, g*1.05, b*1.05],
-        neutral: (r,g,b,a) => [r*.7+a*.3, g*.7+a*.3, b*.7+a*.3],
-        warm:    (r,g,b) => [r*1.1, g*.95, b*.8]
-      };
-      const grade = GRADE[retroPal] || GRADE.warm;
       pixelMap(c, w, h, (d, i) => {
-        const r = d[i], g = d[i+1], b = d[i+2];
-        const [nr, ng, nb] = grade(r, g, b, (r+g+b)/3);
-        d[i] = cl(nr); d[i+1] = cl(ng); d[i+2] = cl(nb);
+        d[i]   = cl(d[i]   * 1.1);
+        d[i+1] = cl(d[i+1] * .95);
+        d[i+2] = cl(d[i+2] * .8);
       });
     }
-    // 雜訊色帶（紅綠藍通道各別振幅） + 追蹤線
     if (nS > 0) {
-      for (let i = 0; i < (0 | 7 * nS); i++) {
-        const y = 0 | Math.random() * h;
-        const bh = 1 + (0 | Math.random() * 4);
-        const bi = c.getImageData(0, y, w, bh), bd = bi.data;
-        for (let j = 0; j < bd.length; j += 4) {
-          bd[j]   = cl(bd[j]   + (Math.random() - .5) * 90 * nS);
-          bd[j+1] = cl(bd[j+1] + (Math.random() - .5) * 45 * nS);
-          bd[j+2] = cl(bd[j+2] + (Math.random() - .5) * 35 * nS);
-        }
-        c.putImageData(bi, 0 | (Math.random() - .5) * 25 * nS, y);
-      }
-      // 亮白追蹤線
+      displaceLines(c, w, h, 0 | 7 * nS, 25 * nS, 4, 1);
       for (let i = 0; i < (0 | 2 * nS); i++) {
         const y = 0 | Math.random() * h;
-        const bh = 2 + (0 | Math.random() * 6);
         c.fillStyle = `rgba(255,255,255,${.2 + Math.random() * .3})`;
-        c.fillRect(0, y, w, bh);
+        c.fillRect(0, y, w, 2 + (0 | Math.random() * 6));
       }
     }
-    // 掃描線
     scanLines(c, w, h, 2, .15);
-    // 色差
     if (coSc > 0) rgbSplit(c, w, h, Math.round(6 * coSc));
-    // 色調疊加
     if (coSc > 0) {
-      c.fillStyle = `rgba(${pal.tint.join(',')},${pal.alpha * coSc})`;
+      c.fillStyle = `rgba(255,100,0,${.08 * coSc})`;
       c.fillRect(0, 0, w, h);
     }
-    // VHS 字幕
     if (huSc > 0) {
       const zone = getZones();
-      c.fillStyle = `rgba(${pal.ch.join(',')},.85)`;
-      c.font = `bold ${(11 * (0.7 + huSc * 0.5)) * sk}px VT323, monospace`;
+      c.fillStyle = `rgba(255,200,50,.85)`;
+      c.font = `bold ${(11 + huSc * 4) * sk}px VT323, monospace`;
       const n = new Date();
-
-      if (zone.tl) {
-        c.textAlign = 'left';
-        c.fillText(`▶ PLAY  SP  ${n.getFullYear()}.${String(n.getMonth()+1).padStart(2,'0')}.${String(n.getDate()).padStart(2,'0')}`, 8*sk, 20*sk);
-      }
-      if (zone.tr) {
-        c.textAlign = 'right';
-        c.fillText(`${String(n.getHours()).padStart(2,'0')}:${String(n.getMinutes()).padStart(2,'0')}:${String((n.getSeconds()+t)%60).padStart(2,'0')}`, w-8*sk, 20*sk);
-      }
-      if (zone.bl) {
-        c.textAlign = 'left';
-        c.fillText(`AM  STEREO  SP  TAPE-01`, 8*sk, h-12*sk);
-      }
+      if (zone.tl) { c.textAlign = 'left'; c.fillText(`▶ PLAY  SP  ${n.getFullYear()}`, 8*sk, 20*sk); }
+      if (zone.tr) { c.textAlign = 'right'; c.fillText(`${String(n.getHours()).padStart(2,'0')}:${String(n.getMinutes()).padStart(2,'0')}`, w-8*sk, 20*sk); }
       c.textAlign = 'left';
     }
   },
 
-  // ══════ 404 系統錯誤 ══════
   err(c, w, h, t) {
     const sk = SK(w);
-    const nS = NO/5, coSc = CO/5, huSc = HU/5, dkSc = DK/5;
+    const nS = state.NO/5, coSc = state.CO/5, huSc = state.HU/5, dkSc = state.DK/5;
 
     if (coSc > 0) rgbSplit(c, w, h, Math.round(3 * coSc));
-
-    // 紅色邊框
     if (huSc > 0) {
       c.strokeStyle = `rgba(255,20,50,${.9 + Math.sin(t * .5) * .1})`;
       c.lineWidth = Math.max(3, 0 | 10 * huSc);
       c.strokeRect(0, 0, w, h);
     }
-    // 故障條紋（紅色疊加）
     if (nS > 0) {
-      displaceLines(c, w, h,
-        0 | 2 * nS,                                          // 條數
-        30 * nS,                                             // 位移幅度
-        10,                                                  // 最大高度
-        .6,                                                  // 觸發機率
-        `rgba(255,0,0,${.25 + Math.random() * .3})`);        // 紅色疊加
+      displaceLines(c, w, h, 0 | 2 * nS, 30 * nS, 10, .6, `rgba(255,0,0,${.25 + Math.random() * .3})`);
     }
     // 404 浮水印
-    if (errWM > 0) {
-      const wmSize = h * .55 * (errWM / 100);
-      if (wmSize > 10) {
-        c.save();
-        c.globalAlpha = Math.min(.28, .12 + .08 * Math.abs(Math.sin(t * .3)));
-        c.font = `bold ${0 | wmSize}px 'Bebas Neue', monospace`;
-        c.fillStyle = '#ff2244';
-        c.textAlign = 'center';
-        c.textBaseline = 'middle';
-
-        let px = w/2, py = h/2;
-        if      (focusMode === 'tl') { px = w*.72; py = h*.72; }
-        else if (focusMode === 'tr') { px = w*.28; py = h*.72; }
-        else if (focusMode === 'bl') { px = w*.72; py = h*.28; }
-        else if (focusMode === 'br') { px = w*.28; py = h*.28; }
-
-        c.fillText('404', px, py);
-        c.restore();
-      }
-    }
+    const wmSize = h * .35;
+    c.save();
+    c.globalAlpha = .15 + .08 * Math.abs(Math.sin(t * .3));
+    c.font = `bold ${0 | wmSize}px 'Bebas Neue', monospace`;
+    c.fillStyle = '#ff2244';
+    c.textAlign = 'center';
+    c.textBaseline = 'middle';
+    c.fillText('404', w/2, h/2);
+    c.restore();
     // 警示橫幅
     if (huSc > 0) {
-      const bh = (0 | 28 + huSc * 4) * sk;
-      if (t % 6 < 3) {
-        c.fillStyle = 'rgba(255,20,50,.92)';
-        c.fillRect(0, 0, w, bh);
-        c.fillStyle = '#fff';
-      } else {
-        c.fillStyle = 'rgba(255,255,255,.92)';
-        c.fillRect(0, 0, w, bh);
-        c.fillStyle = '#ff2244';
-      }
-      c.font = `bold ${(0 | 10 + huSc) * sk}px monospace`;
+      const bh = (28 + huSc * 4) * sk;
+      c.fillStyle = (t % 6 < 3) ? 'rgba(255,20,50,.92)' : 'rgba(255,255,255,.92)';
+      c.fillRect(0, 0, w, bh);
+      c.fillStyle = (t % 6 < 3) ? '#fff' : '#ff2244';
+      c.font = `bold ${(10 + huSc * 4) * sk}px monospace`;
       c.textAlign = 'center';
       c.textBaseline = 'middle';
-      c.fillText('⚠ SYSTEM ERROR — 404 NOT FOUND — DATA CORRUPTED ⚠', w/2, bh/2);
-
-      // 底部狀態列
-      const sbH = (16 + huSc * 8) * sk;  // HU=0:16 / HU=10:32
-      c.fillStyle = 'rgba(0,0,0,.8)';
-      c.fillRect(0, h-sbH, w, sbH);
-      c.fillStyle = '#ff4466';
-      c.font = `${9 * sk}px monospace`;
-      c.textAlign = 'left';
-      c.textBaseline = 'middle';
-      c.fillText(`ERR_CODE: 0xF404 | MEMORY DUMP FAILED | ${new Date().toISOString().slice(0,19)}`, 10*sk, h-sbH/2);
+      c.fillText('⚠ SYSTEM ERROR — 404 NOT FOUND ⚠', w/2, bh/2);
       c.textBaseline = 'alphabetic';
-
-      // 關閉按鈕
-      const zone = getZones();
-      if (zone.tr) {
-        const btnW = 38 * sk, btnH = 16 * sk;
-        c.fillStyle = 'rgba(255,20,50,.9)';
-        c.fillRect(w-btnW-10*sk, bh+8*sk, btnW, btnH);
-        c.fillStyle = '#fff';
-        c.font = `bold ${10 * sk}px monospace`;
-        c.textAlign = 'center';
-        c.textBaseline = 'middle';
-        c.fillText('× CLOSE', w-btnW/2-10*sk, bh+8*sk+btnH/2);
-        c.textAlign = 'left';
-        c.textBaseline = 'alphabetic';
-      }
     }
-    // 掃描線
     scanLines(c, w, h, 3, .06 * dkSc);
   },
 
-  // ══════ CCTV 監視器 ══════
   cctv(c, w, h, t) {
     const sk = SK(w);
-    const nS = NO/5, coSc = CO/5, dkSc = DK/5, huSc = HU/5;
+    const nS = state.NO/5, coSc = state.CO/5, dkSc = state.DK/5, huSc = state.HU/5;
     const zone = getZones();
 
-    // 綠色偏調（去飽和並拉綠）
     if (coSc > 0) {
       const m = .6 * coSc;
       pixelMap(c, w, h, (d, i) => {
@@ -1969,474 +1915,724 @@ const FX = {
         d[i+2] = cl(d[i+2] * (1-m) + a * m * .7);
       });
     }
-    // 掃描線
     scanLines(c, w, h, 2, .18 * dkSc);
-
-    // 靜電噪點 + 雜訊色帶
     if (nS > 0) {
-      staticNoise(c, w, h, .3 * nS, 80 * nS);
-
-      // 全雜訊切片（純色帶覆蓋）
-      for (let k = 0; k < (0 | 3 * nS); k++) {
-        if (Math.random() < .4) {
-          const y = 0 | Math.random() * h;
-          const bh = 2 + (0 | Math.random() * 10);
-          const bi = c.getImageData(0, y, w, bh), bd = bi.data;
-          for (let j = 0; j < bd.length; j += 4) {
-            const n = Math.random() * 255 * nS;
-            bd[j]   = cl(n * .8);
-            bd[j+1] = cl(n);
-            bd[j+2] = cl(n * .7);
-            bd[j+3] = 255;
-          }
-          c.putImageData(bi, 0 | (Math.random() - .5) * 20, y);
-        }
-      }
+      pixelMap(c, w, h, (d, i) => {
+        if (Math.random() >= .3 * nS) return;
+        const n = (Math.random() - .5) * 80 * nS;
+        d[i] = cl(d[i] + n); d[i+1] = cl(d[i+1] + n); d[i+2] = cl(d[i+2] + n);
+      });
     }
-    // 訊號中斷
-    if (nS > 0 && Math.random() < .1 * nS) {
-      c.fillStyle = 'rgba(0,0,0,.9)';
-      const by = 0 | Math.random() * (h - 40 * sk);
-      c.fillRect(0, by, w, (15 + (0 | Math.random() * 25)) * sk);
-      c.fillStyle = 'rgba(150,200,150,.7)';
-      c.font = `${(10 * (0.7 + huSc * 0.5)) * sk}px VT323, monospace`;
-      c.fillText('--- SIGNAL LOST ---', 12*sk, by + 18*sk);
-    }
-    // HUD
     if (huSc > 0) {
       const n = new Date();
       const ts = `${String(n.getHours()).padStart(2,'0')}:${String(n.getMinutes()).padStart(2,'0')}:${String((n.getSeconds()+t)%60).padStart(2,'0')}`;
-
       c.fillStyle = 'rgba(150,255,150,.9)';
-      c.font = `bold ${(11 * (0.7 + huSc * 0.5)) * sk}px VT323, monospace`;
-
+      c.font = `bold ${(11 + huSc * 4) * sk}px VT323, monospace`;
       if (zone.tl) {
         c.textAlign = 'left';
         c.fillText('CAM-01', 10*sk, 18*sk);
-        c.fillText(`${n.getFullYear()}-${String(n.getMonth()+1).padStart(2,'0')}-${String(n.getDate()).padStart(2,'0')} ${ts}`, 10*sk, 34*sk);
+        c.fillText(`${n.getFullYear()}-${String(n.getMonth()+1).padStart(2,'0')}-${String(n.getDate()).padStart(2,'0')} ${ts}`, 10*sk, 38*sk);
       }
       if (zone.tr) {
         if (t % 8 < 4) {
           c.fillStyle = 'rgba(255,50,50,.95)';
-          c.beginPath();
-          c.arc(w-48*sk, 14*sk, 5*sk, 0, Math.PI*2);
-          c.fill();
+          c.beginPath(); c.arc(w-48*sk, 14*sk, 5*sk, 0, Math.PI*2); c.fill();
         }
         c.fillStyle = 'rgba(255,50,50,.95)';
-        c.font = `bold ${(10 * (0.7 + huSc * 0.5)) * sk}px monospace`;
+        c.font = `bold ${(10 + huSc * 4) * sk}px monospace`;
         c.textAlign = 'right';
         c.fillText('● REC', w-10*sk, 18*sk);
       }
       c.textAlign = 'left';
 
-      // 中央十字準星
-      if (cctvCross) {
-        const cx = w/2, cy = h/2, crs = 15 * sk;
-        c.strokeStyle = 'rgba(150,255,150,.4)';
-        c.lineWidth = 1 * sk;
-        c.beginPath();
-        c.moveTo(cx-crs, cy); c.lineTo(cx+crs, cy);
-        c.moveTo(cx, cy-crs); c.lineTo(cx, cy+crs);
-        c.stroke();
-      }
       // 底部資訊列
       if (zone.bl || zone.br) {
-        const sbH = (16 + huSc * 8) * sk;  // HU=0:16 / HU=10:32
+        const sbH = (16 + huSc * 8) * sk;
         c.fillStyle = 'rgba(0,20,0,.75)';
         c.fillRect(0, h-sbH, w, sbH);
         c.fillStyle = 'rgba(150,255,150,.85)';
-        c.font = `${(9 * (0.7 + huSc * 0.4)) * sk}px VT323, monospace`;
-        c.fillText(`LOC: SECTOR 04-A | CH:01/16 | MOTION: ${Math.random() < .3 ? 'DETECTED' : 'NONE'}`, 10*sk, h-8*sk);
+        c.font = `${(9 + huSc * 4) * sk}px VT323, monospace`;
+        c.fillText(`LOC: SECTOR 04-A | CH:01/16`, 10*sk, h - sbH/2 + 4*sk);
       }
     }
-    // 暗角（略緊一點）
     vignette(c, w, h, dkSc, 0.3, 0.85);
   },
 
-  // ══════ HACK 終端機入侵 ══════
   hack(c, w, h, t) {
     const sk = SK(w);
-    const nS = NO/5, coSc = CO/5, dkSc = DK/5, huSc = HU/5;
+    const nS = state.NO/5, coSc = state.CO/5, dkSc = state.DK/5, huSc = state.HU/5;
     const zone = getZones();
 
-    // 暗化（上限 0.5）
     if (dkSc > 0) {
       c.fillStyle = `rgba(0,10,0,${Math.min(.5, .3 + .04 * dkSc)})`;
       c.fillRect(0, 0, w, h);
     }
-    // 綠色疊加
     if (coSc > 0) {
       c.fillStyle = `rgba(0,80,30,${.08 * coSc})`;
       c.fillRect(0, 0, w, h);
     }
-    // Matrix 字元雨
     if (huSc > 0) {
-      c.font = `bold ${(11 * (0.7 + huSc * 0.5)) * sk}px monospace`;
+      c.font = `bold ${(11 + huSc * 4) * sk}px monospace`;
       const ch = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789@#$%&アカサタナハマヤラワ';
       const spots = [];
-      if (zone.tl) spots.push([0, w*.35, 0, h*.4]);
-      if (zone.tr) spots.push([w*.65, w, 0, h*.4]);
-      if (zone.bl) spots.push([0, w*.35, h*.6, h]);
-      if (zone.br) spots.push([w*.65, w, h*.6, h]);
-      if (focusMode === 'edge') {
-        spots.push([0, w*.2, 0, h], [w*.8, w, 0, h],
-                   [0, w, 0, h*.15], [0, w, h*.85, h]);
-      }
+      if (zone.tl) spots.push([0, w*.3, 0, h*.4]);
+      if (zone.tr) spots.push([w*.7, w, 0, h*.4]);
+      if (zone.bl) spots.push([0, w*.3, h*.6, h]);
+      if (zone.br) spots.push([w*.7, w, h*.6, h]);
       if (spots.length === 0) spots.push([0, w, 0, h]);
 
-      // 字元雨密度也按面積縮放
-      const matrixCount = (0 | 100 * huSc) * Math.max(1, sk * sk * 0.5);
-
-      // 暗綠字
-      for (let i = 0; i < matrixCount; i++) {
+      const cnt = (0 | 80 * huSc) * Math.max(1, sk * sk * 0.5);
+      for (let i = 0; i < cnt; i++) {
         const sp = spots[0 | Math.random() * spots.length];
         const x = sp[0] + Math.random() * (sp[1] - sp[0]);
         const y = sp[2] + Math.random() * (sp[3] - sp[2]);
         c.fillStyle = `rgba(0,255,65,${.15 + Math.random() * .7})`;
         c.fillText(ch[0 | Math.random() * ch.length], x, y);
       }
-      // 亮白頭部字
-      for (let i = 0; i < (0 | 16 * huSc) * Math.max(1, sk); i++) {
-        const sp = spots[0 | Math.random() * spots.length];
-        c.fillStyle = `rgba(200,255,220,${.7 + Math.random() * .3})`;
-        c.fillText(ch[0 | Math.random() * ch.length],
-          sp[0] + Math.random() * (sp[1] - sp[0]),
-          sp[2] + Math.random() * (sp[3] - sp[2]));
-      }
     }
-    // ACCESS DENIED 警示
-    if (huSc >= 0.6) {
-      // 警示框大小也跟著 HU 強度變化
-      const huBoost = 0.7 + huSc * 0.5;
-      const bw = Math.min(w * .75, 460 * sk * huBoost);
-      const bh = 66 * sk * huBoost;
-      const bx = (w - bw) / 2;
-      let by = (h - bh) / 2;
-
-      if (focusMode === 'tl' || focusMode === 'tr') by = h - bh - 20*sk;
-      else if (focusMode === 'bl' || focusMode === 'br') by = 20*sk;
-
-      if (t % 12 < 5) {
-        c.fillStyle = 'rgba(0,0,0,.88)';
-        c.fillRect(bx, by, bw, bh);
-        c.strokeStyle = 'rgba(255,30,30,.95)';
-        c.lineWidth = 2 * sk;
-        c.strokeRect(bx, by, bw, bh);
-        c.fillStyle = 'rgba(255,30,30,.98)';
-        c.font = `bold ${(16 * (0.7 + huSc * 0.6)) * sk}px 'Bebas Neue', monospace`;
-        c.textAlign = 'center';
-        c.textBaseline = 'middle';
-        c.fillText('⛔ ACCESS DENIED', w/2, by + bh/2 - 8*sk);
-        c.fillStyle = 'rgba(255,100,100,.9)';
-        c.font = `${(9 * (0.7 + huSc * 0.5)) * sk}px monospace`;
-        c.fillText('UNAUTHORIZED ACCESS ATTEMPT DETECTED', w/2, by + bh/2 + 12*sk);
-        c.textAlign = 'left';
-        c.textBaseline = 'alphabetic';
-      } else if (t % 12 < 10) {
-        c.fillStyle = 'rgba(0,0,0,.85)';
-        c.fillRect(bx, by, bw, bh);
-        c.strokeStyle = 'rgba(0,255,65,.85)';
-        c.lineWidth = 1 * sk;
-        c.strokeRect(bx, by, bw, bh);
-        c.fillStyle = 'rgba(0,255,65,.98)';
-        c.font = `bold ${(14 * (0.7 + huSc * 0.5)) * sk}px monospace`;
-        c.textAlign = 'center';
-        c.textBaseline = 'middle';
-        c.fillText(`> BREACHING FIREWALL... ${0 | Math.random() * 100}%`, w/2, by + bh/2 - 8*sk);
-        c.fillStyle = 'rgba(0,255,65,.75)';
-        c.font = `${(9 * (0.7 + huSc * 0.5)) * sk}px monospace`;
-        c.fillText('[████████░░] DECRYPTING PAYLOAD', w/2, by + bh/2 + 12*sk);
-        c.textAlign = 'left';
-        c.textBaseline = 'alphabetic';
-      }
+    if (huSc > 0 && (zone.tl || zone.tr)) {
+      const sbH = (16 + huSc * 8) * sk;
+      c.fillStyle = 'rgba(0,20,0,.88)';
+      c.fillRect(0, 0, w, sbH);
+      c.fillStyle = 'rgba(0,255,65,.95)';
+      c.font = `bold ${(9 + huSc * 3) * sk}px monospace`;
+      if (zone.tl) { c.textAlign = 'left'; c.fillText('[ROOT@TARGET:~$ EXPLOIT_RUNNING]', 10*sk, sbH/2 + 4*sk); }
+      if (zone.tr) { c.textAlign = 'right'; c.fillText(`PID:${String(0 | Math.random() * 9999).padStart(4,'0')}`, w-10*sk, sbH/2 + 4*sk); }
+      c.textAlign = 'left';
     }
-    // 頂/底狀態列
-    if (huSc > 0) {
-      const sbH = (16 + huSc * 8) * sk;  // HU=0:16 / HU=10:32
-      if (zone.tl || zone.tr) {
-        c.fillStyle = 'rgba(0,20,0,.88)';
-        c.fillRect(0, 0, w, sbH);
-        c.fillStyle = 'rgba(0,255,65,.95)';
-        c.font = `bold ${(9 * (0.7 + huSc * 0.4)) * sk}px monospace`;
-        if (zone.tl) {
-          c.textAlign = 'left';
-          c.fillText('[ROOT@TARGET:~$ EXPLOIT_RUNNING]', 10*sk, 15*sk);
-        }
-        if (zone.tr) {
-          c.textAlign = 'right';
-          c.fillText(`PID:${String(0 | Math.random() * 9999).padStart(4,'0')}  UID:0`, w-10*sk, 15*sk);
-        }
-        c.textAlign = 'left';
-      }
-      if (zone.bl || zone.br) {
-        c.fillStyle = 'rgba(0,20,0,.88)';
-        c.fillRect(0, h-sbH, w, sbH);
-        c.fillStyle = 'rgba(0,255,65,.8)';
-        c.font = `${(9 * (0.7 + huSc * 0.4)) * sk}px monospace`;
-        const lg = ['INJECTING SHELLCODE', 'BYPASSING 2FA', 'DUMPING CREDENTIALS',
-                    'PATCHING KERNEL', 'UPLOADING TROJAN', 'ESCALATING PRIVILEGES'];
-        c.fillText(`> ${lg[t % lg.length]}... [${new Date().toISOString().slice(11,19)}]`, 10*sk, h-8*sk);
-      }
-    }
-    // 故障線
-    if (nS > 0) displaceLines(c, w, h, 0 | 2 * nS, 30 * nS, 4, .5);
   }
 };
 
-// ──────────────────────────────────────────────────
-// C9. 匯出功能
-// ──────────────────────────────────────────────────
+// ═══════════════════════════════════════════
+// C7 文字繪製 — 支援多段 + 進階特效 + 垂直書寫
+// ═══════════════════════════════════════════
+function drawText(c, w, h, t, tx) {
+  let raw = tx.text;
+  if (!raw) return;
 
-/** 顯示進度 */
-function prog(p, tx) {
-  const bar = $('#pb'), fill = $('#pf'), txt = $('#ptx');
-  bar.style.display = 'block';
-  txt.style.display = 'block';
-  fill.style.width  = p + '%';
-  txt.textContent   = tx;
+  // 打字機效果
+  if (tx.effect === 'type') {
+    const totalFrames = state.duration * FPS;
+    const progress = (t % totalFrames) / totalFrames;
+    const chars = Math.ceil(raw.length * Math.min(1, progress * 1.3));
+    raw = raw.slice(0, chars);
+    if (t % 4 < 2 && chars < tx.text.length + 1) raw += '_';
+  }
+
+  const f = FONTS[tx.font] || FONTS.orbitron;
+  c.save();
+
+  // 旋轉
+  if (tx.rotate) {
+    const cx0 = tx.x * w, cy0 = tx.y * h;
+    c.translate(cx0, cy0);
+    c.rotate(tx.rotate * Math.PI / 180);
+    c.translate(-cx0, -cy0);
+  }
+
+  // 字型
+  const styles = [];
+  if (tx.italic) styles.push('italic');
+  styles.push(tx.bold ? 'bold' : f.weight);
+  c.font = `${styles.join(' ')} ${tx.size}px ${f.css}`;
+  c.textBaseline = 'middle';
+  if ('letterSpacing' in c) c.letterSpacing = `${tx.letterSpacing}px`;
+
+  // 透明度
+  let alpha = tx.opacity / 100;
+  if (tx.effect === 'flicker') {
+    if (Math.random() < 0.12) alpha *= 0.25;
+    else if (Math.random() < 0.08) alpha *= 0.6;
+  }
+  c.globalAlpha = alpha;
+
+  // 描邊參數
+  const rgb = hexToRgb(tx.color);
+  const isLight = rgb && (rgb.r + rgb.g + rgb.b) > 380;
+  const strokeColor = isLight ? 'rgba(0,0,0,0.7)' : 'rgba(255,255,255,0.7)';
+  const strokeW = Math.max(0, tx.size * tx.strokeWidth);
+
+  // Glow / Shadow
+  if (tx.glow) {
+    c.shadowColor = tx.color;
+    c.shadowBlur = tx.glowSize;
+    c.shadowOffsetX = 0;
+    c.shadowOffsetY = 0;
+  } else if (tx.shadow) {
+    c.shadowColor = 'rgba(0,0,0,0.7)';
+    c.shadowBlur = tx.size * 0.15;
+    c.shadowOffsetX = tx.size * 0.06;
+    c.shadowOffsetY = tx.size * 0.06;
+  }
+
+  const cx = tx.x * w;
+  const cy = tx.y * h;
+
+  if (tx.vertical) {
+    // ═══════ 垂直書寫模式（多欄直書，由右至左）═══════
+    const cols = raw.split('\n');                // 每段原始行 → 一欄
+    const colCount = cols.length;
+    const colSpacing = tx.size * tx.lineH;      // 欄間距 = 字大小 × 行距倍率
+
+    // 每欄寬度（最寬字元 + 字距），高度（字數 × 字高）
+    const charSpacing = tx.size * 1.0;          // 每字垂直間距
+    const colHeights = cols.map(col => Array.from(col).length * charSpacing);
+    const maxColH = Math.max(...colHeights, 1);
+
+    // 段落框
+    const totalW = colSpacing * (colCount - 1);
+    const paraLeft = cx - totalW / 2 - tx.size / 2;
+    const paraRight = cx + totalW / 2 + tx.size / 2;
+    const paraTop = cy - maxColH / 2 - tx.size * 0.3;
+    const paraBottom = cy + maxColH / 2 + tx.size * 0.3;
+
+    // 背景色塊
+    if (tx.bgEnable) {
+      const pad = tx.bgPad;
+      const bgRgb = hexToRgb(tx.bgColor) || { r: 0, g: 0, b: 0 };
+      c.fillStyle = `rgba(${bgRgb.r},${bgRgb.g},${bgRgb.b},${tx.bgOpacity / 100})`;
+      c.fillRect(paraLeft - pad, paraTop - pad,
+                 (paraRight - paraLeft) + pad * 2, (paraBottom - paraTop) + pad * 2);
+    }
+    // 外框
+    if (tx.border) {
+      c.strokeStyle = tx.color;
+      c.lineWidth = tx.borderW;
+      const pad = tx.bgPad || 8;
+      c.strokeRect(paraLeft - pad, paraTop - pad,
+                   (paraRight - paraLeft) + pad * 2, (paraBottom - paraTop) + pad * 2);
+    }
+
+    c.textAlign = 'center';
+
+    // 直書傳統：第一行（ci=0）永遠在最右邊，由右至左排列
+    // align 影響整體段落在畫布的位置（左/中/右）
+    cols.forEach((col, ci) => {
+      const chars = Array.from(col);
+      // ci=0 在右、ci=N-1 在左（中文/日文直書習慣）
+      // 所以該欄的 X = paraRight - tx.size/2 - ci * colSpacing
+      const colX = paraRight - tx.size / 2 - ci * colSpacing;
+
+      const colH = chars.length * charSpacing;
+      // 依 valign 決定該欄起始 Y（top/middle/bottom）
+      const valign = tx.valign || 'middle';
+      let startY;
+      if (valign === 'top')         startY = paraTop + charSpacing / 2;
+      else if (valign === 'bottom') startY = paraBottom - colH + charSpacing / 2;
+      else                          startY = cy - colH / 2 + charSpacing / 2;
+
+      chars.forEach((ch, ki) => {
+        const y = startY + ki * charSpacing;
+        if (strokeW > 0) {
+          c.strokeStyle = strokeColor;
+          c.lineWidth = strokeW;
+          c.lineJoin = 'round';
+          c.strokeText(ch, colX, y);
+        }
+        if (tx.effect === 'rgb') {
+          const off = Math.max(2, tx.size * 0.04);
+          const wobble = Math.sin(t * 0.3 + ki * 0.5) * off;
+          const orig = c.shadowColor;
+          c.shadowColor = 'transparent';
+          c.globalCompositeOperation = 'screen';
+          c.fillStyle = '#ff0040';
+          c.fillText(ch, colX + wobble, y);
+          c.fillStyle = '#00ffee';
+          c.fillText(ch, colX - wobble, y);
+          c.globalCompositeOperation = 'source-over';
+          c.shadowColor = orig;
+        }
+        c.fillStyle = tx.color;
+        c.fillText(ch, colX, y);
+      });
+    });
+
+    c.restore();
+    return;
+  }
+
+  // ═══════ 一般水平書寫 ═══════
+  const lines = raw.split('\n');
+  const lineWs = lines.map(l => c.measureText(l).width);
+  const maxW = Math.max(...lineWs, 1);
+  const lineH = tx.size * tx.lineH;
+  const totalH = lineH * (lines.length - 1);
+
+  const paraLeft = cx - maxW / 2;
+  const paraRight = cx + maxW / 2;
+  const paraTop = cy - totalH / 2 - tx.size * 0.5;
+  const paraBottom = cy + totalH / 2 + tx.size * 0.5;
+
+  // 背景色塊
+  if (tx.bgEnable) {
+    const pad = tx.bgPad;
+    const bgRgb = hexToRgb(tx.bgColor) || { r: 0, g: 0, b: 0 };
+    c.fillStyle = `rgba(${bgRgb.r},${bgRgb.g},${bgRgb.b},${tx.bgOpacity / 100})`;
+    c.fillRect(paraLeft - pad, paraTop - pad,
+               (paraRight - paraLeft) + pad * 2, (paraBottom - paraTop) + pad * 2);
+  }
+  // 外框
+  if (tx.border) {
+    c.strokeStyle = tx.color;
+    c.lineWidth = tx.borderW;
+    const pad = tx.bgPad || 8;
+    c.strokeRect(paraLeft - pad, paraTop - pad,
+                 (paraRight - paraLeft) + pad * 2, (paraBottom - paraTop) + pad * 2);
+  }
+
+  c.textAlign = 'left';
+  lines.forEach((line, i) => {
+    if (!line) return;
+    const lineY = cy - totalH / 2 + i * lineH;
+    const lineW = lineWs[i];
+
+    let lineX;
+    if (tx.align === 'left')       lineX = paraLeft;
+    else if (tx.align === 'right') lineX = paraRight - lineW;
+    else                            lineX = cx - lineW / 2;
+
+    if (strokeW > 0) {
+      c.strokeStyle = strokeColor;
+      c.lineWidth = strokeW;
+      c.lineJoin = 'round';
+      c.strokeText(line, lineX, lineY);
+    }
+    if (tx.effect === 'rgb') {
+      const off = Math.max(2, tx.size * 0.04);
+      const wobble = Math.sin(t * 0.3 + i * 0.5) * off;
+      const orig = c.shadowColor;
+      c.shadowColor = 'transparent';
+      c.globalCompositeOperation = 'screen';
+      c.fillStyle = '#ff0040';
+      c.fillText(line, lineX + wobble, lineY);
+      c.fillStyle = '#00ffee';
+      c.fillText(line, lineX - wobble, lineY);
+      c.globalCompositeOperation = 'source-over';
+      c.shadowColor = orig;
+    }
+    c.fillStyle = tx.color;
+    c.fillText(line, lineX, lineY);
+
+    if (tx.underline) {
+      c.fillRect(lineX, lineY + tx.size * 0.45, lineW, Math.max(1, tx.size * 0.05));
+    }
+  });
+
+  c.restore();
+}
+
+// ═══════════════════════════════════════════
+// 文字拖曳（用 Pointer Events）
+// ═══════════════════════════════════════════
+let dragState = null;
+
+function eventToPos(e) {
+  const r = cv.getBoundingClientRect();
+  const cx = e.clientX - r.left;
+  const cy = e.clientY - r.top;
+  return { x: cx / r.width, y: cy / r.height };
+}
+
+/** 回傳 hit 到的段落 index，沒有則 -1（從上層往下找）*/
+function hitTextTest(e) {
+  if (!state.img && !state.video) return -1;
+  const p = eventToPos(e);
+  for (let i = state.txts.length - 1; i >= 0; i--) {
+    const tx = state.txts[i];
+    if (!tx.text) continue;
+    const lineCount = tx.text.split('\n').length;
+    const tolX = Math.max(0.1, tx.size * Math.max(...tx.text.split('\n').map(s=>s.length)) * 0.3 / cv.width);
+    const tolY = Math.max(0.05, tx.size * lineCount * tx.lineH * 0.7 / cv.height);
+    if (Math.abs(p.x - tx.x) < tolX && Math.abs(p.y - tx.y) < tolY) return i;
+  }
+  return -1;
+}
+
+cv.addEventListener('pointerdown', e => {
+  const idx = hitTextTest(e);
+  if (idx === -1) return;
+  // 自動選中該段
+  if (idx !== state.selectedTxt) {
+    state.selectedTxt = idx;
+    syncEditorFromCurrent();
+    renderTxtList();
+  }
+  const p = eventToPos(e);
+  dragState = { offX: p.x - curTxt().x, offY: p.y - curTxt().y };
+  cv.setPointerCapture(e.pointerId);
+  cv.style.cursor = 'grabbing';
+  e.preventDefault();
+});
+
+cv.addEventListener('pointermove', e => {
+  if (!dragState) return;
+  const p = eventToPos(e);
+  curTxt().x = Math.max(0, Math.min(1, p.x - dragState.offX));
+  curTxt().y = Math.max(0, Math.min(1, p.y - dragState.offY));
+  $('#txtX').value = Math.round(curTxt().x * 100);
+  $('#txtY').value = Math.round(curTxt().y * 100);
+  $('#vTxtX').textContent = Math.round(curTxt().x * 100) + '%';
+  $('#vTxtY').textContent = Math.round(curTxt().y * 100) + '%';
+});
+
+cv.addEventListener('pointerup', () => {
+  dragState = null;
+  cv.style.cursor = '';
+});
+cv.addEventListener('pointercancel', () => { dragState = null; cv.style.cursor = ''; });
+
+// 雙擊 = inline 編輯
+cv.addEventListener('dblclick', e => {
+  const idx = hitTextTest(e);
+  if (idx === -1) return;
+  state.selectedTxt = idx;
+  syncEditorFromCurrent();
+  renderTxtList();
+  openInlineEditor();
+});
+
+/** 在畫布上文字位置開啟 inline 編輯框 */
+function openInlineEditor() {
+  closeInlineEditor();
+  const tx = curTxt();
+  const r = cv.getBoundingClientRect();
+  const wrap = $('#dz');
+  const wrapR = wrap.getBoundingClientRect();
+
+  // 計算文字螢幕位置（畫布座標 → 螢幕座標）
+  const sx = r.left + tx.x * r.width;
+  const sy = r.top + tx.y * r.height;
+  const sw = Math.max(120, tx.size * 0.4 * tx.text.length * (r.width / cv.width));
+  const sh = Math.max(40, tx.size * tx.text.split('\n').length * tx.lineH * (r.height / cv.height));
+
+  const ed = document.createElement('textarea');
+  ed.className = 'inline-editor';
+  ed.value = tx.text;
+  ed.style.left = (sx - wrapR.left - sw / 2) + 'px';
+  ed.style.top  = (sy - wrapR.top - sh / 2) + 'px';
+  ed.style.width = sw + 'px';
+  ed.style.height = sh + 'px';
+  ed.style.fontSize = Math.min(20, tx.size * (r.width / cv.width)) + 'px';
+  wrap.appendChild(ed);
+
+  ed.focus();
+  ed.select();
+
+  ed.addEventListener('input', () => {
+    tx.text = ed.value;
+    $('#txtText').value = ed.value;
+    renderTxtList();
+  });
+  // Esc 或失焦關閉
+  ed.addEventListener('blur', closeInlineEditor);
+  ed.addEventListener('keydown', evt => {
+    if (evt.key === 'Escape') closeInlineEditor();
+  });
+}
+function closeInlineEditor() {
+  const ed = document.querySelector('.inline-editor');
+  if (ed) ed.remove();
+}
+
+// ═══════════════════════════════════════════
+// C8 匯出
+// ═══════════════════════════════════════════
+function getOutputSize() {
+  const src = state.isVideo ? state.video : state.img;
+  if (!src) return { w: cv.width, h: cv.height };
+  const natW = state.isVideo ? src.videoWidth : src.naturalWidth;
+  const natH = state.isVideo ? src.videoHeight : src.naturalHeight;
+
+  if (state.resMode === 'original') return { w: natW, h: natH };
+  if (state.resMode === 'custom') {
+    const w = state.customWidth;
+    return { w, h: Math.round(natH * w / natW) };
+  }
+  return { w: cv.width, h: cv.height };
+}
+
+function updateResInfo() {
+  const src = state.isVideo ? state.video : state.img;
+  if (!src) {
+    $('#resInfo').textContent = '請先上傳圖片或影片';
+    return;
+  }
+  const { w, h } = getOutputSize();
+  const tags = { original: '原始解析度', recommended: '適合 Threads / 社群', custom: '自訂寬度' };
+  $('#resInfo').textContent = `${w} × ${h} px · ${tags[state.resMode]}`;
+}
+
+function showProgress(p, txt) {
+  $('#progBar').style.display = 'block';
+  $('#progText').style.display = 'block';
+  $('#progFill').style.width = p + '%';
+  $('#progText').textContent = txt;
   if (p >= 100) {
     setTimeout(() => {
-      bar.style.display = 'none';
-      txt.style.display = 'none';
+      $('#progBar').style.display = 'none';
+      $('#progText').style.display = 'none';
     }, 2500);
   }
 }
 
-/** 停用匯出按鈕 */
-function dis(v) {
-  $('#bG').disabled = v;
-  $('#bM').disabled = v;
-  $('#bP').disabled = v;
+function disableExport(v) {
+  $('#btnPng').disabled = v;
+  $('#btnGif').disabled = v;
+  $('#btnMp4').disabled = v;
 }
 
-// ── PNG 匯出 ──
-$('#bP').onclick = () => {
-  if (!img) return;
+// PNG
+$('#btnPng').addEventListener('click', () => {
+  if (!state.img && !state.video) return;
   const { w, h } = getOutputSize();
 
-  // 「建議」模式直接抓 cv 內容，不重畫（最快、最一致）
-  if (resMode === 'recommended') {
+  if (state.resMode === 'recommended') {
     cv.toBlob(b => {
-      const u = URL.createObjectURL(b);
       const a = document.createElement('a');
-      a.href = u;
-      a.download = `glitch_${fx}_${w}x${h}.png`;
+      a.href = URL.createObjectURL(b);
+      a.download = `glitch_${state.fx}_${w}x${h}.png`;
       a.click();
-      prog(100, `PNG ${w}×${h} 下載完成！`);
+      showProgress(100, 'PNG 完成！');
     }, 'image/png');
     return;
   }
 
-  // 原圖/自訂：在目標解析度重新繪製（用 t=15 避免起始幀的單薄感）
   const off = document.createElement('canvas');
   off.width = w; off.height = h;
-  const offCtx = off.getContext('2d');
-  drawFrame(offCtx, w, h, 15);
-
+  drawFrame(off.getContext('2d'), w, h, 15);
   off.toBlob(b => {
-    const u = URL.createObjectURL(b);
     const a = document.createElement('a');
-    a.href = u;
-    a.download = `glitch_${fx}_${w}x${h}.png`;
+    a.href = URL.createObjectURL(b);
+    a.download = `glitch_${state.fx}_${w}x${h}.png`;
     a.click();
-    prog(100, `PNG ${w}×${h} 下載完成！`);
+    showProgress(100, `PNG ${w}×${h} 完成！`);
   }, 'image/png');
-};
+});
 
-// ── GIF Worker 預載（繞過 CORS） ──
-let gifWorkerBlobURL = null;
-async function getWorkerURL() {
-  if (gifWorkerBlobURL) return gifWorkerBlobURL;
+// GIF worker (繞 CORS)
+let gifWorkerURL = null;
+async function getGifWorker() {
+  if (gifWorkerURL) return gifWorkerURL;
   try {
     const res = await fetch('https://cdnjs.cloudflare.com/ajax/libs/gif.js/0.2.0/gif.worker.js');
-    if (!res.ok) throw new Error('fetch failed');
     const code = await res.text();
     const blob = new Blob([code], { type: 'application/javascript' });
-    gifWorkerBlobURL = URL.createObjectURL(blob);
-    return gifWorkerBlobURL;
+    gifWorkerURL = URL.createObjectURL(blob);
+    return gifWorkerURL;
   } catch (e) {
     return 'https://cdnjs.cloudflare.com/ajax/libs/gif.js/0.2.0/gif.worker.js';
   }
 }
 
-// ── GIF 匯出 ──
-$('#bG').onclick = async () => {
-  if (!img) return;
-  dis(true);
-  cancelAnimationFrame(raf);
-
+// GIF
+$('#btnGif').addEventListener('click', async () => {
+  if (!state.img && !state.video) return;
+  disableExport(true);
+  cancelAnimationFrame(state.raf);
   const { w, h } = getOutputSize();
-  const totalFrames = D * FPS;
-
-  prog(0, `準備 worker... (${w}×${h})`);
-
+  showProgress(0, `準備 GIF (${w}×${h})...`);
   try {
-    const workerURL = await getWorkerURL();
-    prog(2, 'GIF 產生中...');
-
+    const workerURL = await getGifWorker();
     const off = document.createElement('canvas');
     off.width = w; off.height = h;
     const offCtx = off.getContext('2d');
+    const g = new GIF({ workers: 4, quality: QUALITY_INFO[state.quality].gifQ, width: w, height: h, workerScript: workerURL });
 
-    const g = new GIF({
-      workers: 4,
-      quality: 5,    // 平衡品質與速度（1=最高但極慢，10=快但糊）
-      width: w, height: h,
-      workerScript: workerURL
-    });
-
-    // Watchdog 時間：依解析度動態調整（大圖需要更久）
-    const wdMs = Math.max(60000, w * h * 0.05);  // 1920x1080 ≈ 100s
     let finished = false;
-    const watchdog = setTimeout(() => {
-      if (!finished) {
-        prog(100, '⚠ 超時失敗，請重試或用 MP4');
-        dis(false);
-        if (L) play();
-      }
-    }, wdMs);
+    const wd = setTimeout(() => {
+      if (!finished) { showProgress(100, '⚠ 超時'); disableExport(false); play(); }
+    }, Math.max(60000, w * h * 0.05));
 
-    g.on('progress', p => prog(50 + (0 | p * 50), 'GIF 壓縮中...'));
-    g.on('abort', () => {
-      finished = true;
-      clearTimeout(watchdog);
-      prog(100, '⚠ 已取消');
-      dis(false);
-      if (L) play();
-    });
+    g.on('progress', p => showProgress(50 + (0|p*50), 'GIF 壓縮中...'));
     g.on('finished', b => {
       finished = true;
-      clearTimeout(watchdog);
-      const u = URL.createObjectURL(b);
+      clearTimeout(wd);
+      const suffix = state.isVideo ? '_video' : '';
       const a = document.createElement('a');
-      a.href = u;
-      a.download = `glitch_${fx}_${w}x${h}.gif`;
+      a.href = URL.createObjectURL(b);
+      a.download = `glitch_${state.fx}${suffix}_${w}x${h}.gif`;
       a.click();
-      prog(100, '下載完成！');
-      dis(false);
-      if (L) play();
+      showProgress(100, '完成！');
+      disableExport(false);
+      play();
     });
 
-    for (let f = 0; f < totalFrames; f++) {
-      drawFrame(offCtx, w, h, f);
-      g.addFrame(off, { copy: true, delay: 1000 / FPS | 0 });
-      prog(0 | f / totalFrames * 50, `渲染 ${f+1}/${totalFrames}`);
-      await new Promise(r => setTimeout(r, 0));
+    if (state.isVideo) {
+      // ─── 影片模式：以剪輯區間取樣 ───
+      const v = state.video;
+      const startT = state.trimStart;
+      const trimDur = state.trimEnd - startT;
+      const total = Math.min(150, Math.ceil(trimDur * FPS));
+      v.pause();
+      v.loop = false;
+
+      for (let f = 0; f < total; f++) {
+        const targetTime = startT + (f / total) * trimDur;
+        v.currentTime = targetTime;
+        await new Promise(r => v.addEventListener('seeked', r, { once: true }));
+        drawFrame(offCtx, w, h, f);
+        g.addFrame(off, { copy: true, delay: 1000 / FPS | 0 });
+        showProgress(0 | f / total * 50, `取樣 ${f+1}/${total}`);
+      }
+      v.loop = true;
+    } else {
+      // ─── 圖片模式：依 state.duration ───
+      const total = state.duration * FPS;
+      for (let f = 0; f < total; f++) {
+        drawFrame(offCtx, w, h, f);
+        g.addFrame(off, { copy: true, delay: 1000 / FPS | 0 });
+        showProgress(0 | f / total * 50, `渲染 ${f+1}/${total}`);
+        await new Promise(r => setTimeout(r, 0));
+      }
     }
+
     g.render();
-
   } catch (e) {
-    console.error(e);
-    prog(100, '⚠ 失敗: ' + e.message);
-    dis(false);
-    if (L) play();
+    showProgress(100, '⚠ ' + e.message);
+    disableExport(false);
+    play();
   }
-};
+});
 
-// ── MP4 匯出 ──
-$('#bM').onclick = async () => {
-  if (!img) return;
-  dis(true);
-  cancelAnimationFrame(raf);
-
+// MP4
+$('#btnMp4').addEventListener('click', async () => {
+  if (!state.img && !state.video) return;
+  disableExport(true);
+  cancelAnimationFrame(state.raf);
   const { w, h } = getOutputSize();
-  const totalFrames = D * FPS;
-
-  prog(0, `MP4 產生中... (${w}×${h})`);
 
   const off = document.createElement('canvas');
   off.width = w; off.height = h;
   const offCtx = off.getContext('2d');
 
-  const chunks = [];
-  const mimeType = MediaRecorder.isTypeSupported('video/mp4') ? 'video/mp4'
-                 : MediaRecorder.isTypeSupported('video/webm;codecs=vp9') ? 'video/webm;codecs=vp9'
-                 : 'video/webm';
-  // 高品質 bitrate
-  const pixelCount = w * h;
-  const bitrate = Math.max(4e6, Math.min(40e6, pixelCount * 0.4));
+  const mime = MediaRecorder.isTypeSupported('video/mp4') ? 'video/mp4'
+             : MediaRecorder.isTypeSupported('video/webm;codecs=vp9') ? 'video/webm;codecs=vp9'
+             : 'video/webm';
+  const bitrate = getBitrate(w, h);
+  const ext = mime.startsWith('video/mp4') ? 'mp4' : 'webm';
 
-  // ─── 階段 1：預渲染所有幀到 ImageBitmap 陣列 ───
-  // 記憶體保護：超過 600MB 預估值改用即時編碼模式
-  const estMB = totalFrames * w * h * 4 / 1024 / 1024;
-  const useTwoPhase = estMB <= 600;
+  // ═══════ 影片模式：跟著影片時間軸錄製 ═══════
+  if (state.isVideo) {
+    const v = state.video;
+    const startT = state.trimStart;
+    const endT   = state.trimEnd;
+    const trimDur = endT - startT;
+    showProgress(0, `MP4 錄製 (${w}×${h}, ${trimDur.toFixed(1)}s)...`);
 
-  if (useTwoPhase) {
-    prog(0, `階段 1/2 預渲染 (${w}×${h})...`);
-  } else {
-    prog(0, `即時編碼模式 (${w}×${h}, 大檔案)...`);
+    v.pause();
+    v.loop = false;
+
+    // 等影片 seek 到起點
+    v.currentTime = startT;
+    await new Promise(r => v.addEventListener('seeked', r, { once: true }));
+
+    const stream = off.captureStream(30);
+    const recorder = new MediaRecorder(stream, { mimeType: mime, videoBitsPerSecond: bitrate });
+    const chunks = [];
+    recorder.ondataavailable = e => e.data.size && chunks.push(e.data);
+
+    let drawingRaf = null;
+    let stopped = false;
+
+    const finalize = () => {
+      if (stopped) return;
+      stopped = true;
+      cancelAnimationFrame(drawingRaf);
+      v.loop = true;
+      try { recorder.stop(); } catch(e) {}
+    };
+
+    recorder.onstop = () => {
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(new Blob(chunks, { type: mime }));
+      a.download = `glitch_${state.fx}_video_${w}x${h}.${ext}`;
+      a.click();
+      showProgress(100, `完成！(${ext.toUpperCase()})`);
+      disableExport(false);
+      play();
+    };
+
+    // Watchdog：超過剪輯長度 + 5 秒還沒完成，強制停止
+    const watchdog = setTimeout(() => {
+      console.warn('[mp4] watchdog timeout - force stop');
+      finalize();
+    }, (trimDur * 1000) + 5000);
+
+    // 持續繪製 + 監控時間
+    let frameCount = 0;
+    const drawLoop = () => {
+      drawFrame(offCtx, w, h, frameCount++);
+      const cur = v.currentTime;
+      const elapsed = cur - startT;
+      const progress = Math.min(99, (elapsed / trimDur) * 100 | 0);
+      showProgress(progress, `錄製 ${elapsed.toFixed(1)} / ${trimDur.toFixed(1)}s`);
+
+      // 主動偵測：到達剪輯結束點就停止（不再依賴 ended 事件）
+      if (cur >= endT - 0.05 || v.ended) {
+        clearTimeout(watchdog);
+        // 多畫一幀確保最後一幀被捕獲
+        setTimeout(() => {
+          drawFrame(offCtx, w, h, frameCount++);
+          setTimeout(finalize, 100);
+        }, 50);
+        return;
+      }
+      drawingRaf = requestAnimationFrame(drawLoop);
+    };
+
+    recorder.start();
+    drawLoop();
+    await v.play();
+    return;
   }
+
+  // ═══════ 圖片模式：原本的兩階段預渲染 ═══════
+  const total = state.duration * FPS;
+  showProgress(0, `MP4 預渲染 (${w}×${h})...`);
 
   const frames = [];
-  const tempCanvas = document.createElement('canvas');
-  tempCanvas.width = w; tempCanvas.height = h;
-  const tempCtx = tempCanvas.getContext('2d');
-
-  if (useTwoPhase) {
-    for (let f = 0; f < totalFrames; f++) {
-      drawFrame(tempCtx, w, h, f);
-      const bitmap = await createImageBitmap(tempCanvas);
-      frames.push(bitmap);
-      prog(0 | f / totalFrames * 60, `渲染幀 ${f+1}/${totalFrames}`);
-      if (f % 3 === 0) await new Promise(r => setTimeout(r, 0));
-    }
+  const tmp = document.createElement('canvas');
+  tmp.width = w; tmp.height = h;
+  const tmpCtx = tmp.getContext('2d');
+  for (let f = 0; f < total; f++) {
+    drawFrame(tmpCtx, w, h, f);
+    frames.push(await createImageBitmap(tmp));
+    showProgress(0 | f / total * 60, `渲染 ${f+1}/${total}`);
+    if (f % 3 === 0) await new Promise(r => setTimeout(r, 0));
   }
 
-  // ─── 階段 2：播放預渲染幀給 MediaRecorder（精準 12fps）───
-  prog(60, '階段 2/2 編碼影片...');
+  showProgress(60, 'MP4 編碼...');
   const stream = off.captureStream(0);
   const track = stream.getVideoTracks()[0];
-
-  const rec = new MediaRecorder(stream, {
-    mimeType: mimeType,
-    videoBitsPerSecond: bitrate
-  });
-
+  const rec = new MediaRecorder(stream, { mimeType: mime, videoBitsPerSecond: bitrate });
+  const chunks = [];
   rec.ondataavailable = e => e.data.size && chunks.push(e.data);
   rec.onstop = () => {
-    // 釋放 ImageBitmap 記憶體
     frames.forEach(b => b.close && b.close());
-
-    const ext = mimeType.startsWith('video/mp4') ? 'mp4' : 'webm';
-    const blob = new Blob(chunks, { type: mimeType });
-    const u = URL.createObjectURL(blob);
     const a = document.createElement('a');
-    a.href = u;
-    a.download = `glitch_${fx}_${w}x${h}.${ext}`;
+    a.href = URL.createObjectURL(new Blob(chunks, { type: mime }));
+    a.download = `glitch_${state.fx}_${w}x${h}.${ext}`;
     a.click();
-    prog(100, `下載完成！(${ext.toUpperCase()} ${w}×${h})`);
-    dis(false);
-    if (L) play();
+    showProgress(100, `完成！(${ext.toUpperCase()})`);
+    disableExport(false);
+    play();
   };
-
   rec.start();
   const frameMs = 1000 / FPS;
-
-  // 用精準時間排程播放每一幀
-  for (let f = 0; f < totalFrames; f++) {
+  for (let f = 0; f < total; f++) {
     const target = performance.now() + frameMs;
-
-    if (useTwoPhase) {
-      // 兩階段模式：直接繪預渲染好的 bitmap（快）
-      offCtx.drawImage(frames[f], 0, 0);
-    } else {
-      // 即時模式：當下渲染（大檔案保護模式）
-      drawFrame(offCtx, w, h, f);
-    }
-
+    offCtx.drawImage(frames[f], 0, 0);
     if (track.requestFrame) track.requestFrame();
-    prog(60 + (0 | f / totalFrames * 35), `編碼 ${f+1}/${totalFrames}`);
-
-    // 等到下一幀的時間點（即時模式可能本身已經超過時間，那就不等）
+    showProgress(60 + (0|f/total*35), `編碼 ${f+1}/${total}`);
     const wait = target - performance.now();
     if (wait > 0) await new Promise(r => setTimeout(r, wait));
   }
-  // 額外等 2 個 frameMs 確保最後一幀被捕獲
   await new Promise(r => setTimeout(r, frameMs * 2));
-  prog(98, '封裝中...');
+  showProgress(98, '封裝中...');
   rec.stop();
-};
+});
 
+// GLITCH STUDIO loaded
 </script>
 </body>
 </html>
