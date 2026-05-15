@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>乙女遊戲模擬器 · Otome Studio</title>
+<link rel="stylesheet" href="otome-studio.css">
+</head>
+<body>
+
+<div class="app">
+
+  <!-- Top Bar -->
+  <header class="topbar">
+    <div class="brand">
+      <div class="brand-mark">Otome Studio</div>
+      <div class="brand-sub">乙女遊戲模擬器</div>
+    </div>
+    <div class="topbar-status">
+      <span class="save-indicator" id="saveIndicator" title="自動存檔狀態">
+        <span class="save-dot"></span>
+        <span class="save-text">已儲存</span>
+      </span>
+      <span class="storage-dot" id="storageDot" title="本機儲存量"></span>
+    </div>
+    <div class="topbar-actions">
+      <button class="btn btn-ghost" id="btnReset" title="重設選項">↻ 重設</button>
+      <button class="btn btn-ghost" id="btnImport" title="匯入專案 JSON">📥</button>
+      <button class="btn btn-ghost" id="btnShare" title="匯出專案 JSON">📤</button>
+      <button class="btn" id="btnChars">👥 角色</button>
+      <button class="btn" id="btnScreenshot">📸 截圖</button>
+      <button class="btn btn-primary" id="btnRecord">🎬 錄影</button>
+    </div>
+  </header>
+
+  <!-- Main -->
+  <div class="main">
+
+    <!-- Script Pane -->
+    <section class="pane pane-script">
+      <div class="pane-header">
+        <div class="pane-title">劇本</div>
+        <div class="pane-meta" id="lineCount">0 行</div>
+      </div>
+      <div class="script-wrap">
+        <div class="script-current-line" id="scriptCurrentLine"></div>
+        <textarea
+          id="scriptArea"
+          class="script-area"
+          spellcheck="false"
+          placeholder="角色：台詞&#10;角色[微笑][左]：台詞&#10;角色[?]：神秘語氣（顯示 ???）&#10;[bg: 背景名] / [離場]&#10;[cg: 名] 顯示 CG / [cg off] 關閉&#10;[選項] 加 - 三選項，* 標記最終"
+        ></textarea>
+      </div>
+      <div class="script-toolbar">
+        <button class="snippet-btn" data-snippet="bg">🌄 換背景</button>
+        <button class="snippet-btn" data-snippet="exit">🚪 離場</button>
+        <button class="snippet-btn" data-snippet="cg">🖼 插入 CG</button>
+        <button class="snippet-btn" data-snippet="cgoff">⊗ CG 關閉</button>
+        <button class="snippet-btn" data-snippet="choices">📝 三選項</button>
+        <button class="snippet-btn" data-snippet="unknown">❔ ??? 神秘人</button>
+      </div>
+      <details class="script-help">
+        <summary>📖 語法速查（點擊展開）</summary>
+        <div class="script-help-body">
+          <div class="help-row"><code>角色：台詞</code><span>說話</span></div>
+          <div class="help-row"><code>角色[微笑][左]：…</code><span>表情 + 位置（左/中/右）</span></div>
+          <div class="help-row"><code>角色[?]：…</code> 或 <code>角色[?:神秘人]：…</code><span>隱藏名 / 顯示替代名</span></div>
+          <div class="help-row"><code>[bg: 教室]</code><span>切換背景（Tab/Enter 自動補全）</span></div>
+          <div class="help-row"><code>[cg: 告白]</code> / <code>[cg full: …]</code> / <code>[cg off]</code><span>顯示 CG / 全螢幕 CG / 關閉</span></div>
+          <div class="help-row"><code>[離場]</code> 或 <code>[退場]</code> 或 <code>[無人]</code><span>清空舞台角色</span></div>
+          <div class="help-row"><code>[選項]</code> + <code>- 選項一</code> + <code>- * 最終</code><span>三選項，<code>*</code> 標記正解</span></div>
+          <div class="help-row" style="border-top:1px dashed var(--border-soft); margin-top:6px; padding-top:8px;"><strong style="color:var(--gold-bright);">⌨ 打字小幫手</strong></div>
+          <div class="help-row"><span>打角色名第一個字</span><span>自動跳出候選名單（含表情）</span></div>
+          <div class="help-row"><span>換行 <kbd>Enter</kbd></span><span>沿用上一句的說話者</span></div>
+          <div class="help-row"><span>連按兩次 <kbd>Enter</kbd></span><span>變成旁白</span></div>
+          <div class="help-row"><span>連按三次 <kbd>Enter</kbd></span><span>又會沿用上一句的說話者</span></div>
+          <div class="help-row"><span>角色名後 <kbd>Tab</kbd></span><span>跳出位置選單（左/中/右）</span></div>
+          <div class="help-row"><span>空行 <kbd>Tab</kbd></span><span>插入上一句的說話者前綴</span></div>
+          <div class="help-row"><span><code>[</code> 內輸入 <kbd>?</kbd></span><span>提示視窗會問要 <code>[?]</code> 還是 <code>[?:別名]</code></span></div>
+          <div class="help-row"><span><code>[</code> 內輸入任意字</span><span>無對應表情時，提示視窗會給「轉成別名 <code>[?:X]</code>」一鍵選項</span></div>
+        </div>
+      </details>
+    </section>
+
+    <!-- Preview Pane -->
+    <section class="pane pane-preview">
+      <div class="preview-controls">
+        <div class="ratio-toggle" role="tablist">
+          <button class="active" data-ratio="16:9">16 : 9</button>
+          <button data-ratio="9:16">9 : 16</button>
+        </div>
+      </div>
+      <div class="stage-container">
+        <div class="stage" id="stage" data-ratio="16:9">
+          <div class="stage-bg stage-bg-default" id="stageBg"></div>
+          <div class="characters" id="characters"></div>
+          <div class="stage-cg" id="stageCg"></div>
+          <div class="choices-overlay" id="choicesOverlay"></div>
+          <div class="dialog-box" id="dialogBox">
+            <div class="dialog-speaker" id="dialogSpeaker"></div>
+            <div class="dialog-text" id="dialogText"></div>
+            <div class="dialog-progress" id="dialogProgress"></div>
+            <div class="dialog-indicator" id="dialogIndicator"></div>
+          </div>
+          <div class="stage-nav-zone left" id="stageNavLeft" title="上一句">‹</div>
+          <div class="stage-nav-zone right" id="stageNavRight" title="下一句">›</div>
+        </div>
+      </div>
+    </section>
+
+  </div>
+</div>
+
+<!-- ========== Asset Manager Modal ========== -->
+<div class="modal-backdrop" id="assetsModal">
+  <div class="modal" role="dialog" aria-modal="true">
+    <div class="modal-header">
+      <div class="modal-title" id="modalTitle">資產管理</div>
+      <button class="modal-close" id="modalClose" aria-label="關閉">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="tabs" role="tablist">
+        <button class="tab active" data-tab="chars">角色 立繪</button>
+        <button class="tab" data-tab="bgs">場景 背景</button>
+        <button class="tab" data-tab="cgs">CG 圖卡</button>
+        <button class="tab" data-tab="style">🎨 樣式</button>
+      </div>
+
+      <div class="tab-panel active" id="tab-chars" data-tab="chars">
+        <div class="char-list" id="charList"></div>
+        <button class="add-card-btn" id="addCharBtn" style="margin-top:12px;">+ 新增角色</button>
+      </div>
+
+      <div class="tab-panel" id="tab-bgs" data-tab="bgs">
+        <div class="bg-list" id="bgList"></div>
+        <button class="add-card-btn" id="addBgBtn" style="margin-top:12px;">+ 新增背景</button>
+      </div>
+
+      <div class="tab-panel" id="tab-cgs" data-tab="cgs">
+        <div class="cg-grid" id="cgList"></div>
+        <button class="add-card-btn" id="addCgBtn" style="margin-top:12px;">+ 新增 CG</button>
+        <div style="margin-top:14px; font-size:11px; color:var(--text-faint); line-height:1.7;">
+          CG 是「全螢幕圖卡」,適合放告白、回憶、特寫等關鍵場景。<br>
+          劇本用 <span style="color:var(--gold-bright); font-family:var(--font-mono);">[cg: 名字]</span> 顯示、<span style="color:var(--gold-bright); font-family:var(--font-mono);">[cg full: 名字]</span> 純圖模式、<span style="color:var(--gold-bright); font-family:var(--font-mono);">[cg off]</span> 關閉。
+        </div>
+      </div>
+
+      <div class="tab-panel" id="tab-style" data-tab="style">
+        <div class="style-section">
+          <div class="style-label">主題預設</div>
+          <div class="style-presets" id="dialogPresets"></div>
+        </div>
+        <div class="style-section">
+          <div class="style-label">自訂底色</div>
+          <div class="style-row">
+            <div class="style-field">
+              <label for="dialogColorInput">顏色</label>
+              <input type="color" id="dialogColorInput" value="#0d0716">
+            </div>
+            <div class="style-field">
+              <label for="dialogOpacityInput">透明度</label>
+              <input type="range" id="dialogOpacityInput" min="40" max="100" step="5" value="88">
+              <strong id="dialogOpacityLabel">88%</strong>
+            </div>
+            <button class="style-reset-btn" id="dialogStyleReset">↻ 還原預設</button>
+          </div>
+          <div class="style-preview-note">
+            修改會即時反映在預覽、截圖與錄影上;設定會自動儲存。
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <div class="storage-meter" id="storageMeter">儲存:計算中...</div>
+      <button class="btn btn-primary" id="modalDoneBtn">完成</button>
+    </div>
+  </div>
+</div>
+
+<!-- ========== Record Settings Modal ========== -->
+<div class="modal-backdrop" id="recordModal">
+  <div class="modal" role="dialog" aria-modal="true" style="max-width: 480px;">
+    <div class="modal-header">
+      <div class="modal-title">錄影輸出</div>
+      <button class="modal-close" id="recordModalClose" aria-label="關閉">×</button>
+    </div>
+    <div class="modal-body record-modal-body">
+
+      <div class="record-setting">
+        <div class="record-setting-label">
+          <span>打字機速度</span>
+          <strong id="typeSpeedLabel">中速 · 45ms</strong>
+        </div>
+        <input type="range" id="typeSpeed" min="20" max="100" step="5" value="45">
+      </div>
+
+      <div class="record-setting">
+        <div class="record-setting-label">
+          <span>每句停留時間</span>
+          <strong id="holdTimeLabel">1.5 秒</strong>
+        </div>
+        <input type="range" id="holdTime" min="0.5" max="4" step="0.1" value="1.5">
+      </div>
+
+      <div class="record-setting">
+        <div class="record-setting-label">
+          <span>場景切換停留</span>
+          <strong id="bgHoldLabel">0.6 秒</strong>
+        </div>
+        <input type="range" id="bgHold" min="0.2" max="2" step="0.1" value="0.6">
+      </div>
+
+      <div class="record-estimate" id="recordEstimate">
+        預計片長:<strong>...</strong>
+      </div>
+
+      <div style="font-size: 11px; color: var(--text-faint); line-height: 1.7;">
+        💡 沒有時間上限,但檔案大小會隨片長線性增加（約 0.5 MB/秒）。<br>
+        📱 錄影中請勿切換分頁或鎖屏,否則動畫會卡頓。可隨時按「■ 停止」結束。
+      </div>
+
+    </div>
+    <div class="modal-footer">
+      <div class="storage-meter" id="recordFormatInfo">偵測格式中...</div>
+      <button class="btn btn-primary" id="recordStartBtn">▶ 開始錄影</button>
+    </div>
+  </div>
+</div>
+
+<!-- ========== Recording Overlay (during recording) ========== -->
+<div class="recording-overlay" id="recordingOverlay">
+  <div class="recording-stage-wrap">
+    <canvas class="recording-canvas" id="recordingCanvas"></canvas>
+    <div class="rec-indicator">
+      <span class="rec-dot"></span>
+      <span>REC</span>
+    </div>
+  </div>
+  <div class="rec-controls">
+    <div class="rec-timer" id="recTimer"><strong>00:00</strong></div>
+    <button class="btn btn-stop" id="recStopBtn">■ 停止</button>
+  </div>
+</div>
+
+<!-- ========== Result Modal ========== -->
+<div class="modal-backdrop" id="resultModal">
+  <div class="modal" role="dialog" aria-modal="true" style="max-width: 560px;">
+    <div class="modal-header">
+      <div class="modal-title" id="resultTitle">✨ 錄影完成</div>
+      <button class="modal-close" id="resultModalClose" aria-label="關閉">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="result-preview">
+        <video class="result-video" id="resultVideo" controls></video>
+        <div class="result-meta" id="resultMeta"></div>
+        <div class="result-actions" id="resultActions"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- hidden file inputs -->
+<input type="file" class="file-input" id="charImgInput" accept="image/jpeg,image/png,image/webp">
+<input type="file" class="file-input" id="bgImgInput" accept="image/jpeg,image/png,image/webp">
+<input type="file" class="file-input" id="cgImgInput" accept="image/jpeg,image/png,image/webp">
+<input type="file" class="file-input" id="projectInput" accept="application/json,.json">
+
+<!-- toast -->
+<div class="toast" id="toast"></div>
+
+<script src="otome-studio.js"></script>
+</body>
+</html>

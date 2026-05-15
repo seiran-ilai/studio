@@ -1,0 +1,7 @@
+{
+  "permissions": {
+    "allow": [
+      "PowerShell($src = Get-Content -Raw -Encoding utf8 'e:\\\\網頁\\\\studio\\\\RP_marco.html'; $lines = $src -split \"`r?`n\"; $css = \\($lines[10..1342]\\) -join \"`r`n\"; [System.IO.File]::WriteAllText\\('e:\\\\網頁\\\\studio\\\\RP_marco.css', $css, \\(New-Object System.Text.UTF8Encoding $false\\)\\); Write-Output \"css lines: $\\(\\(1342-10\\)+1\\)\"; $js = \\($lines[1530..2989]\\) -join \"`r`n\"; [System.IO.File]::WriteAllText\\('e:\\\\網頁\\\\studio\\\\RP_marco.js', $js, \\(New-Object System.Text.UTF8Encoding $false\\)\\); Write-Output \"js lines: $\\(\\(2989-1530\\)+1\\)\")"
+    ]
+  }
+}
