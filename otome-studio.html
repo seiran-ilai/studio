@@ -4,6 +4,9 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>乙女遊戲模擬器 · Otome Studio</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;700&family=Ma+Shan+Zheng&family=Special+Elite&family=Nunito:wght@400;700&family=Cinzel:wght@400;700&family=UnifrakturCook:wght@700&family=Liu+Jian+Mao+Cao&family=Cormorant+Garamond:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="otome-studio.css">
 </head>
 <body>
@@ -24,63 +27,79 @@
       <span class="storage-dot" id="storageDot" title="本機儲存量"></span>
     </div>
     <div class="topbar-actions">
-      <button class="btn btn-ghost" id="btnReset" title="重設選項">↻ 重設</button>
-      <button class="btn btn-ghost" id="btnImport" title="匯入專案 JSON">📥</button>
-      <button class="btn btn-ghost" id="btnShare" title="匯出專案 JSON">📤</button>
-      <button class="btn" id="btnChars">👥 角色</button>
-      <button class="btn" id="btnScreenshot">📸 截圖</button>
-      <button class="btn btn-primary" id="btnRecord">🎬 錄影</button>
+      <!-- 次要功能 -->
+      <button class="btn" id="btnChars"><span class="btn-emoji">👥</span><span class="btn-text">角色</span></button>
+      <button class="btn" id="btnStyle"><span class="btn-emoji">🎨</span><span class="btn-text">樣式</span></button>
+
+      <!-- 視覺分隔線 -->
+      <span class="topbar-divider"></span>
+
+      <!-- 主要輸出 -->
+      <button class="btn" id="btnScreenshot"><span class="btn-emoji">📸</span><span class="btn-text">截圖</span></button>
+      <button class="btn btn-primary" id="btnRecord"><span class="btn-emoji">🎬</span><span class="btn-text">錄影</span></button>
+
+      <!-- 更多功能選單 -->
+      <div class="topbar-more">
+        <button class="btn btn-ghost" id="btnMore" title="更多" aria-haspopup="true">⋯</button>
+        <div class="topbar-menu" id="topbarMenu" hidden>
+          <button class="topbar-menu-item" id="btnImport">📥 匯入專案</button>
+          <button class="topbar-menu-item" id="btnShare">📤 匯出專案</button>
+          <button class="topbar-menu-item" id="btnExportClip">📤 匯出分享字串</button>
+          <div class="topbar-menu-sep"></div>
+          <button class="topbar-menu-item" id="btnResetScript">↻ 只重設劇本</button>
+          <button class="topbar-menu-item" id="btnResetStyle">↻ 只重設樣式</button>
+          <button class="topbar-menu-item danger" id="btnReset">↻ 全部重設</button>
+          <div class="topbar-menu-sep"></div>
+          <div class="topbar-menu-label">最近開啟</div>
+          <div id="recentList"></div>
+        </div>
+      </div>
     </div>
   </header>
 
   <!-- Main -->
   <div class="main">
 
+    <div class="mobile-pane-tabs">
+      <button class="mobile-pane-tab active" data-pane="script">劇本</button>
+      <button class="mobile-pane-tab" data-pane="preview">預覽</button>
+    </div>
+
     <!-- Script Pane -->
-    <section class="pane pane-script">
+    <section class="pane pane-script mobile-active">
       <div class="pane-header">
         <div class="pane-title">劇本</div>
         <div class="pane-meta" id="lineCount">0 行</div>
       </div>
       <div class="script-wrap">
         <div class="script-current-line" id="scriptCurrentLine"></div>
+        <div class="script-highlight" id="scriptHighlight" aria-hidden="true"></div>
         <textarea
           id="scriptArea"
           class="script-area"
           spellcheck="false"
-          placeholder="角色：台詞&#10;角色[微笑][左]：台詞&#10;角色[?]：神秘語氣（顯示 ???）&#10;[bg: 背景名] / [離場]&#10;[cg: 名] 顯示 CG / [cg off] 關閉&#10;[選項] 加 - 三選項，* 標記最終"
+          placeholder="學長[微笑][左]：嗨，原來你也在這裡。&#10;&#10;點下方按鈕插入語法，或點「⌨ 語法說明」查看完整教學。"
         ></textarea>
       </div>
       <div class="script-toolbar">
-        <button class="snippet-btn" data-snippet="bg">🌄 換背景</button>
-        <button class="snippet-btn" data-snippet="exit">🚪 離場</button>
-        <button class="snippet-btn" data-snippet="cg">🖼 插入 CG</button>
-        <button class="snippet-btn" data-snippet="cgoff">⊗ CG 關閉</button>
-        <button class="snippet-btn" data-snippet="choices">📝 三選項</button>
-        <button class="snippet-btn" data-snippet="unknown">❔ ??? 神秘人</button>
-      </div>
-      <details class="script-help">
-        <summary>📖 語法速查（點擊展開）</summary>
-        <div class="script-help-body">
-          <div class="help-row"><code>角色：台詞</code><span>說話</span></div>
-          <div class="help-row"><code>角色[微笑][左]：…</code><span>表情 + 位置（左/中/右）</span></div>
-          <div class="help-row"><code>角色[?]：…</code> 或 <code>角色[?:神秘人]：…</code><span>隱藏名 / 顯示替代名</span></div>
-          <div class="help-row"><code>[bg: 教室]</code><span>切換背景（Tab/Enter 自動補全）</span></div>
-          <div class="help-row"><code>[cg: 告白]</code> / <code>[cg full: …]</code> / <code>[cg off]</code><span>顯示 CG / 全螢幕 CG / 關閉</span></div>
-          <div class="help-row"><code>[離場]</code> 或 <code>[退場]</code> 或 <code>[無人]</code><span>清空舞台角色</span></div>
-          <div class="help-row"><code>[選項]</code> + <code>- 選項一</code> + <code>- * 最終</code><span>三選項，<code>*</code> 標記正解</span></div>
-          <div class="help-row" style="border-top:1px dashed var(--border-soft); margin-top:6px; padding-top:8px;"><strong style="color:var(--gold-bright);">⌨ 打字小幫手</strong></div>
-          <div class="help-row"><span>打角色名第一個字</span><span>自動跳出候選名單（含表情）</span></div>
-          <div class="help-row"><span>換行 <kbd>Enter</kbd></span><span>沿用上一句的說話者</span></div>
-          <div class="help-row"><span>連按兩次 <kbd>Enter</kbd></span><span>變成旁白</span></div>
-          <div class="help-row"><span>連按三次 <kbd>Enter</kbd></span><span>又會沿用上一句的說話者</span></div>
-          <div class="help-row"><span>選表情後 <kbd>Tab</kbd></span><span>跳出位置選單（左/中/右）</span></div>
-          <div class="help-row"><span>選位置後 <kbd>Tab</kbd></span><span>跳出 <code>[?]</code> / 別名選單，並自動補上 <code>：</code></span></div>
-          <div class="help-row"><span>空行 <kbd>Tab</kbd></span><span>插入上一句的說話者前綴</span></div>
-          <div class="help-row"><span><code>[</code> 內輸入 <kbd>?</kbd></span><span>提示視窗會問要 <code>[?]</code> 還是 <code>[?:別名]</code></span></div>
-          <div class="help-row"><span><code>[</code> 內輸入任意字</span><span>無對應表情時，提示視窗會給「轉成別名 <code>[?:X]</code>」一鍵選項</span></div>
+        <div class="snippet-group">
+          <button class="snippet-btn" data-snippet="bg">🌄 背景</button>
+          <button class="snippet-btn" data-snippet="exit">🚪 離場</button>
+          <div class="snippet-cg-group">
+            <button class="snippet-btn" data-snippet="cg">🖼 CG</button>
+            <button class="snippet-btn-more" id="cgMoreBtn" title="CG 變體" aria-haspopup="true">▾</button>
+            <div class="snippet-cg-menu" id="cgMenu" hidden>
+              <button data-snippet="cg">CG（含對話框、UI）</button>
+              <button data-snippet="cgsolo">CG solo（含對話框、無 UI）</button>
+              <button data-snippet="cgfull">CG full（純圖、無對話框）</button>
+            </div>
+          </div>
+          <button class="snippet-btn" data-snippet="choices">📝 選項</button>
+          <button class="snippet-btn" data-snippet="light">💡 光線</button>
+          <button class="snippet-btn" data-snippet="unknown">❔ 神秘人</button>
         </div>
-      </details>
+        <button class="syntax-help-btn" id="btnSyntaxHelp">⌨ 語法說明</button>
+      </div>
     </section>
 
     <!-- Preview Pane -->
@@ -93,6 +112,21 @@
       </div>
       <div class="stage-container">
         <div class="stage" id="stage" data-ratio="16:9">
+          <div class="game-ui-layer" id="gameUiLayer">
+            <div class="ui-chapter" id="uiChapter" hidden></div>
+            <div class="ui-date" id="uiDate" hidden></div>
+            <div class="ui-love" id="uiLove" hidden>
+              <div class="ui-love-icon">♥</div>
+              <div class="ui-love-content">
+                <div class="ui-love-name" id="uiLoveName"></div>
+                <div class="ui-love-bar"><div class="ui-love-fill" id="uiLoveFill"></div></div>
+              </div>
+            </div>
+            <div class="ui-autoskip" id="uiAutoSkip" hidden>
+              <button class="ui-skip-btn">SKIP</button>
+              <button class="ui-skip-btn active">AUTO</button>
+            </div>
+          </div>
           <div class="stage-bg stage-bg-default" id="stageBg"></div>
           <div class="characters" id="characters"></div>
           <div class="stage-cg" id="stageCg"></div>
@@ -105,6 +139,10 @@
           </div>
           <div class="stage-nav-zone left" id="stageNavLeft" title="上一句">‹</div>
           <div class="stage-nav-zone right" id="stageNavRight" title="下一句">›</div>
+          <div class="preview-counter" id="previewCounter" title="點擊跳到指定句">
+            <span id="previewCounterCurrent">0</span> / <span id="previewCounterTotal">0</span>
+          </div>
+          <div class="stage-hint" id="stageHint" hidden>點擊畫面繼續 →</div>
         </div>
       </div>
     </section>
@@ -124,7 +162,6 @@
         <button class="tab active" data-tab="chars">角色 立繪</button>
         <button class="tab" data-tab="bgs">場景 背景</button>
         <button class="tab" data-tab="cgs">CG 圖卡</button>
-        <button class="tab" data-tab="style">🎨 樣式</button>
       </div>
 
       <div class="tab-panel active" id="tab-chars" data-tab="chars">
@@ -146,34 +183,173 @@
         </div>
       </div>
 
-      <div class="tab-panel" id="tab-style" data-tab="style">
-        <div class="style-section">
-          <div class="style-label">主題預設</div>
-          <div class="style-presets" id="dialogPresets"></div>
-        </div>
-        <div class="style-section">
-          <div class="style-label">自訂底色</div>
-          <div class="style-row">
-            <div class="style-field">
-              <label for="dialogColorInput">顏色</label>
-              <input type="color" id="dialogColorInput" value="#0d0716">
-            </div>
-            <div class="style-field">
-              <label for="dialogOpacityInput">透明度</label>
-              <input type="range" id="dialogOpacityInput" min="40" max="100" step="5" value="88">
-              <strong id="dialogOpacityLabel">88%</strong>
-            </div>
-            <button class="style-reset-btn" id="dialogStyleReset">↻ 還原預設</button>
-          </div>
-          <div class="style-preview-note">
-            修改會即時反映在預覽、截圖與錄影上;設定會自動儲存。
-          </div>
-        </div>
-      </div>
     </div>
     <div class="modal-footer">
       <div class="storage-meter" id="storageMeter">儲存:計算中...</div>
       <button class="btn btn-primary" id="modalDoneBtn">完成</button>
+    </div>
+  </div>
+</div>
+
+<!-- ========== Style Modal ========== -->
+<div class="modal-backdrop" id="styleModal">
+  <div class="modal" role="dialog" aria-modal="true" style="max-width: 560px;">
+    <div class="modal-header">
+      <div class="modal-title">🎨 對話框樣式</div>
+      <button class="modal-close" id="styleModalClose" aria-label="關閉">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="style-section">
+        <div class="style-label">介面主題</div>
+        <div class="theme-switcher">
+          <button class="theme-btn active" data-theme="violet">紫金（預設）</button>
+          <button class="theme-btn" data-theme="daylight">日光</button>
+          <button class="theme-btn" data-theme="rose">粉紅</button>
+        </div>
+      </div>
+      <div class="style-section">
+        <div class="style-label">對話框形狀</div>
+        <div class="shape-grid" id="dialogShapeGrid"></div>
+      </div>
+      <div class="style-section">
+        <div class="style-label">角色光線</div>
+        <div class="light-mode-row">
+          <button class="light-mode-btn" data-mode="聚光" title="只有說話者正常亮度，其他角色罩半透明黑">
+            <div class="light-mode-icon spotlight"></div>
+            <span>聚光</span>
+          </button>
+          <button class="light-mode-btn" data-mode="同亮" title="所有角色都正常顯示">
+            <div class="light-mode-icon all-lit"></div>
+            <span>同亮</span>
+          </button>
+          <button class="light-mode-btn" data-mode="全暗" title="所有角色都罩半透明黑（用於回憶 / 夢境）">
+            <div class="light-mode-icon all-dim"></div>
+            <span>全暗</span>
+          </button>
+        </div>
+        <div class="style-preview-note">
+          劇本中可用 <code>[聚光]</code> / <code>[同亮]</code> / <code>[全暗]</code> 即時切換。
+        </div>
+      </div>
+      <div class="style-section">
+        <div class="style-label">遊戲介面元素</div>
+        <div class="game-ui-settings">
+          <div class="ui-toggle-row">
+            <label class="ui-toggle-label">
+              <input type="checkbox" id="uiChapterToggle">
+              <span>章節標題</span>
+            </label>
+            <input type="text" id="uiChapterText" placeholder="第一章 — 序幕" maxlength="40">
+          </div>
+          <div class="ui-toggle-row">
+            <label class="ui-toggle-label">
+              <input type="checkbox" id="uiDateToggle">
+              <span>日期 / 時間</span>
+            </label>
+            <input type="text" id="uiDateText" placeholder="Day 1 · 黃昏" maxlength="30">
+          </div>
+          <div class="ui-toggle-row ui-love-row">
+            <label class="ui-toggle-label">
+              <input type="checkbox" id="uiLoveToggle">
+              <span>好感度</span>
+            </label>
+            <select id="uiLoveCharSelect"></select>
+            <div class="ui-love-slider-wrap">
+              <input type="range" id="uiLoveValue" min="0" max="100" value="50">
+              <strong id="uiLoveValueLabel">50</strong>
+            </div>
+          </div>
+          <div class="ui-toggle-row">
+            <label class="ui-toggle-label">
+              <input type="checkbox" id="uiAutoSkipToggle">
+              <span>AUTO / SKIP 按鈕</span>
+            </label>
+            <span class="ui-toggle-hint">右下角裝飾按鈕（不可點）</span>
+          </div>
+        </div>
+      </div>
+      <div class="style-section">
+        <div class="style-label">對話框預設</div>
+        <div class="style-presets" id="dialogPresets"></div>
+      </div>
+      <div class="style-section">
+        <div class="style-label">自訂底色</div>
+        <div class="style-row">
+          <div class="style-field">
+            <label for="dialogColorInput">顏色</label>
+            <input type="color" id="dialogColorInput" value="#0d0716">
+          </div>
+          <div class="style-field">
+            <label for="dialogOpacityInput">透明度</label>
+            <input type="range" id="dialogOpacityInput" min="40" max="100" step="5" value="88">
+            <strong id="dialogOpacityLabel">88%</strong>
+          </div>
+          <button class="style-reset-btn" id="dialogStyleReset">↻ 還原預設</button>
+        </div>
+        <div class="style-preview-note">
+          修改會即時反映在預覽、截圖與錄影上;設定會自動儲存。
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-primary" id="styleModalDone">完成</button>
+    </div>
+  </div>
+</div>
+
+<!-- ========== Syntax Help Modal ========== -->
+<div class="modal-backdrop" id="syntaxModal">
+  <div class="modal" role="dialog" aria-modal="true" style="max-width: 600px;">
+    <div class="modal-header">
+      <div class="modal-title">⌨ 語法說明</div>
+      <button class="modal-close" id="syntaxModalClose" aria-label="關閉">×</button>
+    </div>
+    <div class="modal-body syntax-modal-body">
+
+      <div class="syntax-section">
+        <div class="syntax-section-title">▍對話</div>
+        <div class="syntax-row"><code>夕陽灑進來。</code><span>場景旁白 — 沒有冒號的純文字（灰字、不顯示說話者）</span></div>
+        <div class="syntax-row"><code>（這該怎麼辦？）</code><span>內心獨白 — 整行被括號包起來（自動去括號，視覺與旁白相同）</span></div>
+        <div class="syntax-row"><code>我：你好。</code><span>主角開口 — 顯示名字、無立繪。主角名可在「角色管理」自訂</span></div>
+        <div class="syntax-row"><code>角色[表情][位置]：台詞</code><span>配角對話 — 位置 = 左／中／右</span></div>
+        <div class="syntax-row"><code>角色[表情][位置][?]：…</code><span>顯示 ???，或 <code>[?:別名]</code> 顯示替代名（<code>[表情]</code> 仍正常生效）</span></div>
+        <div class="syntax-row"><code>角色[…][字體:手寫]：…</code><span>單句使用特殊字體（候選清單列出可用字體）</span></div>
+        <div class="syntax-tip" style="margin-top: 8px;">
+          💡 <strong>內心獨白</strong>：整行被全形或半形括號包起來時，自動轉為旁白樣式（會去掉括號）。例如 <code>（他在看我？）</code> 顯示為「他在看我？」。
+        </div>
+        <div class="syntax-tip" style="margin-top: 8px;">
+          💡 神秘人也要指定表情：<code>學長[神秘][?:神秘人][右]：…</code><br>
+          揭穿身份時拿掉 <code>[?:神秘人]</code> 即可：<code>學長[微笑][右]：其實我就是學長。</code>
+        </div>
+      </div>
+
+      <div class="syntax-section">
+        <div class="syntax-section-title">▍場景</div>
+        <div class="syntax-row"><code>[bg: 教室]</code><span>切換背景</span></div>
+        <div class="syntax-row"><code>[cg: 告白]</code><span>顯示 CG（保留對話框與 UI）</span></div>
+        <div class="syntax-row"><code>[cg solo: 告白]</code><span>CG + 對話框（隱藏假 UI，適合 CG 中的對話）</span></div>
+        <div class="syntax-row"><code>[cg full: 告白]</code><span>純圖模式（隱藏對話框與假 UI）</span></div>
+        <div class="syntax-row"><code>[cg off]</code><span>關閉 CG，回到背景 + 立繪</span></div>
+        <div class="syntax-row"><code>[離場]</code><span>清空舞台角色</span></div>
+        <div class="syntax-row"><code>[聚光]</code> / <code>[同亮]</code> / <code>[全暗]</code><span>切換角色光線（聚光 = 只亮說話者；同亮 = 全亮；全暗 = 全部罩半透明黑）</span></div>
+      </div>
+
+      <div class="syntax-section">
+        <div class="syntax-section-title">▍選項</div>
+        <div class="syntax-row"><code>[選項]</code> + <code>- 選項</code> + <code>- * 正解</code><span><code>*</code> 標記最終答案</span></div>
+      </div>
+
+      <div class="syntax-section">
+        <div class="syntax-section-title">▍快捷鍵</div>
+        <div class="syntax-row"><kbd>Tab</kbd><span>展開縮寫（<code>bg</code>/<code>cg</code>/<code>cgs</code>/<code>cgf</code>/<code>cgoff</code>/<code>離場</code>/<code>選項</code>/<code>?</code>），或補 <code>：</code>、接受候選並跳下一格</span></div>
+        <div class="syntax-row"><kbd>Enter</kbd><span>對話行尾 = 自動帶上同前綴開新行；候選清單 = 接受並停留</span></div>
+        <div class="syntax-row"><kbd>↑</kbd> <kbd>↓</kbd><span>切換候選</span></div>
+        <div class="syntax-row"><kbd>Esc</kbd><span>撤銷剛才的自動插入</span></div>
+        <div class="syntax-row"><kbd>Ctrl</kbd>+<kbd>Backspace</kbd><span>刪掉最近的一個 <code>[xxx]</code></span></div>
+      </div>
+
+      <div class="syntax-tip">💡 邊打邊跳候選清單，照著按 <kbd>Tab</kbd> 就會自動填完整行。</div>
+
     </div>
   </div>
 </div>
@@ -186,6 +362,25 @@
       <button class="modal-close" id="recordModalClose" aria-label="關閉">×</button>
     </div>
     <div class="modal-body record-modal-body">
+
+      <div class="record-setting">
+        <div class="record-setting-label"><span>起點</span></div>
+        <div class="record-range-row">
+          <label><input type="radio" name="recStart" value="head" checked> 從頭開始</label>
+          <label><input type="radio" name="recStart" value="current"> 從目前位置（第 <strong id="recCurrentBeat">1</strong> 拍）</label>
+        </div>
+      </div>
+
+      <div class="record-setting">
+        <div class="record-setting-label"><span>終點</span></div>
+        <div class="record-range-row">
+          <label><input type="radio" name="recEnd" value="last" checked> 到最後一拍</label>
+          <label>
+            <input type="radio" name="recEnd" value="custom"> 到第
+            <input type="number" id="recEndBeat" min="1" value="1" style="width:60px;"> 拍
+          </label>
+        </div>
+      </div>
 
       <div class="record-setting">
         <div class="record-setting-label">
@@ -217,7 +412,8 @@
 
       <div style="font-size: 11px; color: var(--text-faint); line-height: 1.7;">
         💡 沒有時間上限,但檔案大小會隨片長線性增加（約 0.5 MB/秒）。<br>
-        📱 錄影中請勿切換分頁或鎖屏,否則動畫會卡頓。可隨時按「■ 停止」結束。
+        📱 錄影中請勿切換分頁或鎖屏,否則動畫會卡頓。可隨時按「■ 停止」結束。<br>
+        ⚠️ 此功能輸出靜音影片,不包含背景音樂或音效。如需配音請後製加入。
       </div>
 
     </div>
@@ -267,7 +463,7 @@
 <input type="file" class="file-input" id="projectInput" accept="application/json,.json">
 
 <!-- toast -->
-<div class="toast" id="toast"></div>
+<div class="toast-container" id="toastContainer"></div>
 
 <script src="otome-studio.js"></script>
 </body>
