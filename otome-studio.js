@@ -3636,6 +3636,88 @@ function showPositionPicker(ctx) {
   requestAnimationFrame(positionAssetAutoComplete);
 }
 
+// ===== Alias / hide-name picker (Tab triggered after position) =================
+
+// Guards the Tab handler from re-opening the alias picker while the alias
+// input prompt is awaiting user input (the line state still matches the
+// trigger condition until the user actually submits a name).
+let _pendingAliasPrompt = false;
+
+function showAliasHidePicker(ctx) {
+  closeAssetAutoComplete();
+  closeSpeakerAutoComplete();
+  const OPTIONS = [
+    { key: "hide",  label: "[?]",        desc: "隱藏真名（顯示 ???）" },
+    { key: "alias", label: "輸入別名…",  desc: "顯示自訂名（例如「神秘人」）" },
+  ];
+  ac.kind = "alias-hide";
+  ac.items = OPTIONS;
+  ac.selectedIdx = 0;
+  const ta = els.scriptArea;
+  ac.start = ta.selectionStart || 0;
+  ac.end = ac.start;
+  ac.query = "";
+
+  const popup = document.createElement("div");
+  popup.className = "asset-ac-popup";
+  ac.popup = popup;
+
+  const header = document.createElement("div");
+  header.className = "asset-ac-header";
+  header.innerHTML = `名稱顯示 · <strong>選擇 [?] 或輸入別名</strong>`;
+  popup.appendChild(header);
+
+  OPTIONS.forEach((opt, idx) => {
+    const el = document.createElement("div");
+    el.className = "asset-ac-item" + (idx === ac.selectedIdx ? " selected" : "");
+    el.dataset.idx = idx;
+    el.innerHTML = `<span class="asset-ac-icon">❔</span><span>${escapeHtml(opt.label)}</span><span class="asset-ac-tag">${escapeHtml(opt.desc)}</span>`;
+    el.addEventListener("mouseenter", () => { ac.selectedIdx = idx; updateAssetSelected(); });
+    el.addEventListener("mousedown", (ev) => {
+      ev.preventDefault();
+      ac.selectedIdx = idx;
+      acceptAutoComplete();
+    });
+    popup.appendChild(el);
+  });
+
+  const hint = document.createElement("div");
+  hint.className = "asset-ac-hint";
+  hint.innerHTML = "<span><kbd>↑↓</kbd> 選</span><span><kbd>Tab</kbd>/<kbd>Enter</kbd> 確認</span><span><kbd>Esc</kbd> 跳過</span>";
+  popup.appendChild(hint);
+
+  document.body.appendChild(popup);
+  positionAssetAutoComplete();
+  requestAnimationFrame(positionAssetAutoComplete);
+}
+
+async function promptForAliasAndInsert(insertAt) {
+  const ta = els.scriptArea;
+  try {
+    const name = await inlinePrompt({
+      title: "顯示名稱",
+      message: "對話框上要顯示成什麼？（不影響真正的角色名）",
+      placeholder: "例如：神秘人 / 一個奇怪的人",
+    });
+    if (!name) {
+      // user cancelled — leave the line as-is so they can decide manually
+      ta.focus();
+      return;
+    }
+    const text = ta.value;
+    const insertion = `[?:${name}]：`;
+    ta.value = text.slice(0, insertAt) + insertion + text.slice(insertAt);
+    state.script = ta.value;
+    const newPos = insertAt + insertion.length;
+    ta.focus();
+    ta.setSelectionRange(newPos, newPos);
+    reparseAndRender(false);
+    saveToStorage();
+  } finally {
+    _pendingAliasPrompt = false;
+  }
+}
+
 // ===== Unified accept (handles all 3 kinds) ====================================
 
 function acceptAutoComplete() {
@@ -3648,10 +3730,13 @@ function acceptAutoComplete() {
     return acceptAssetAutoComplete();
   }
   if (ac.kind === "char") {
-    // Replace the portion (start..end) with `name[emotion]：` (or `name：`)
+    // Bare name → close prefix with `：` (done in one Tab).
+    // With emotion → leave open so Tab can chain into position / alias pickers.
     const before = text.slice(0, ac.start);
     const after = text.slice(ac.end);
-    const insertion = chosen.insertName + (chosen.emotion ? `[${chosen.emotion}]` : "") + "：";
+    const insertion = chosen.emotion
+      ? `${chosen.insertName}[${chosen.emotion}]`
+      : `${chosen.insertName}：`;
     ta.value = before + insertion + after;
     state.script = ta.value;
     const newPos = ac.start + insertion.length;
@@ -3682,6 +3767,34 @@ function acceptAutoComplete() {
     reparseAndRender(false);
     saveToStorage();
     return;
+  }
+  if (ac.kind === "alias-hide") {
+    // Insert at the end of the tag chain on the current line.
+    const pos = ta.selectionStart || 0;
+    const lineStartAbs = text.lastIndexOf("\n", pos - 1) + 1;
+    const lineToCursor = text.slice(lineStartAbs, pos);
+    let insertAt = pos;
+    const tagMatch = lineToCursor.match(/^(\s*[^\[\]:：\n]*(?:\[[^\]\n]*\])*)/);
+    if (tagMatch) insertAt = lineStartAbs + tagMatch[0].length;
+
+    if (chosen.key === "hide") {
+      const insertion = `[?]：`;
+      ta.value = text.slice(0, insertAt) + insertion + text.slice(insertAt);
+      state.script = ta.value;
+      const newPos = insertAt + insertion.length;
+      ta.focus();
+      ta.setSelectionRange(newPos, newPos);
+      closeAssetAutoComplete();
+      reparseAndRender(false);
+      saveToStorage();
+      return;
+    }
+    if (chosen.key === "alias") {
+      _pendingAliasPrompt = true;
+      closeAssetAutoComplete();
+      promptForAliasAndInsert(insertAt);
+      return;
+    }
   }
 }
 
@@ -3955,11 +4068,11 @@ function suggestSpeakerNames(query) {
     items.push({ kind: "name", ch, score, sub: 0,
       insert: `${ch.name}：`,
       label: `${ch.name}：` });
-    // emotions
+    // emotions — no `：`, so Tab can chain into position / alias pickers
     (ch.emotions || []).forEach((emo, i) => {
       items.push({ kind: "emotion", ch, emo, score, sub: i + 1,
-        insert: `${ch.name}[${emo}]：`,
-        label: `${ch.name}[${emo}]：` });
+        insert: `${ch.name}[${emo}]`,
+        label: `${ch.name}[${emo}]` });
     });
   }
   items.sort((a, b) => a.score - b.score || a.sub - b.sub);
@@ -4228,12 +4341,22 @@ els.scriptArea.addEventListener("keydown", (e) => {
   }
 
   // Tab in speaker context (no popup) → position picker if name is recognized
-  if (e.key === "Tab" && !e.shiftKey && !ac.popup && !cac.popup) {
+  if (e.key === "Tab" && !e.shiftKey && !ac.popup && !cac.popup && !_pendingAliasPrompt) {
     const ctx = detectSpeakerContext();
     if (ctx && !ctx.insideBracket && ctx.matchedChar && !ctx.hasPosition) {
       e.preventDefault();
       showPositionPicker(ctx);
       return;
+    }
+    // Position already set, no alias yet → alias / [?] picker (final step, adds `：`)
+    if (ctx && !ctx.insideBracket && ctx.matchedChar && ctx.hasPosition && !ctx.hasNameOverride) {
+      const hasLongAlias = ctx.tags.some(t =>
+        !POS_TAGS_SET.has(t) && !isHideTag(t) && t.length >= ALIAS_BRACKET_THRESHOLD);
+      if (!hasLongAlias) {
+        e.preventDefault();
+        showAliasHidePicker(ctx);
+        return;
+      }
     }
   }
 
