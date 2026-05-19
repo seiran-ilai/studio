@@ -5,36 +5,36 @@
 // ============================================================
 
 const SAMPLE_SCRIPT = `[bg: 黃昏]
-放學後的圖書館，夕陽透過窗戶灑進來。
+放學後的圖書館,夕陽透過窗戶灑進來。
 
-（好安靜，正適合一個人發呆。）
+(好安靜,正適合一個人發呆。)
 
-學長[神秘][?:神秘人][右]：嗨，原來你也在這裡。
-（這個聲音是？）
-我：請問你是？
-學長[微笑][右]：是我啊。
-我：學⋯學長！
+[學長][神秘][神祕旅人][右]:嗨,原來你也在這裡。
+(這個聲音是?)
+[我]:請問你是?
+[學長][微笑][右]:是我啊。
+[我][害羞]:學...學長!
 
 [bg: 教室]
-學長[微笑][中]：要不要一起去買杯咖啡？
+[學長][微笑][中]:要不要一起去買杯咖啡?
 
-（怎麼辦，我該答應嗎？）
+[辰宇落雁](怎麼辦,我該答應嗎?)
 
 [選項]
 - 好啊
 - 改天吧
-- * 我⋯我也喜歡你
+- * 我...我也喜歡你
 
-我：我⋯我也喜歡你。
+[我][害羞][大]:我...我也喜歡你。
 
 [cg: 告白]
 這就是我們故事的開始。
 [cg off]
 
-學長[微笑][右]：以後也請多指教。
+[學長][微笑][右][粗]:以後也請多指教。
 
 [離場]
-（完）`;
+(完)`;
 
 const SAMPLE_CHARACTERS = [
   {
@@ -74,19 +74,103 @@ const SAMPLE_BACKGROUNDS = {
 //  State
 // ============================================================
 
-// Per-line font presets ([字體: 名稱] tag). stack=null → fall back to default.
+// =============================================================
+// 樣式系統 - 字體清單
+// =============================================================
+// 排序:標準在最前,其他依視覺風格分組
+// 每個字體都用 Google Fonts 或 Justfont 公開 CDN,自動 fallback 到系統字體
 const FONT_PRESETS = [
-  { id: "default",    name: "標準",   stack: null },
-  { id: "handwrite",  name: "手寫",   stack: '"Caveat", "Ma Shan Zheng", cursive' },
-  { id: "typewriter", name: "打字機", stack: '"Special Elite", "JetBrains Mono", monospace' },
-  { id: "classical",  name: "古典",   stack: '"Cormorant Garamond", "Noto Serif TC", serif' },
-  { id: "round",      name: "圓體",   stack: '"Nunito", "PingFang TC", sans-serif' },
-  { id: "bold",       name: "黑體",   stack: '"Noto Sans TC", "PingFang TC", sans-serif' },
-  { id: "brush",      name: "毛筆",   stack: '"Ma Shan Zheng", "Liu Jian Mao Cao", cursive' },
-  { id: "gothic",     name: "哥德",   stack: '"UnifrakturCook", "Cinzel", serif' },
+  {
+    id: "default",
+    name: "標準",
+    stack: null,  // null = 使用 textarea 預設(var(--font-body))
+    weight: null,
+    preview: "預設字體,適合一般對話。",
+  },
+  {
+    id: "luoyan",
+    name: "辰宇落雁",
+    stack: '"ChenYuluoyan", "Klee One", cursive',
+    weight: null,
+    preview: "夕陽透過窗戶灑進來。",
+  },
+  {
+    id: "serif",
+    name: "明體",
+    stack: '"Noto Serif TC", "Noto Serif JP", serif',
+    weight: null,
+    preview: "夕陽透過窗戶灑進來。",
+  },
+  {
+    id: "sans",
+    name: "黑體",
+    stack: '"GenYoGothic", "Noto Sans TC", "Noto Sans JP", sans-serif',
+    weight: null,
+    preview: "夕陽透過窗戶灑進來。",
+  },
+  {
+    id: "round",
+    name: "粉圓",
+    stack: '"jf-openhuninn-2.1", "Zen Maru Gothic", sans-serif',
+    weight: null,
+    preview: "夕陽透過窗戶灑進來。",
+  },
+  {
+    id: "iansui",
+    name: "芫荽",
+    stack: '"Iansui", "Klee One", serif',
+    weight: null,
+    preview: "夕陽透過窗戶灑進來。",
+  },
+  {
+    id: "marker",
+    name: "麥克黑",
+    stack: '"Noto Sans TC", "Noto Sans JP", sans-serif',
+    weight: 900,  // ★ 用 Noto Sans TC 900 字重替代
+    preview: "夕陽透過窗戶灑進來。",
+  },
+  {
+    id: "pixel",
+    name: "點陣",
+    stack: '"DotGothic16", monospace',
+    weight: null,
+    preview: "夕陽透過窗戶灑進來。",
+  },
 ];
+
+// 雙向查找
 const FONT_BY_NAME = Object.fromEntries(FONT_PRESETS.map(f => [f.name, f]));
 const FONT_BY_ID = Object.fromEntries(FONT_PRESETS.map(f => [f.id, f]));
+
+// 樣式 tag 別名(寫法 → 標準名)
+const STYLE_TAG_ALIASES = {
+  // 字體
+  "辰宇落雁": { kind: "font", value: "luoyan" },
+  "落雁": { kind: "font", value: "luoyan" },  // 短別名
+  "明體": { kind: "font", value: "serif" },
+  "黑體": { kind: "font", value: "sans" },
+  "粉圓": { kind: "font", value: "round" },
+  "芫荽": { kind: "font", value: "iansui" },
+  "麥克黑": { kind: "font", value: "marker" },
+  "點陣": { kind: "font", value: "pixel" },
+  // 大小
+  "大": { kind: "size", value: "large" },
+  "小": { kind: "size", value: "small" },
+  // 粗體
+  "粗": { kind: "bold", value: true },
+  "B": { kind: "bold", value: true },
+  "b": { kind: "bold", value: true },
+  // 斜體
+  "斜": { kind: "italic", value: true },
+  "I": { kind: "italic", value: true },
+  "i": { kind: "italic", value: true },
+};
+
+// 樣式 tag 名單(用於 parser 快速判斷某 tag 是否為樣式 tag)
+const STYLE_TAG_NAMES = new Set(Object.keys(STYLE_TAG_ALIASES));
+const FONT_TAG_NAMES = ["辰宇落雁", "明體", "黑體", "粉圓", "芫荽", "麥克黑", "點陣"];
+const SIZE_TAG_NAMES = ["大", "小"];
+const EMPHASIS_TAG_NAMES = ["粗", "斜"];
 
 const DEFAULT_DIALOG_STYLE = { shape: "classic", color: "#0d0716", opacity: 0.88 };
 
@@ -124,6 +208,9 @@ function migrateGameUI(g) {
 function migrateCharacter(ch) {
   const c = { emotions: [], portraits: {}, ...ch };
   if (c.kind !== "protagonist" && c.kind !== "supporting") c.kind = "supporting";
+  // 立繪取景設定(舊資料自動補預設 = 等同現況)
+  c.portraitY = typeof c.portraitY === "number" ? c.portraitY : 0;
+  c.portraitScale = typeof c.portraitScale === "number" ? c.portraitScale : 100;
   return c;
 }
 function ensureProtagonistExists() {
@@ -135,6 +222,8 @@ function ensureProtagonistExists() {
       color: "#d4869a",
       emotions: [],
       portraits: {},
+      portraitY: 0,
+      portraitScale: 100,
     });
   }
 }
@@ -153,6 +242,12 @@ const state = {
   fullText: "",
   dialogStyle: { ...DEFAULT_DIALOG_STYLE },
   gameUI: JSON.parse(JSON.stringify(DEFAULT_GAME_UI)),
+  // O5:全域預設樣式(沒寫樣式 tag 的行會自動套用)
+  styleDefaults: {
+    narration: { font: "", size: "" },
+    inner:     { font: "luoyan", size: "" },
+    dialog:    { font: "", size: "" },
+  },
   lightMode: DEFAULT_LIGHT_MODE,   // 全域目前模式
   // live stage state
   stage: {
@@ -176,7 +271,7 @@ const DIALOG_PRESETS = [
 
 // ============================================================
 //  Parser
-//  Format: 角色[emotion][position][?][?:某人]：text
+//  Format: 角色[emotion][position][替代名]：text  (替代名 = 純中括號別名,隱藏真名)
 //          [bg: name]
 //          [離場] / [無人] / [退場]
 //          [cg: name]       — show CG, dialog box visible
@@ -188,7 +283,10 @@ const DIALOG_PRESETS = [
 //          <empty or text without :> = narration
 // ============================================================
 
+// 舊格式:角色名[tag][tag]:台詞(向下相容)
 const LINE_RE = /^([^:：\[]{1,24})((?:\[[^\]]+\])*)\s*[:：]\s*(.+)$/;
+// 新格式:[角色名][tag][tag]:台詞(第一個 tag 必須是已知角色名)
+const NEW_LINE_RE = /^\[([^\]]+)\]((?:\s*\[[^\]]+\])*)\s*[:：]\s*(.+)$/;
 const CMD_BG_RE = /^\[bg\s*:\s*(.+?)\]$/i;
 const CMD_EXIT_RE = /^\[(離場|無人|退場)\]$/;
 const CMD_CG_RE = /^\[cg\s*(full|solo)?\s*:\s*(.+?)\]$/i;
@@ -199,6 +297,73 @@ const POS_TAGS = ["左", "中", "右"];
 // Bracket content > this many characters is treated as a name-override
 // (descriptive alias) instead of an emotion label.
 const ALIAS_BRACKET_THRESHOLD = 8;
+
+// 對話節點建構(新舊格式共用,沿用既有 tag 解析邏輯)
+function buildDialogNode(name, tags, text, idx, raw, ch) {
+  let position = null, emotion = null;
+  let nameHidden = false;
+  let nameOverride = null;
+  let fontId = null;
+  // 樣式相關狀態
+  let styleFont = null;       // 字體 id
+  let styleSize = null;       // "large" | "small" | null
+  let styleBold = false;
+  let styleItalic = false;
+  // Look up speaker's known emotions so we can disambiguate brackets.
+  const knownEmotions = ch && Array.isArray(ch.emotions) ? ch.emotions : null;
+  for (const t of tags) {
+    // ★ 樣式 tag 優先判斷(撞名時樣式優先)
+    if (STYLE_TAG_NAMES.has(t)) {
+      const styleInfo = STYLE_TAG_ALIASES[t];
+      if (styleInfo.kind === "font") styleFont = styleInfo.value;
+      else if (styleInfo.kind === "size") styleSize = styleInfo.value;
+      else if (styleInfo.kind === "bold") styleBold = true;
+      else if (styleInfo.kind === "italic") styleItalic = true;
+      continue;
+    }
+    if (POS_TAGS.includes(t)) {
+      position = t;
+    } else if (/^字體\s*[:：]/.test(t)) {
+      // [字體: 明體] — per-line font override
+      const fontName = t.replace(/^字體\s*[:：]\s*/, "").trim();
+      fontId = (FONT_BY_NAME[fontName] && FONT_BY_NAME[fontName].id) || null;
+    } else if (t === "?" || t === "？" || t === "???") {
+      nameHidden = true;
+    } else if (/^[?？][:：]/.test(t)) {
+      // [?:某人] / [？：某人] — hide real name, show override
+      nameHidden = true;
+      nameOverride = t.slice(2).trim() || null;
+    } else if (knownEmotions && knownEmotions.includes(t)) {
+      // matches a defined emotion → it's an emotion
+      emotion = t;
+    } else if (emotion || t.length >= ALIAS_BRACKET_THRESHOLD) {
+      // emotion slot already filled, OR long descriptive text → alias
+      // (matches the in-bracket picker logic so behaviour is consistent)
+      nameHidden = true;
+      nameOverride = t;
+    } else {
+      // short, undefined → fall back to emotion (allows new emotion names)
+      emotion = t;
+    }
+  }
+  return {
+    type: "dialog",
+    idx, raw,
+    speaker: name,
+    text,
+    position,
+    emotion,
+    nameHidden,
+    nameOverride,
+    fontId,
+    isProtagonist: !!(ch && ch.kind === "protagonist"),
+    // ★ 樣式(styleFont 與舊 [字體:X] 的 fontId 統一,新 tag 優先)
+    styleFont: styleFont || fontId,
+    styleSize,
+    styleBold,
+    styleItalic,
+  };
+}
 
 function parseLine(raw, idx) {
   const line = raw.trim();
@@ -239,60 +404,29 @@ function parseLine(raw, idx) {
   // choices start marker
   if (CMD_CHOICES_RE.test(line)) return { type: "choices_start", idx, raw };
 
-  // dialog
+  // 新格式對話:[角色名][tag]...:台詞 — 第一個 tag 須為已知角色名
+  const nm = line.match(NEW_LINE_RE);
+  if (nm) {
+    const speaker = nm[1].trim();
+    const ch = (typeof state !== "undefined" && state.characters)
+      ? state.characters.find(c => c.name === speaker)
+      : null;
+    if (ch) {
+      const tags = [...(nm[2] || "").matchAll(/\[([^\]]+)\]/g)].map(t => t[1].trim());
+      return buildDialogNode(speaker, tags, nm[3].trim(), idx, raw, ch);
+    }
+    // 第一個 tag 不是角色名 → 不是新格式對話,往下交給樣式旁白處理
+  }
+
+  // 舊格式對話:角色名[tag]...:台詞(向下相容)
   const m = line.match(LINE_RE);
   if (m) {
     const name = m[1].trim();
-    const tagsRaw = m[2] || "";
-    const text = m[3].trim();
-    const tags = [...tagsRaw.matchAll(/\[([^\]]+)\]/g)].map(t => t[1].trim());
-    let position = null, emotion = null;
-    let nameHidden = false;
-    let nameOverride = null;
-    let fontId = null;
-    // Look up speaker's known emotions so we can disambiguate brackets.
+    const tags = [...(m[2] || "").matchAll(/\[([^\]]+)\]/g)].map(t => t[1].trim());
     const ch = (typeof state !== "undefined" && state.characters)
       ? state.characters.find(c => c.name === name)
       : null;
-    const knownEmotions = ch && Array.isArray(ch.emotions) ? ch.emotions : null;
-    for (const t of tags) {
-      if (POS_TAGS.includes(t)) {
-        position = t;
-      } else if (/^字體\s*[:：]/.test(t)) {
-        // [字體: 手寫] — per-line font override
-        const fontName = t.replace(/^字體\s*[:：]\s*/, "").trim();
-        fontId = (FONT_BY_NAME[fontName] && FONT_BY_NAME[fontName].id) || null;
-      } else if (t === "?" || t === "？" || t === "???") {
-        nameHidden = true;
-      } else if (/^[?？][:：]/.test(t)) {
-        // [?:某人] / [？：某人] — hide real name, show override
-        nameHidden = true;
-        nameOverride = t.slice(2).trim() || null;
-      } else if (knownEmotions && knownEmotions.includes(t)) {
-        // matches a defined emotion → it's an emotion
-        emotion = t;
-      } else if (emotion || t.length >= ALIAS_BRACKET_THRESHOLD) {
-        // emotion slot already filled, OR long descriptive text → alias
-        // (matches the in-bracket picker logic so behaviour is consistent)
-        nameHidden = true;
-        nameOverride = t;
-      } else {
-        // short, undefined → fall back to emotion (allows new emotion names)
-        emotion = t;
-      }
-    }
-    return {
-      type: "dialog",
-      idx, raw,
-      speaker: name,
-      text,
-      position,
-      emotion,
-      nameHidden,
-      nameOverride,
-      fontId,
-      isProtagonist: !!(ch && ch.kind === "protagonist"),
-    };
+    return buildDialogNode(name, tags, m[3].trim(), idx, raw, ch);
   }
 
   // choice item (`- text` or `- * text`)
@@ -300,9 +434,44 @@ function parseLine(raw, idx) {
   if (ci) return { type: "choice_item", idx, raw, isFinal: ci[1] === "*", text: ci[2].trim() };
 
   // narration — inner monologue wrapped in full/half-width parens auto-strips them
-  const innerMatch = line.match(/^[（(]([^）)]*)[）)]$/);
-  const narrationText = innerMatch ? innerMatch[1].trim() : line;
-  return { type: "narration", idx, raw, text: narrationText };
+  // 先嘗試從行首抓出樣式 tag 區塊
+  const styleTagsMatch = line.match(/^((?:\[[^\]]+\])+)\s*(.*)$/);
+  let nStyleFont = null;
+  let nStyleSize = null;
+  let nStyleBold = false;
+  let nStyleItalic = false;
+  let remainingLine = line;
+
+  if (styleTagsMatch) {
+    const tagBlock = styleTagsMatch[1];
+    const rest = styleTagsMatch[2];
+    const styleTags = [...tagBlock.matchAll(/\[([^\]]+)\]/g)].map(mm => mm[1].trim());
+    // 只接受全部都是樣式 tag 才視為樣式區塊
+    const allStyleTags = styleTags.every(t => STYLE_TAG_NAMES.has(t));
+    if (allStyleTags && styleTags.length > 0) {
+      for (const t of styleTags) {
+        const info = STYLE_TAG_ALIASES[t];
+        if (info.kind === "font") nStyleFont = info.value;
+        else if (info.kind === "size") nStyleSize = info.value;
+        else if (info.kind === "bold") nStyleBold = true;
+        else if (info.kind === "italic") nStyleItalic = true;
+      }
+      remainingLine = rest;
+    }
+  }
+
+  const innerMatch = remainingLine.match(/^[（(]([^）)]*)[）)]$/);
+  const narrationText = innerMatch ? innerMatch[1].trim() : remainingLine;
+  return {
+    type: "narration",
+    subtype: innerMatch ? "inner" : "scene",
+    idx, raw,
+    text: narrationText,
+    styleFont: nStyleFont,
+    styleSize: nStyleSize,
+    styleBold: nStyleBold,
+    styleItalic: nStyleItalic,
+  };
 }
 
 // Second pass: collapse `choices_start` + following `choice_item`s into a single `choices` node.
@@ -524,6 +693,19 @@ function svgPortrait(color, label) {
   </svg>`;
 }
 
+// 立繪取景:套到 .char-portrait / placeholder(避免 .char-figure 的進場動畫覆蓋 transform)
+// 與 Canvas 同公式:scale = portraitScale%,正 portraitY = 往下沉(translateY 正值),
+// 以底部中心為錨點(腳對齊)。預設 y0/scale100 → 無變化(等同現況)。
+function applyPortraitTransform(figEl, ch) {
+  if (!figEl || !ch) return;
+  const inner = figEl.querySelector(".char-portrait, .char-portrait-placeholder");
+  if (!inner) return;
+  const y = typeof ch.portraitY === "number" ? ch.portraitY : 0;
+  const scale = typeof ch.portraitScale === "number" ? ch.portraitScale : 100;
+  inner.style.transformOrigin = "bottom center";
+  inner.style.transform = `translateY(${y}%) scale(${scale / 100})`;
+}
+
 function renderCharacters(activeCharId) {
   els.characters.innerHTML = "";
   const lightMode = state.stage.lightMode || state.lightMode || DEFAULT_LIGHT_MODE;
@@ -567,6 +749,7 @@ function renderCharacters(activeCharId) {
         badge.textContent = ch.name + (occupant.emotion ? ` · ${occupant.emotion}` : "");
         fig.appendChild(badge);
 
+        applyPortraitTransform(fig, ch);
         slot.appendChild(fig);
       }
     }
@@ -574,11 +757,157 @@ function renderCharacters(activeCharId) {
   }
 }
 
-function applyDialogFont(fontId) {
+// ============================================================
+//  O5:句中 Markdown + 全域預設樣式
+// ============================================================
+function escHtml(s) {
+  return String(s == null ? "" : s)
+    .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+}
+
+// 行的「有效樣式」:行內 tag 優先,缺的用 state.styleDefaults 補
+function getEffectiveStyle(line) {
+  let font = line && line.styleFont;
+  let size = line && line.styleSize;
+  if (line && line.type === "narration") {
+    const kind = line.subtype === "inner" ? "inner" : "narration";
+    const def = (state.styleDefaults && state.styleDefaults[kind]) || {};
+    if (!font && def.font) font = def.font;
+    if (!size && def.size) size = def.size;
+  } else if (line && line.type === "dialog") {
+    const def = (state.styleDefaults && state.styleDefaults.dialog) || {};
+    if (!font && def.font) font = def.font;
+    if (!size && def.size) size = def.size;
+  }
+  return {
+    font: font || null,
+    size: size || null,
+    bold: !!(line && line.styleBold),
+    italic: !!(line && line.styleItalic),
+  };
+}
+
+// 句中 Markdown → HTML(預覽用)
+function renderInlineMarkdownToHTML(text) {
+  let html = escHtml(text);
+  const fontNames = FONT_TAG_NAMES.join("|");
+  // 句中字體:[字體名:文字]
+  html = html.replace(new RegExp(`\\[(${fontNames}):([^\\]]+)\\]`, "g"), (m, name, content) => {
+    const alias = STYLE_TAG_ALIASES[name];
+    const font = alias ? FONT_BY_ID[alias.value] : null;
+    if (!font || !font.stack) return content;
+    const w = font.weight ? `;font-weight:${font.weight}` : "";
+    return `<span style="font-family: ${font.stack}${w}">${content}</span>`;
+  });
+  html = html.replace(/\*\*([^*]+)\*\*/g, '<span class="md-bold">$1</span>');
+  html = html.replace(/\*([^*]+)\*/g, '<span class="md-italic">$1</span>');
+  html = html.replace(/##([^#]+)##/g, '<span class="md-large">$1</span>');
+  html = html.replace(/\^\^([^\^]+)\^\^/g, '<span class="md-small">$1</span>');
+  return html;
+}
+
+// 句中 Markdown → segment 陣列(Canvas 用)
+function parseInlineToSegments(text) {
+  const segments = [];
+  let i = 0;
+  while (i < text.length) {
+    const rest = text.substring(i);
+    const fontMatch = rest.match(/^\[([^:\]]+):([^\]]+)\]/);
+    if (fontMatch && STYLE_TAG_ALIASES[fontMatch[1]]
+        && STYLE_TAG_ALIASES[fontMatch[1]].kind === "font") {
+      const fontId = STYLE_TAG_ALIASES[fontMatch[1]].value;
+      const f = FONT_BY_ID[fontId];
+      segments.push({ text: fontMatch[2], fontStack: f && f.stack, fontWeight: f && f.weight });
+      i += fontMatch[0].length;
+      continue;
+    }
+    const boldMatch = rest.match(/^\*\*([^*]+)\*\*/);
+    if (boldMatch) { segments.push({ text: boldMatch[1], bold: true }); i += boldMatch[0].length; continue; }
+    const italicMatch = rest.match(/^\*([^*]+)\*/);
+    if (italicMatch) { segments.push({ text: italicMatch[1], italic: true }); i += italicMatch[0].length; continue; }
+    const largeMatch = rest.match(/^##([^#]+)##/);
+    if (largeMatch) { segments.push({ text: largeMatch[1], large: true }); i += largeMatch[0].length; continue; }
+    const smallMatch = rest.match(/^\^\^([^\^]+)\^\^/);
+    if (smallMatch) { segments.push({ text: smallMatch[1], small: true }); i += smallMatch[0].length; continue; }
+    let plainEnd = i;
+    while (plainEnd < text.length
+           && !text.substring(plainEnd).match(/^(\*\*|\*|##|\^\^|\[[^:\]]+:)/)) {
+      plainEnd++;
+    }
+    if (plainEnd > i) { segments.push({ text: text.substring(i, plainEnd) }); i = plainEnd; }
+    else { segments.push({ text: text[i] }); i++; }
+  }
+  return segments;
+}
+
+function applyStyleToDialogText(ln) {
   const el = els.dialogText;
   if (!el) return;
-  const font = FONT_BY_ID[fontId];
-  el.style.fontFamily = (font && font.stack) ? font.stack : "";
+  const eff = getEffectiveStyle(ln);
+
+  // 1. 字體
+  let fontWeight = null;  // 字體固有 weight(例如麥克黑 900)
+  if (eff.font) {
+    const font = FONT_BY_ID[eff.font];
+    if (font && font.stack) {
+      el.style.fontFamily = font.stack;
+      if (font.weight) fontWeight = font.weight;
+      // ★ M18:確保字體已載入(辰宇落雁體較大,先觸發下載)
+      const primaryFont = font.stack.split(",")[0].trim().replace(/^["']|["']$/g, "");
+      if (document.fonts && document.fonts.load) {
+        try { document.fonts.load(`16px "${primaryFont}"`); } catch (e) {}
+      }
+    } else {
+      el.style.fontFamily = "";
+    }
+  } else {
+    el.style.fontFamily = "";
+  }
+
+  // 2. 大小
+  if (eff.size === "large") {
+    el.style.fontSize = "1.3em";
+  } else if (eff.size === "small") {
+    el.style.fontSize = "0.85em";
+  } else {
+    el.style.fontSize = "";
+  }
+
+  // 3. 粗體:明確 [粗] tag > 字體固有 weight > 清空
+  if (eff.bold) el.style.fontWeight = "700";
+  else if (fontWeight) el.style.fontWeight = String(fontWeight);
+  else el.style.fontWeight = "";
+
+  // 4. 斜體(narration 預設無斜體,但明確指定 [斜] 仍要套)
+  el.style.fontStyle = eff.italic ? "italic" : "";
+}
+
+// 從 parsed line 抽出樣式欄位(供 canvas frame 使用)
+function styleFieldsFromLine(ln) {
+  const eff = getEffectiveStyle(ln);
+  const styleFont = eff.font || null;
+  return {
+    styleFont,
+    styleSize: eff.size || null,
+    styleBold: eff.bold,
+    styleItalic: eff.italic,
+    fontStack: styleFont ? (FONT_BY_ID[styleFont] && FONT_BY_ID[styleFont].stack) : null,
+  };
+}
+
+// 依 frame.dialog 的樣式欄位組出 canvas ctx.font 字串(只用於對話/旁白「文字」,speaker 名字不套)
+function buildCanvasFont(d, basePx, fallbackStack) {
+  const preset = (d && d.styleFont) ? FONT_BY_ID[d.styleFont] : null;
+  const stack = (preset && preset.stack) ? preset.stack : ((d && d.fontStack) || fallbackStack);
+  let size = basePx;
+  if (d && d.styleSize === "large") size = basePx * 1.3;
+  else if (d && d.styleSize === "small") size = basePx * 0.85;
+  const style = (d && d.styleItalic) ? "italic " : "";
+  let weight = "400";
+  if (d && d.styleBold) weight = "700";
+  else if (preset && preset.weight) weight = String(preset.weight);
+  return `${style}${weight} ${Math.round(size)}px ${stack}`;
 }
 
 function renderDialog(line) {
@@ -597,7 +926,7 @@ function renderDialog(line) {
     els.dialogSpeaker.textContent = "";
     els.dialogSpeaker.style.display = "none";
     els.dialogText.classList.add("narration");
-    applyDialogFont(null);
+    applyStyleToDialogText(line);
     typewrite(line.text);
   } else if (line.type === "dialog") {
     const ch = findCharacter(line.speaker);
@@ -613,7 +942,7 @@ function renderDialog(line) {
     els.dialogSpeaker.textContent = displayName;
     els.dialogSpeaker.style.color = displayColor;
     els.dialogText.classList.remove("narration");
-    applyDialogFont(line.fontId);
+    applyStyleToDialogText(line);
     typewrite(line.text);
   } else {
     els.dialogBox.style.display = "none";
@@ -684,6 +1013,7 @@ function typewrite(text) {
       clearInterval(state.typingTimer);
       state.typingTimer = null;
       state.isTyping = false;
+      els.dialogText.innerHTML = renderInlineMarkdownToHTML(text);
       els.dialogIndicator.classList.add("show");
     }
   }, 45);
@@ -756,7 +1086,7 @@ function nextLine() {
   if (state.isTyping) {
     // finish typing instantly
     if (state.typingTimer) { clearInterval(state.typingTimer); state.typingTimer = null; }
-    els.dialogText.textContent = state.fullText;
+    els.dialogText.innerHTML = renderInlineMarkdownToHTML(state.fullText);
     state.isTyping = false;
     els.dialogIndicator.classList.add("show");
     return;
@@ -774,7 +1104,7 @@ function prevLine() {
   // If still typing, just finish — don't go back yet (matches VN convention).
   if (state.isTyping) {
     if (state.typingTimer) { clearInterval(state.typingTimer); state.typingTimer = null; }
-    els.dialogText.textContent = state.fullText;
+    els.dialogText.innerHTML = renderInlineMarkdownToHTML(state.fullText);
     state.isTyping = false;
     els.dialogIndicator.classList.add("show");
     return;
@@ -802,6 +1132,10 @@ function jumpToStart() {
 // ============================================================
 
 function reparseAndRender(resetIndex = false) {
+  // 保存 textarea 捲動位置(L2) — 防止內部 render 意外重設視野
+  const _ta = els.scriptArea;
+  const _savedScrollTop = _ta ? _ta.scrollTop : 0;
+
   state.parsed = parseScript(state.script);
   renderLineCount();
   if (resetIndex || state.currentIndex >= state.parsed.length) {
@@ -811,12 +1145,63 @@ function reparseAndRender(resetIndex = false) {
   }
   syncSyntaxHighlight();
   applyGameUI();
+
+  // 還原 scrollTop(僅在被意外改動時)
+  if (_ta && _ta.scrollTop !== _savedScrollTop) {
+    _ta.scrollTop = _savedScrollTop;
+  }
 }
+
+/**
+ * 將 textarea 滾動到指定位置,讓游標保持在視野中。(L1)
+ * 用於 snippet 插入、Tab 展開、popup 接受候選等所有「程式自動修改 textarea」之後。
+ * @param {HTMLTextAreaElement} ta - textarea 元素
+ * @param {number} [caretPos] - 游標位置(預設用 ta.selectionStart)
+ * @param {'center'|'nearest'} [behavior='nearest'] - center=游標置中,nearest=只在跑出視野才滾
+ */
+function ensureCaretVisible(ta, caretPos, behavior = "nearest") {
+  if (!ta) return;
+  if (ta.dataset.composing === "true") return; // 輸入法組字中,不要捲動(L4)
+  if (caretPos == null) caretPos = ta.selectionStart;
+
+  const cs = getComputedStyle(ta);
+  const lineHeight = parseFloat(cs.lineHeight) || parseFloat(cs.fontSize) * 1.5;
+  const paddingTop = parseFloat(cs.paddingTop) || 0;
+
+  const textBeforeCaret = ta.value.substring(0, caretPos);
+  const lineNumber = textBeforeCaret.split("\n").length - 1; // 0-based
+  const caretY = paddingTop + lineNumber * lineHeight;
+
+  const viewportTop = ta.scrollTop;
+  const viewportBottom = viewportTop + ta.clientHeight;
+  const margin = lineHeight * 2;
+
+  if (behavior === "center") {
+    ta.scrollTop = caretY - ta.clientHeight / 2;
+  } else {
+    if (caretY < viewportTop + margin) {
+      ta.scrollTop = caretY - margin;
+    } else if (caretY > viewportBottom - margin) {
+      ta.scrollTop = caretY - ta.clientHeight + margin;
+    }
+  }
+
+  ta.scrollTop = Math.max(0, Math.min(ta.scrollTop, ta.scrollHeight - ta.clientHeight));
+}
+window.__ensureCaretVisible = ensureCaretVisible;
 
 // ----- Editor syntax highlight overlay (G1) -----
 function _shEsc(s) {
   return String(s == null ? "" : s)
     .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+}
+
+// M11:把 [tag] 區塊轉成 highlight HTML,樣式 tag 用紫色 .sh-style-tag
+function _shTagsHtml(raw) {
+  return String(raw || "").replace(/\[([^\]\n]+)\]/g, (_, inner) => {
+    const cls = STYLE_TAG_NAMES.has(inner.trim()) ? "sh-style-tag" : "sh-tag";
+    return `<span class="sh-bracket">[</span><span class="${cls}">${_shEsc(inner)}</span><span class="sh-bracket">]</span>`;
+  });
 }
 
 function highlightScript(text) {
@@ -839,10 +1224,17 @@ function highlightScript(text) {
     // dialog: name + [tag]* + ：/: + text
     const m = line.match(/^([^:：\[\n]{1,24})((?:\[[^\]\n]+\])*)\s*([:：])\s*(.*)$/);
     if (m) {
-      const tagsHtml = m[2].replace(/\[([^\]]+)\]/g,
-        '<span class="sh-bracket">[</span><span class="sh-tag">$1</span><span class="sh-bracket">]</span>');
+      const tagsHtml = _shTagsHtml(m[2]);
       return `<span class="sh-speaker">${_shEsc(m[1])}</span>${tagsHtml}` +
         `<span class="sh-colon">${_shEsc(m[3])}</span>${_shEsc(m[4])}`;
+    }
+    // narration with leading style-tag block: [辰宇落雁](他在看我嗎?)
+    const nm = line.match(/^((?:\[[^\]\n]+\])+)\s*(.*)$/);
+    if (nm) {
+      const styleTags = [...nm[1].matchAll(/\[([^\]]+)\]/g)].map(t => t[1].trim());
+      if (styleTags.length > 0 && styleTags.every(t => STYLE_TAG_NAMES.has(t))) {
+        return _shTagsHtml(nm[1]) + (nm[2] ? _shEsc(line.slice(nm[1].length)) : "");
+      }
     }
     // narration / plain
     return _shEsc(line);
@@ -884,6 +1276,14 @@ function setRatio(r) {
 els.scriptArea.addEventListener("input", (e) => {
   state.script = e.target.value;
   reparseAndRender(false);
+});
+
+// 輸入法組字狀態(L4)— ensureCaretVisible 在組字中不捲動
+els.scriptArea.addEventListener("compositionstart", () => {
+  els.scriptArea.dataset.composing = "true";
+});
+els.scriptArea.addEventListener("compositionend", () => {
+  els.scriptArea.dataset.composing = "false";
 });
 
 // ----- Bidirectional binding: script cursor <-> preview line -----
@@ -1033,6 +1433,10 @@ function insertSnippet(snippetKey) {
   ta.setSelectionRange(cursorPos, cursorPos);
   reparseAndRender(false);
   saveToStorage();
+  // 確保游標保持在視野中(L3)— 多行 snippet 置中以看到完整範本
+  const _multiLine = snippetKey === "cg" || snippetKey === "cgsolo"
+    || snippetKey === "cgfull" || snippetKey === "choices";
+  ensureCaretVisible(ta, cursorPos, _multiLine ? "center" : "nearest");
   // immediately offer autocomplete if cursor is now inside [bg:/cg:
   if (snippetKey === "bg" || snippetKey === "cg" || snippetKey === "cgsolo" || snippetKey === "cgfull") {
     setTimeout(() => window.ScriptEditor && window.ScriptEditor.refresh(), 0);
@@ -1262,6 +1666,7 @@ function saveToStorage() {
       dialogStyle: state.dialogStyle,
       gameUI: state.gameUI,
       lightMode: state.lightMode,
+      styleDefaults: state.styleDefaults,
     };
     localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
     updateStorageMeter();
@@ -1329,6 +1734,17 @@ function loadFromStorage() {
     }
     state.gameUI = migrateGameUI(payload.gameUI);
     state.lightMode = LIGHT_MODES.includes(payload.lightMode) ? payload.lightMode : DEFAULT_LIGHT_MODE;
+    if (payload.styleDefaults && typeof payload.styleDefaults === "object") {
+      for (const k of ["narration", "inner", "dialog"]) {
+        const d = payload.styleDefaults[k];
+        if (d && typeof d === "object") {
+          state.styleDefaults[k] = {
+            font: typeof d.font === "string" ? d.font : "",
+            size: typeof d.size === "string" ? d.size : "",
+          };
+        }
+      }
+    }
     return true;
   } catch (e) {
     console.warn("Failed to load from storage:", e);
@@ -2023,6 +2439,22 @@ function renderCharCard(ch, idx) {
     return card;
   }
 
+  // 立繪取景按鈕(僅配角,全表情共用)
+  const cropRow = document.createElement("div");
+  cropRow.className = "char-cropper-row";
+  const cropBtn = document.createElement("button");
+  cropBtn.type = "button";
+  cropBtn.className = "char-cropper-btn";
+  function cropInfoText() {
+    return `Y${ch.portraitY != null ? ch.portraitY : 0} · ${ch.portraitScale != null ? ch.portraitScale : 100}%`;
+  }
+  cropBtn.innerHTML = `📐 <span>取景</span> <span class="crop-info">${cropInfoText()}</span>`;
+  cropBtn.addEventListener("click", () => {
+    if (window.PortraitCropper) window.PortraitCropper.open(ch.id);
+  });
+  cropRow.appendChild(cropBtn);
+  card.appendChild(cropRow);
+
   // emotions grid (supporting only)
   const grid = document.createElement("div");
   grid.className = "emotions-grid";
@@ -2047,6 +2479,7 @@ function renderCharCard(ch, idx) {
       },
     });
     if (!name) return;
+    if (!checkEmotionNameConflict(name)) return;
     ch.emotions.push(name);
     saveToStorage();
     renderCharList();
@@ -2055,6 +2488,18 @@ function renderCharCard(ch, idx) {
 
   card.appendChild(grid);
   return card;
+}
+
+// M7:撞名保護 — 表情名稱與系統樣式 tag 同名時警告
+function checkEmotionNameConflict(name) {
+  if (STYLE_TAG_NAMES.has(name)) {
+    return confirm(
+      `「${name}」是系統樣式 tag 的名稱,可能會被誤判為樣式而非表情。\n\n` +
+      `按確定 = 仍然使用這個名稱(劇本中此 tag 會被當成樣式)\n` +
+      `按取消 = 重新輸入`
+    );
+  }
+  return true; // 沒衝突
 }
 
 function renderEmotionSlot(ch, emoName, emoIdx) {
@@ -2097,6 +2542,11 @@ function renderEmotionSlot(ch, emoName, emoIdx) {
     if (ch.emotions.includes(newName)) {
       showToast("已有同名表情", "warn");
       e.target.value = emoName;
+      return;
+    }
+    if (!checkEmotionNameConflict(newName)) {
+      e.target.value = emoName;
+      e.target.focus();
       return;
     }
     // rename: update emotions array + portraits map
@@ -2375,7 +2825,9 @@ document.getElementById("addCharBtn").addEventListener("click", async () => {
     kind,
     color,
     emotions: isProtag ? [] : ["普通"],
-    portraits: {}
+    portraits: {},
+    portraitY: 0,
+    portraitScale: 100,
   });
   saveToStorage();
   renderCharList();
@@ -2558,6 +3010,13 @@ const styleModalEl = document.getElementById("styleModal");
 function openStyleModal() {
   styleModalEl.classList.add("show");
   renderStyleTab();
+  renderFontPreviewList();
+  if (typeof syncStyleDefaultsUI === "function") syncStyleDefaultsUI();
+  // 開啟時預設回到第一個 tab
+  const tabs = styleModalEl.querySelectorAll(".style-tab");
+  const panels = styleModalEl.querySelectorAll(".style-panel");
+  tabs.forEach((t, i) => t.classList.toggle("active", i === 0));
+  panels.forEach((p, i) => p.classList.toggle("active", i === 0));
 }
 function closeStyleModal() {
   styleModalEl.classList.remove("show");
@@ -2569,6 +3028,140 @@ document.getElementById("styleModalDone").addEventListener("click", closeStyleMo
 styleModalEl.addEventListener("click", (e) => {
   if (e.target === styleModalEl) closeStyleModal();
 });
+
+// M8:字體預覽清單
+function renderFontPreviewList() {
+  const list = document.getElementById("fontPreviewList");
+  if (!list) return;
+  list.innerHTML = "";
+
+  FONT_PRESETS.forEach(f => {
+    const item = document.createElement("div");
+    item.className = "font-preview-item";
+    item.dataset.font = f.id;  // M16:供 CSS 針對特定字體微調
+
+    const meta = document.createElement("div");
+    meta.className = "font-preview-meta";
+
+    const nameEl = document.createElement("span");
+    nameEl.className = "font-preview-name";
+    nameEl.textContent = f.name;
+    // ★ M15 關鍵:名稱本身要套用該字體
+    if (f.stack) {
+      nameEl.style.fontFamily = f.stack;
+      if (f.weight) nameEl.style.fontWeight = f.weight;
+    }
+
+    const tagEl = document.createElement("span");
+    tagEl.className = "font-preview-tag";
+    tagEl.textContent = f.id === "default" ? "(無 tag)" : `[${f.name}]`;
+
+    meta.appendChild(nameEl);
+    meta.appendChild(tagEl);
+
+    const sample = document.createElement("div");
+    sample.className = "font-preview-sample";
+    sample.textContent = f.preview;
+    if (f.stack) {
+      sample.style.fontFamily = f.stack;
+      if (f.weight) sample.style.fontWeight = f.weight;
+    }
+
+    // ★ M17:檢測該字體是否已載入
+    if (f.stack && f.id !== "default") {
+      const primaryFont = f.stack.split(",")[0].trim().replace(/^["']|["']$/g, "");
+      if (document.fonts && document.fonts.check) {
+        try {
+          const isLoaded = document.fonts.check(`16px "${primaryFont}"`);
+          if (!isLoaded) {
+            sample.classList.add("font-loading");
+            document.fonts.load(`16px "${primaryFont}"`).then(() => {
+              sample.classList.remove("font-loading");
+            }).catch(() => {
+              sample.classList.remove("font-loading");
+              sample.classList.add("font-failed");
+            });
+          }
+        } catch (err) {
+          // 字體名含特殊字元時可能拋錯,忽略
+        }
+      }
+    }
+
+    const btn = document.createElement("button");
+    btn.className = "font-preview-insert";
+    if (f.id === "default") {
+      btn.textContent = "—";
+      btn.disabled = true;
+    } else {
+      btn.textContent = "▶ 插入";
+      btn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        const ta = els.scriptArea;
+        const start = ta.selectionStart;
+        const tagText = `[${f.name}]`;
+        ta.value = ta.value.substring(0, start) + tagText + ta.value.substring(ta.selectionEnd);
+        ta.selectionStart = ta.selectionEnd = start + tagText.length;
+        ta.dispatchEvent(new Event("input", { bubbles: true }));
+        styleModalEl.classList.remove("show");
+        ta.focus();
+        if (typeof ensureCaretVisible === "function") ensureCaretVisible(ta);
+      });
+    }
+
+    item.appendChild(meta);
+    item.appendChild(sample);
+    item.appendChild(btn);
+    list.appendChild(item);
+  });
+}
+
+// M8:style modal tab 切換
+(function initStyleModalTabs() {
+  const modal = document.getElementById("styleModal");
+  if (!modal) return;
+  const tabs = modal.querySelectorAll(".style-tab");
+  const panels = modal.querySelectorAll(".style-panel");
+  tabs.forEach(tab => {
+    tab.addEventListener("click", () => {
+      const target = tab.dataset.tab;
+      tabs.forEach(t => t.classList.toggle("active", t === tab));
+      panels.forEach(p => p.classList.toggle("active", p.dataset.tab === target));
+    });
+  });
+})();
+
+// O5:全域預設樣式分頁 ←→ state.styleDefaults
+const STYLE_DEFAULT_FIELDS = [
+  { key: "narration", font: "defNarrationFont", size: "defNarrationSize" },
+  { key: "inner",     font: "defInnerFont",     size: "defInnerSize" },
+  { key: "dialog",    font: "defDialogFont",    size: "defDialogSize" },
+];
+function syncStyleDefaultsUI() {
+  for (const f of STYLE_DEFAULT_FIELDS) {
+    const fe = document.getElementById(f.font);
+    const se = document.getElementById(f.size);
+    const d = state.styleDefaults[f.key] || { font: "", size: "" };
+    if (fe) fe.value = d.font || "";
+    if (se) se.value = d.size || "";
+  }
+}
+(function initStyleDefaultsPanel() {
+  for (const f of STYLE_DEFAULT_FIELDS) {
+    const fe = document.getElementById(f.font);
+    const se = document.getElementById(f.size);
+    if (fe) fe.addEventListener("change", () => {
+      state.styleDefaults[f.key].font = fe.value;
+      saveToStorage();
+      reparseAndRender(false);
+    });
+    if (se) se.addEventListener("change", () => {
+      state.styleDefaults[f.key].size = se.value;
+      saveToStorage();
+      reparseAndRender(false);
+    });
+  }
+})();
 
 // ----- Interface theme (G2) -----
 const THEME_KEY = "otome-theme";
@@ -2587,7 +3180,14 @@ document.querySelectorAll(".theme-btn").forEach(b => {
 
 // ----- Syntax help modal -----
 const syntaxModalEl = document.getElementById("syntaxModal");
+
+// N5：開啟時預設選第一個 tab、折疊所有 details
 document.getElementById("btnSyntaxHelp").addEventListener("click", () => {
+  const tabs = syntaxModalEl.querySelectorAll(".syntax-tab");
+  const panels = syntaxModalEl.querySelectorAll(".syntax-panel");
+  tabs.forEach((t, i) => t.classList.toggle("active", i === 0));
+  panels.forEach((p, i) => p.classList.toggle("active", i === 0));
+  syntaxModalEl.querySelectorAll("details").forEach(d => d.removeAttribute("open"));
   syntaxModalEl.classList.add("show");
 });
 document.getElementById("syntaxModalClose").addEventListener("click", () => {
@@ -2596,6 +3196,55 @@ document.getElementById("syntaxModalClose").addEventListener("click", () => {
 syntaxModalEl.addEventListener("click", (e) => {
   if (e.target === syntaxModalEl) syntaxModalEl.classList.remove("show");
 });
+
+// N3：syntax modal tab 切換
+(function initSyntaxModalTabs() {
+  const modal = document.getElementById("syntaxModal");
+  if (!modal) return;
+  const tabs = modal.querySelectorAll(".syntax-tab");
+  const panels = modal.querySelectorAll(".syntax-panel");
+  tabs.forEach(tab => {
+    tab.addEventListener("click", () => {
+      const target = tab.dataset.tab;
+      tabs.forEach(t => t.classList.toggle("active", t === tab));
+      panels.forEach(p => p.classList.toggle("active", p.dataset.tab === target));
+    });
+  });
+})();
+
+// N4：「試試看」按鈕 — 插入語法到劇本游標處、關閉 modal、游標跟到插入點
+(function initSyntaxTryButtons() {
+  const modal = document.getElementById("syntaxModal");
+  if (!modal) return;
+  modal.querySelectorAll(".syntax-try").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const insertText = btn.dataset.insert || "";
+      if (!insertText) return;
+
+      const ta = els.scriptArea;
+      const start = ta.selectionStart;
+      const end = ta.selectionEnd;
+
+      const before = ta.value.substring(0, start);
+      const after = ta.value.substring(end);
+      ta.value = before + insertText + after;
+
+      const newPos = start + insertText.length;
+      ta.selectionStart = newPos;
+      ta.selectionEnd = newPos;
+
+      // 觸發 input,讓 reparse / 自動儲存等邏輯啟動
+      ta.dispatchEvent(new Event("input", { bubbles: true }));
+
+      modal.classList.remove("show");
+
+      ta.focus();
+      if (typeof ensureCaretVisible === "function") {
+        ensureCaretVisible(ta, newPos, "nearest");
+      }
+    });
+  });
+})();
 
 // ----- Topbar "more" menu (匯入 / 匯出 / 重設) -----
 const topbarMenuEl = document.getElementById("topbarMenu");
@@ -2883,9 +3532,92 @@ function wrapText(ctx, text, maxWidth) {
   return lines;
 }
 
+// O5:依 segment 組 canvas font 字串(套用行級 large/small/bold/italic + 句中覆寫)
+function buildSegFont(seg, baseSizePx, d, fallbackStack) {
+  const preset = (d && d.styleFont) ? FONT_BY_ID[d.styleFont] : null;
+  const stack = seg.fontStack || (preset && preset.stack) || (d && d.fontStack) || fallbackStack;
+  let size = baseSizePx;
+  if (d && d.styleSize === "large") size = baseSizePx * 1.3;
+  else if (d && d.styleSize === "small") size = baseSizePx * 0.85;
+  if (seg.large) size = baseSizePx * 1.3;
+  if (seg.small) size = baseSizePx * 0.85;
+  const italic = (seg.italic || (d && d.styleItalic)) ? "italic " : "";
+  // weight:明確 [粗] tag > 句中字體固有 weight > 行級字體固有 weight > 400
+  let weight = "400";
+  if (seg.bold || (d && d.styleBold)) weight = "700";
+  else if (seg.fontWeight) weight = String(seg.fontWeight);
+  else if (preset && preset.weight) weight = String(preset.weight);
+  return { font: `${italic}${weight} ${Math.round(size)}px ${stack}`, size };
+}
+
+// O5:句中 Markdown 的 segment 感知換行 → 視覺行陣列 [[{text,font}]]
+function wrapSegments(ctx, text, maxWidth, baseSizePx, d, fallbackStack) {
+  const segs = parseInlineToSegments(text);
+  const visualLines = [];
+  let cur = [];
+  let curW = 0;
+  function pushLine() { visualLines.push(cur); cur = []; curW = 0; }
+  for (const seg of segs) {
+    const { font } = buildSegFont(seg, baseSizePx, d, fallbackStack);
+    const parts = String(seg.text).split("\n");
+    for (let pi = 0; pi < parts.length; pi++) {
+      if (pi > 0) pushLine();                 // 文字內硬換行
+      ctx.font = font;
+      let piece = "";
+      for (const chr of parts[pi]) {
+        const wch = ctx.measureText(chr).width;
+        if (curW > 0 && curW + wch > maxWidth) {
+          if (piece) { cur.push({ text: piece, font }); piece = ""; }
+          pushLine();
+        }
+        piece += chr;
+        curW += wch;
+      }
+      if (piece) cur.push({ text: piece, font });
+    }
+  }
+  if (cur.length > 0 || visualLines.length === 0) pushLine();
+  return visualLines;
+}
+
+function drawWrappedSegLines(ctx, lines, x, startY, lineH, color) {
+  ctx.textAlign = "left";
+  ctx.textBaseline = "top";
+  for (let i = 0; i < lines.length; i++) {
+    let cx = x;
+    for (const pc of lines[i]) {
+      ctx.font = pc.font;
+      ctx.fillStyle = color;
+      ctx.fillText(pc.text, cx, startY + i * lineH);
+      cx += ctx.measureText(pc.text).width;
+    }
+  }
+}
+
 // Render the stage to a canvas given a "frame" object:
 //   { bg, slots: {左,中,右}, dialog: {speaker, text, color, isNarration} | null, activeCharId }
 // Returns the canvas (caller can toDataURL it or stream it).
+// 立繪取景(Canvas)— 與 DOM 同公式:scale 等比、正 portraitY 往下沉,
+// 以底部中心為錨點;超出舞台會被裁切。預設 y0/scale100 → 與原本完全相同。
+function drawPortraitTransformed(ctx, src, ch, dx, dy, dw, dh) {
+  const portraitY = (ch && typeof ch.portraitY === "number") ? ch.portraitY : 0;
+  const portraitScale = (ch && typeof ch.portraitScale === "number") ? ch.portraitScale : 100;
+  const finalW = dw * (portraitScale / 100);
+  const finalH = dh * (portraitScale / 100);
+  const centerX = dx + dw / 2;
+  const baseBottomY = dy + dh;
+  const yOffsetPx = (portraitY / 100) * dh;          // 正值 = 往下沉
+  const finalBottomY = baseBottomY + yOffsetPx;
+  const finalLeftX = centerX - finalW / 2;
+  const finalTopY = finalBottomY - finalH;
+  ctx.save();
+  ctx.beginPath();
+  ctx.rect(0, 0, ctx.canvas.width, ctx.canvas.height);
+  ctx.clip();
+  ctx.drawImage(src, finalLeftX, finalTopY, finalW, finalH);
+  ctx.restore();
+}
+
 async function renderFrameToCanvas(canvas, frame) {
   const ratio = state.ratio;
   const base = RENDER_SIZES[ratio];
@@ -2968,9 +3700,9 @@ async function renderFrameToCanvas(canvas, frame) {
           octx.globalCompositeOperation = "source-atop";
           octx.fillStyle = "rgba(0, 0, 0, 0.6)";
           octx.fillRect(0, 0, oc.width, oc.height);
-          ctx.drawImage(oc, dx, dy, dw, dh);
+          drawPortraitTransformed(ctx, oc, ch, dx, dy, dw, dh);
         } else {
-          ctx.drawImage(img, dx, dy, dw, dh);
+          drawPortraitTransformed(ctx, img, ch, dx, dy, dw, dh);
         }
       }
     } else {
@@ -2985,7 +3717,7 @@ async function renderFrameToCanvas(canvas, frame) {
         octx.fillStyle = "rgba(0, 0, 0, 0.6)";
         octx.fillRect(0, 0, oc.width, oc.height);
       }
-      ctx.drawImage(oc, charX, charY, charW, charH);
+      drawPortraitTransformed(ctx, oc, ch, charX, charY, charW, charH);
     }
 
     // No floating badge — speaker name lives in the dialog box, matching VN convention.
@@ -3040,18 +3772,13 @@ async function renderFrameToCanvas(canvas, frame) {
 
     if (frame.dialog.isNarration) {
       ctx.save();
-      ctx.fillStyle = "#9a8aa8";
       const fontSize = Math.round(h * 0.035);
-      ctx.font = `400 ${fontSize}px ${frame.dialog.fontStack || '"Noto Serif TC", "PingFang TC", serif'}`;
-      ctx.textAlign = "left";
-      ctx.textBaseline = "top";
-      const lines = wrapText(ctx, frame.dialog.text, contentW);
+      const fallback = '"Noto Serif TC", "PingFang TC", serif';
+      const lines = wrapSegments(ctx, frame.dialog.text, contentW, fontSize, frame.dialog, fallback);
       const lineH = fontSize * 1.7;
       const totalH = lines.length * lineH;
       const startY = boxY + (boxH - totalH) / 2;
-      for (let i = 0; i < lines.length; i++) {
-        ctx.fillText(lines[i], contentX, startY + i * lineH);
-      }
+      drawWrappedSegLines(ctx, lines, contentX, startY, lineH, "#9a8aa8");
       ctx.restore();
     } else {
       // speaker
@@ -3078,17 +3805,12 @@ async function renderFrameToCanvas(canvas, frame) {
 
       // text
       ctx.save();
-      ctx.fillStyle = "#f3e9d8";
       const textSize = Math.round(h * 0.036);
-      ctx.font = `400 ${textSize}px ${frame.dialog.fontStack || '"PingFang TC", "Noto Sans TC", sans-serif'}`;
-      ctx.textAlign = "left";
-      ctx.textBaseline = "top";
-      const lines = wrapText(ctx, frame.dialog.text, contentW);
+      const fallback = '"PingFang TC", "Noto Sans TC", sans-serif';
+      const lines = wrapSegments(ctx, frame.dialog.text, contentW, textSize, frame.dialog, fallback);
       const lineH = textSize * 1.7;
       const startY = boxY + contentPad * 0.8 + nameSize + h * 0.012 + 16 * scale;
-      for (let i = 0; i < lines.length; i++) {
-        ctx.fillText(lines[i], contentX, startY + i * lineH);
-      }
+      drawWrappedSegLines(ctx, lines, contentX, startY, lineH, "#f3e9d8");
       ctx.restore();
     }
   }
@@ -3448,10 +4170,10 @@ function buildFrameAt(idx) {
         text: cur.text,
         color: displayColor,
         isNarration: false,
-        fontStack: cur.fontId ? (FONT_BY_ID[cur.fontId] && FONT_BY_ID[cur.fontId].stack) : null,
+        ...styleFieldsFromLine(cur),
       };
     } else if (cur.type === "narration") {
-      dialog = { speaker: "", text: cur.text, color: "#9a8aa8", isNarration: true };
+      dialog = { speaker: "", text: cur.text, color: "#9a8aa8", isNarration: true, ...styleFieldsFromLine(cur) };
     } else if (cur.type === "choices") {
       // for static preview/screenshot, show full choices state
       choices = {
@@ -3486,6 +4208,7 @@ document.getElementById("btnScreenshot").addEventListener("click", async () => {
   window.__recAntiDedup = false;
   try {
     await preloadAllAssets();
+    await preloadFontsForRecording();
     const canvas = document.createElement("canvas");
     canvas.dataset.renderScale = "2"; // 2x 解析度提升截圖品質（影片維持原解析度）
     const frame = buildFrameAt(state.currentIndex);
@@ -3912,9 +4635,54 @@ document.getElementById("recStopBtn").addEventListener("click", () => {
   recState.stopRequested = true;
 });
 
+// M19:錄影前等劇本用到的所有字體完成載入,避免影片出現 fallback 字體
+async function preloadFontsForRecording() {
+  if (!document.fonts || !document.fonts.load) return;
+
+  const usedFonts = new Set();
+  for (const ln of state.parsed) {
+    if (ln && ln.styleFont) {
+      const font = FONT_BY_ID[ln.styleFont];
+      if (font && font.stack) {
+        const primaryFont = font.stack.split(",")[0].trim().replace(/^["']|["']$/g, "");
+        usedFonts.add(primaryFont);
+      }
+    }
+  }
+  // 預設字體也要載
+  usedFonts.add("Noto Sans TC");
+  usedFonts.add("Noto Serif TC");
+
+  const promises = [...usedFonts].map(f => {
+    try {
+      return document.fonts.load(`16px "${f}"`).catch(() => null);
+    } catch (e) {
+      return Promise.resolve();
+    }
+  });
+  // 特定字重 / 字面:麥克黑用 Noto Sans TC 900,源樣 500,各開源 face
+  const explicit = [
+    '900 16px "Noto Sans TC"',
+    '900 16px "Noto Sans JP"',
+    '500 16px "GenYoGothic"',
+    '400 16px "ChenYuluoyan"',
+    '400 16px "Iansui"',
+    '400 16px "DotGothic16"',
+    '400 16px "jf-openhuninn-2.1"',
+  ];
+  for (const spec of explicit) {
+    try { promises.push(document.fonts.load(spec).catch(() => null)); }
+    catch (e) { /* 字體名特殊字元時忽略 */ }
+  }
+  await Promise.all(promises);
+}
+
 async function beginRecording() {
   // preload assets
   await preloadAllAssets();
+  // M19:預載字體
+  showToast("📦 載入字體中...", "", 1500);
+  await preloadFontsForRecording();
 
   const canvas = document.getElementById("recordingCanvas");
   const ratio = state.ratio;
@@ -4120,7 +4888,7 @@ async function runRecordingAnimation(canvas) {
         displayName = ln.nameOverride || "???";
         dialogColor = "#9a8aa8";
       }
-      const fontStack = ln.fontId ? (FONT_BY_ID[ln.fontId] && FONT_BY_ID[ln.fontId].stack) : null;
+      const st = styleFieldsFromLine(ln);
       const text = ln.text || "";
       let charsShown = 0;
       let framesSinceLastChar = REC_MIN_FRAMES_PER_CHAR; // 允許立刻顯示第一字
@@ -4141,7 +4909,7 @@ async function runRecordingAnimation(canvas) {
           text: text.slice(0, charsShown),
           color: dialogColor,
           isNarration: false,
-          fontStack,
+          ...st,
         }, activeCharId);
         if (performance.now() - startMs >= totalDurationMs) break;
         await new Promise(r => requestAnimationFrame(r));
@@ -4152,14 +4920,15 @@ async function runRecordingAnimation(canvas) {
         text,
         color: dialogColor,
         isNarration: false,
-        fontStack,
+        ...st,
       }, activeCharId);
       lastFrameState = {
-        dialog: { speaker: displayName, text, color: dialogColor, isNarration: false, fontStack },
+        dialog: { speaker: displayName, text, color: dialogColor, isNarration: false, ...st },
         activeCharId,
       };
       await sleepWithTimer(recState.holdTime * 1000, startMs, totalDurationMs);
     } else if (ln.type === "narration") {
+      const nst = styleFieldsFromLine(ln);
       const text = ln.text || "";
       const activeCharId = null;
       let charsShown = 0;
@@ -4179,6 +4948,7 @@ async function runRecordingAnimation(canvas) {
           text: text.slice(0, charsShown),
           color: "#9a8aa8",
           isNarration: true,
+          ...nst,
         }, activeCharId);
         if (performance.now() - startMs >= totalDurationMs) break;
         await new Promise(r => requestAnimationFrame(r));
@@ -4189,9 +4959,10 @@ async function runRecordingAnimation(canvas) {
         text,
         color: "#9a8aa8",
         isNarration: true,
+        ...nst,
       }, activeCharId);
       lastFrameState = {
-        dialog: { speaker: "", text, color: "#9a8aa8", isNarration: true },
+        dialog: { speaker: "", text, color: "#9a8aa8", isNarration: true, ...nst },
         activeCharId,
       };
       await sleepWithTimer(recState.holdTime * 1000, startMs, totalDurationMs);
@@ -4579,7 +5350,16 @@ window.ScriptEditor = (() => {
     selectedIdx: 0,
     context: null,
     autoInserted: null,   // { start, end } — what an Esc would undo
+    enterPhase: 0,        // O3:0=正常 / 1=已接續 / 2=已清空(三段循環)
+    lastPrefix: "",       // O3:上次接續/清空的對話前綴(用於恢復)
   };
+
+  // O3:對話前綴擷取 — 同時相容舊格式 `名[tag]:` 與新格式 `[名][tag]:`
+  const DIALOG_PREFIX_RE = /^(\s*(?:[^\[\]:：\n]+)?(?:\[[^\]\n]*\])+)\s*[:：]/;
+  function extractDialogPrefix(content) {
+    const m = content.match(DIALOG_PREFIX_RE);
+    return m ? m[1].trim() : "";
+  }
 
   // ---- line helpers ----
   function getLine(pos) {
@@ -4623,6 +5403,7 @@ window.ScriptEditor = (() => {
       ta.setSelectionRange(cursorPos, cursorPos);
       reparseAndRender(false);
       saveToStorage();
+      ensureCaretVisible(ta, cursorPos, "nearest"); // L3 — Tab 展開單行,nearest
       refresh();
       return true;
     }
@@ -4822,6 +5603,27 @@ window.ScriptEditor = (() => {
     return out;
   }
 
+  // M10:樣式 tag 候選(字體 + 大小/粗/斜),用標準名、避免 B/I/b/i 重複
+  const STYLE_CANDIDATES = [
+    { label: "[辰宇落雁]", insert: "辰宇落雁", sub: "字體" },
+    { label: "[明體]", insert: "明體", sub: "字體" },
+    { label: "[黑體]", insert: "黑體", sub: "字體" },
+    { label: "[粉圓]", insert: "粉圓", sub: "字體" },
+    { label: "[打字機]", insert: "打字機", sub: "字體" },
+    { label: "[大]", insert: "大", sub: "放大" },
+    { label: "[小]", insert: "小", sub: "縮小" },
+    { label: "[粗]", insert: "粗", sub: "粗體" },
+    { label: "[斜]", insert: "斜", sub: "斜體" },
+  ];
+  function pushStyleCandidates(items, used, q) {
+    let s = 100;
+    for (const c of STYLE_CANDIDATES) {
+      if (used.has(c.insert)) continue;
+      if (q && !(c.insert.includes(q) || c.label.includes(q))) continue;
+      items.push({ kind: "style", label: c.label, sub: c.sub, insert: c.insert, score: s++ });
+    }
+  }
+
   function suggestInBracket(ctx) {
     const items = [];
     const q = ctx.query.trim();
@@ -4843,19 +5645,18 @@ window.ScriptEditor = (() => {
         items.push({ kind: "emotion-new", label: `表情「${q}」`, insert: q });
       }
       items.push({ kind: "hide", label: "[?] 隱藏真名", sub: "顯示 ???", insert: "?", score: 95 });
-      items.push({ kind: "alias-prompt", label: "[?:] 輸入別名", sub: "顯示替代名", insert: "?:", keepInside: true, score: 96 });
       items.push({ kind: "font-open", label: "[字體:] 指定字體", sub: "選字體", insert: "字體:", keepInside: true, score: 97 });
+      pushStyleCandidates(items, used, q);
     } else if (ctx.slot === "position") {
       for (const p of ["左", "中", "右"]) {
         if (used.has(p)) continue;
         if (!q || p === q || p.includes(q)) items.push({ kind: "position", label: p, insert: p });
       }
       items.push({ kind: "hide", label: "[?] 隱藏真名", sub: "顯示 ???", insert: "?", score: 95 });
-      items.push({ kind: "alias-prompt", label: "[?:] 輸入別名", sub: "顯示替代名", insert: "?:", keepInside: true, score: 96 });
       items.push({ kind: "font-open", label: "[字體:] 指定字體", sub: "選字體", insert: "字體:", keepInside: true, score: 97 });
+      pushStyleCandidates(items, used, q);
     } else if (ctx.slot === "alias-hide" || ctx.slot === "hide") {
       items.push({ kind: "hide", label: "[?]", sub: "隱藏真名（顯示 ???）", insert: "?" });
-      items.push({ kind: "alias-prompt", label: "[?:]", sub: "輸入別名", insert: "?:", keepInside: true });
       items.push({ kind: "font-open", label: "[字體:]", sub: "指定字體", insert: "字體:", keepInside: true });
     }
     return items;
@@ -5100,10 +5901,63 @@ window.ScriptEditor = (() => {
   function handleTab(e) {
     if (isOpen()) {
       e.preventDefault();
-      accept(false);
+      if (accept(false)) ensureCaretVisible(ta, undefined, "nearest"); // L3 — popup 接受候選
       return;
     }
+    // 任何 Tab 動作都會打斷 Enter 三段循環
+    S.enterPhase = 0;
+
+    const { ls, le, content, pos } = getLine();
+    const cursorOnLine = pos - ls;
+    const trimmed = content.trim();
+    const isCommand = COMMAND_HEAD.test(content);
+
+    // 情境 A:空行 → 角色 + 指令候選清單(O4 實作 popup;此處保留 fallback)
+    if (trimmed === "") {
+      e.preventDefault();
+      if (typeof window.showCharacterAndCommandPopup === "function") {
+        e.stopImmediatePropagation();
+        window.showCharacterAndCommandPopup();
+        return;
+      }
+      tryRepeatPrefix(); // fallback:沿用既有「重複上一個前綴」
+      return;
+    }
+
+    // 關鍵字展開(bg/cg/離場…)優先,不可破壞(全局規則 1)
     if (tryExpandKeyword()) { e.preventDefault(); return; }
+
+    // 情境 B:整行皆 tag、無冒號、游標在行尾 → 可選欄位 popup(O4)
+    if (!isCommand && /^(?:\[[^\]\n]+\])+$/.test(trimmed) && pos === le) {
+      e.preventDefault();
+      if (typeof window.showOptionalFieldPopup === "function") {
+        e.stopImmediatePropagation();
+        window.showOptionalFieldPopup();
+        return;
+      }
+      tryAppendColon(); // fallback:補上冒號
+      return;
+    }
+
+    // 情境 C:對話行,游標在最後一個 ] 之後、冒號之前 → 可選欄位 popup(O4)
+    if (!isCommand) {
+      const a = content.indexOf("："), b = content.indexOf(":");
+      const colonIdx = a === -1 ? b : (b === -1 ? a : Math.min(a, b));
+      const tagEndMatch = content.match(/^\s*(?:[^\[\]:：\n]+)?(?:\[[^\]\n]+\])+/);
+      if (colonIdx !== -1 && tagEndMatch) {
+        const tagEnd = tagEndMatch[0].length;
+        if (cursorOnLine >= tagEnd && cursorOnLine <= colonIdx) {
+          e.preventDefault();
+          if (typeof window.showOptionalFieldPopupBeforeColon === "function") {
+            e.stopImmediatePropagation();
+            window.showOptionalFieldPopupBeforeColon(colonIdx);
+          }
+          return;
+        }
+      }
+    }
+
+    // 其他情境:沿用既有鏈
     if (tryAppendColon()) { e.preventDefault(); return; }
     if (tryRepeatPrefix()) { e.preventDefault(); return; }
     e.preventDefault();
@@ -5114,12 +5968,13 @@ window.ScriptEditor = (() => {
     if (pos !== le) return false;
     if (/[:：]/.test(content)) return false;
     if (COMMAND_HEAD.test(content)) return false;
-    if (!/^\s*[^\[\]:：\n]+(?:\[[^\]\n]*\])+\s*$/.test(content)) return false;
+    if (!/^\s*(?:[^\[\]:：\n]+)?(?:\[[^\]\n]*\])+\s*$/.test(content)) return false;
     ta.value = ta.value.slice(0, le) + "：" + ta.value.slice(le);
     state.script = ta.value;
     ta.setSelectionRange(le + 1, le + 1);
     reparseAndRender(false);
     saveToStorage();
+    ensureCaretVisible(ta, le + 1, "nearest"); // L3
     return true;
   }
 
@@ -5129,7 +5984,7 @@ window.ScriptEditor = (() => {
     const above = ta.value.slice(0, ls).split("\n");
     let prefix = null;
     for (let i = above.length - 1; i >= 0; i--) {
-      const m = above[i].match(/^(\s*[^\[\]:：\n]+(?:\[[^\]\n]*\])+)\s*[:：]/);
+      const m = above[i].match(/^(\s*(?:[^\[\]:：\n]+)?(?:\[[^\]\n]*\])+)\s*[:：]/);
       if (m) { prefix = m[1]; break; }
     }
     if (!prefix) return false;
@@ -5141,6 +5996,7 @@ window.ScriptEditor = (() => {
     S.autoInserted = { start: pos, end: np };
     reparseAndRender(false);
     saveToStorage();
+    ensureCaretVisible(ta, np, "nearest"); // L3
     return true;
   }
 
@@ -5150,7 +6006,7 @@ window.ScriptEditor = (() => {
   function handleEnter(e) {
     if (isOpen()) {
       e.preventDefault();
-      accept(true);
+      if (accept(true)) ensureCaretVisible(ta, undefined, "nearest"); // L3 — popup 接受候選(Enter)
       return;
     }
     const { ls, le, content, pos } = getLine();
@@ -5179,16 +6035,49 @@ window.ScriptEditor = (() => {
       ta.setSelectionRange(np, np);
       reparseAndRender(false);
       saveToStorage();
+      ensureCaretVisible(ta, np, "nearest"); // L3
       return;
     }
 
-    // Current line is dialog → carry prefix onto the new line.
-    // (The spec's "上一行也是對話" condition: viewed from the new line, the
-    // previous line is the line we're pressing Enter on — so the test is
-    // simply "current line is dialog".)
-    const dialogMatch = content.match(/^(\s*[^\[\]:：\n]+(?:\[[^\]\n]*\])+)\s*[:：]/);
-    if (dialogMatch) {
-      const prefix = dialogMatch[1];
+    // ── O3:Enter 三段循環(接續 → 清空 → 恢復) ──
+    const trimmed = content.trim();
+    const prefix = extractDialogPrefix(trimmed);
+    const isJustPrefix = prefix &&
+      (trimmed === prefix + "：" || trimmed === prefix + ":");
+
+    // 階段 1 → 2:只有前綴的行,沒打字再按 Enter → 清空該行
+    if (isJustPrefix && S.enterPhase === 1) {
+      e.preventDefault();
+      ta.value = ta.value.slice(0, ls) + ta.value.slice(le);
+      state.script = ta.value;
+      ta.setSelectionRange(ls, ls);
+      S.enterPhase = 2;
+      S.lastPrefix = prefix;
+      S.autoInserted = null;
+      reparseAndRender(false);
+      saveToStorage();
+      ensureCaretVisible(ta, ls, "nearest");
+      return;
+    }
+
+    // 階段 2 → 1:空行且上次有清空 → 恢復前綴
+    if (trimmed === "" && S.enterPhase === 2 && S.lastPrefix) {
+      e.preventDefault();
+      const restored = S.lastPrefix + "：";
+      ta.value = ta.value.slice(0, pos) + restored + ta.value.slice(pos);
+      state.script = ta.value;
+      const np = pos + restored.length;
+      ta.setSelectionRange(np, np);
+      S.enterPhase = 1;
+      S.autoInserted = { start: pos, end: np };
+      reparseAndRender(false);
+      saveToStorage();
+      ensureCaretVisible(ta, np, "nearest");
+      return;
+    }
+
+    // 階段 C:對話行尾 → 自動接續同前綴到新行
+    if (prefix) {
       e.preventDefault();
       const insertion = `\n${prefix}：`;
       ta.value = ta.value.slice(0, pos) + insertion + ta.value.slice(pos);
@@ -5196,10 +6085,16 @@ window.ScriptEditor = (() => {
       const np = pos + insertion.length;
       ta.setSelectionRange(np, np);
       S.autoInserted = { start: pos, end: np };
+      S.enterPhase = 1;
+      S.lastPrefix = prefix;
       reparseAndRender(false);
       saveToStorage();
+      ensureCaretVisible(ta, np, "nearest"); // L3
       return;
     }
+
+    // 其他:正常換行,重置循環狀態
+    S.enterPhase = 0;
   }
 
   function insertAndTrack(text) {
@@ -5211,6 +6106,7 @@ window.ScriptEditor = (() => {
     S.autoInserted = { start: pos, end: np };
     reparseAndRender(false);
     saveToStorage();
+    ensureCaretVisible(ta, np, "nearest"); // L3 — 清單延續(- / [選項])
   }
 
   // ============================================================
@@ -5304,6 +6200,7 @@ window.ScriptEditor = (() => {
     ta.setSelectionRange(pos + 1, pos + 1);
     reparseAndRender(false);
     saveToStorage();
+    ensureCaretVisible(ta, pos + 1, "nearest"); // L3 — `[` 自動成對
     refresh();
     return true;
   }
@@ -5333,6 +6230,7 @@ window.ScriptEditor = (() => {
   function init() {
     ta.addEventListener("input", () => {
       S.autoInserted = null;
+      S.enterPhase = 0; // O3:使用者打字 → 跳出 Enter 三段循環
       refresh();
     });
     ta.addEventListener("click", refresh);
@@ -5349,6 +6247,8 @@ window.ScriptEditor = (() => {
     ta.addEventListener("blur", () => setTimeout(hide, 150));
 
     ta.addEventListener("keydown", (e) => {
+      // O4:分類 popup 開啟時,本模組完全讓位給 popup 自己的鍵盤處理
+      if (window.__catPopupOpen) return;
       if (e.key === "Backspace" && (e.ctrlKey || e.metaKey) && !e.altKey) {
         handleCtrlBackspace(e);
         return;
@@ -5358,9 +6258,30 @@ window.ScriptEditor = (() => {
         move(e.key === "ArrowDown" ? 1 : -1);
         return;
       }
+      // O3:IME 組字中,Enter/Tab 交給輸入法處理(全局規則 3)
+      if ((e.key === "Enter" || e.key === "Tab") &&
+          (e.isComposing || ta.dataset.composing === "true")) {
+        return;
+      }
       if (e.key === "Tab" && !e.ctrlKey && !e.metaKey && !e.altKey) {
         if (e.shiftKey) { e.preventDefault(); return; }
         handleTab(e);
+        return;
+      }
+      // O3:Shift+Enter → 純空行(parser 會忽略,且不觸發接續/循環)
+      if (e.key === "Enter" && e.shiftKey && !e.ctrlKey && !e.metaKey && !e.altKey) {
+        if (isOpen()) return;
+        e.preventDefault();
+        const p = ta.selectionStart;
+        ta.value = ta.value.slice(0, p) + "\n\n" + ta.value.slice(p);
+        state.script = ta.value;
+        const np = p + 2;
+        ta.setSelectionRange(np, np);
+        S.enterPhase = 0;
+        S.autoInserted = null;
+        reparseAndRender(false);
+        saveToStorage();
+        ensureCaretVisible(ta, np, "nearest");
         return;
       }
       if (e.key === "Enter" && !e.ctrlKey && !e.metaKey && !e.altKey && !e.shiftKey) {
@@ -5381,5 +6302,874 @@ window.ScriptEditor = (() => {
 
   init();
 
-  return { refresh, isOpen, hide };
+  return { refresh, isOpen, hide, caretRect: caretCoords };
 })();
+
+// ============================================================
+//  O4:分類候選 popup(角色 / 指令 / 可選欄位,Tab 循環)
+//  由 O3 handleTab 透過 window.show* 觸發。自成系統,
+//  開啟期間 ScriptEditor 模組會讓位(window.__catPopupOpen)。
+// ============================================================
+(() => {
+  const ta = els.scriptArea;
+
+  const POS_TAGS_ORDERED = ["中", "左", "右"];   // 中為預設
+  const MYSTERY_OPTS = ["替代名"];   // 純中括號別名:插入 [替代名] 後直接改字
+  const OPTIONAL_FIELDS = ["position", "mystery", "font", "size", "emphasis"];
+  const FIELD_LABELS = {
+    position: "📍 位置",
+    mystery: "🎭 替代名",
+    font: "🎨 字體",
+    size: "📏 大小",
+    emphasis: "💪 粗斜",
+  };
+
+  let popupState = { open: false };
+  let tabFieldIndex = -1;
+
+  const popup = document.createElement("div");
+  popup.className = "se-cat-popup";
+  popup.style.display = "none";
+  document.body.appendChild(popup);
+
+  // ---- 行 / 角色工具 ----
+  function getCurrentLineInfo(t) {
+    const pos = t.selectionStart;
+    const lineStart = t.value.lastIndexOf("\n", pos - 1) + 1;
+    const le = t.value.indexOf("\n", pos);
+    const lineEnd = le === -1 ? t.value.length : le;
+    return { pos, lineStart, lineEnd, lineText: t.value.substring(lineStart, lineEnd) };
+  }
+
+  function knownCharNames() {
+    return state.characters.map(c => c.name);
+  }
+  function emotionsOf(name) {
+    const c = state.characters.find(x => x.name === name);
+    return (c && c.emotions) || [];
+  }
+  function isCharacterProtagonist(name) {
+    const c = state.characters.find(x => x.name === name);
+    return !!(c && c.kind === "protagonist");
+  }
+
+  function parseAllTagsOnLine(lineText, knownCharacters, getEmos) {
+    const tags = [];
+    const re = /\[([^\]]+)\]/g;
+    let m, idx = 0, charNameSoFar = null;
+    while ((m = re.exec(lineText)) !== null) {
+      const tag = m[1];
+      let kind = "unknown";
+      if (idx === 0 && knownCharacters.includes(tag)) {
+        kind = "character"; charNameSoFar = tag;
+      } else if (POS_TAGS_ORDERED.includes(tag)) kind = "position";
+      else if (tag === "?" || tag.startsWith("?:") || tag === "？" || /^[?？]/.test(tag)) kind = "mystery";
+      else if (FONT_TAG_NAMES.includes(tag)) kind = "font";
+      else if (SIZE_TAG_NAMES.includes(tag)) kind = "size";
+      else if (EMPHASIS_TAG_NAMES.includes(tag)) kind = "emphasis";
+      else if (charNameSoFar && getEmos(charNameSoFar).includes(tag)) kind = "emotion";
+      tags.push({ start: m.index, end: m.index + m[0].length, text: m[0], inner: tag, kind, idx });
+      idx++;
+    }
+    return { tags, charName: charNameSoFar };
+  }
+
+  function getUsedFields(lineText) {
+    const { tags, charName } = parseAllTagsOnLine(lineText, knownCharNames(), emotionsOf);
+    const used = new Set();
+    for (const t of tags) {
+      if (["character", "emotion", "position", "mystery", "font", "size"].includes(t.kind)) {
+        used.add(t.kind);
+      }
+      // emphasis 不加入 used(可重複,但同名不可)
+    }
+    return { used, charName, tags };
+  }
+
+  function getRemainingOptionalFields(used, charName, isProtagonist) {
+    return OPTIONAL_FIELDS.filter(f => {
+      if (f === "emphasis") return true;            // 粗斜永遠出現
+      if (used.has(f)) return false;
+      if (isProtagonist && (f === "position" || f === "mystery")) return false;
+      return true;
+    });
+  }
+
+  function getCurrentEmphasisTags(lineText) {
+    return [...lineText.matchAll(/\[([^\]]+)\]/g)]
+      .map(x => x[1]).filter(t => EMPHASIS_TAG_NAMES.includes(t));
+  }
+
+  // 往上找最近的對話前綴(用於「接續說話」)
+  function findLastDialogPrefix() {
+    const { lineStart } = getCurrentLineInfo(ta);
+    const above = ta.value.slice(0, lineStart).split("\n");
+    for (let i = above.length - 1; i >= 0; i--) {
+      const m = above[i].match(/^(\s*(?:[^\[\]:：\n]+)?(?:\[[^\]\n]*\])+)\s*[:：]/);
+      if (m) return m[1].trim();
+    }
+    return null;
+  }
+
+  // ---- 定位 ----
+  function positionPopupAtCaret() {
+    let r = null;
+    try { r = window.ScriptEditor && window.ScriptEditor.caretRect(); } catch (e) {}
+    if (!r) return;
+    popup.style.visibility = "hidden";
+    popup.style.display = "block";
+    const pr = popup.getBoundingClientRect();
+    let top = r.top + r.lineHeight + 4;
+    let left = r.left;
+    if (top + pr.height > window.innerHeight - 8) top = r.top - pr.height - 4;
+    if (left + pr.width > window.innerWidth - 8) left = window.innerWidth - pr.width - 8;
+    popup.style.top = Math.max(8, top) + "px";
+    popup.style.left = Math.max(8, left) + "px";
+    popup.style.visibility = "visible";
+  }
+
+  // ---- 渲染 ----
+  function showCategorizedPopup(sections, selectedIdx = 0, insertContext = null, cycleCtx = null) {
+    popup.innerHTML = "";
+    let totalIdx = 0;
+    const allItems = [];
+    for (const sec of sections) {
+      const secDiv = document.createElement("div");
+      secDiv.className = "popup-section";
+      if (sec.title) {
+        const t = document.createElement("div");
+        t.className = "popup-section-title";
+        t.textContent = sec.title;
+        secDiv.appendChild(t);
+      }
+      for (const item of sec.items) {
+        const div = document.createElement("div");
+        let cls = "popup-item";
+        if (item.skip) cls += " skip";
+        if (item.disabled) cls += " disabled";
+        div.className = cls;
+        const text = document.createElement("span");
+        text.textContent = item.text;
+        div.appendChild(text);
+        if (item.badge) {
+          const b = document.createElement("span");
+          b.className = "popup-item-badge";
+          b.textContent = item.badge;
+          div.appendChild(b);
+        }
+        const myIdx = totalIdx++;
+        div.dataset.idx = myIdx;
+        if (myIdx === selectedIdx) div.classList.add("selected");
+        div.addEventListener("mouseenter", () => {
+          if (item.disabled) return;
+          popupState.selectedIdx = myIdx;
+          refreshSelected();
+        });
+        div.addEventListener("mousedown", (e) => {
+          e.preventDefault();
+          if (!item.disabled) acceptItem(item, insertContext);
+        });
+        secDiv.appendChild(div);
+        allItems.push(item);
+      }
+      popup.appendChild(secDiv);
+    }
+    const hintBar = document.createElement("div");
+    hintBar.className = "popup-hint-bar";
+    hintBar.innerHTML = cycleCtx
+      ? '<kbd>↑↓</kbd> 移動 · <kbd>Tab</kbd> 下一類 · <kbd>↵</kbd> 接受 · <kbd>Esc</kbd> 關閉'
+      : '<kbd>↑↓</kbd> 移動 · <kbd>↵</kbd>/<kbd>Tab</kbd> 接受 · <kbd>Esc</kbd> 關閉';
+    popup.appendChild(hintBar);
+
+    popupState = { open: true, items: allItems, selectedIdx, insertContext, cycle: cycleCtx };
+    window.__catPopupOpen = true;
+    positionPopupAtCaret();
+  }
+
+  function refreshSelected() {
+    popup.querySelectorAll(".popup-item").forEach((el, i) => {
+      el.classList.toggle("selected", i === popupState.selectedIdx);
+    });
+  }
+
+  // ---- 三種場景 ----
+  function showCharacterAndCommandPopup() {
+    const sections = [
+      {
+        title: "👤 角色",
+        items: knownCharNames().map(c => ({ text: `[${c}]`, val: `[${c}]` })),
+      },
+      {
+        title: "🎬 指令",
+        items: [
+          { text: "[bg: ]", val: "[bg: " },
+          { text: "[cg: ]", val: "[cg: " },
+          { text: "[cg off]", val: "[cg off]\n" },
+          { text: "[離場]", val: "[離場]\n" },
+          { text: "[聚光]", val: "[聚光]\n" },
+          { text: "[同亮]", val: "[同亮]\n" },
+          { text: "[全暗]", val: "[全暗]\n" },
+        ],
+      },
+    ];
+    const lastPrefix = findLastDialogPrefix();
+    if (lastPrefix) {
+      sections.unshift({
+        title: "⏎ 接續說話",
+        items: [{ text: lastPrefix + "：", val: lastPrefix + "：" }],
+      });
+    }
+    tabFieldIndex = -1;
+    showCategorizedPopup(sections, 0);
+  }
+
+  function showOptionalFieldPopup() {
+    const { lineText } = getCurrentLineInfo(ta);
+    const { used, charName } = getUsedFields(lineText);
+    const isProt = isCharacterProtagonist(charName);
+
+    // 還沒選表情且不是主角 → 強制選表情
+    if (used.has("character") && !used.has("emotion") && !isProt) {
+      const emos = emotionsOf(charName);
+      if (emos.length > 0) {
+        tabFieldIndex = -1;
+        showCategorizedPopup([{
+          title: "😊 " + charName + " 的表情(必選)",
+          items: emos.map(e => ({ text: `[${e}]`, val: `[${e}]` })),
+        }], 0);
+        return;
+      }
+    }
+
+    const remaining = getRemainingOptionalFields(used, charName, isProt);
+    cycleOptionalField(remaining, lineText, null);
+  }
+
+  function showOptionalFieldPopupBeforeColon(colonIdx) {
+    const { lineText, lineStart } = getCurrentLineInfo(ta);
+    const insertAbsPos = lineStart + colonIdx;
+    const { used, charName } = getUsedFields(lineText);
+    const isProt = isCharacterProtagonist(charName);
+    const remaining = getRemainingOptionalFields(used, charName, isProt);
+    cycleOptionalField(remaining, lineText, insertAbsPos);
+  }
+
+  function cycleOptionalField(remaining, lineText, insertAbsPos) {
+    if (remaining.length === 0) {
+      hidePopup();
+      if (insertAbsPos === null) { insertAtCursor("："); commit(); }
+      return;
+    }
+    tabFieldIndex = (tabFieldIndex + 1) % remaining.length;
+    const field = remaining[tabFieldIndex];
+    const currentEmphasis = getCurrentEmphasisTags(lineText);
+    const fieldOptions = {
+      position: POS_TAGS_ORDERED.map(p => ({ text: `[${p}]`, val: `[${p}]` })),
+      mystery: MYSTERY_OPTS.map(x => ({ text: `[${x}]`, val: `[${x}]` })),
+      font: FONT_TAG_NAMES.map(f => ({ text: `[${f}]`, val: `[${f}]` })),
+      size: SIZE_TAG_NAMES.map(s => ({ text: `[${s}]`, val: `[${s}]` })),
+      emphasis: EMPHASIS_TAG_NAMES.map(e => ({
+        text: `[${e}]`, val: `[${e}]`,
+        disabled: currentEmphasis.includes(e),
+        badge: currentEmphasis.includes(e) ? "已選" : null,
+      })),
+    };
+    const sections = [
+      {
+        title: "",
+        items: [{
+          text: insertAbsPos === null ? "⏭ 跳過,開始打台詞" : "⏭ 跳過,不加 tag",
+          val: insertAbsPos === null ? "：" : "",
+          skip: true,
+        }],
+      },
+      {
+        title: FIELD_LABELS[field] + "  (Tab 跳下一類,循環)",
+        items: fieldOptions[field],
+      },
+    ];
+    showCategorizedPopup(sections, 0, { insertAbsPos }, { remaining, lineText, insertAbsPos });
+  }
+
+  // ---- 接受 / 插入 ----
+  function insertAtCursor(text) {
+    const pos = ta.selectionStart;
+    ta.value = ta.value.substring(0, pos) + text + ta.value.substring(ta.selectionEnd);
+    ta.selectionStart = ta.selectionEnd = pos + text.length;
+  }
+
+  function commit() {
+    state.script = ta.value;
+    reparseAndRender(false);
+    saveToStorage();
+    if (typeof ensureCaretVisible === "function") ensureCaretVisible(ta, ta.selectionStart, "nearest");
+  }
+
+  function acceptItem(item, insertContext) {
+    if (item.skip) {
+      hidePopup();
+      if (item.val === "：") { insertAtCursor("："); commit(); }
+      return;
+    }
+    if (insertContext && insertContext.insertAbsPos !== null && insertContext.insertAbsPos !== undefined) {
+      const p = insertContext.insertAbsPos;
+      ta.value = ta.value.substring(0, p) + item.val + ta.value.substring(p);
+      ta.selectionStart = ta.selectionEnd = p + item.val.length;
+    } else {
+      insertAtCursor(item.val);
+    }
+    hidePopup();
+    commit();
+    ta.focus();
+    setTimeout(maybeShowNextStep, 0);
+  }
+
+  function hidePopup() {
+    popup.style.display = "none";
+    popupState = { open: false };
+    tabFieldIndex = -1;
+    window.__catPopupOpen = false;
+  }
+
+  // 接受角色 tag 後,若該行只有角色名(非主角、有表情)→ 自動帶出表情
+  function maybeShowNextStep() {
+    if (popupState.open) return;
+    const { lineText, pos, lineEnd } = getCurrentLineInfo(ta);
+    if (pos !== lineEnd) return;
+    const trimmed = lineText.trim();
+    if (!/^\[[^\]\n]+\]$/.test(trimmed)) return;          // 只有單一 tag
+    const { used, charName } = getUsedFields(lineText);
+    if (!used.has("character") || used.has("emotion")) return;
+    if (isCharacterProtagonist(charName)) return;
+    if (emotionsOf(charName).length === 0) return;
+    showOptionalFieldPopup();
+  }
+
+  // ---- popup 開啟時的鍵盤行為 ----
+  ta.addEventListener("keydown", (e) => {
+    if (!popupState.open) return;
+
+    if (e.key === "Escape") {
+      e.preventDefault(); e.stopPropagation();
+      hidePopup();
+      return;
+    }
+    if (e.key === "ArrowDown" || e.key === "ArrowUp") {
+      e.preventDefault(); e.stopPropagation();
+      const n = popupState.items.length;
+      if (n === 0) return;
+      let next = popupState.selectedIdx;
+      let guard = 0;
+      do {
+        next = e.key === "ArrowDown" ? (next + 1) % n : (next - 1 + n) % n;
+        guard++;
+      } while (popupState.items[next] && popupState.items[next].disabled && guard <= n);
+      popupState.selectedIdx = next;
+      refreshSelected();
+      return;
+    }
+    if (e.key === "Tab" && !e.shiftKey) {
+      e.preventDefault(); e.stopPropagation();
+      // 可選欄位 popup:Tab = 跳下一類(循環);其餘:Tab = 接受
+      if (popupState.cycle) {
+        const c = popupState.cycle;
+        cycleOptionalField(c.remaining, c.lineText, c.insertAbsPos);
+      } else {
+        const item = popupState.items[popupState.selectedIdx];
+        if (item && !item.disabled) acceptItem(item, popupState.insertContext);
+      }
+      return;
+    }
+    if (e.key === "Tab" && e.shiftKey) {
+      e.preventDefault(); e.stopPropagation();
+      if (popupState.cycle) {
+        const c = popupState.cycle;
+        // 往前一類:抵銷 cycleOptionalField 內的 +1
+        tabFieldIndex = (tabFieldIndex - 2 + c.remaining.length * 2) % c.remaining.length;
+        cycleOptionalField(c.remaining, c.lineText, c.insertAbsPos);
+      }
+      return;
+    }
+    if (e.key === "Enter") {
+      e.preventDefault(); e.stopPropagation();
+      const item = popupState.items[popupState.selectedIdx];
+      if (item && !item.disabled) acceptItem(item, popupState.insertContext);
+      return;
+    }
+    // 其他可輸入的鍵 → 關閉 popup,讓使用者繼續打字
+    if (e.key === "Backspace" || e.key === "Delete" || e.key.length === 1) {
+      hidePopup();
+    }
+  });
+
+  ta.addEventListener("blur", () => {
+    setTimeout(() => { if (popupState.open) hidePopup(); }, 150);
+  });
+
+  // 暴露給 O3 handleTab 的觸發點
+  window.showCharacterAndCommandPopup = showCharacterAndCommandPopup;
+  window.showOptionalFieldPopup = showOptionalFieldPopup;
+  window.showOptionalFieldPopupBeforeColon = showOptionalFieldPopupBeforeColon;
+})();
+
+// ============================================================
+//  O5:反白整行 → 浮動樣式 popup(行級套樣式,取代不堆積)
+// ============================================================
+(() => {
+  const ta = els.scriptArea;
+  const popup = document.getElementById("floatStylePopup");
+  if (!ta || !popup) return;
+
+  let lastSelection = null;
+  let popupCooldown = false;
+  const CMD_LINE_RE = /^\[(bg|cg|cg\s+off|cg\s+full|離場|聚光|同亮|全暗)/i;
+
+  function knownChars() { return state.characters.map(c => c.name); }
+
+  // ---- 反白偵測:只接受整行 / 多行 ----
+  function getRowSelectionInfo() {
+    const start = ta.selectionStart;
+    const end = ta.selectionEnd;
+    if (start === end) return null;
+    const text = ta.value.substring(start, end);
+    if (!text.trim()) return null;
+    const beforeStart = ta.value.lastIndexOf("\n", start - 1) + 1;
+    const afterEnd = ta.value.indexOf("\n", end);
+    const lineEndPos = afterEnd === -1 ? ta.value.length : afterEnd;
+    const startsAtLineHead = start === beforeStart;
+    const endsAtLineTail = end === lineEndPos || end === ta.value.length || ta.value[end] === "\n";
+    const hasNewline = text.includes("\n");
+    const isLineLevel = (startsAtLineHead && endsAtLineTail) || hasNewline;
+    if (!isLineLevel) return null;
+    return { start, end, text };
+  }
+
+  function checkSelectionForFloatPopup() {
+    if (popupCooldown) return;
+    if (window.__catPopupOpen) return;          // 候選 popup 開著時不跳
+    const sel = getRowSelectionInfo();
+    if (sel) showFloatStylePopup(sel);
+    else hideFloatStylePopup();
+  }
+
+  ta.addEventListener("mouseup", () => setTimeout(checkSelectionForFloatPopup, 10));
+  ta.addEventListener("keyup", (e) => {
+    if (e.shiftKey || ["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown", "Home", "End"].includes(e.key)) {
+      setTimeout(checkSelectionForFloatPopup, 10);
+    } else {
+      hideFloatStylePopup();
+    }
+  });
+  ta.addEventListener("input", () => hideFloatStylePopup());
+
+  // ---- 範圍工具 ----
+  function selectionRowRange() {
+    const { start, end } = lastSelection;
+    const beforeStart = ta.value.lastIndexOf("\n", start - 1) + 1;
+    const afterEnd = ta.value.indexOf("\n", end);
+    const realEnd = afterEnd === -1 ? ta.value.length : afterEnd;
+    return { beforeStart, realEnd };
+  }
+
+  function extractStyleTagsFromLine(line) {
+    const tags = [];
+    const kc = knownChars();
+    const firstTag = line.match(/^\[([^\]]+)\]/);
+    const isDialog = firstTag && kc.includes(firstTag[1]);
+    let pos = isDialog ? firstTag[0].length : 0;
+    while (pos < line.length) {
+      const m = line.substring(pos).match(/^\[([^\]]+)\]/);
+      if (!m) break;
+      const inner = m[1];
+      if (STYLE_TAG_NAMES.has(inner)) {
+        tags.push({ name: inner, start: pos, end: pos + m[0].length });
+        pos += m[0].length;
+      } else if (isDialog) {
+        pos += m[0].length;             // 對話的表情/位置等非樣式 tag,跳過續找
+      } else {
+        break;                          // 旁白:遇非樣式 tag 停止
+      }
+    }
+    return tags;
+  }
+
+  function getCurrentStylesInSelection() {
+    const empty = { fonts: new Set(), sizes: new Set(), emphasis: new Set() };
+    if (!lastSelection) return empty;
+    const { beforeStart, realEnd } = selectionRowRange();
+    const middle = ta.value.substring(beforeStart, realEnd);
+    const fonts = new Set(), sizes = new Set(), emphasis = new Set();
+    middle.split("\n").forEach(line => {
+      extractStyleTagsFromLine(line).forEach(t => {
+        if (FONT_TAG_NAMES.includes(t.name)) fonts.add(t.name);
+        if (SIZE_TAG_NAMES.includes(t.name)) sizes.add(t.name);
+        if (EMPHASIS_TAG_NAMES.includes(t.name)) emphasis.add(t.name);
+      });
+    });
+    return { fonts, sizes, emphasis };
+  }
+
+  function removeTagsByKind(line, kind) {
+    const tags = extractStyleTagsFromLine(line);
+    let result = line;
+    for (let i = tags.length - 1; i >= 0; i--) {
+      const t = tags[i];
+      let match = false;
+      if (kind === "font" && FONT_TAG_NAMES.includes(t.name)) match = true;
+      else if (kind === "size" && SIZE_TAG_NAMES.includes(t.name)) match = true;
+      else if (kind === "emphasis" && EMPHASIS_TAG_NAMES.includes(t.name)) match = true;
+      else if (kind === "all") match = STYLE_TAG_NAMES.has(t.name);
+      if (match) result = result.substring(0, t.start) + result.substring(t.end);
+    }
+    return result;
+  }
+
+  function removeSpecificTag(line, tagName) {
+    const tags = extractStyleTagsFromLine(line);
+    let result = line;
+    for (let i = tags.length - 1; i >= 0; i--) {
+      if (tags[i].name === tagName) {
+        result = result.substring(0, tags[i].start) + result.substring(tags[i].end);
+      }
+    }
+    return result;
+  }
+
+  function insertStyleTagIntoLine(line, tagText, kc) {
+    const firstTag = line.match(/^\[([^\]]+)\]/);
+    const isDialog = firstTag && kc.includes(firstTag[1]);
+    if (isDialog) {
+      let pos = 0;
+      while (pos < line.length) {
+        const m = line.substring(pos).match(/^\[[^\]]+\]/);
+        if (!m) break;
+        pos += m[0].length;
+      }
+      return line.substring(0, pos) + tagText + line.substring(pos);
+    }
+    return tagText + line;
+  }
+
+  function commitRange(newText, beforeStart, realEnd) {
+    ta.value = ta.value.substring(0, beforeStart) + newText + ta.value.substring(realEnd);
+    ta.selectionStart = ta.selectionEnd = beforeStart + newText.length;
+    popupCooldown = true;
+    setTimeout(() => { popupCooldown = false; }, 200);
+    hideFloatStylePopup();
+    ta.dispatchEvent(new Event("input", { bubbles: true }));
+    ta.focus();
+  }
+
+  function mapRows(transform) {
+    if (!lastSelection) return;
+    const { beforeStart, realEnd } = selectionRowRange();
+    const middle = ta.value.substring(beforeStart, realEnd);
+    const newText = middle.split("\n").map(line => {
+      const trimmed = line.trim();
+      if (!trimmed) return line;
+      if (CMD_LINE_RE.test(trimmed)) return line;
+      return transform(line);
+    }).join("\n");
+    commitRange(newText, beforeStart, realEnd);
+  }
+
+  function applyLineLevelTag(tagName, kind) {
+    const kc = knownChars();
+    mapRows(line => insertStyleTagIntoLine(removeTagsByKind(line, kind), `[${tagName}]`, kc));
+  }
+
+  function toggleLineLevelTag(tagName) {
+    const kc = knownChars();
+    mapRows(line => {
+      const tags = extractStyleTagsFromLine(line);
+      return tags.some(t => t.name === tagName)
+        ? removeSpecificTag(line, tagName)
+        : insertStyleTagIntoLine(line, `[${tagName}]`, kc);
+    });
+  }
+
+  function clearAllLineLevelStyles() {
+    mapRows(line => removeTagsByKind(line, "all"));
+  }
+
+  // ---- 渲染 ----
+  function appendSection(label, options, activeSet, onClick) {
+    const lab = document.createElement("div");
+    lab.className = "fsp-section-label";
+    lab.textContent = label;
+    popup.appendChild(lab);
+    const grid = document.createElement("div");
+    grid.className = "fsp-buttons";
+    for (const name of options) {
+      const btn = document.createElement("button");
+      btn.className = "fsp-btn" + (activeSet.has(name) ? " active" : "");
+      btn.textContent = name;
+      btn.addEventListener("mousedown", e => { e.preventDefault(); onClick(name); });
+      grid.appendChild(btn);
+    }
+    popup.appendChild(grid);
+  }
+
+  function showFloatStylePopup(selInfo) {
+    lastSelection = selInfo;
+    popup.innerHTML = "";
+    popup.style.display = "block";
+
+    const info = document.createElement("div");
+    info.className = "fsp-mode-info";
+    info.innerHTML = "📋 行級樣式 · 套用會<strong>取代</strong>同類舊樣式";
+    popup.appendChild(info);
+
+    const status = getCurrentStylesInSelection();
+    appendSection("🎨 字體", FONT_TAG_NAMES, status.fonts, (n) => applyLineLevelTag(n, "font"));
+    appendSection("📏 大小", SIZE_TAG_NAMES, status.sizes, (n) => applyLineLevelTag(n, "size"));
+    appendSection("💪 粗斜(切換)", EMPHASIS_TAG_NAMES, status.emphasis, (n) => toggleLineLevelTag(n));
+
+    const clearBtn = document.createElement("button");
+    clearBtn.className = "fsp-btn clear-btn";
+    clearBtn.textContent = "✕ 清除所有樣式";
+    clearBtn.addEventListener("mousedown", e => { e.preventDefault(); clearAllLineLevelStyles(); });
+    popup.appendChild(clearBtn);
+
+    positionFloatPopupAtSelection();
+  }
+
+  function positionFloatPopupAtSelection() {
+    let r = null;
+    try { r = window.ScriptEditor && window.ScriptEditor.caretRect(); } catch (e) {}
+    popup.style.position = "fixed";
+    if (!r) {
+      const tr = ta.getBoundingClientRect();
+      r = { top: tr.top + 20, left: tr.left + 20, lineHeight: 18 };
+    }
+    popup.style.visibility = "hidden";
+    const pr = popup.getBoundingClientRect();
+    let top = r.top + r.lineHeight + 6;
+    let left = r.left;
+    if (top + pr.height > window.innerHeight - 8) top = Math.max(8, r.top - pr.height - 6);
+    if (left + pr.width > window.innerWidth - 8) left = window.innerWidth - pr.width - 8;
+    popup.style.top = Math.max(8, top) + "px";
+    popup.style.left = Math.max(8, left) + "px";
+    popup.style.visibility = "visible";
+  }
+
+  function hideFloatStylePopup() {
+    popup.style.display = "none";
+    lastSelection = null;
+  }
+
+  // 點 popup 以外處 → 關閉
+  document.addEventListener("mousedown", (e) => {
+    if (popup.style.display === "none") return;
+    if (popup.contains(e.target) || e.target === ta) return;
+    hideFloatStylePopup();
+  });
+})();
+
+// ============================================================
+//  立繪取景器(Y 軸 + 縮放,全表情共用)
+// ============================================================
+const PortraitCropper = (function () {
+  let editingCharId = null;
+  const comparing = new Set();
+  let modal, stage, container, ySlider, scaleSlider, yVal, scaleVal, statusEl;
+  let nameTitle, editingNameEl, compareListEl;
+  let dragging = false, dragStartY = 0, dragStartYVal = 0;
+  let inited = false;
+
+  function init() {
+    if (inited) return;
+    modal = document.getElementById("portraitCropperModal");
+    if (!modal) return;
+    stage = document.getElementById("cropperStage");
+    container = document.getElementById("cropperFigureContainer");
+    ySlider = document.getElementById("cropperYSlider");
+    scaleSlider = document.getElementById("cropperScaleSlider");
+    yVal = document.getElementById("cropperYVal");
+    scaleVal = document.getElementById("cropperScaleVal");
+    statusEl = document.getElementById("cropperStatus");
+    nameTitle = document.getElementById("cropperCharName");
+    editingNameEl = document.getElementById("cropperEditingName");
+    compareListEl = document.getElementById("cropperCompareList");
+
+    document.getElementById("cropperClose").addEventListener("click", close);
+    document.getElementById("cropperReset").addEventListener("click", reset);
+    document.getElementById("cropperSave").addEventListener("click", save);
+    modal.addEventListener("click", (e) => { if (e.target === modal) close(); });
+
+    ySlider.addEventListener("input", onSliderChange);
+    scaleSlider.addEventListener("input", onSliderChange);
+
+    stage.addEventListener("mousedown", onDragStart);
+    stage.addEventListener("touchstart", onDragStart, { passive: false });
+    document.addEventListener("mousemove", onDragMove);
+    document.addEventListener("touchmove", onDragMove, { passive: true });
+    document.addEventListener("mouseup", onDragEnd);
+    document.addEventListener("touchend", onDragEnd);
+    inited = true;
+  }
+
+  function open(charId) {
+    if (!inited) init();
+    if (!modal) return;
+    editingCharId = charId;
+    comparing.clear();
+    const c = getCurrentChar();
+    if (!c) return;
+    nameTitle.textContent = c.name;
+    editingNameEl.textContent = c.name;
+    state.characters.filter(x => x.id !== charId).slice(0, 2)
+      .forEach(x => comparing.add(x.id));
+    renderCompareList();
+    render();
+    modal.classList.add("show");
+  }
+
+  function close() {
+    if (modal) modal.classList.remove("show");
+    editingCharId = null;
+  }
+
+  function getCurrentChar() {
+    return state.characters.find(c => c.id === editingCharId);
+  }
+
+  function onSliderChange() {
+    const c = getCurrentChar();
+    if (!c) return;
+    c.portraitY = parseInt(ySlider.value, 10);
+    c.portraitScale = parseInt(scaleSlider.value, 10);
+    render();
+  }
+
+  function onDragStart(e) {
+    if (!editingCharId) return;
+    dragging = true;
+    dragStartY = e.touches ? e.touches[0].clientY : e.clientY;
+    dragStartYVal = getCurrentChar().portraitY;
+    if (e.cancelable) e.preventDefault();
+  }
+
+  function onDragMove(e) {
+    if (!dragging || !editingCharId) return;
+    const rect = stage.getBoundingClientRect();
+    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+    const dyPct = ((clientY - dragStartY) / rect.height) * 100;
+    const c = getCurrentChar();
+    c.portraitY = Math.max(-50, Math.min(50, Math.round(dragStartYVal + dyPct)));
+    render();
+  }
+
+  function onDragEnd() { dragging = false; }
+
+  function getCharPortraitURL(char) {
+    if (!char.portraits) return null;
+    for (const k of Object.keys(char.portraits)) {
+      if (char.portraits[k]) return char.portraits[k];
+    }
+    return null;
+  }
+
+  function buildFigure(char, isMain, leftPct) {
+    const wrap = document.createElement("div");
+    wrap.className = "cropper-fig " + (isMain ? "is-main" : "is-compare");
+    const baseW = isMain ? 30 : 22;
+    wrap.style.width = baseW + "%";
+    wrap.style.left = `calc(${leftPct}% - ${baseW / 2}%)`;
+    // 固定高度 100%,用 transform 縮放(避免 object-fit:contain 寬度受限時 height% 無效)
+    wrap.style.height = "100%";
+    wrap.style.bottom = (-char.portraitY) + "%";
+    wrap.style.transform = `scale(${char.portraitScale / 100})`;
+    wrap.style.transformOrigin = "bottom center";
+
+    const tag = document.createElement("div");
+    tag.className = "cropper-fig-tag";
+    tag.style.color = char.color;
+    tag.textContent = char.name + (isMain ? " · 編輯中" : "");
+    wrap.appendChild(tag);
+
+    const url = getCharPortraitURL(char);
+    if (url) {
+      const img = document.createElement("img");
+      img.src = url;
+      img.alt = char.name;
+      wrap.appendChild(img);
+    } else {
+      const ph = document.createElement("div");
+      ph.style.cssText =
+        "width:100%;height:100%;border-radius:8px 8px 0 0;opacity:.6;background:" + char.color;
+      wrap.appendChild(ph);
+    }
+    return wrap;
+  }
+
+  function render() {
+    if (!editingCharId) return;
+    container.innerHTML = "";
+    const ed = getCurrentChar();
+    if (!ed) return;
+    container.appendChild(buildFigure(ed, true, 50));
+    [...comparing]
+      .map(id => state.characters.find(c => c.id === id))
+      .filter(Boolean)
+      .forEach((c, i) => {
+        const isLeft = i % 2 === 0;
+        const offset = Math.floor(i / 2) + 1;
+        const leftPct = isLeft ? 50 - offset * 18 : 50 + offset * 18;
+        container.appendChild(buildFigure(c, false, leftPct));
+      });
+    ySlider.value = ed.portraitY;
+    scaleSlider.value = ed.portraitScale;
+    yVal.textContent = ed.portraitY + "%";
+    scaleVal.textContent = ed.portraitScale + "%";
+    statusEl.innerHTML =
+      `Y 位置 <code>${ed.portraitY}%</code> · 縮放 <code>${ed.portraitScale}%</code>`;
+  }
+
+  function renderCompareList() {
+    compareListEl.innerHTML = "";
+    state.characters.filter(c => c.id !== editingCharId).forEach(c => {
+      const item = document.createElement("label");
+      item.className = "cropper-compare-item";
+      item.innerHTML =
+        `<input type="checkbox" ${comparing.has(c.id) ? "checked" : ""}>` +
+        `<span class="cropper-color-dot" style="background:${c.color}"></span>` +
+        `<span>${escHtml(c.name)}</span>` +
+        `<span class="cropper-compare-info">Y${c.portraitY} · ${c.portraitScale}%</span>`;
+      item.querySelector("input").addEventListener("change", (e) => {
+        if (e.target.checked) comparing.add(c.id);
+        else comparing.delete(c.id);
+        render();
+      });
+      compareListEl.appendChild(item);
+    });
+  }
+
+  function reset() {
+    const c = getCurrentChar();
+    if (!c) return;
+    c.portraitY = 0;
+    c.portraitScale = 100;
+    render();
+  }
+
+  function save() {
+    const c = getCurrentChar();
+    if (!c) return;
+    saveToStorage();
+    reparseAndRender(false);
+    if (typeof renderCharList === "function") renderCharList();
+    statusEl.innerHTML =
+      `✓ 已儲存 · Y <code>${c.portraitY}%</code> 縮放 <code>${c.portraitScale}%</code>`;
+    setTimeout(() => {
+      if (getCurrentChar() === c) {
+        statusEl.innerHTML =
+          `Y 位置 <code>${c.portraitY}%</code> · 縮放 <code>${c.portraitScale}%</code>`;
+      }
+    }, 2000);
+  }
+
+  return { init, open, close };
+})();
+window.PortraitCropper = PortraitCropper;
+PortraitCropper.init();

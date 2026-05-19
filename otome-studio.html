@@ -4,9 +4,15 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>乙女遊戲模擬器 · Otome Studio</title>
+<!-- Google Fonts: 中文 / 日文 混排 -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;700&family=Ma+Shan+Zheng&family=Special+Elite&family=Nunito:wght@400;700&family=Cinzel:wght@400;700&family=UnifrakturCook:wght@700&family=Liu+Jian+Mao+Cao&family=Cormorant+Garamond:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet">
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&family=Noto+Serif+TC:wght@400;500;700&family=Noto+Sans+JP:wght@400;500;700;900&family=Noto+Serif+JP:wght@400;500;700&family=Klee+One:wght@400;600&family=Zen+Maru+Gothic:wght@400;500;700&family=DotGothic16&display=swap" rel="stylesheet">
+
+<!-- Justfont 粉圓體(免費繁中) -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/justfont/open-huninn-font@2.1/font.css">
+
 <link rel="stylesheet" href="otome-studio.css">
 </head>
 <body>
@@ -96,7 +102,6 @@
           </div>
           <button class="snippet-btn" data-snippet="choices">📝 選項</button>
           <button class="snippet-btn" data-snippet="light">💡 光線</button>
-          <button class="snippet-btn" data-snippet="unknown">❔ 神秘人</button>
         </div>
         <button class="syntax-help-btn" id="btnSyntaxHelp">⌨ 語法說明</button>
       </div>
@@ -165,6 +170,14 @@
       </div>
 
       <div class="tab-panel active" id="tab-chars" data-tab="chars">
+        <div class="upload-hint">
+          💡 立繪建議規格:
+          <ul>
+            <li>透明背景 PNG</li>
+            <li>人物滿版約 800×1600(直幅)</li>
+            <li>上傳後用每張卡片的「📐 取景」調整位置與縮放</li>
+          </ul>
+        </div>
         <div class="char-list" id="charList"></div>
         <button class="add-card-btn" id="addCharBtn" style="margin-top:12px;">+ 新增角色</button>
       </div>
@@ -199,6 +212,16 @@
       <button class="modal-close" id="styleModalClose" aria-label="關閉">×</button>
     </div>
     <div class="modal-body">
+
+      <!-- Tab 切換 -->
+      <div class="style-tabs">
+        <button class="style-tab active" data-tab="dialog">對話框外觀</button>
+        <button class="style-tab" data-tab="fonts">字體預覽</button>
+        <button class="style-tab" data-tab="defaults">全域預設</button>
+      </div>
+
+      <!-- Tab 1: 對話框外觀(既有內容) -->
+      <div class="style-panel active" data-tab="dialog">
       <div class="style-section">
         <div class="style-label">介面主題</div>
         <div class="theme-switcher">
@@ -290,6 +313,84 @@
           修改會即時反映在預覽、截圖與錄影上;設定會自動儲存。
         </div>
       </div>
+      </div>
+
+      <!-- Tab 2: 字體預覽(新增) -->
+      <div class="style-panel" data-tab="fonts">
+        <div class="font-preview-intro">
+          劇本中可用 <code>[字體名]</code> 套用單句樣式。<br>
+          例如 <code>我[辰宇落雁]:這該怎麼辦?</code> 顯示為辰宇落雁手寫體。
+        </div>
+        <div class="font-preview-list" id="fontPreviewList">
+          <!-- JS 動態填入 -->
+        </div>
+      </div>
+
+      <!-- Tab 3: 全域預設樣式 -->
+      <div class="style-panel" data-tab="defaults">
+        <div class="defaults-section">
+          <h3>🌐 全域預設樣式</h3>
+          <p class="defaults-hint">沒有寫樣式 tag 的行會自動套用以下預設。行內自己寫的樣式優先。</p>
+
+          <div class="default-row">
+            <label>旁白</label>
+            <select id="defNarrationFont">
+              <option value="">(無)</option>
+              <option value="luoyan">辰宇落雁</option>
+              <option value="serif">明體</option>
+              <option value="sans">黑體</option>
+              <option value="round">粉圓</option>
+              <option value="iansui">芫荽</option>
+              <option value="marker">麥克黑</option>
+              <option value="pixel">點陣</option>
+            </select>
+            <select id="defNarrationSize">
+              <option value="">標準</option>
+              <option value="large">大</option>
+              <option value="small">小</option>
+            </select>
+          </div>
+
+          <div class="default-row">
+            <label>內心話</label>
+            <select id="defInnerFont">
+              <option value="">(無)</option>
+              <option value="luoyan">辰宇落雁</option>
+              <option value="serif">明體</option>
+              <option value="sans">黑體</option>
+              <option value="round">粉圓</option>
+              <option value="iansui">芫荽</option>
+              <option value="marker">麥克黑</option>
+              <option value="pixel">點陣</option>
+            </select>
+            <select id="defInnerSize">
+              <option value="">標準</option>
+              <option value="large">大</option>
+              <option value="small">小</option>
+            </select>
+          </div>
+
+          <div class="default-row">
+            <label>對話</label>
+            <select id="defDialogFont">
+              <option value="">(無)</option>
+              <option value="luoyan">辰宇落雁</option>
+              <option value="serif">明體</option>
+              <option value="sans">黑體</option>
+              <option value="round">粉圓</option>
+              <option value="iansui">芫荽</option>
+              <option value="marker">麥克黑</option>
+              <option value="pixel">點陣</option>
+            </select>
+            <select id="defDialogSize">
+              <option value="">標準</option>
+              <option value="large">大</option>
+              <option value="small">小</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
     </div>
     <div class="modal-footer">
       <button class="btn btn-primary" id="styleModalDone">完成</button>
@@ -299,56 +400,206 @@
 
 <!-- ========== Syntax Help Modal ========== -->
 <div class="modal-backdrop" id="syntaxModal">
-  <div class="modal" role="dialog" aria-modal="true" style="max-width: 600px;">
+  <div class="modal" role="dialog" aria-modal="true" style="max-width: 720px;">
     <div class="modal-header">
-      <div class="modal-title">⌨ 語法說明</div>
+      <div class="modal-title">📖 語法說明</div>
       <button class="modal-close" id="syntaxModalClose" aria-label="關閉">×</button>
     </div>
     <div class="modal-body syntax-modal-body">
 
-      <div class="syntax-section">
-        <div class="syntax-section-title">▍對話</div>
-        <div class="syntax-row"><code>夕陽灑進來。</code><span>場景旁白 — 沒有冒號的純文字（灰字、不顯示說話者）</span></div>
-        <div class="syntax-row"><code>（這該怎麼辦？）</code><span>內心獨白 — 整行被括號包起來（自動去括號，視覺與旁白相同）</span></div>
-        <div class="syntax-row"><code>我：你好。</code><span>主角開口 — 顯示名字、無立繪。主角名可在「角色管理」自訂</span></div>
-        <div class="syntax-row"><code>角色[表情][位置]：台詞</code><span>配角對話 — 位置 = 左／中／右</span></div>
-        <div class="syntax-row"><code>角色[表情][位置][?]：…</code><span>顯示 ???，或 <code>[?:別名]</code> 顯示替代名（<code>[表情]</code> 仍正常生效）</span></div>
-        <div class="syntax-row"><code>角色[…][字體:手寫]：…</code><span>單句使用特殊字體（候選清單列出可用字體）</span></div>
-        <div class="syntax-tip" style="margin-top: 8px;">
-          💡 <strong>內心獨白</strong>：整行被全形或半形括號包起來時，自動轉為旁白樣式（會去掉括號）。例如 <code>（他在看我？）</code> 顯示為「他在看我？」。
+      <!-- Tab 切換列 -->
+      <div class="syntax-tabs" role="tablist">
+        <button class="syntax-tab active" data-tab="dialog" role="tab">💬 對話</button>
+        <button class="syntax-tab" data-tab="scene" role="tab">🎬 場景</button>
+        <button class="syntax-tab" data-tab="choices" role="tab">📝 選項</button>
+        <button class="syntax-tab" data-tab="style" role="tab">🎨 樣式</button>
+        <button class="syntax-tab" data-tab="keys" role="tab">⌨ 快捷鍵</button>
+      </div>
+
+      <!-- Tab 1: 對話 -->
+      <div class="syntax-panel active" data-tab="dialog">
+        <div class="syntax-section-header">最常用</div>
+        <div class="syntax-row">
+          <code>夕陽灑進來。</code>
+          <span>場景旁白(灰字、不顯示說話者)</span>
+          <button class="syntax-try" data-insert="夕陽灑進來。&#10;">▶ 試試</button>
         </div>
-        <div class="syntax-tip" style="margin-top: 8px;">
-          💡 神秘人也要指定表情：<code>學長[神秘][?:神秘人][右]：…</code><br>
-          揭穿身份時拿掉 <code>[?:神秘人]</code> 即可：<code>學長[微笑][右]：其實我就是學長。</code>
+        <div class="syntax-row">
+          <code>(這該怎麼辦?)</code>
+          <span>內心獨白(自動去括號、與旁白同樣式)</span>
+          <button class="syntax-try" data-insert="(這該怎麼辦?)&#10;">▶ 試試</button>
+        </div>
+        <div class="syntax-row">
+          <code>我:你好。</code>
+          <span>主角開口(顯示名字、無立繪)</span>
+          <button class="syntax-try" data-insert="我:你好。&#10;">▶ 試試</button>
+        </div>
+        <div class="syntax-row">
+          <code>學長[微笑][右]:嗨。</code>
+          <span>配角對話(顯示名字 + 立繪)</span>
+          <button class="syntax-try" data-insert="學長[微笑][右]:嗨。&#10;">▶ 試試</button>
+        </div>
+
+        <details class="syntax-advanced">
+          <summary>進階用法</summary>
+          <div class="syntax-row">
+            <code>角色[表情][中]:…</code>
+            <span>位置 = 左 / 中 / 右(一個人建議用中)</span>
+          </div>
+          <div class="syntax-row">
+            <code>角色[表情][替代名]:…</code>
+            <span>用替代名顯示、隱藏真名(揭穿身份時拿掉即可)</span>
+          </div>
+          <div class="syntax-tip">
+            💡 替代名要寫在表情之後:<code>學長[神秘][神祕旅人][右]:…</code> → 對話框顯示「神祕旅人」
+          </div>
+        </details>
+      </div>
+
+      <!-- Tab 2: 場景 -->
+      <div class="syntax-panel" data-tab="scene">
+        <div class="syntax-section-header">最常用</div>
+        <div class="syntax-row">
+          <code>[bg: 教室]</code>
+          <span>切換背景</span>
+          <button class="syntax-try" data-insert="[bg: ]">▶ 試試</button>
+        </div>
+        <div class="syntax-row">
+          <code>[離場]</code>
+          <span>清空舞台所有角色</span>
+          <button class="syntax-try" data-insert="[離場]&#10;">▶ 試試</button>
+        </div>
+        <div class="syntax-row">
+          <code>[cg: 告白]</code>
+          <span>顯示 CG(保留對話框與 UI)</span>
+          <button class="syntax-try" data-insert="[cg: ]&#10;旁白文字...&#10;[cg off]&#10;">▶ 試試</button>
+        </div>
+        <div class="syntax-row">
+          <code>[cg off]</code>
+          <span>關閉 CG</span>
+          <button class="syntax-try" data-insert="[cg off]&#10;">▶ 試試</button>
+        </div>
+
+        <details class="syntax-advanced">
+          <summary>進階用法</summary>
+          <div class="syntax-row">
+            <code>[cg solo: 告白]</code>
+            <span>CG + 對話框(隱藏假 UI、適合 CG 中的對話)</span>
+          </div>
+          <div class="syntax-row">
+            <code>[cg full: 告白]</code>
+            <span>純圖模式(隱藏對話框與假 UI)</span>
+          </div>
+          <div class="syntax-section-header" style="margin-top: 14px;">光線模式</div>
+          <div class="syntax-row">
+            <code>[聚光]</code>
+            <span>只亮說話者(其他角色罩半透明黑)</span>
+          </div>
+          <div class="syntax-row">
+            <code>[同亮]</code>
+            <span>所有角色都正常亮</span>
+          </div>
+          <div class="syntax-row">
+            <code>[全暗]</code>
+            <span>所有角色都罩黑(回憶/夢境)</span>
+          </div>
+        </details>
+      </div>
+
+      <!-- Tab 3: 選項 -->
+      <div class="syntax-panel" data-tab="choices">
+        <div class="syntax-section-header">用法</div>
+        <div class="syntax-row" style="flex-direction: column; align-items: flex-start; gap: 6px;">
+          <code style="white-space: pre-line;">[選項]
+- 好啊
+- 改天吧
+- * 我...我也喜歡你</code>
+          <span style="margin-top: 4px;">三個選項;<code>*</code> 標記正解(最終答案)</span>
+          <button class="syntax-try" data-insert="[選項]&#10;- &#10;- &#10;- * &#10;">▶ 插入範本</button>
+        </div>
+
+        <div class="syntax-tip" style="margin-top: 14px;">
+          💡 選項至少要 2 個,沒有上限。<code>*</code> 可不標記(只是給作者自己看的記號)。
         </div>
       </div>
 
-      <div class="syntax-section">
-        <div class="syntax-section-title">▍場景</div>
-        <div class="syntax-row"><code>[bg: 教室]</code><span>切換背景</span></div>
-        <div class="syntax-row"><code>[cg: 告白]</code><span>顯示 CG（保留對話框與 UI）</span></div>
-        <div class="syntax-row"><code>[cg solo: 告白]</code><span>CG + 對話框（隱藏假 UI，適合 CG 中的對話）</span></div>
-        <div class="syntax-row"><code>[cg full: 告白]</code><span>純圖模式（隱藏對話框與假 UI）</span></div>
-        <div class="syntax-row"><code>[cg off]</code><span>關閉 CG，回到背景 + 立繪</span></div>
-        <div class="syntax-row"><code>[離場]</code><span>清空舞台角色</span></div>
-        <div class="syntax-row"><code>[聚光]</code> / <code>[同亮]</code> / <code>[全暗]</code><span>切換角色光線（聚光 = 只亮說話者；同亮 = 全亮；全暗 = 全部罩半透明黑）</span></div>
+      <!-- Tab 4: 樣式 -->
+      <div class="syntax-panel" data-tab="style">
+        <div class="syntax-section-header">字體</div>
+        <div class="syntax-row">
+          <code>角色[微笑][辰宇落雁]:…</code>
+          <span>單句使用辰宇落雁手寫字體</span>
+          <button class="syntax-try" data-insert="[辰宇落雁]">▶ 插入</button>
+        </div>
+        <div class="syntax-tip">
+          💡 可用字體:<code>[辰宇落雁]</code>、<code>[明體]</code>、<code>[黑體]</code>、<code>[粉圓]</code>、<code>[打字機]</code>。完整預覽見「🎨 樣式」 modal 的「字體預覽」分頁。
+        </div>
+
+        <div class="syntax-section-header" style="margin-top: 18px;">大小 / 粗 / 斜</div>
+        <div class="syntax-row">
+          <code>角色[微笑][大]:…</code>
+          <span>放大 1.3 倍</span>
+          <button class="syntax-try" data-insert="[大]">▶ 插入</button>
+        </div>
+        <div class="syntax-row">
+          <code>角色[微笑][小]:…</code>
+          <span>縮小至 0.85 倍(內心 OS 適用)</span>
+          <button class="syntax-try" data-insert="[小]">▶ 插入</button>
+        </div>
+        <div class="syntax-row">
+          <code>角色[微笑][粗]:…</code>
+          <span>粗體強調</span>
+          <button class="syntax-try" data-insert="[粗]">▶ 插入</button>
+        </div>
+        <div class="syntax-row">
+          <code>角色[微笑][斜]:…</code>
+          <span>斜體</span>
+          <button class="syntax-try" data-insert="[斜]">▶ 插入</button>
+        </div>
+
+        <div class="syntax-section-header" style="margin-top: 18px;">組合使用</div>
+        <div class="syntax-row">
+          <code>我[辰宇落雁][大]:我喜歡你!</code>
+          <span>多個樣式 tag 可同時套用</span>
+        </div>
+        <div class="syntax-row">
+          <code>[辰宇落雁](他在看我嗎?)</code>
+          <span>內心獨白也支援(tag 放最前面)</span>
+        </div>
+
+        <div class="syntax-tip" style="margin-top: 14px;">
+          💡 樣式 tag 跟其他 tag 順序不影響結果。<code>[微笑][右][辰宇落雁][大]</code> 跟 <code>[大][辰宇落雁][微笑][右]</code> 效果相同。
+        </div>
       </div>
 
-      <div class="syntax-section">
-        <div class="syntax-section-title">▍選項</div>
-        <div class="syntax-row"><code>[選項]</code> + <code>- 選項</code> + <code>- * 正解</code><span><code>*</code> 標記最終答案</span></div>
-      </div>
+      <!-- Tab 5: 快捷鍵 -->
+      <div class="syntax-panel" data-tab="keys">
+        <div class="syntax-section-header">編輯快捷鍵</div>
+        <div class="syntax-row">
+          <kbd>Tab</kbd>
+          <span>展開縮寫(bg/cg/cgs/cgf/cgoff/離場/選項/?)、補冒號、接受候選</span>
+        </div>
+        <div class="syntax-row">
+          <kbd>Enter</kbd>
+          <span>對話行尾 = 自動帶同前綴;候選清單 = 接受並停留</span>
+        </div>
+        <div class="syntax-row">
+          <kbd>↑</kbd> <kbd>↓</kbd>
+          <span>切換候選</span>
+        </div>
+        <div class="syntax-row">
+          <kbd>Esc</kbd>
+          <span>撤銷剛才的自動插入 / 關閉候選</span>
+        </div>
+        <div class="syntax-row">
+          <kbd>Ctrl</kbd>+<kbd>Backspace</kbd>
+          <span>刪掉最近的一個 [xxx]</span>
+        </div>
 
-      <div class="syntax-section">
-        <div class="syntax-section-title">▍快捷鍵</div>
-        <div class="syntax-row"><kbd>Tab</kbd><span>展開縮寫（<code>bg</code>/<code>cg</code>/<code>cgs</code>/<code>cgf</code>/<code>cgoff</code>/<code>離場</code>/<code>選項</code>/<code>?</code>），或補 <code>：</code>、接受候選並跳下一格</span></div>
-        <div class="syntax-row"><kbd>Enter</kbd><span>對話行尾 = 自動帶上同前綴開新行；候選清單 = 接受並停留</span></div>
-        <div class="syntax-row"><kbd>↑</kbd> <kbd>↓</kbd><span>切換候選</span></div>
-        <div class="syntax-row"><kbd>Esc</kbd><span>撤銷剛才的自動插入</span></div>
-        <div class="syntax-row"><kbd>Ctrl</kbd>+<kbd>Backspace</kbd><span>刪掉最近的一個 <code>[xxx]</code></span></div>
+        <div class="syntax-tip" style="margin-top: 14px;">
+          💡 邊打邊跳候選清單,照著按 <kbd>Tab</kbd> 就會自動填完整行。
+        </div>
       </div>
-
-      <div class="syntax-tip">💡 邊打邊跳候選清單，照著按 <kbd>Tab</kbd> 就會自動填完整行。</div>
 
     </div>
   </div>
@@ -461,6 +712,59 @@
 <input type="file" class="file-input" id="bgImgInput" accept="image/jpeg,image/png,image/webp">
 <input type="file" class="file-input" id="cgImgInput" accept="image/jpeg,image/png,image/webp">
 <input type="file" class="file-input" id="projectInput" accept="application/json,.json">
+
+<!-- 立繪取景器 -->
+<div class="modal-backdrop" id="portraitCropperModal">
+  <div class="modal" role="dialog" aria-modal="true" style="max-width: 760px;">
+    <div class="modal-header">
+      <div class="modal-title">📐 立繪取景 · <span id="cropperCharName">角色名</span></div>
+      <button class="modal-close" id="cropperClose" aria-label="關閉">×</button>
+    </div>
+    <div class="modal-body" style="padding: 16px 20px;">
+      <div class="cropper-stage" id="cropperStage">
+        <div class="cropper-figure-container" id="cropperFigureContainer"></div>
+        <div class="cropper-dialog-mock">
+          <div class="cropper-dialog-name" id="cropperDialogName">伊萊諾斯</div>
+          <div class="cropper-dialog-text">在這種地方睡著,不怕感冒嗎?</div>
+        </div>
+      </div>
+
+      <div class="cropper-controls">
+        <div class="cropper-block">
+          <div class="cropper-block-title"><span id="cropperEditingName">學長</span> · 取景設定</div>
+
+          <div class="cropper-slider-row">
+            <label>Y 軸位置</label>
+            <input type="range" id="cropperYSlider" min="-50" max="50" value="0" step="1">
+            <span class="cropper-val" id="cropperYVal">0%</span>
+          </div>
+
+          <div class="cropper-slider-row">
+            <label>縮放</label>
+            <input type="range" id="cropperScaleSlider" min="50" max="200" value="100" step="1">
+            <span class="cropper-val" id="cropperScaleVal">100%</span>
+          </div>
+
+          <div class="cropper-status" id="cropperStatus">
+            Y 位置 <code>0%</code> · 縮放 <code>100%</code>
+          </div>
+        </div>
+
+        <div class="cropper-block">
+          <div class="cropper-block-title">對比其他角色</div>
+          <div class="cropper-compare-list" id="cropperCompareList"></div>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn" id="cropperReset">重設</button>
+      <button class="btn btn-primary" id="cropperSave">儲存(套用所有表情)</button>
+    </div>
+  </div>
+</div>
+
+<!-- O5:反白整行 → 浮動樣式 popup -->
+<div id="floatStylePopup" class="float-style-popup" style="display:none;"></div>
 
 <!-- toast -->
 <div class="toast-container" id="toastContainer"></div>
