@@ -175,16 +175,309 @@ const EMPHASIS_TAG_NAMES = ["粗", "斜"];
 const DEFAULT_DIALOG_STYLE = { shape: "classic", color: "#0d0716", opacity: 0.88 };
 
 const DIALOG_SHAPES = [
-  { id: "classic",   name: "經典金邊", desc: "直角金邊矩形" },
-  { id: "soft",      name: "柔和圓角", desc: "大圓角、無邊框" },
-  { id: "bubble",    name: "彈出泡泡", desc: "圓潤、含小尖角" },
-  { id: "parchment", name: "羊皮紙",   desc: "紙質、不規則邊緣" },
-  { id: "minimal",   name: "極簡無框", desc: "無框、底部漸層" },
-  { id: "window",    name: "雙線窗格", desc: "上下雙線" },
+  { id: "classic", name: "經典金邊", desc: "直角金邊矩形" },
+  { id: "soft",    name: "柔和圓角", desc: "大圓角、無邊框" },
+  { id: "window",  name: "雙線窗格", desc: "上下雙線" },
 ];
+const DIALOG_SHAPE_IDS = new Set(DIALOG_SHAPES.map(s => s.id));
 
 function migrateDialogStyle(s) {
-  return { ...DEFAULT_DIALOG_STYLE, ...(s || {}) };
+  const merged = { ...DEFAULT_DIALOG_STYLE, ...(s || {}) };
+  if (!DIALOG_SHAPE_IDS.has(merged.shape)) merged.shape = "classic";
+  return merged;
+}
+
+// ============================================================
+// Batch 2:風格系統 - 6 風格 × 3 變體 = 18 個鎖定配色組合
+// ============================================================
+const STYLE_PRESETS = {
+  cyberpunk: {
+    name: "CYBERPUNK",
+    uiPreset: "cyberHud",
+    animationId: "cyberpunk",
+    variants: {
+      neonTokyo: {
+        name: "Neon Tokyo",
+        isDefault: true,
+        dialog: { shape: "classic", bgColor: "#000814", borderColor: "#00fff0", borderWidth: 1.5, cornerAccent: "#ff00ff", opacity: 0.95 },
+        speaker: { color: "#ff00ff", fontStack: 'monospace', fontSize: 16, letterSpacing: "2px", prefix: "> ", suffix: "_" },
+        dialogText: { color: "#00fff0", fontStack: 'monospace', fontSize: 14 },
+        stageBg: { base: "#0a0014", gridOverlay: "rgba(0,255,240,0.06)" },
+      },
+      bladeSunset: {
+        name: "Blade Sunset",
+        dialog: { shape: "classic", bgColor: "#0f0408", borderColor: "#ff4080", borderWidth: 1.5, cornerAccent: "#ffcc00", opacity: 0.95 },
+        speaker: { color: "#ffcc00", fontStack: 'monospace', fontSize: 16, letterSpacing: "2px", prefix: "> ", suffix: "_" },
+        dialogText: { color: "#ff4080", fontStack: 'monospace', fontSize: 14 },
+        stageBg: { base: "#1a0510", gridOverlay: "rgba(255,64,128,0.06)" },
+      },
+      matrixGreen: {
+        name: "Matrix Green",
+        dialog: { shape: "classic", bgColor: "#000400", borderColor: "#00ff44", borderWidth: 1.5, cornerAccent: "#88ff88", opacity: 0.95 },
+        speaker: { color: "#88ff88", fontStack: 'monospace', fontSize: 16, letterSpacing: "2px", prefix: "> ", suffix: "_" },
+        dialogText: { color: "#00ff44", fontStack: 'monospace', fontSize: 14 },
+        stageBg: { base: "#000a00", gridOverlay: "rgba(0,255,68,0.06)" },
+      },
+    },
+  },
+  coffeeShop: {
+    name: "COFFEE SHOP",
+    uiPreset: "cafeReceipt",
+    animationId: "coffee",
+    variants: {
+      latte: {
+        name: "Latte",
+        isDefault: true,
+        dialog: { shape: "soft", bgColor: "#f4e8d4", borderColor: "#a87850", borderWidth: 0.8, borderRadius: 20, opacity: 1 },
+        speaker: { color: "#5d4030", fontStack: '"Noto Sans TC", sans-serif', fontSize: 16, weight: 500 },
+        dialogText: { color: "#3a2818", fontStack: '"Noto Sans TC", sans-serif', fontSize: 14 },
+        stageBg: { base: "linear-gradient(135deg,#3a2818,#2a1a0a)" },
+      },
+      espresso: {
+        name: "Espresso",
+        dialog: { shape: "soft", bgColor: "#2a1810", borderColor: "#8b5a2b", borderWidth: 0.8, borderRadius: 20, opacity: 1 },
+        speaker: { color: "#d4a574", fontStack: '"Noto Sans TC", sans-serif', fontSize: 16, weight: 500 },
+        dialogText: { color: "#f0e0c8", fontStack: '"Noto Sans TC", sans-serif', fontSize: 14 },
+        stageBg: { base: "linear-gradient(135deg,#0f0805,#1a0d05)" },
+      },
+      matcha: {
+        name: "Matcha",
+        dialog: { shape: "soft", bgColor: "#f0ead8", borderColor: "#5a7848", borderWidth: 0.8, borderRadius: 20, opacity: 1 },
+        speaker: { color: "#3a5030", fontStack: '"Noto Sans TC", sans-serif', fontSize: 16, weight: 500 },
+        dialogText: { color: "#2a3820", fontStack: '"Noto Sans TC", sans-serif', fontSize: 14 },
+        stageBg: { base: "linear-gradient(135deg,#1a2418,#0f1a0d)" },
+      },
+    },
+  },
+  loveLetter: {
+    name: "LOVE LETTER",
+    uiPreset: "novel",
+    animationId: "love",
+    variants: {
+      roseGold: {
+        name: "Rose Gold",
+        isDefault: true,
+        dialog: { shape: "window", bgColor: "#f5e6d6", borderColor: "#a83246", borderWidth: 2, innerBorderColor: "#a83246", innerBorderOpacity: 0.5, cornerDots: true, opacity: 1 },
+        speaker: { color: "#a83246", fontStack: '"Cormorant Garamond","Noto Serif TC",serif', fontSize: 20, fontStyle: "italic", weight: 500 },
+        dialogText: { color: "#5d3030", fontStack: '"ChenYuluoyan","Klee One",cursive', fontSize: 17 },
+        stageBg: { base: "radial-gradient(ellipse at center,#4a2828 0%,#2a1818 80%)" },
+      },
+      midnightInk: {
+        name: "Midnight Ink",
+        dialog: { shape: "window", bgColor: "#f5eecf", borderColor: "#1a2a5a", borderWidth: 2, innerBorderColor: "#1a2a5a", innerBorderOpacity: 0.5, cornerDots: true, opacity: 1 },
+        speaker: { color: "#1a2a5a", fontStack: '"Cormorant Garamond","Noto Serif TC",serif', fontSize: 20, fontStyle: "italic", weight: 500 },
+        dialogText: { color: "#2a2a3a", fontStack: '"ChenYuluoyan","Klee One",cursive', fontSize: 17 },
+        stageBg: { base: "radial-gradient(ellipse at center,#1a1a3a 0%,#0a0a18 80%)" },
+      },
+      bloodstain: {
+        name: "Bloodstain",
+        dialog: { shape: "window", bgColor: "#e8e0d8", borderColor: "#6a1010", borderWidth: 2, innerBorderColor: "#6a1010", innerBorderOpacity: 0.5, cornerDots: true, opacity: 1 },
+        speaker: { color: "#6a1010", fontStack: '"Cormorant Garamond","Noto Serif TC",serif', fontSize: 20, fontStyle: "italic", weight: 500 },
+        dialogText: { color: "#3a1010", fontStack: '"ChenYuluoyan","Klee One",cursive', fontSize: 17 },
+        stageBg: { base: "radial-gradient(ellipse at center,#3a1818 0%,#180808 80%)" },
+      },
+    },
+  },
+  dailyMessage: {
+    name: "DAILY MESSAGE",
+    uiPreset: "phoneStatus",
+    animationId: "daily",
+    variants: {
+      imessageLight: {
+        name: "iMessage Light",
+        isDefault: true,
+        dialog: { shape: "soft", bgColor: "#ffffff", borderColor: "#c8d0dc", borderWidth: 0.6, borderRadius: 24, opacity: 1, showMeta: true },
+        speaker: { color: "#5a7090", fontStack: '"jf-openhuninn-2.1","Zen Maru Gothic",sans-serif', fontSize: 15, weight: 500 },
+        dialogText: { color: "#2a3548", fontStack: '"jf-openhuninn-2.1","Zen Maru Gothic",sans-serif', fontSize: 14 },
+        stageBg: { base: "#e8e8eb" },
+        meta: { timeColor: "#a8b0c0", readColor: "#7090b0" },
+      },
+      imessageDark: {
+        name: "iMessage Dark",
+        dialog: { shape: "soft", bgColor: "#1c1c1e", borderColor: "#3a3a3c", borderWidth: 0.6, borderRadius: 24, opacity: 1, showMeta: true },
+        speaker: { color: "#7090b0", fontStack: '"jf-openhuninn-2.1","Zen Maru Gothic",sans-serif', fontSize: 15, weight: 500 },
+        dialogText: { color: "#e8e8ea", fontStack: '"jf-openhuninn-2.1","Zen Maru Gothic",sans-serif', fontSize: 14 },
+        stageBg: { base: "#000000" },
+        meta: { timeColor: "#5a6a80", readColor: "#5a7090" },
+      },
+      bubblePink: {
+        name: "Bubble Pink",
+        dialog: { shape: "soft", bgColor: "#ffffff", borderColor: "#f09cb4", borderWidth: 0.8, borderRadius: 24, opacity: 1, showMeta: true },
+        speaker: { color: "#d05080", fontStack: '"jf-openhuninn-2.1","Zen Maru Gothic",sans-serif', fontSize: 15, weight: 500 },
+        dialogText: { color: "#502030", fontStack: '"jf-openhuninn-2.1","Zen Maru Gothic",sans-serif', fontSize: 14 },
+        stageBg: { base: "#fce8f0" },
+        meta: { timeColor: "#e8a0b8", readColor: "#e87090" },
+      },
+    },
+  },
+  gamer: {
+    name: "GAMER",
+    uiPreset: "rpgHud",
+    animationId: "gamer",
+    variants: {
+      classicRpg: {
+        name: "Classic RPG",
+        isDefault: true,
+        dialog: { shape: "classic", bgColor: "#0a1a0a", borderColor: "#00ff7f", borderWidth: 2, innerBorderColor: "#ffcc33", opacity: 0.96 },
+        speaker: { color: "#00ff7f", bgHighlight: "rgba(0,255,127,0.15)", fontStack: '"Noto Sans TC", sans-serif', fontSize: 16, weight: 900, letterSpacing: "1px" },
+        dialogText: { color: "#e8ffe8", fontStack: '"Noto Sans TC", sans-serif', fontSize: 15, weight: 900 },
+        stageBg: { base: "radial-gradient(ellipse at center,#1a4a1a 0%,#0a1a0a 80%)" },
+      },
+      bloodKnight: {
+        name: "Blood Knight",
+        dialog: { shape: "classic", bgColor: "#1a0a0a", borderColor: "#cc2244", borderWidth: 2, innerBorderColor: "#cccccc", opacity: 0.96 },
+        speaker: { color: "#cc2244", bgHighlight: "rgba(204,34,68,0.15)", fontStack: '"Noto Sans TC", sans-serif', fontSize: 16, weight: 900, letterSpacing: "1px" },
+        dialogText: { color: "#ffd8d8", fontStack: '"Noto Sans TC", sans-serif', fontSize: 15, weight: 900 },
+        stageBg: { base: "radial-gradient(ellipse at center,#4a1a1a 0%,#1a0a0a 80%)" },
+      },
+      arcaneBlue: {
+        name: "Arcane Blue",
+        dialog: { shape: "classic", bgColor: "#0a0a2a", borderColor: "#4488ff", borderWidth: 2, innerBorderColor: "#aa88ff", opacity: 0.96 },
+        speaker: { color: "#4488ff", bgHighlight: "rgba(68,136,255,0.15)", fontStack: '"Noto Sans TC", sans-serif', fontSize: 16, weight: 900, letterSpacing: "1px" },
+        dialogText: { color: "#d8e0ff", fontStack: '"Noto Sans TC", sans-serif', fontSize: 15, weight: 900 },
+        stageBg: { base: "radial-gradient(ellipse at center,#1a1a4a 0%,#0a0a2a 80%)" },
+      },
+    },
+  },
+  horrorMovie: {
+    name: "HORROR MOVIE",
+    uiPreset: "distortedHud",
+    animationId: "horror",
+    variants: {
+      crimsonStain: {
+        name: "Crimson Stain",
+        isDefault: true,
+        dialog: { shape: "window", bgColor: "#0a0000", borderColor: "#a02030", borderWidth: 1.5, innerBorderColor: "#a02030", innerBorderOpacity: 0.7, innerBorderOffset: 2, opacity: 0.95 },
+        speaker: { color: "#e8e8e0", shadowColor: "#a02030", fontStack: '"Noto Serif TC", serif', fontSize: 18, weight: 500 },
+        dialogText: { color: "#e8e8e0", fontStack: '"Noto Serif TC", serif', fontSize: 16, letterSpacing: "0.5px" },
+        stageBg: { base: "#050000", mistColor: "rgba(160,0,0,0.4)" },
+      },
+      abyss: {
+        name: "Abyss",
+        dialog: { shape: "window", bgColor: "#0a0518", borderColor: "#5a1a8a", borderWidth: 1.5, innerBorderColor: "#5a1a8a", innerBorderOpacity: 0.7, innerBorderOffset: 2, opacity: 0.95 },
+        speaker: { color: "#d8d0e0", shadowColor: "#5a1a8a", fontStack: '"Noto Serif TC", serif', fontSize: 18, weight: 500 },
+        dialogText: { color: "#d8d0e0", fontStack: '"Noto Serif TC", serif', fontSize: 16, letterSpacing: "0.5px" },
+        stageBg: { base: "#080418", mistColor: "rgba(90,26,138,0.4)" },
+      },
+      ghostPale: {
+        name: "Ghost Pale",
+        dialog: { shape: "window", bgColor: "#0a0a0a", borderColor: "#a8a8a8", borderWidth: 1.5, innerBorderColor: "#a8a8a8", innerBorderOpacity: 0.7, innerBorderOffset: 2, opacity: 0.95 },
+        speaker: { color: "#ffffff", shadowColor: "#888888", fontStack: '"Noto Serif TC", serif', fontSize: 18, weight: 500 },
+        dialogText: { color: "#cccccc", fontStack: '"Noto Serif TC", serif', fontSize: 16, letterSpacing: "0.5px" },
+        stageBg: { base: "#000000", mistColor: "rgba(168,168,168,0.2)" },
+      },
+    },
+  },
+};
+
+function getStylePreset(styleId, variantId) {
+  const style = STYLE_PRESETS[styleId];
+  if (!style) return null;
+  const v = style.variants[variantId] || Object.values(style.variants).find(x => x.isDefault) || Object.values(style.variants)[0];
+  return { style, variant: v };
+}
+function getDefaultVariantId(styleId) {
+  const style = STYLE_PRESETS[styleId];
+  if (!style) return null;
+  for (const [id, v] of Object.entries(style.variants)) {
+    if (v.isDefault) return id;
+  }
+  return Object.keys(style.variants)[0];
+}
+
+// UI 配色預設(隨風格綁定)
+const UI_PRESETS = {
+  cyberHud: {
+    name: "Cyber HUD",
+    elements: { chapter: true, love: true, autoskip: true },
+    chapter: { color: "#ff00ff", fontStack: "monospace", fontSize: 12, letterSpacing: "2px", prefix: "> ", suffix: ".exe" },
+    love: { iconColor: "#ff00ff", barFg: "linear-gradient(90deg,#ff00ff,#00fff0)", barBg: "#000", barBorder: "#00fff0", labelColor: "#00fff0", icon: "LV" },
+    autoskip: { skipBg: "#000", skipBorder: "#ff00ff", skipColor: "#ff00ff", autoBg: "rgba(0,255,240,0.2)", autoBorder: "#00fff0", autoColor: "#00fff0", fontStack: "monospace" },
+  },
+  cafeReceipt: {
+    name: "Cafe Receipt",
+    elements: { chapter: true, love: true, autoskip: false },
+    chapter: { color: "#f0e0c8", fontStack: "monospace", fontSize: 13, letterSpacing: "2px", prefix: "❀ ", suffix: " ❀" },
+    love: { iconColor: "#d4a878", barFg: "#8b5a2b", barBg: "rgba(255,255,255,0.1)", labelColor: "#f0e0c8", icon: "♡" },
+  },
+  novel: {
+    name: "Novel",
+    elements: { chapter: true, love: true, autoskip: false },
+    chapter: { color: "#f0e0c8", fontStack: '"Cormorant Garamond",serif', fontStyle: "italic", fontSize: 14, letterSpacing: "1px", prefix: "❀ ", suffix: " ❀" },
+    love: { iconColor: "#f0a8c0", barFg: "linear-gradient(90deg,#a83246,#f0a8c0)", barBg: "rgba(255,255,255,0.2)", labelColor: "#f0a8c0", icon: "♡" },
+  },
+  phoneStatus: {
+    name: "Phone Status",
+    elements: { chapter: true, love: true, autoskip: false },
+    chapter: { color: "#5a7090", fontStack: '"jf-openhuninn-2.1",sans-serif', fontSize: 13, weight: 500 },
+    love: { iconColor: "#f09cb4", barFg: "#f09cb4", barBg: "rgba(90,112,144,0.2)", labelColor: "#5a7090", icon: "♡" },
+  },
+  rpgHud: {
+    name: "RPG HUD",
+    elements: { chapter: true, love: false, autoskip: true },
+    chapter: { color: "#ffcc33", fontStack: '"Noto Sans TC",sans-serif', fontSize: 14, weight: 900, letterSpacing: "1px" },
+    autoskip: { skipBg: "#0a1a0a", skipBorder: "#00ff7f", skipColor: "#00ff7f", autoBg: "#00ff7f", autoBorder: "#00ff7f", autoColor: "#0a1a0a", fontStack: "monospace", weight: 900 },
+  },
+  distortedHud: {
+    name: "Distorted HUD",
+    elements: { chapter: true, love: true, autoskip: false },
+    chapter: { color: "#e8e8e0", shadowColor: "#a02030", fontStack: '"Noto Serif TC",serif', fontSize: 14, letterSpacing: "1px" },
+    love: { iconColor: "#a02030", barFg: "#a02030", barBg: "rgba(255,255,255,0.1)", labelColor: "#a02030", icon: "♡" },
+  },
+};
+
+const ANIMATION_PRESETS = {
+  cyberpunk: { name: "Cyberpunk", enterClass: "anim-cyber-enter", persistClass: "anim-cyber-persist", cursorBlink: true },
+  coffee:    { name: "Coffee",    enterClass: "anim-coffee-enter", persistClass: null },
+  love:      { name: "Love",      enterClass: "anim-love-enter",   persistClass: null },
+  daily:     { name: "Daily",     enterClass: "anim-daily-enter",  persistClass: null },
+  gamer:     { name: "Gamer",     enterClass: "anim-gamer-enter",  persistClass: "anim-gamer-persist" },
+  horror:    { name: "Horror",    enterClass: null,                persistClass: "anim-horror-persist", nameDisplace: true },
+};
+
+// 滿值/歸零特效定義(skeleton — Batch 3 完整實作)
+const LOVE_EXTREME_EFFECTS = {
+  cyberpunk:    { full: { type: "screenFlash", color: "#00fff0", overlayText: "OVERLOAD",        textColor: "#ff00ff" }, empty: { type: "noiseStatic", duration: 2000, overlayText: "CONNECTION LOST", textColor: "#ff4080" } },
+  coffeeShop:   { full: { type: "steam",       overlayText: "正好溫熱",   textColor: "#f0e0c8" },                         empty: { type: "emptyCup",   overlayText: "冷掉了...",         textColor: "#888888" } },
+  loveLetter:   { full: { type: "petalsFall",  color: "#f0a8c0", count: 30 },                                              empty: { type: "inkBurn",     color: "#3a1a1a" } },
+  dailyMessage: { full: { type: "heartsBurst", count: 8 },                                                                  empty: { type: "blockedText", overlayText: "對方已封鎖你" } },
+  gamer:        { full: { type: "levelUp",     overlayText: "LEVEL UP!",   textColor: "#ffcc33" },                          empty: { type: "gameOver",    overlayText: "GAME OVER",         textColor: "#cc2244" } },
+  horrorMovie:  { full: { type: "heartbeatFast", duration: 2000 },                                                         empty: { type: "flatline",    overlayText: "FLATLINE",          textColor: "#a02030" } },
+};
+function triggerLoveExtremeEffect(type, charName) {
+  const styleId = state.style && state.style.preset;
+  const set = LOVE_EXTREME_EFFECTS[styleId];
+  if (!set) return;
+  const effect = set[type];
+  if (!effect) return;
+  const stage = document.getElementById("stage");
+  if (!stage) return;
+  // 同類特效若已存在,先清掉避免重疊
+  stage.querySelectorAll(".love-extreme-effect").forEach(n => n.remove());
+
+  const overlay = document.createElement("div");
+  overlay.className = `love-extreme-effect effect-${effect.type}`;
+  if (effect.overlayText) {
+    const span = document.createElement("span");
+    span.style.color = effect.textColor || "#ffffff";
+    span.textContent = effect.overlayText;
+    overlay.appendChild(span);
+  }
+  stage.appendChild(overlay);
+  // petalsFall:動態產生花瓣
+  if (effect.type === "petalsFall") {
+    const cnt = effect.count || 30;
+    for (let i = 0; i < cnt; i++) {
+      const p = document.createElement("span");
+      p.className = "petal";
+      p.style.background = effect.color || "#f0a8c0";
+      p.style.left = `${Math.random() * 100}%`;
+      p.style.animationDelay = `${Math.random() * 1.5}s`;
+      p.style.animationDuration = `${2 + Math.random() * 2}s`;
+      overlay.appendChild(p);
+    }
+  }
+  setTimeout(() => overlay.remove(), effect.duration || 2800);
 }
 
 const LIGHT_MODES = ["聚光", "同亮", "全暗"];
@@ -192,10 +485,35 @@ const DEFAULT_LIGHT_MODE = "聚光";
 
 const DEFAULT_GAME_UI = {
   chapter:  { enabled: false, text: "第一章 — 序幕" },
-  date:     { enabled: false, text: "Day 1 · 黃昏" },
   love:     { enabled: false, charId: null, value: 50 },
   autoSkip: { enabled: false },
 };
+function migrateStyle(s) {
+  const out = { preset: "loveLetter", variant: "roseGold", animationsEnabled: true, firstStyleSelected: false };
+  if (s && typeof s === "object") {
+    if (typeof s.preset === "string" && STYLE_PRESETS[s.preset]) out.preset = s.preset;
+    if (typeof s.variant === "string" && STYLE_PRESETS[out.preset] && STYLE_PRESETS[out.preset].variants[s.variant]) {
+      out.variant = s.variant;
+    } else {
+      out.variant = getDefaultVariantId(out.preset);
+    }
+    if (typeof s.animationsEnabled === "boolean") out.animationsEnabled = s.animationsEnabled;
+    if (typeof s.firstStyleSelected === "boolean") out.firstStyleSelected = s.firstStyleSelected;
+  }
+  return out;
+}
+
+function migrateFontSizes(f) {
+  const out = { dialog: 16, speaker: 18 };
+  if (f && typeof f === "object") {
+    const d = Number(f.dialog);
+    const s = Number(f.speaker);
+    if (Number.isFinite(d)) out.dialog = Math.max(10, Math.min(24, Math.round(d)));
+    if (Number.isFinite(s)) out.speaker = Math.max(10, Math.min(24, Math.round(s)));
+  }
+  return out;
+}
+
 function migrateGameUI(g) {
   const out = JSON.parse(JSON.stringify(DEFAULT_GAME_UI));
   for (const k of Object.keys(DEFAULT_GAME_UI)) {
@@ -248,6 +566,16 @@ const state = {
     inner:     { font: "luoyan", size: "" },
     dialog:    { font: "", size: "" },
   },
+  // Task 1.5:對話/角色名字級獨立 pt slider(10-24pt)
+  fontSizes: { dialog: 16, speaker: 18 },
+  // Batch 2:風格組合(整套配色)
+  style: { preset: "loveLetter", variant: "roseGold", animationsEnabled: true, firstStyleSelected: false },
+  // Batch 3:好感度系統 — 每個角色獨立數值
+  loveValues: {},     // { "學長": 50, ... } — runtime,由 computeStageStateAt 重算
+  loveInitial: {},    // { "學長": 50, ... } — 角色卡設的初始值
+  // Batch 4:模式 + 卡片資料
+  mode: "detail",     // "simple" | "detail"
+  simpleCards: [],    // [{ cgName, dialogs: [{ speaker, text }] }, ...]
   lightMode: DEFAULT_LIGHT_MODE,   // 全域目前模式
   // live stage state
   stage: {
@@ -399,6 +727,19 @@ function parseLine(raw, idx) {
   const lightMatch = line.match(/^\[(聚光|同亮|全暗)\]$/);
   if (lightMatch) {
     return { type: "light", idx, raw, mode: lightMatch[1] };
+  }
+
+  // 好感度命令:[好感度: +5]、[好感度: -10]、[好感度: =80]
+  //              [好感度 學長: +5]、[好感度 學長: =50]
+  const loveMatch = line.match(/^\[好感度(?:\s+([^\s:：]+))?\s*[:：]\s*([+\-=])\s*(\d+)\]$/);
+  if (loveMatch) {
+    return {
+      type: "love",
+      idx, raw,
+      targetName: loveMatch[1] ? loveMatch[1].trim() : null,
+      operator: loveMatch[2],
+      value: parseInt(loveMatch[3], 10),
+    };
   }
 
   // choices start marker
@@ -597,6 +938,11 @@ function placeCharacter(charId, emotion, position) {
 // Compute stage state up to and including line index `upToIdx`.
 function computeStageStateAt(parsedLines, upToIdx) {
   state.stage = { bg: "default", slots: { 左: null, 中: null, 右: null }, cg: null, lightMode: state.lightMode || DEFAULT_LIGHT_MODE };
+  // Batch 3:好感度重算 — 從初始值開始
+  state.loveValues = {};
+  for (const [k, v] of Object.entries(state.loveInitial || {})) {
+    state.loveValues[k] = v;
+  }
   let activeChar = null;
   for (let i = 0; i <= upToIdx && i < parsedLines.length; i++) {
     const ln = parsedLines[i];
@@ -641,6 +987,25 @@ function computeStageStateAt(parsedLines, upToIdx) {
       }
     } else if (ln.type === "narration") {
       // narration doesn't change slot occupancy or active char highlight
+    } else if (ln.type === "love") {
+      // Batch 3:套用好感度變動
+      let target = ln.targetName;
+      if (!target) {
+        // 沒指定 → 用 gameUI.love.charId 對應角色,否則第一個非主角角色
+        const u = state.gameUI && state.gameUI.love;
+        const ch = u && u.charId
+          ? state.characters.find(c => c.id === u.charId)
+          : state.characters.find(c => c.kind !== "protagonist");
+        if (ch) target = ch.name;
+      }
+      if (target) {
+        const cur = state.loveValues[target] || state.loveInitial[target] || 0;
+        let next;
+        if (ln.operator === "=") next = ln.value;
+        else if (ln.operator === "+") next = cur + ln.value;
+        else next = cur - ln.value;
+        state.loveValues[target] = Math.max(0, Math.min(100, next));
+      }
     }
   }
   return activeChar;
@@ -1667,10 +2032,17 @@ function saveToStorage() {
       gameUI: state.gameUI,
       lightMode: state.lightMode,
       styleDefaults: state.styleDefaults,
+      fontSizes: state.fontSizes,
+      style: state.style,
+      loveInitial: state.loveInitial,
+      mode: state.mode,
+      simpleCards: state.simpleCards,
     };
     localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
     updateStorageMeter();
     setSaveIndicator("saved");
+    if (typeof updateStatusBar === "function") updateStatusBar();
+    if (typeof updateRecentSaveTime === "function") updateRecentSaveTime();
     return true;
   } catch (e) {
     setSaveIndicator("error");
@@ -1745,6 +2117,21 @@ function loadFromStorage() {
         }
       }
     }
+    if (payload.fontSizes && typeof payload.fontSizes === "object") {
+      state.fontSizes = migrateFontSizes(payload.fontSizes);
+    }
+    if (payload.style && typeof payload.style === "object") {
+      state.style = migrateStyle(payload.style);
+    }
+    if (payload.loveInitial && typeof payload.loveInitial === "object") {
+      state.loveInitial = {};
+      for (const [k, v] of Object.entries(payload.loveInitial)) {
+        const n = Number(v);
+        if (Number.isFinite(n)) state.loveInitial[k] = Math.max(0, Math.min(100, Math.round(n)));
+      }
+    }
+    if (payload.mode === "simple" || payload.mode === "detail") state.mode = payload.mode;
+    if (Array.isArray(payload.simpleCards)) state.simpleCards = payload.simpleCards;
     return true;
   } catch (e) {
     console.warn("Failed to load from storage:", e);
@@ -1943,24 +2330,56 @@ function applyGameUI() {
     chap.hidden = !u.chapter.enabled || !u.chapter.text;
     chap.textContent = u.chapter.text || "";
   }
-  const date = document.getElementById("uiDate");
-  if (date) {
-    date.hidden = !u.date.enabled || !u.date.text;
-    date.textContent = u.date.text || "";
-  }
   const love = document.getElementById("uiLove");
   const ch = state.characters.find(c => c.id === u.love.charId);
   if (love) {
     love.hidden = !u.love.enabled || !ch;
     if (ch) {
+      const targetValue = state.loveValues[ch.name] != null
+        ? state.loveValues[ch.name]
+        : (state.loveInitial[ch.name] != null ? state.loveInitial[ch.name] : u.love.value);
       const nm = document.getElementById("uiLoveName");
       const fill = document.getElementById("uiLoveFill");
+      const num = document.getElementById("uiLoveNum");
       if (nm) nm.textContent = ch.name;
-      if (fill) fill.style.width = u.love.value + "%";
+      // 平滑動畫:從上次顯示值到 targetValue
+      const fromValue = (typeof __lastLoveDisplayed === "number") ? __lastLoveDisplayed : targetValue;
+      animateLoveValue(ch.name, fromValue, targetValue, 800, fill, num);
     }
   }
   const as = document.getElementById("uiAutoSkip");
   if (as) as.hidden = !u.autoSkip.enabled;
+}
+
+// Batch 3:好感度數值平滑動畫(三次方緩出 ease-out)
+let __lastLoveDisplayed = null;
+let __loveAnimRaf = null;
+function animateLoveValue(charName, fromValue, toValue, durationMs, fillEl, numEl) {
+  if (__loveAnimRaf) cancelAnimationFrame(__loveAnimRaf);
+  if (fromValue === toValue) {
+    if (fillEl) fillEl.style.width = toValue + "%";
+    if (numEl) numEl.textContent = toValue;
+    __lastLoveDisplayed = toValue;
+    return;
+  }
+  const start = performance.now();
+  function tick(now) {
+    const t = Math.min(1, (now - start) / durationMs);
+    const eased = 1 - Math.pow(1 - t, 3);
+    const cur = Math.round(fromValue + (toValue - fromValue) * eased);
+    if (fillEl) fillEl.style.width = cur + "%";
+    if (numEl) numEl.textContent = cur;
+    __lastLoveDisplayed = cur;
+    if (t < 1) {
+      __loveAnimRaf = requestAnimationFrame(tick);
+    } else {
+      __loveAnimRaf = null;
+      // 達到極值 → 觸發特效
+      if (toValue === 100) triggerLoveExtremeEffect("full", charName);
+      else if (toValue === 0) triggerLoveExtremeEffect("empty", charName);
+    }
+  }
+  __loveAnimRaf = requestAnimationFrame(tick);
 }
 
 function applyDialogStyle() {
@@ -2047,15 +2466,6 @@ function bindGameUISettings() {
     chapText.value = u.chapter.text;
     chapToggle.onchange = () => { u.chapter.enabled = chapToggle.checked; applyGameUI(); saveToStorage(); };
     chapText.oninput = () => { u.chapter.text = chapText.value; applyGameUI(); saveToStorage(); };
-  }
-
-  const dateToggle = document.getElementById("uiDateToggle");
-  const dateText = document.getElementById("uiDateText");
-  if (dateToggle && dateText) {
-    dateToggle.checked = u.date.enabled;
-    dateText.value = u.date.text;
-    dateToggle.onchange = () => { u.date.enabled = dateToggle.checked; applyGameUI(); saveToStorage(); };
-    dateText.oninput = () => { u.date.text = dateText.value; applyGameUI(); saveToStorage(); };
   }
 
   const loveToggle = document.getElementById("uiLoveToggle");
@@ -2426,6 +2836,26 @@ function renderCharCard(ch, idx) {
     });
   });
   card.appendChild(kindRow);
+
+  // Batch 3:初始好感度
+  if (!isProtag) {
+    const loveRow = document.createElement("div");
+    loveRow.className = "char-love-initial";
+    const initVal = state.loveInitial[ch.name] != null ? state.loveInitial[ch.name] : 50;
+    loveRow.innerHTML =
+      `<label>初始好感度</label>` +
+      `<input type="number" min="0" max="100" value="${initVal}" class="char-love-num">` +
+      `<span class="char-love-hint">(0-100)</span>`;
+    const numIn = loveRow.querySelector(".char-love-num");
+    numIn.addEventListener("change", () => {
+      const v = Math.max(0, Math.min(100, parseInt(numIn.value, 10) || 0));
+      numIn.value = v;
+      state.loveInitial[ch.name] = v;
+      saveToStorage();
+      reparseAndRender(false);
+    });
+    card.appendChild(loveRow);
+  }
 
   if (isProtag) {
     // protagonist: no emotion / portrait area
@@ -3163,10 +3593,151 @@ function syncStyleDefaultsUI() {
   }
 })();
 
+// Task 1.5:對話/角色名字級獨立 pt slider
+function applyFontSizes() {
+  const fs = state.fontSizes || { dialog: 16, speaker: 18 };
+  document.documentElement.style.setProperty("--dialog-font-size", fs.dialog + "px");
+  document.documentElement.style.setProperty("--speaker-font-size", fs.speaker + "px");
+}
+function syncFontSizesUI() {
+  const fs = state.fontSizes || { dialog: 16, speaker: 18 };
+  const d = document.getElementById("fontSizeDialog");
+  const s = document.getElementById("fontSizeSpeaker");
+  const dl = document.getElementById("fontSizeDialogLabel");
+  const sl = document.getElementById("fontSizeSpeakerLabel");
+  if (d) d.value = fs.dialog;
+  if (s) s.value = fs.speaker;
+  if (dl) dl.textContent = fs.dialog + " pt";
+  if (sl) sl.textContent = fs.speaker + " pt";
+}
+(function initFontSizePanel() {
+  const d = document.getElementById("fontSizeDialog");
+  const s = document.getElementById("fontSizeSpeaker");
+  const dl = document.getElementById("fontSizeDialogLabel");
+  const sl = document.getElementById("fontSizeSpeakerLabel");
+  if (d) d.addEventListener("input", () => {
+    const v = Math.max(10, Math.min(24, parseInt(d.value, 10) || 16));
+    state.fontSizes.dialog = v;
+    if (dl) dl.textContent = v + " pt";
+    applyFontSizes();
+    saveToStorage();
+  });
+  if (s) s.addEventListener("input", () => {
+    const v = Math.max(10, Math.min(24, parseInt(s.value, 10) || 18));
+    state.fontSizes.speaker = v;
+    if (sl) sl.textContent = v + " pt";
+    applyFontSizes();
+    saveToStorage();
+  });
+})();
+applyFontSizes();
+syncFontSizesUI();
+
+// ============================================================
+// Batch 2:Style preset 套用
+// ============================================================
+function applyStylePreset(presetId, variantId, opts) {
+  const result = getStylePreset(presetId, variantId);
+  if (!result) return;
+  const { style, variant } = result;
+  const root = document.documentElement;
+
+  // 1. 標記 active + animation id
+  root.setAttribute("data-style-active", presetId);
+  root.setAttribute("data-animation", style.animationId);
+  root.setAttribute("data-dialog-shape", variant.dialog.shape);
+  root.setAttribute("data-ui-preset", style.uiPreset);
+
+  // 2. CSS 變數 — dialog box
+  root.style.setProperty("--style-dialog-bg", variant.dialog.bgColor);
+  root.style.setProperty("--style-dialog-border", variant.dialog.borderColor);
+  root.style.setProperty("--style-dialog-border-width", (variant.dialog.borderWidth || 1) + "px");
+  root.style.setProperty("--style-dialog-opacity", variant.dialog.opacity);
+
+  // 3. CSS 變數 — speaker
+  root.style.setProperty("--style-speaker-color", variant.speaker.color);
+  root.style.setProperty("--style-speaker-font", variant.speaker.fontStack);
+  root.style.setProperty("--style-speaker-weight", variant.speaker.weight || 400);
+  root.style.setProperty("--style-speaker-style", variant.speaker.fontStyle || "normal");
+  root.style.setProperty("--style-speaker-spacing", variant.speaker.letterSpacing || "normal");
+
+  // 4. CSS 變數 — dialog text
+  root.style.setProperty("--style-dialog-text-color", variant.dialogText.color);
+  root.style.setProperty("--style-dialog-text-font", variant.dialogText.fontStack);
+  root.style.setProperty("--style-dialog-text-weight", variant.dialogText.weight || 400);
+  root.style.setProperty("--style-dialog-text-spacing", variant.dialogText.letterSpacing || "normal");
+
+  // 5. 舞台背景
+  root.style.setProperty("--style-stage-bg", variant.stageBg.base);
+
+  // 6. UI preset 配色變數
+  const uiPreset = UI_PRESETS[style.uiPreset];
+  if (uiPreset) {
+    if (uiPreset.chapter) {
+      root.style.setProperty("--ui-chapter-color", uiPreset.chapter.color || "#ffffff");
+      root.style.setProperty("--ui-chapter-font", uiPreset.chapter.fontStack || "inherit");
+      root.style.setProperty("--ui-chapter-size", (uiPreset.chapter.fontSize || 13) + "px");
+    }
+    if (uiPreset.love) {
+      root.style.setProperty("--ui-love-icon-color", uiPreset.love.iconColor || "#ffffff");
+      root.style.setProperty("--ui-love-bar-bg", uiPreset.love.barBg || "rgba(0,0,0,0.4)");
+      root.style.setProperty("--ui-love-label-color", uiPreset.love.labelColor || "#ffffff");
+    }
+  }
+
+  // 7. State 更新 + 持久化
+  state.style.preset = presetId;
+  state.style.variant = variantId;
+  if (!opts || !opts.skipSave) saveToStorage();
+}
+
+function applyAnimationsToggle(enabled) {
+  document.documentElement.setAttribute("data-animations", enabled ? "on" : "off");
+}
+
+function renderStylePresetGrid() {
+  const grid = document.getElementById("stylePresetGrid");
+  if (!grid) return;
+  grid.innerHTML = "";
+  for (const [styleId, style] of Object.entries(STYLE_PRESETS)) {
+    const card = document.createElement("div");
+    card.className = "style-preset-card";
+    card.innerHTML = `<div class="style-preset-name">${style.name}</div><div class="style-preset-variants" id="variants-${styleId}"></div>`;
+    grid.appendChild(card);
+    const varContainer = card.querySelector(".style-preset-variants");
+    for (const [variantId, variant] of Object.entries(style.variants)) {
+      const btn = document.createElement("button");
+      btn.className = "variant-btn";
+      if (state.style.preset === styleId && state.style.variant === variantId) btn.classList.add("active");
+      btn.style.background = variant.dialog.bgColor;
+      btn.style.borderColor = variant.dialog.borderColor;
+      btn.style.color = variant.speaker.color;
+      btn.textContent = variant.name;
+      btn.addEventListener("click", () => {
+        applyStylePreset(styleId, variantId);
+        renderStylePresetGrid();
+      });
+      varContainer.appendChild(btn);
+    }
+  }
+}
+
+(function initAnimationsToggle() {
+  const cb = document.getElementById("animationsToggle");
+  if (cb) {
+    cb.checked = !!state.style.animationsEnabled;
+    cb.addEventListener("change", () => {
+      state.style.animationsEnabled = cb.checked;
+      applyAnimationsToggle(cb.checked);
+      saveToStorage();
+    });
+  }
+})();
+
 // ----- Interface theme (G2) -----
 const THEME_KEY = "otome-theme";
 function applyTheme(t) {
-  const theme = (t === "daylight" || t === "rose") ? t : "violet";
+  const theme = (t === "daylight") ? t : "violet";
   document.documentElement.setAttribute("data-theme", theme);
   try { localStorage.setItem(THEME_KEY, theme); } catch (e) {}
   document.querySelectorAll(".theme-btn").forEach(b => {
@@ -3770,22 +4341,28 @@ async function renderFrameToCanvas(canvas, frame) {
     const contentX = boxX + contentPad;
     const contentW = boxW - contentPad * 2;
 
+    const styleVariant = getCurrentStyleVariant();
     if (frame.dialog.isNarration) {
       ctx.save();
       const fontSize = Math.round(h * 0.035);
-      const fallback = '"Noto Serif TC", "PingFang TC", serif';
+      const fallback = (styleVariant && styleVariant.dialogText.fontStack) || '"Noto Serif TC", "PingFang TC", serif';
       const lines = wrapSegments(ctx, frame.dialog.text, contentW, fontSize, frame.dialog, fallback);
       const lineH = fontSize * 1.7;
       const totalH = lines.length * lineH;
       const startY = boxY + (boxH - totalH) / 2;
-      drawWrappedSegLines(ctx, lines, contentX, startY, lineH, "#9a8aa8");
+      const narrationColor = styleVariant ? styleVariant.dialogText.color : "#9a8aa8";
+      drawWrappedSegLines(ctx, lines, contentX, startY, lineH, narrationColor);
       ctx.restore();
     } else {
       // speaker
       ctx.save();
-      ctx.fillStyle = frame.dialog.color || "#f3e9d8";
+      const speakerColor = styleVariant ? styleVariant.speaker.color : (frame.dialog.color || "#f3e9d8");
+      ctx.fillStyle = speakerColor;
       const nameSize = Math.round(h * 0.042);
-      ctx.font = `italic 500 ${nameSize}px "Cormorant Garamond", "Noto Serif TC", serif`;
+      const speakerFont = styleVariant
+        ? `${styleVariant.speaker.fontStyle || "normal"} ${styleVariant.speaker.weight || 500} ${nameSize}px ${styleVariant.speaker.fontStack}`
+        : `italic 500 ${nameSize}px "Cormorant Garamond", "Noto Serif TC", serif`;
+      ctx.font = speakerFont;
       ctx.textAlign = "left";
       ctx.textBaseline = "top";
       const nameY = boxY + contentPad * 0.8;
@@ -3806,11 +4383,12 @@ async function renderFrameToCanvas(canvas, frame) {
       // text
       ctx.save();
       const textSize = Math.round(h * 0.036);
-      const fallback = '"PingFang TC", "Noto Sans TC", sans-serif';
+      const fallback = (styleVariant && styleVariant.dialogText.fontStack) || '"PingFang TC", "Noto Sans TC", sans-serif';
       const lines = wrapSegments(ctx, frame.dialog.text, contentW, textSize, frame.dialog, fallback);
       const lineH = textSize * 1.7;
       const startY = boxY + contentPad * 0.8 + nameSize + h * 0.012 + 16 * scale;
-      drawWrappedSegLines(ctx, lines, contentX, startY, lineH, "#f3e9d8");
+      const textColor = styleVariant ? styleVariant.dialogText.color : "#f3e9d8";
+      drawWrappedSegLines(ctx, lines, contentX, startY, lineH, textColor);
       ctx.restore();
     }
   }
@@ -3826,6 +4404,26 @@ async function renderFrameToCanvas(canvas, frame) {
   // 但 cg solo / full（hideGameUI）時跳過（J5）
   if (!frame.cg || !frame.cg.hideGameUI) {
     drawGameUI(ctx, w, h, scale);
+  }
+
+  // Batch 3:極值特效文字 overlay(只繪文字 — 粒子忽略)
+  if (frame.extremeEffect && frame.extremeEffect.styleId) {
+    const set = LOVE_EXTREME_EFFECTS[frame.extremeEffect.styleId];
+    if (set) {
+      const e = set[frame.extremeEffect.kind];
+      if (e && e.overlayText) {
+        ctx.save();
+        ctx.fillStyle = e.textColor || "#ffffff";
+        ctx.shadowColor = "rgba(0,0,0,0.8)";
+        ctx.shadowBlur = 12 * scale;
+        const fontSize = Math.round(h * 0.08);
+        ctx.font = `700 ${fontSize}px "Cormorant Garamond","Noto Serif TC", serif`;
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.fillText(e.overlayText, w / 2, h / 2);
+        ctx.restore();
+      }
+    }
   }
 
   // 截圖時 window.__recAntiDedup 設為 false 以略過(R6)。
@@ -3922,70 +4520,37 @@ function roundRect(ctx, x, y, w, h, r) {
   ctx.closePath();
 }
 
+// 取得當前風格 variant(找不到回 null)
+function getCurrentStyleVariant() {
+  if (!state.style || !state.style.preset) return null;
+  const result = getStylePreset(state.style.preset, state.style.variant);
+  return result ? result.variant : null;
+}
+
 // Canvas counterpart of the DOM .dialog-box[data-shape] styles (H3.5).
 function drawDialogShape(ctx, x, y, w, h, shape, scale) {
-  const ds = state.dialogStyle || DEFAULT_DIALOG_STYLE;
-  const c = hexToRgb(ds.color);
-  const a = (ds.opacity == null) ? 0.88 : ds.opacity;
-  const bg = `rgba(${c.r}, ${c.g}, ${c.b}, ${a})`;
-  const c2 = { r: Math.min(255, c.r + 10), g: Math.min(255, c.g + 6), b: Math.min(255, c.b + 14) };
-  const GOLD = "#c4a265";
+  const variant = getCurrentStyleVariant();
+  let bg, GOLD, c, c2, a;
+  if (variant) {
+    c = hexToRgb(variant.dialog.bgColor);
+    a = variant.dialog.opacity == null ? 1 : variant.dialog.opacity;
+    bg = `rgba(${c.r}, ${c.g}, ${c.b}, ${a})`;
+    c2 = { r: Math.min(255, c.r + 10), g: Math.min(255, c.g + 6), b: Math.min(255, c.b + 14) };
+    GOLD = variant.dialog.borderColor;
+  } else {
+    const ds = state.dialogStyle || DEFAULT_DIALOG_STYLE;
+    c = hexToRgb(ds.color);
+    a = (ds.opacity == null) ? 0.88 : ds.opacity;
+    bg = `rgba(${c.r}, ${c.g}, ${c.b}, ${a})`;
+    c2 = { r: Math.min(255, c.r + 10), g: Math.min(255, c.g + 6), b: Math.min(255, c.b + 14) };
+    GOLD = "#c4a265";
+  }
 
   switch (shape) {
     case "soft":
       roundRect(ctx, x, y, w, h, 18 * scale);
       ctx.fillStyle = bg; ctx.fill();
       break;
-
-    case "bubble": {
-      roundRect(ctx, x, y, w, h, 20 * scale);
-      ctx.fillStyle = bg; ctx.fill();
-      ctx.strokeStyle = GOLD; ctx.lineWidth = 1.5 * scale; ctx.stroke();
-      const tipX = x + w / 2, tipY = y - 10 * scale;
-      ctx.beginPath();
-      ctx.moveTo(tipX - 9 * scale, y);
-      ctx.lineTo(tipX, tipY);
-      ctx.lineTo(tipX + 9 * scale, y);
-      ctx.closePath();
-      ctx.fillStyle = bg; ctx.fill();
-      ctx.beginPath();
-      ctx.moveTo(tipX - 9 * scale, y);
-      ctx.lineTo(tipX, tipY);
-      ctx.lineTo(tipX + 9 * scale, y);
-      ctx.strokeStyle = GOLD; ctx.lineWidth = 1.5 * scale; ctx.stroke();
-      break;
-    }
-
-    case "parchment": {
-      roundRect(ctx, x, y, w, h, 4 * scale);
-      ctx.fillStyle = bg; ctx.fill();
-      ctx.strokeStyle = "rgba(196, 162, 101, 0.35)";
-      ctx.lineWidth = 1 * scale; ctx.stroke();
-      ctx.save();
-      roundRect(ctx, x, y, w, h, 4 * scale); ctx.clip();
-      const ig = ctx.createRadialGradient(
-        x + w / 2, y + h / 2, h * 0.3,
-        x + w / 2, y + h / 2, h);
-      ig.addColorStop(0, "transparent");
-      ig.addColorStop(1, "rgba(0, 0, 0, 0.25)");
-      ctx.fillStyle = ig; ctx.fillRect(x, y, w, h);
-      ctx.fillStyle = "rgba(0, 0, 0, 0.2)";
-      for (let dx = 0; dx < w; dx += 7 * scale) {
-        ctx.fillRect(x + dx, y - 1, 1 * scale, 4 * scale);
-        ctx.fillRect(x + dx, y + h - 3 * scale, 1 * scale, 4 * scale);
-      }
-      ctx.restore();
-      break;
-    }
-
-    case "minimal": {
-      const mg = ctx.createLinearGradient(x, y, x, y + h);
-      mg.addColorStop(0, "transparent");
-      mg.addColorStop(0.3, `rgba(${c.r}, ${c.g}, ${c.b}, ${a * 0.5})`);
-      mg.addColorStop(1, bg);
-      ctx.fillStyle = mg; ctx.fillRect(x, y, w, h);
-      break;
-    }
 
     case "window":
       ctx.fillStyle = bg; ctx.fillRect(x, y, w, h);
@@ -4034,28 +4599,6 @@ function drawGameUI(ctx, w, h, scale) {
     ctx.textBaseline = "top";
     ctx.textAlign = "left";
     ctx.fillText("❀ " + u.chapter.text, 22 * scale, 18 * scale);
-    ctx.restore();
-  }
-
-  if (u.date.enabled && u.date.text) {
-    ctx.save();
-    ctx.font = `${14 * scale}px ${baseFont}`;
-    ctx.textBaseline = "middle";
-    const padX = 12 * scale;
-    const text = u.date.text;
-    const textW = ctx.measureText(text).width;
-    const boxW = textW + padX * 2;
-    const boxH = 26 * scale;
-    const boxX = w - 22 * scale - boxW;
-    const boxY = 18 * scale;
-    ctx.fillStyle = "rgba(13, 7, 22, 0.4)";
-    roundRect(ctx, boxX, boxY, boxW, boxH, boxH / 2); ctx.fill();
-    ctx.strokeStyle = "rgba(196, 162, 101, 0.18)";
-    ctx.lineWidth = 1 * scale;
-    roundRect(ctx, boxX, boxY, boxW, boxH, boxH / 2); ctx.stroke();
-    ctx.fillStyle = "#f3e9d8";
-    ctx.textAlign = "right";
-    ctx.fillText(text, w - 22 * scale - padX, boxY + boxH / 2);
     ctx.restore();
   }
 
@@ -4181,6 +4724,24 @@ function buildFrameAt(idx) {
       };
     }
   }
+  // Batch 3:極值特效偵測 — 當前 beat 若是 love 行且觸發 0/100,標記 frame
+  let extremeEffect = null;
+  if (cur && cur.type === "love") {
+    let target = cur.targetName;
+    if (!target) {
+      const u = state.gameUI && state.gameUI.love;
+      const targetCh = u && u.charId
+        ? state.characters.find(c => c.id === u.charId)
+        : state.characters.find(c => c.kind !== "protagonist");
+      if (targetCh) target = targetCh.name;
+    }
+    if (target && state.loveValues[target] != null) {
+      const v = state.loveValues[target];
+      if (v === 100) extremeEffect = { kind: "full", styleId: state.style && state.style.preset };
+      else if (v === 0) extremeEffect = { kind: "empty", styleId: state.style && state.style.preset };
+    }
+  }
+
   return {
     bg: state.stage.bg,
     slots: { ...state.stage.slots },
@@ -4189,6 +4750,7 @@ function buildFrameAt(idx) {
     activeCharId,
     dialog,
     choices,
+    extremeEffect,
   };
 }
 
@@ -4367,6 +4929,17 @@ async function applyImportedPayload(data) {
       }
       state.gameUI = migrateGameUI(data.gameUI);
       state.lightMode = LIGHT_MODES.includes(data.lightMode) ? data.lightMode : DEFAULT_LIGHT_MODE;
+      if (data.fontSizes) state.fontSizes = migrateFontSizes(data.fontSizes);
+      if (data.style) {
+        state.style = migrateStyle(data.style);
+      }
+      if (data.loveInitial && typeof data.loveInitial === "object") {
+        state.loveInitial = {};
+        for (const [k, v] of Object.entries(data.loveInitial)) {
+          const n = Number(v);
+          if (Number.isFinite(n)) state.loveInitial[k] = Math.max(0, Math.min(100, Math.round(n)));
+        }
+      }
       // 防禦性：舊版 export 無 hideGameUI 欄位（state.stage.cg 通常由
       // computeStageStateAt 重算，這裡僅保險）
       if (state.stage.cg && state.stage.cg.hideGameUI === undefined) {
@@ -4395,6 +4968,11 @@ async function applyImportedPayload(data) {
     setRatio(state.ratio);
     applyDialogStyle();
     applyGameUI();
+    applyFontSizes();
+    syncFontSizesUI();
+    applyStylePreset(state.style.preset, state.style.variant, { skipSave: true });
+    applyAnimationsToggle(state.style.animationsEnabled);
+    renderStylePresetGrid();
     state.currentIndex = 0;
     reparseAndRender(true);
     saveToStorage();
@@ -5146,12 +5724,23 @@ state.cgOrder = [];
 const restored = loadFromStorage();
 if (!restored) {
   state.script = SAMPLE_SCRIPT;
+  // Batch 6:全新用戶 → 直接進簡易模式
+  state.mode = "simple";
 }
 
 // apply ratio — prefer the explicitly remembered toggle, else restored/default
 setRatio(localStorage.getItem(RATIO_KEY) || state.ratio || "16:9");
 els.scriptArea.value = state.script;
 applyDialogStyle();
+applyFontSizes();
+syncFontSizesUI();
+applyStylePreset(state.style.preset, state.style.variant, { skipSave: true });
+applyAnimationsToggle(state.style.animationsEnabled);
+renderStylePresetGrid();
+{
+  const _animCb = document.getElementById("animationsToggle");
+  if (_animCb) _animCb.checked = !!state.style.animationsEnabled;
+}
 reparseAndRender(true);
 updateStorageMeter();
 
@@ -7173,3 +7762,1016 @@ const PortraitCropper = (function () {
 })();
 window.PortraitCropper = PortraitCropper;
 PortraitCropper.init();
+
+// ============================================================
+// Batch 4:簡易模式(Simple Mode)
+// ============================================================
+function cardsToScript(cards) {
+  if (!cards || !cards.length) return "";
+  const lines = [];
+  let currentCg = null;
+  for (const card of cards) {
+    if (card.cgName && card.cgName !== currentCg) {
+      lines.push(`[cg: ${card.cgName}]`);
+      currentCg = card.cgName;
+    }
+    for (const d of card.dialogs) {
+      if (!d.text || !d.text.trim()) continue;
+      if (d.speaker) lines.push(`${d.speaker}：${d.text}`);
+      else lines.push(d.text);
+    }
+    lines.push("");
+  }
+  while (lines.length && lines[lines.length - 1] === "") lines.pop();
+  return lines.join("\n");
+}
+
+function scriptToCards(script) {
+  if (!script || !script.trim()) return [];
+  const parsed = parseScript(script);
+  const cards = [];
+  let currentCg = null;
+  let currentCard = null;
+  for (const ln of parsed) {
+    if (ln.type === "blank") continue;
+    if (ln.type === "cg") {
+      currentCg = ln.cgName;
+      if (currentCard) cards.push(currentCard);
+      currentCard = { cgName: currentCg, dialogs: [] };
+    } else if (ln.type === "cg_off") {
+      currentCg = null;
+      if (currentCard) cards.push(currentCard);
+      currentCard = null;
+    } else if (ln.type === "dialog") {
+      if (!currentCard) currentCard = { cgName: currentCg, dialogs: [] };
+      currentCard.dialogs.push({ speaker: ln.speaker, text: ln.text });
+    } else if (ln.type === "narration") {
+      if (!currentCard) currentCard = { cgName: currentCg, dialogs: [] };
+      currentCard.dialogs.push({ speaker: null, text: ln.text });
+    } else {
+      return null;
+    }
+  }
+  if (currentCard) cards.push(currentCard);
+  return cards;
+}
+
+function scriptToCardsLossy(script) {
+  if (!script || !script.trim()) return [];
+  const parsed = parseScript(script);
+  const cards = [];
+  let currentCg = null;
+  let currentCard = null;
+  for (const ln of parsed) {
+    if (ln.type === "cg") {
+      currentCg = ln.cgName;
+      if (currentCard) cards.push(currentCard);
+      currentCard = { cgName: currentCg, dialogs: [] };
+    } else if (ln.type === "cg_off") {
+      currentCg = null;
+      if (currentCard) cards.push(currentCard);
+      currentCard = null;
+    } else if (ln.type === "dialog") {
+      if (!currentCard) currentCard = { cgName: currentCg, dialogs: [] };
+      currentCard.dialogs.push({ speaker: ln.speaker, text: ln.text });
+    } else if (ln.type === "narration") {
+      if (!currentCard) currentCard = { cgName: currentCg, dialogs: [] };
+      currentCard.dialogs.push({ speaker: null, text: ln.text });
+    }
+    // 其他指令(bg/exit/choices/love/light)直接略過
+  }
+  if (currentCard) cards.push(currentCard);
+  return cards;
+}
+
+function syncSimpleToScript() {
+  state.script = cardsToScript(state.simpleCards);
+  if (els.scriptArea) els.scriptArea.value = state.script;
+  saveToStorage();
+  if (state.mode === "simple") {
+    state.parsed = parseScript(state.script);
+    // 不馬上 render(會吃效能)
+  }
+}
+
+async function switchMode(newMode) {
+  if (newMode === state.mode) return;
+  if (newMode === "detail") {
+    if (state.simpleCards && state.simpleCards.length) {
+      state.script = cardsToScript(state.simpleCards);
+      els.scriptArea.value = state.script;
+    }
+  } else {
+    const lossless = scriptToCards(state.script);
+    if (lossless !== null) {
+      state.simpleCards = lossless;
+    } else {
+      const ok = await inlineConfirm({
+        title: "切到簡易模式?",
+        message: "這份劇本有進階功能(背景、選項、好感度…),簡易模式只會保留 CG 和對白,進階指令會丟掉。\n\n要繼續?",
+        okText: "繼續切換",
+        danger: true,
+      });
+      if (!ok) return;
+      state.simpleCards = scriptToCardsLossy(state.script);
+    }
+  }
+  state.mode = newMode;
+  document.documentElement.setAttribute("data-mode", newMode);
+  document.querySelectorAll(".mode-btn").forEach(b => b.classList.toggle("active", b.dataset.mode === newMode));
+  saveToStorage();
+  renderMainView();
+}
+
+function renderMainView() {
+  const simple = state.mode === "simple";
+  const paneSimple = document.getElementById("paneSimple");
+  if (paneSimple) paneSimple.hidden = !simple;
+  document.querySelectorAll(".pane-script").forEach(p => p.style.display = simple ? "none" : "");
+  document.querySelectorAll(".pane-preview").forEach(p => p.style.display = simple ? "none" : "");
+  // mobile pane tabs 在簡易模式也藏
+  const mobTabs = document.querySelector(".mobile-pane-tabs");
+  if (mobTabs) mobTabs.style.display = simple ? "none" : "";
+  if (simple) renderSimpleCards();
+  else reparseAndRender(false);
+}
+
+function renderSimpleCards() {
+  const container = document.getElementById("simpleCardsContainer");
+  const empty = document.getElementById("simpleEmptyState");
+  const addZone = document.getElementById("simpleAddCardZone");
+  const actions = document.getElementById("simpleBottomActions");
+  if (!container) return;
+  if (!state.simpleCards || !state.simpleCards.length) {
+    if (empty) empty.hidden = false;
+    if (addZone) addZone.hidden = true;
+    if (actions) actions.hidden = true;
+    container.innerHTML = "";
+    return;
+  }
+  if (empty) empty.hidden = true;
+  if (addZone) addZone.hidden = false;
+  if (actions) actions.hidden = false;
+  container.innerHTML = "";
+  state.simpleCards.forEach((card, idx) => {
+    container.appendChild(renderSimpleCard(card, idx));
+  });
+}
+
+function renderSimpleCard(card, idx) {
+  const el = document.createElement("div");
+  el.className = "simple-card";
+  el.dataset.index = idx;
+
+  const thumb = document.createElement("div");
+  thumb.className = "simple-card-thumb";
+  const cgData = card.cgName ? state.cgs[card.cgName] : null;
+  if (cgData && cgData.dataUrl) {
+    thumb.style.backgroundImage = `url(${cgData.dataUrl})`;
+  } else if (card.cgName) {
+    thumb.innerHTML = `<span class="simple-card-thumb-empty">${_shEsc(card.cgName)}<br>(未上傳)</span>`;
+  } else {
+    thumb.innerHTML = '<span class="simple-card-thumb-empty">點此選 CG</span>';
+  }
+  thumb.addEventListener("click", () => openCgPicker(idx));
+  el.appendChild(thumb);
+
+  const body = document.createElement("div");
+  body.className = "simple-card-body";
+
+  const dialogList = document.createElement("div");
+  dialogList.className = "simple-card-dialogs";
+  if (!card.dialogs.length) card.dialogs.push({ speaker: null, text: "" });
+  card.dialogs.forEach((d, dIdx) => {
+    dialogList.appendChild(renderDialogRow(card, idx, d, dIdx));
+  });
+  body.appendChild(dialogList);
+
+  const addDialog = document.createElement("button");
+  addDialog.className = "simple-add-dialog-btn";
+  addDialog.textContent = "＋ 對白";
+  addDialog.addEventListener("click", () => {
+    const last = card.dialogs[card.dialogs.length - 1];
+    card.dialogs.push({ speaker: last ? last.speaker : null, text: "" });
+    syncSimpleToScript();
+    renderSimpleCards();
+    setTimeout(() => {
+      const allTextareas = document.querySelectorAll(".simple-dialog-text");
+      const target = allTextareas[allTextareas.length - 1];
+      if (target) target.focus();
+    }, 30);
+  });
+  body.appendChild(addDialog);
+
+  el.appendChild(body);
+
+  const actions = document.createElement("div");
+  actions.className = "simple-card-actions";
+  const upBtn = document.createElement("button");
+  upBtn.className = "icon-btn";
+  upBtn.title = "上移";
+  upBtn.textContent = "↑";
+  if (idx === 0) upBtn.disabled = true;
+  upBtn.addEventListener("click", () => moveCard(idx, -1));
+  actions.appendChild(upBtn);
+
+  const dnBtn = document.createElement("button");
+  dnBtn.className = "icon-btn";
+  dnBtn.title = "下移";
+  dnBtn.textContent = "↓";
+  if (idx === state.simpleCards.length - 1) dnBtn.disabled = true;
+  dnBtn.addEventListener("click", () => moveCard(idx, +1));
+  actions.appendChild(dnBtn);
+
+  const delBtn = document.createElement("button");
+  delBtn.className = "icon-btn icon-btn-danger";
+  delBtn.title = "刪除";
+  delBtn.textContent = "🗑";
+  delBtn.addEventListener("click", async () => {
+    const ok = await inlineConfirm({
+      title: "刪除這張卡?",
+      message: "卡片上的 CG + 所有對白會一起刪除。",
+      okText: "刪除", danger: true,
+    });
+    if (!ok) return;
+    state.simpleCards.splice(idx, 1);
+    syncSimpleToScript();
+    renderSimpleCards();
+  });
+  actions.appendChild(delBtn);
+
+  el.appendChild(actions);
+  return el;
+}
+
+function renderDialogRow(card, cardIdx, dialog, dialogIdx) {
+  const row = document.createElement("div");
+  row.className = "simple-dialog-row";
+
+  const speakerSel = document.createElement("select");
+  speakerSel.className = "simple-dialog-speaker";
+  speakerSel.innerHTML =
+    '<option value="">（旁白）</option>' +
+    state.characters.map(c => `<option value="${_shEsc(c.name)}" ${dialog.speaker === c.name ? "selected" : ""}>${_shEsc(c.name)}</option>`).join("");
+  speakerSel.addEventListener("change", () => {
+    dialog.speaker = speakerSel.value || null;
+    syncSimpleToScript();
+  });
+  row.appendChild(speakerSel);
+
+  const textInput = document.createElement("textarea");
+  textInput.className = "simple-dialog-text";
+  textInput.placeholder = "輸入對白...";
+  textInput.value = dialog.text;
+  textInput.rows = 2;
+  textInput.addEventListener("input", () => {
+    dialog.text = textInput.value;
+    if (__simpleSyncTimer) clearTimeout(__simpleSyncTimer);
+    __simpleSyncTimer = setTimeout(syncSimpleToScript, 250);
+  });
+  row.appendChild(textInput);
+
+  const delBtn = document.createElement("button");
+  delBtn.className = "simple-dialog-del";
+  delBtn.innerHTML = "×";
+  delBtn.title = "刪除這段對白";
+  delBtn.addEventListener("click", () => {
+    card.dialogs.splice(dialogIdx, 1);
+    if (card.dialogs.length === 0) card.dialogs.push({ speaker: null, text: "" });
+    syncSimpleToScript();
+    renderSimpleCards();
+  });
+  row.appendChild(delBtn);
+
+  return row;
+}
+let __simpleSyncTimer = null;
+
+function moveCard(idx, dir) {
+  const target = idx + dir;
+  if (target < 0 || target >= state.simpleCards.length) return;
+  const tmp = state.simpleCards[idx];
+  state.simpleCards[idx] = state.simpleCards[target];
+  state.simpleCards[target] = tmp;
+  syncSimpleToScript();
+  renderSimpleCards();
+}
+
+// ----- Style picker overlay (Task 4.5) -----
+function showStylePickerOverlay() {
+  return new Promise((resolve) => {
+    const overlay = document.getElementById("stylePickerOverlay");
+    const grid = document.getElementById("stylePickerGrid");
+    if (!overlay || !grid) { resolve(); return; }
+    grid.innerHTML = "";
+    for (const [styleId, style] of Object.entries(STYLE_PRESETS)) {
+      const variantId = getDefaultVariantId(styleId);
+      const variant = style.variants[variantId];
+      const card = document.createElement("div");
+      card.className = "style-picker-card";
+
+      const preview = document.createElement("div");
+      preview.className = "style-picker-card-preview";
+      preview.style.background = variant.stageBg.base;
+      const dlg = document.createElement("div");
+      dlg.style.background = variant.dialog.bgColor;
+      dlg.style.border = `${variant.dialog.borderWidth || 1}px solid ${variant.dialog.borderColor}`;
+      dlg.style.padding = "8px 12px";
+      dlg.style.borderRadius = (variant.dialog.shape === "soft" ? "12px" : "2px");
+      dlg.style.fontFamily = variant.dialogText.fontStack;
+      dlg.style.color = variant.dialogText.color;
+      dlg.style.fontSize = "11px";
+      dlg.style.width = "100%";
+      const spk = document.createElement("div");
+      spk.style.color = variant.speaker.color;
+      spk.style.fontFamily = variant.speaker.fontStack;
+      spk.style.fontSize = "11px";
+      spk.style.fontWeight = variant.speaker.weight || 500;
+      spk.style.fontStyle = variant.speaker.fontStyle || "normal";
+      spk.textContent = (variant.speaker.prefix || "") + "薇拉諾斯" + (variant.speaker.suffix || "");
+      dlg.appendChild(spk);
+      const txt = document.createElement("div");
+      txt.style.marginTop = "3px";
+      txt.textContent = "「等你很久了…」";
+      dlg.appendChild(txt);
+      preview.appendChild(dlg);
+      card.appendChild(preview);
+
+      const name = document.createElement("div");
+      name.className = "style-picker-card-name";
+      name.textContent = style.name;
+      card.appendChild(name);
+
+      card.addEventListener("click", () => {
+        applyStylePreset(styleId, variantId);
+        state.style.firstStyleSelected = true;
+        saveToStorage();
+        renderStylePresetGrid();
+        overlay.hidden = true;
+        resolve();
+      });
+      grid.appendChild(card);
+    }
+    const skipBtn = document.getElementById("stylePickerSkip");
+    if (skipBtn) skipBtn.onclick = () => {
+      state.style.firstStyleSelected = true;
+      saveToStorage();
+      overlay.hidden = true;
+      resolve();
+    };
+    overlay.hidden = false;
+  });
+}
+
+// ----- CG picker overlay (Task 4.7) -----
+let __cgPickerTargetCardIdx = -1;
+function openCgPicker(cardIdx) {
+  __cgPickerTargetCardIdx = cardIdx;
+  const overlay = document.getElementById("cgPickerOverlay");
+  const grid = document.getElementById("cgPickerGrid");
+  if (!overlay || !grid) return;
+  grid.innerHTML = "";
+  const cgNames = state.cgOrder.length ? state.cgOrder : Object.keys(state.cgs);
+  if (!cgNames.length) {
+    grid.innerHTML = '<div class="cg-picker-grid-empty">還沒有 CG。點下方按鈕上傳第一張。</div>';
+  } else {
+    const currentCgName = state.simpleCards[cardIdx]?.cgName;
+    for (const name of cgNames) {
+      const cg = state.cgs[name];
+      if (!cg || !cg.dataUrl) continue;
+      const thumb = document.createElement("div");
+      thumb.className = "cg-picker-thumb" + (name === currentCgName ? " active" : "");
+      thumb.style.backgroundImage = `url(${cg.dataUrl})`;
+      thumb.title = name;
+      thumb.addEventListener("click", () => {
+        state.simpleCards[cardIdx].cgName = name;
+        syncSimpleToScript();
+        renderSimpleCards();
+        overlay.hidden = true;
+      });
+      grid.appendChild(thumb);
+    }
+  }
+  overlay.hidden = false;
+}
+(function initCgPicker() {
+  const overlay = document.getElementById("cgPickerOverlay");
+  const close = document.getElementById("cgPickerClose");
+  const upload = document.getElementById("cgPickerUpload");
+  if (close) close.addEventListener("click", () => overlay.hidden = true);
+  if (overlay) overlay.addEventListener("click", (e) => { if (e.target === overlay) overlay.hidden = true; });
+  if (upload) upload.addEventListener("click", () => {
+    const f = document.createElement("input");
+    f.type = "file";
+    f.accept = "image/*";
+    f.addEventListener("change", async () => {
+      const file = f.files && f.files[0];
+      if (!file) return;
+      const dataUrl = await readFileAsDataURL(file);
+      const scaled = await downscaleImage(dataUrl, 1600);
+      const cgName = `CG-${Date.now()}`;
+      state.cgs[cgName] = { dataUrl: scaled };
+      if (!state.cgOrder.includes(cgName)) state.cgOrder.push(cgName);
+      if (__cgPickerTargetCardIdx >= 0 && state.simpleCards[__cgPickerTargetCardIdx]) {
+        state.simpleCards[__cgPickerTargetCardIdx].cgName = cgName;
+      }
+      syncSimpleToScript();
+      renderSimpleCards();
+      overlay.hidden = true;
+      updateStorageMeter();
+    });
+    f.click();
+  });
+})();
+
+// ----- First card flow / drop / upload (Task 4.6) -----
+async function startFirstCardFlow(file) {
+  // 1. 處理圖片
+  const dataUrl = await readFileAsDataURL(file);
+  const scaled = await downscaleImage(dataUrl, 1600);
+  const cgName = `CG-${Date.now()}`;
+  state.cgs[cgName] = { dataUrl: scaled };
+  if (!state.cgOrder.includes(cgName)) state.cgOrder.push(cgName);
+
+  // 2. 若沒選過風格 → 跳出選風格
+  if (!state.style.firstStyleSelected) {
+    await showStylePickerOverlay();
+  }
+
+  // 3. 建立第一張卡
+  state.simpleCards.push({
+    cgName,
+    dialogs: [{ speaker: null, text: "" }],
+  });
+  syncSimpleToScript();
+  renderSimpleCards();
+  setTimeout(() => {
+    const allTextareas = document.querySelectorAll(".simple-dialog-text");
+    const target = allTextareas[allTextareas.length - 1];
+    if (target) target.focus();
+  }, 50);
+}
+
+async function addCardWithCg(file) {
+  const dataUrl = await readFileAsDataURL(file);
+  const scaled = await downscaleImage(dataUrl, 1600);
+  const cgName = `CG-${Date.now()}`;
+  state.cgs[cgName] = { dataUrl: scaled };
+  if (!state.cgOrder.includes(cgName)) state.cgOrder.push(cgName);
+  const last = state.simpleCards[state.simpleCards.length - 1];
+  const lastDialog = last && last.dialogs[last.dialogs.length - 1];
+  state.simpleCards.push({
+    cgName,
+    dialogs: [{ speaker: lastDialog ? lastDialog.speaker : null, text: "" }],
+  });
+  syncSimpleToScript();
+  renderSimpleCards();
+}
+
+(function initSimplePaneInteractions() {
+  // 上傳按鈕
+  const upload = document.getElementById("simpleEmptyUpload");
+  if (upload) upload.addEventListener("click", () => {
+    const f = document.createElement("input");
+    f.type = "file";
+    f.accept = "image/*";
+    f.addEventListener("change", async () => {
+      const file = f.files && f.files[0];
+      if (file) await startFirstCardFlow(file);
+    });
+    f.click();
+  });
+
+  // 新增一張
+  const addBtn = document.getElementById("simpleAddCardBtn");
+  if (addBtn) addBtn.addEventListener("click", () => {
+    const last = state.simpleCards[state.simpleCards.length - 1];
+    const lastDialog = last && last.dialogs[last.dialogs.length - 1];
+    state.simpleCards.push({
+      cgName: last ? last.cgName : null,
+      dialogs: [{ speaker: lastDialog ? lastDialog.speaker : null, text: "" }],
+    });
+    syncSimpleToScript();
+    renderSimpleCards();
+    setTimeout(() => {
+      const allTextareas = document.querySelectorAll(".simple-dialog-text");
+      const target = allTextareas[allTextareas.length - 1];
+      if (target) target.focus();
+    }, 30);
+  });
+
+  // 拖曳上傳
+  const simplePane = document.getElementById("paneSimple");
+  if (simplePane) {
+    simplePane.addEventListener("dragover", (e) => {
+      e.preventDefault();
+      simplePane.classList.add("dragover");
+    });
+    simplePane.addEventListener("dragleave", (e) => {
+      if (e.target === simplePane) simplePane.classList.remove("dragover");
+    });
+    simplePane.addEventListener("drop", async (e) => {
+      e.preventDefault();
+      simplePane.classList.remove("dragover");
+      const file = e.dataTransfer.files && e.dataTransfer.files[0];
+      if (!file || !file.type.startsWith("image/")) return;
+      if (!state.simpleCards.length) await startFirstCardFlow(file);
+      else await addCardWithCg(file);
+    });
+  }
+
+  // 錄影按鈕 — 重用既有錄影流程
+  const rec = document.getElementById("simpleRecord");
+  if (rec) rec.addEventListener("click", () => {
+    syncSimpleToScript();
+    document.getElementById("btnRecord")?.click();
+  });
+
+  // 預覽全部
+  const prevAll = document.getElementById("simplePreviewAll");
+  if (prevAll) prevAll.addEventListener("click", openPreviewAll);
+})();
+
+// ----- Mode buttons (Task 4.1) -----
+document.querySelectorAll(".mode-btn").forEach(btn => {
+  btn.addEventListener("click", () => switchMode(btn.dataset.mode));
+});
+
+// ----- Preview-all overlay (Task 4.8) -----
+const previewAllState = { idx: 0, playing: true, timer: null };
+function openPreviewAll() {
+  if (!state.simpleCards.length) {
+    showToast("沒有卡片可以預覽", "warn");
+    return;
+  }
+  const overlay = document.getElementById("previewAllOverlay");
+  if (!overlay) return;
+  previewAllState.idx = 0;
+  previewAllState.playing = true;
+  buildPreviewAllStage();
+  renderPreviewAllThumbs();
+  playPreviewAllAt(0);
+  overlay.hidden = false;
+}
+function buildPreviewAllStage() {
+  const main = document.getElementById("previewAllMain");
+  if (!main) return;
+  main.innerHTML = "";
+  const stage = document.createElement("div");
+  stage.className = "stage";
+  stage.dataset.ratio = "16:9";
+  stage.id = "previewAllStage";
+  stage.innerHTML = `
+    <div class="stage-bg" id="paStageBg"></div>
+    <div class="stage-cg" id="paStageCg"></div>
+    <div class="dialog-box" id="paDialogBox">
+      <div class="dialog-speaker" id="paDialogSpeaker"></div>
+      <div class="dialog-text" id="paDialogText"></div>
+    </div>
+  `;
+  main.appendChild(stage);
+}
+function playPreviewAllAt(idx) {
+  if (previewAllState.timer) clearTimeout(previewAllState.timer);
+  if (idx >= state.simpleCards.length) { previewAllState.playing = false; updatePreviewAllPlayBtn(); return; }
+  previewAllState.idx = idx;
+  const card = state.simpleCards[idx];
+  const cg = card.cgName ? state.cgs[card.cgName] : null;
+  const cgEl = document.getElementById("paStageCg");
+  if (cgEl) {
+    if (cg && cg.dataUrl) {
+      cgEl.style.backgroundImage = `url(${cg.dataUrl})`;
+      cgEl.style.backgroundSize = "cover";
+      cgEl.style.backgroundPosition = "center";
+    } else {
+      cgEl.style.backgroundImage = "";
+    }
+  }
+  // 簡化播放:依序顯示每段對白,每段 2.4 秒
+  let dIdx = 0;
+  const spkEl = document.getElementById("paDialogSpeaker");
+  const txtEl = document.getElementById("paDialogText");
+  const boxEl = document.getElementById("paDialogBox");
+  function showNext() {
+    if (dIdx >= card.dialogs.length) {
+      if (previewAllState.playing) {
+        previewAllState.timer = setTimeout(() => playPreviewAllAt(idx + 1), 600);
+      }
+      return;
+    }
+    const d = card.dialogs[dIdx];
+    if (boxEl) boxEl.hidden = !d.text || !d.text.trim();
+    if (spkEl) spkEl.textContent = d.speaker || "";
+    if (txtEl) txtEl.textContent = d.text || "";
+    dIdx++;
+    if (previewAllState.playing) {
+      previewAllState.timer = setTimeout(showNext, 2400);
+    }
+  }
+  showNext();
+  renderPreviewAllThumbs();
+  const indexEl = document.getElementById("previewAllIndex");
+  if (indexEl) indexEl.textContent = `${idx + 1} / ${state.simpleCards.length}`;
+}
+function renderPreviewAllThumbs() {
+  const wrap = document.getElementById("previewAllThumbs");
+  if (!wrap) return;
+  wrap.innerHTML = "";
+  state.simpleCards.forEach((card, i) => {
+    const t = document.createElement("div");
+    t.className = "preview-all-thumb" + (i === previewAllState.idx ? " active" : "");
+    const cg = card.cgName ? state.cgs[card.cgName] : null;
+    if (cg && cg.dataUrl) t.style.backgroundImage = `url(${cg.dataUrl})`;
+    t.addEventListener("click", () => playPreviewAllAt(i));
+    wrap.appendChild(t);
+  });
+}
+function updatePreviewAllPlayBtn() {
+  const btn = document.getElementById("previewAllPlayPause");
+  if (btn) btn.textContent = previewAllState.playing ? "⏸" : "▶";
+}
+(function initPreviewAll() {
+  const close = document.getElementById("previewAllClose");
+  const prev = document.getElementById("previewAllPrev");
+  const next = document.getElementById("previewAllNext");
+  const pp = document.getElementById("previewAllPlayPause");
+  const overlay = document.getElementById("previewAllOverlay");
+  if (close) close.addEventListener("click", () => {
+    if (previewAllState.timer) clearTimeout(previewAllState.timer);
+    previewAllState.playing = false;
+    if (overlay) overlay.hidden = true;
+  });
+  if (prev) prev.addEventListener("click", () => playPreviewAllAt(Math.max(0, previewAllState.idx - 1)));
+  if (next) next.addEventListener("click", () => playPreviewAllAt(Math.min(state.simpleCards.length - 1, previewAllState.idx + 1)));
+  if (pp) pp.addEventListener("click", () => {
+    previewAllState.playing = !previewAllState.playing;
+    updatePreviewAllPlayBtn();
+    if (previewAllState.playing) playPreviewAllAt(previewAllState.idx);
+    else if (previewAllState.timer) clearTimeout(previewAllState.timer);
+  });
+})();
+
+// ----- 啟動時套用 mode -----
+document.documentElement.setAttribute("data-mode", state.mode);
+document.querySelectorAll(".mode-btn").forEach(b => b.classList.toggle("active", b.dataset.mode === state.mode));
+// 載入時:若是 simple 模式 + 有 script 但沒有 simpleCards,嘗試還原卡片
+if (state.mode === "simple" && (!state.simpleCards || !state.simpleCards.length) && state.script && state.script.trim()) {
+  const cards = scriptToCards(state.script);
+  if (cards !== null) state.simpleCards = cards;
+}
+renderMainView();
+
+// ============================================================
+// Batch 5:預覽播放控制
+// ============================================================
+const playbackState = {
+  playing: false,
+  speed: 1,
+  currentStep: 0,
+  stepStartTime: 0,
+  pausedAt: 0,
+  animationId: null,
+};
+
+const PLAYBACK_TYPE_SPEED = 45;   // ms / char
+const PLAYBACK_HOLD_MS = 1500;
+const PLAYBACK_CHOICE_PER = 600;
+const PLAYBACK_CHOICE_TAIL = 1200;
+
+function getPlayableSteps() {
+  return state.parsed.filter(ln => ln.type === "dialog" || ln.type === "narration" || ln.type === "choices");
+}
+function estimateStepDuration(step) {
+  if (step.type === "dialog" || step.type === "narration") {
+    const len = (step.text || "").length;
+    return len * PLAYBACK_TYPE_SPEED + PLAYBACK_HOLD_MS;
+  }
+  if (step.type === "choices") {
+    return (step.items?.length || 0) * PLAYBACK_CHOICE_PER + PLAYBACK_CHOICE_TAIL;
+  }
+  return 1000;
+}
+function getTotalDuration() {
+  return getPlayableSteps().reduce((a, s) => a + estimateStepDuration(s), 0);
+}
+
+function setPlayPauseIcon() {
+  const btn = document.getElementById("playbackPlayPause");
+  if (btn) btn.textContent = playbackState.playing ? "⏸" : "▶";
+}
+
+function startPlayback() {
+  if (playbackState.playing) return;
+  const steps = getPlayableSteps();
+  if (!steps.length) { showToast("沒有可播放的內容", "warn"); return; }
+  if (playbackState.currentStep >= steps.length) playbackState.currentStep = 0;
+  playbackState.playing = true;
+  setPlayPauseIcon();
+  playbackState.stepStartTime = performance.now() - (playbackState.pausedAt / playbackState.speed);
+
+  function tick(now) {
+    if (!playbackState.playing) return;
+    const elapsed = (now - playbackState.stepStartTime) * playbackState.speed;
+    const cur = steps[playbackState.currentStep];
+    if (!cur) { stopPlayback(); return; }
+    renderStepAtTime(cur, elapsed);
+    const dur = estimateStepDuration(cur);
+    if (elapsed >= dur) {
+      if (playbackState.currentStep + 1 >= steps.length) {
+        stopPlayback();
+        return;
+      }
+      playbackState.currentStep++;
+      playbackState.stepStartTime = performance.now();
+      playbackState.pausedAt = 0;
+    }
+    updateProgressBar();
+    playbackState.animationId = requestAnimationFrame(tick);
+  }
+  playbackState.animationId = requestAnimationFrame(tick);
+}
+
+function pausePlayback() {
+  if (!playbackState.playing) return;
+  playbackState.playing = false;
+  playbackState.pausedAt = (performance.now() - playbackState.stepStartTime) * playbackState.speed;
+  if (playbackState.animationId) { cancelAnimationFrame(playbackState.animationId); playbackState.animationId = null; }
+  setPlayPauseIcon();
+}
+
+function stopPlayback() {
+  playbackState.playing = false;
+  playbackState.pausedAt = 0;
+  if (playbackState.animationId) { cancelAnimationFrame(playbackState.animationId); playbackState.animationId = null; }
+  setPlayPauseIcon();
+}
+
+function renderStepAtTime(step, elapsedMs) {
+  // 跳到此 step 對應的 parsed index — 只在第一次或 step 切換時觸發
+  const parsedIdx = state.parsed.indexOf(step);
+  if (parsedIdx !== -1 && parsedIdx !== state.currentIndex) {
+    // 重設舞台 + 對話框內容(會啟動 typing,但我們馬上覆寫)
+    if (state.typingTimer) { clearInterval(state.typingTimer); state.typingTimer = null; }
+    state.isTyping = false;
+    state.currentIndex = parsedIdx;
+    const activeChar = computeStageStateAt(state.parsed, parsedIdx);
+    renderBackground();
+    renderCharacters(activeChar);
+    renderCg();
+    if (step.type === "choices") {
+      renderChoicesStatic(step);
+      renderDialog(null);
+    } else {
+      renderChoicesStatic(null);
+      // 不呼叫 renderDialog(會跑 typing 動畫),手動設靜態框架
+      if (els.dialogBox) {
+        els.dialogBox.hidden = false;
+        els.dialogBox.classList.add("show");
+      }
+      if (els.dialogSpeaker) {
+        if (step.type === "dialog") {
+          els.dialogSpeaker.textContent = step.nameHidden ? (step.nameOverride || "???") : step.speaker;
+          els.dialogSpeaker.style.color = "";
+        } else {
+          els.dialogSpeaker.textContent = "";
+        }
+      }
+      if (els.dialogText) {
+        els.dialogText.classList.toggle("narration", step.type === "narration");
+        els.dialogText.textContent = "";
+      }
+    }
+    updatePreviewCounter();
+  }
+
+  // 打字機進度 — 對話/旁白才打
+  if (step.type === "dialog" || step.type === "narration") {
+    const speed = PLAYBACK_TYPE_SPEED;
+    const visible = Math.min(step.text.length, Math.floor(elapsedMs / speed));
+    if (els.dialogText) {
+      const partial = step.text.slice(0, visible);
+      els.dialogText.textContent = partial;
+    }
+  }
+}
+
+function jumpToStep(stepIdx) {
+  const steps = getPlayableSteps();
+  if (stepIdx < 0 || stepIdx >= steps.length) return;
+  playbackState.currentStep = stepIdx;
+  playbackState.pausedAt = 0;
+  const step = steps[stepIdx];
+  const parsedIdx = state.parsed.indexOf(step);
+  if (parsedIdx !== -1) renderAt(parsedIdx);
+  updateProgressBar();
+}
+
+function updateProgressBar() {
+  const steps = getPlayableSteps();
+  const total = getTotalDuration();
+  let cumElapsed = 0;
+  for (let i = 0; i < playbackState.currentStep; i++) cumElapsed += estimateStepDuration(steps[i]);
+  if (playbackState.playing) cumElapsed += (performance.now() - playbackState.stepStartTime) * playbackState.speed;
+  else cumElapsed += playbackState.pausedAt;
+  cumElapsed = Math.min(cumElapsed, total);
+
+  const progress = document.getElementById("playbackProgress");
+  const timeEl = document.getElementById("playbackTime");
+  const stepEl = document.getElementById("playbackStep");
+  if (progress) progress.value = total > 0 ? (cumElapsed / total) * 100 : 0;
+
+  const fmt = (ms) => {
+    const s = Math.max(0, Math.floor(ms / 1000));
+    return `${String(Math.floor(s / 60)).padStart(2, "0")}:${String(s % 60).padStart(2, "0")}`;
+  };
+  if (timeEl) timeEl.textContent = `${fmt(cumElapsed)} / ${fmt(total)}`;
+  if (stepEl) stepEl.textContent = `${Math.min(playbackState.currentStep + 1, steps.length)} / ${steps.length}`;
+}
+
+// ----- 按鈕事件 (Task 5.4) -----
+(function initPlaybackBindings() {
+  const pp = document.getElementById("playbackPlayPause");
+  const prev = document.getElementById("playbackPrev");
+  const next = document.getElementById("playbackNext");
+  const speed = document.getElementById("playbackSpeed");
+  const progress = document.getElementById("playbackProgress");
+  if (pp) pp.addEventListener("click", () => {
+    if (playbackState.playing) pausePlayback();
+    else startPlayback();
+  });
+  if (prev) prev.addEventListener("click", () => {
+    pausePlayback();
+    jumpToStep(Math.max(0, playbackState.currentStep - 1));
+  });
+  if (next) next.addEventListener("click", () => {
+    pausePlayback();
+    const steps = getPlayableSteps();
+    jumpToStep(Math.min(steps.length - 1, playbackState.currentStep + 1));
+  });
+  if (speed) speed.addEventListener("change", (e) => {
+    const newSpeed = parseFloat(e.target.value) || 1;
+    if (playbackState.playing) {
+      // 維持當前進度感受 — 重設 stepStartTime 把現有 elapsed 換算成新速度的起點
+      const elapsed = (performance.now() - playbackState.stepStartTime) * playbackState.speed;
+      playbackState.speed = newSpeed;
+      playbackState.stepStartTime = performance.now() - (elapsed / newSpeed);
+    } else {
+      playbackState.speed = newSpeed;
+    }
+  });
+  if (progress) progress.addEventListener("input", (e) => {
+    const pct = parseFloat(e.target.value) / 100;
+    const total = getTotalDuration();
+    const targetMs = pct * total;
+    const steps = getPlayableSteps();
+    let acc = 0;
+    for (let i = 0; i < steps.length; i++) {
+      const dur = estimateStepDuration(steps[i]);
+      if (acc + dur >= targetMs) {
+        const wasPlaying = playbackState.playing;
+        pausePlayback();
+        jumpToStep(i);
+        playbackState.pausedAt = targetMs - acc;
+        if (wasPlaying) startPlayback();
+        break;
+      }
+      acc += dur;
+    }
+  });
+})();
+
+// ----- Task 5.5:點台子 = playback 控制(覆寫既有 nextLine 行為) -----
+// 既有 stage.addEventListener("click", ...) 已綁定;這裡加 capture-phase 攔截。
+els.stage.addEventListener("click", (e) => {
+  // 只在 detail 模式 + 播放有狀態時介入
+  if (state.mode !== "detail") return;
+  if (playbackState.playing) {
+    e.stopImmediatePropagation();
+    pausePlayback();
+  } else if (playbackState.pausedAt > 0) {
+    e.stopImmediatePropagation();
+    startPlayback();
+  }
+  // 否則 fall through → 既有 prev/next 邏輯
+}, { capture: true });
+
+// ----- Task 5.6:簡易模式隱藏播放控制 -----
+function syncPlaybackVisibility() {
+  const pb = document.getElementById("previewPlayback");
+  if (pb) pb.style.display = state.mode === "simple" ? "none" : "";
+}
+syncPlaybackVisibility();
+// switchMode 結束後也要 sync
+const __origSwitchMode = switchMode;
+switchMode = async function(newMode) {
+  await __origSwitchMode(newMode);
+  syncPlaybackVisibility();
+};
+
+// ----- Task 5.7:改劇本 reset 播放 -----
+els.scriptArea.addEventListener("input", () => {
+  if (playbackState.playing || playbackState.pausedAt > 0) {
+    stopPlayback();
+    playbackState.currentStep = 0;
+    updateProgressBar();
+  }
+});
+
+// 初始顯示
+updateProgressBar();
+
+// ============================================================
+// Batch 6:Status bar + 手機橫滑
+// ============================================================
+function estimateExportSize() {
+  try {
+    const payload = {
+      script: state.script,
+      characters: state.characters,
+      backgrounds: state.backgrounds,
+      cgs: state.cgs,
+      cgOrder: state.cgOrder,
+      ratio: state.ratio,
+      dialogStyle: state.dialogStyle,
+      gameUI: state.gameUI,
+      lightMode: state.lightMode,
+      styleDefaults: state.styleDefaults,
+      fontSizes: state.fontSizes,
+      style: state.style,
+      loveInitial: state.loveInitial,
+      mode: state.mode,
+      simpleCards: state.simpleCards,
+    };
+    return JSON.stringify(payload).length * 2;  // UTF-16 大概值
+  } catch (e) {
+    return 0;
+  }
+}
+
+function updateStatusBar() {
+  const sizeEl = document.getElementById("statusExportSize");
+  const assetEl = document.getElementById("statusAssetCount");
+  if (sizeEl) sizeEl.textContent = fmtBytes(estimateExportSize());
+  if (assetEl) {
+    const charCount = state.characters.length;
+    const portraitCount = state.characters.reduce((a, c) => a + Object.keys(c.portraits || {}).length, 0);
+    const bgImgCount = Object.values(state.backgrounds).filter(b => b.type === "image").length;
+    const cgCount = Object.values(state.cgs || {}).filter(c => c && c.dataUrl).length;
+    assetEl.textContent = `${charCount} 角色 · ${portraitCount + bgImgCount + cgCount} 張`;
+  }
+}
+
+let __lastSaveTime = Date.now();
+function updateRecentSaveTime() {
+  __lastSaveTime = Date.now();
+  refreshSaveTimeDisplay();
+}
+function refreshSaveTimeDisplay() {
+  const el = document.getElementById("statusRecentSaveTime");
+  if (!el) return;
+  const diff = Date.now() - __lastSaveTime;
+  if (diff < 5000) el.textContent = "剛剛";
+  else if (diff < 60000) el.textContent = `${Math.floor(diff / 1000)} 秒前`;
+  else if (diff < 3600000) el.textContent = `${Math.floor(diff / 60000)} 分鐘前`;
+  else el.textContent = `${Math.floor(diff / 3600000)} 小時前`;
+}
+setInterval(refreshSaveTimeDisplay, 10000);
+updateStatusBar();
+refreshSaveTimeDisplay();
+
+// ----- 手機左右滑動切 pane (Task 6.2) -----
+(function setupMobileSwipe() {
+  const main = document.querySelector(".main");
+  if (!main) return;
+  let startX = 0, startY = 0;
+  const THRESH = 60;        // 至少橫移 60px
+  const VERTICAL_TOL = 80;  // 垂直差超過此值算捲動,不切換
+
+  main.addEventListener("touchstart", (e) => {
+    if (e.touches.length !== 1) return;
+    startX = e.touches[0].clientX;
+    startY = e.touches[0].clientY;
+  }, { passive: true });
+
+  main.addEventListener("touchend", (e) => {
+    if (e.changedTouches.length !== 1) return;
+    if (state.mode === "simple") return;  // 簡易模式沒有雙 pane
+    const dx = e.changedTouches[0].clientX - startX;
+    const dy = Math.abs(e.changedTouches[0].clientY - startY);
+    if (Math.abs(dx) < THRESH) return;
+    if (dy > VERTICAL_TOL) return;
+    const currentActive = document.querySelector(".mobile-pane-tab.active");
+    if (!currentActive) return;
+    const cur = currentActive.dataset.pane;
+    let target = null;
+    if (dx < 0 && cur === "script") target = "preview";
+    else if (dx > 0 && cur === "preview") target = "script";
+    if (!target) return;
+    document.querySelectorAll(".mobile-pane-tab").forEach(t =>
+      t.classList.toggle("active", t.dataset.pane === target));
+    const scriptPane = document.querySelector(".pane-script");
+    const previewPane = document.querySelector(".pane-preview");
+    if (scriptPane) scriptPane.classList.toggle("mobile-active", target === "script");
+    if (previewPane) previewPane.classList.toggle("mobile-active", target === "preview");
+  }, { passive: true });
+})();

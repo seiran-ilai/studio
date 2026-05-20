@@ -25,6 +25,10 @@
       <div class="brand-mark">Otome Studio</div>
       <div class="brand-sub">乙女遊戲模擬器</div>
     </div>
+    <div class="topbar-mode-toggle" role="tablist">
+      <button class="mode-btn active" data-mode="simple" title="一張卡 = 一張 CG + 對白">💬 簡易</button>
+      <button class="mode-btn" data-mode="detail" title="完整劇本語法">📝 細節</button>
+    </div>
     <div class="topbar-status">
       <span class="save-indicator" id="saveIndicator" title="自動存檔狀態">
         <span class="save-dot"></span>
@@ -107,6 +111,24 @@
       </div>
     </section>
 
+    <!-- Simple Pane (Batch 4) -->
+    <section class="pane pane-simple" id="paneSimple" hidden>
+      <div class="simple-cards-container" id="simpleCardsContainer"></div>
+      <div class="simple-empty-state" id="simpleEmptyState" hidden>
+        <div class="simple-empty-icon">💬</div>
+        <div class="simple-empty-text">拖一張圖進來開始</div>
+        <div class="simple-empty-sub">或點下方按鈕上傳</div>
+        <button class="simple-empty-upload" id="simpleEmptyUpload">＋ 上傳第一張 CG</button>
+      </div>
+      <div class="simple-add-card-zone" id="simpleAddCardZone" hidden>
+        <button class="simple-add-card-btn" id="simpleAddCardBtn">＋ 新增一張</button>
+      </div>
+      <div class="simple-bottom-actions" id="simpleBottomActions" hidden>
+        <button class="btn" id="simplePreviewAll">▶ 預覽全部</button>
+        <button class="btn btn-primary" id="simpleRecord">🎬 錄影輸出</button>
+      </div>
+    </section>
+
     <!-- Preview Pane -->
     <section class="pane pane-preview">
       <div class="preview-controls">
@@ -119,12 +141,12 @@
         <div class="stage" id="stage" data-ratio="16:9">
           <div class="game-ui-layer" id="gameUiLayer">
             <div class="ui-chapter" id="uiChapter" hidden></div>
-            <div class="ui-date" id="uiDate" hidden></div>
             <div class="ui-love" id="uiLove" hidden>
               <div class="ui-love-icon">♥</div>
               <div class="ui-love-content">
                 <div class="ui-love-name" id="uiLoveName"></div>
                 <div class="ui-love-bar"><div class="ui-love-fill" id="uiLoveFill"></div></div>
+              <div class="ui-love-num" id="uiLoveNum">50</div>
               </div>
             </div>
             <div class="ui-autoskip" id="uiAutoSkip" hidden>
@@ -150,8 +172,50 @@
           <div class="stage-hint" id="stageHint" hidden>點擊畫面繼續 →</div>
         </div>
       </div>
+
+      <!-- Batch 5:預覽播放控制 -->
+      <div class="preview-playback" id="previewPlayback">
+        <div class="playback-controls">
+          <button class="playback-btn" id="playbackPrev" title="上一句">⏮</button>
+          <button class="playback-btn playback-play" id="playbackPlayPause" title="播放/暫停">▶</button>
+          <button class="playback-btn" id="playbackNext" title="下一句">⏭</button>
+          <div class="playback-speed-wrap">
+            <select class="playback-speed" id="playbackSpeed" title="播放速度">
+              <option value="0.5">0.5×</option>
+              <option value="1" selected>1×</option>
+              <option value="1.5">1.5×</option>
+              <option value="2">2×</option>
+              <option value="3">3×</option>
+            </select>
+          </div>
+        </div>
+        <div class="playback-progress-wrap">
+          <input type="range" class="playback-progress" id="playbackProgress" min="0" max="100" value="0" step="0.1">
+        </div>
+        <div class="playback-meta">
+          <span id="playbackTime">00:00 / 00:00</span>
+          <span class="playback-meta-sep">·</span>
+          <span id="playbackStep">0 / 0</span>
+        </div>
+      </div>
     </section>
 
+  </div>
+
+  <!-- Batch 6:Status bar -->
+  <div class="status-bar" id="statusBar">
+    <span class="status-item">
+      <span class="status-label">檔案預估容量:</span>
+      <strong id="statusExportSize">0 KB</strong>
+    </span>
+    <span class="status-item">
+      <span class="status-label">資產:</span>
+      <strong id="statusAssetCount">0 角色 · 0 張</strong>
+    </span>
+    <span class="status-item" id="statusRecentSave">
+      <span class="status-label">最後存檔:</span>
+      <strong id="statusRecentSaveTime">剛剛</strong>
+    </span>
   </div>
 </div>
 
@@ -215,19 +279,35 @@
 
       <!-- Tab 切換 -->
       <div class="style-tabs">
-        <button class="style-tab active" data-tab="dialog">對話框外觀</button>
+        <button class="style-tab active" data-tab="preset">風格組合</button>
+        <button class="style-tab" data-tab="dialog">對話框細節</button>
         <button class="style-tab" data-tab="fonts">字體預覽</button>
         <button class="style-tab" data-tab="defaults">全域預設</button>
       </div>
 
-      <!-- Tab 1: 對話框外觀(既有內容) -->
-      <div class="style-panel active" data-tab="dialog">
+      <!-- Tab 0: 風格組合 -->
+      <div class="style-panel active" data-tab="preset">
+        <div class="style-preset-grid" id="stylePresetGrid"></div>
+        <div style="margin-top:14px; font-size:11px; color:var(--text-faint); line-height:1.7;">
+          選擇風格後,對話框、字體、UI 配色會整套鎖定。<br>
+          要單獨調顏色 / 字體請到「對話框細節」分頁(進階)。
+        </div>
+        <div class="style-anim-toggle" style="margin-top:16px; padding:12px 14px; background:rgba(196,162,101,0.06); border-radius:6px;">
+          <label style="display:flex; align-items:center; gap:8px; font-size:13px; cursor:pointer;">
+            <input type="checkbox" id="animationsToggle" checked>
+            <span>啟用動畫效果</span>
+          </label>
+          <div style="font-size:11px; color:var(--text-faint); margin-top:4px;">關閉後所有風格只顯示靜態效果</div>
+        </div>
+      </div>
+
+      <!-- Tab 1: 對話框細節(既有內容) -->
+      <div class="style-panel" data-tab="dialog">
       <div class="style-section">
         <div class="style-label">介面主題</div>
         <div class="theme-switcher">
-          <button class="theme-btn active" data-theme="violet">紫金（預設）</button>
-          <button class="theme-btn" data-theme="daylight">日光</button>
-          <button class="theme-btn" data-theme="rose">粉紅</button>
+          <button class="theme-btn active" data-theme="violet">紫月</button>
+          <button class="theme-btn" data-theme="daylight">白晝</button>
         </div>
       </div>
       <div class="style-section">
@@ -263,13 +343,6 @@
               <span>章節標題</span>
             </label>
             <input type="text" id="uiChapterText" placeholder="第一章 — 序幕" maxlength="40">
-          </div>
-          <div class="ui-toggle-row">
-            <label class="ui-toggle-label">
-              <input type="checkbox" id="uiDateToggle">
-              <span>日期 / 時間</span>
-            </label>
-            <input type="text" id="uiDateText" placeholder="Day 1 · 黃昏" maxlength="30">
           </div>
           <div class="ui-toggle-row ui-love-row">
             <label class="ui-toggle-label">
@@ -328,6 +401,20 @@
 
       <!-- Tab 3: 全域預設樣式 -->
       <div class="style-panel" data-tab="defaults">
+        <div class="defaults-section">
+          <h3>🔠 字級設定</h3>
+          <p class="defaults-hint">獨立調整,即時套用到預覽。</p>
+          <div class="font-size-row">
+            <label>對話字級</label>
+            <input type="range" id="fontSizeDialog" min="10" max="24" step="1" value="16">
+            <span class="font-size-label" id="fontSizeDialogLabel">16 pt</span>
+          </div>
+          <div class="font-size-row">
+            <label>角色名字級</label>
+            <input type="range" id="fontSizeSpeaker" min="10" max="24" step="1" value="18">
+            <span class="font-size-label" id="fontSizeSpeakerLabel">18 pt</span>
+          </div>
+        </div>
         <div class="defaults-section">
           <h3>🌐 全域預設樣式</h3>
           <p class="defaults-hint">沒有寫樣式 tag 的行會自動套用以下預設。行內自己寫的樣式優先。</p>
@@ -761,6 +848,42 @@
       <button class="btn btn-primary" id="cropperSave">儲存(套用所有表情)</button>
     </div>
   </div>
+</div>
+
+<!-- Batch 4:首次選風格 overlay -->
+<div class="style-picker-overlay" id="stylePickerOverlay" hidden>
+  <div class="style-picker-content">
+    <div class="style-picker-title">選一個風格開始</div>
+    <div class="style-picker-grid" id="stylePickerGrid"></div>
+    <div class="style-picker-skip">
+      <button id="stylePickerSkip">先跳過,之後再選</button>
+    </div>
+  </div>
+</div>
+
+<!-- Batch 4:CG 選擇器 overlay -->
+<div class="cg-picker-overlay" id="cgPickerOverlay" hidden>
+  <div class="cg-picker-content">
+    <div class="cg-picker-header">
+      <div class="cg-picker-title">選一張 CG</div>
+      <button class="cg-picker-close" id="cgPickerClose" aria-label="關閉">×</button>
+    </div>
+    <div class="cg-picker-grid" id="cgPickerGrid"></div>
+    <button class="cg-picker-upload" id="cgPickerUpload">＋ 上傳新的 CG</button>
+  </div>
+</div>
+
+<!-- Batch 4:預覽全部 overlay -->
+<div class="preview-all-overlay" id="previewAllOverlay" hidden>
+  <button class="preview-all-close" id="previewAllClose" aria-label="關閉">×</button>
+  <div class="preview-all-main" id="previewAllMain"></div>
+  <div class="preview-all-controls">
+    <button class="preview-all-btn" id="previewAllPrev" aria-label="上一張">‹</button>
+    <button class="preview-all-btn play" id="previewAllPlayPause" aria-label="播放/暫停">⏸</button>
+    <button class="preview-all-btn" id="previewAllNext" aria-label="下一張">›</button>
+    <span class="preview-all-index" id="previewAllIndex">1 / 1</span>
+  </div>
+  <div class="preview-all-thumbs" id="previewAllThumbs"></div>
 </div>
 
 <!-- O5:反白整行 → 浮動樣式 popup -->
