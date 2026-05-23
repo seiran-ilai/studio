@@ -821,15 +821,24 @@
           <div class="cropper-block-title"><span id="cropperEditingName">學長</span> · 取景設定</div>
 
           <div class="cropper-slider-row">
-            <label>Y 軸位置</label>
-            <input type="range" id="cropperYSlider" min="-50" max="50" value="0" step="1">
+            <label>Y 軸</label>
+            <input type="range" id="cropperYSlider" min="-200" max="200" value="0" step="1">
             <span class="cropper-val" id="cropperYVal">0%</span>
           </div>
+          <div class="cropper-range-info">範圍 -200% ~ +200%(正值下沉)</div>
 
           <div class="cropper-slider-row">
             <label>縮放</label>
-            <input type="range" id="cropperScaleSlider" min="50" max="200" value="100" step="1">
+            <input type="range" id="cropperScaleSlider" min="30" max="400" value="100" step="1">
             <span class="cropper-val" id="cropperScaleVal">100%</span>
+          </div>
+          <div class="cropper-range-info">範圍 30% ~ 400%</div>
+
+          <div class="cropper-preset-row">
+            <button class="cropper-preset-btn" data-y="0" data-s="100">重設</button>
+            <button class="cropper-preset-btn" data-y="80" data-s="150">頭部</button>
+            <button class="cropper-preset-btn" data-y="50" data-s="130">半身</button>
+            <button class="cropper-preset-btn" data-y="0" data-s="100">全身</button>
           </div>
 
           <div class="cropper-status" id="cropperStatus">

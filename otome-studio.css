@@ -3246,7 +3246,7 @@ body::after {
   display: flex;
   align-items: center;
   gap: 10px;
-  margin-bottom: 12px;
+  margin-bottom: 4px;
 }
 .cropper-slider-row label {
   font-size: 12px;
@@ -3259,8 +3259,36 @@ body::after {
   font-family: var(--font-mono);
   font-size: 12px;
   color: var(--gold-bright);
-  min-width: 46px;
+  min-width: 50px;
   text-align: right;
+}
+.cropper-range-info {
+  font-size: 10px;
+  color: var(--text-faint);
+  text-align: right;
+  margin-bottom: 10px;
+}
+.cropper-preset-row {
+  display: flex;
+  gap: 4px;
+  margin: 8px 0 12px;
+}
+.cropper-preset-btn {
+  flex: 1;
+  background: transparent;
+  border: 0.5px solid var(--border-soft);
+  color: var(--text-muted);
+  padding: 5px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  cursor: pointer;
+  font-family: var(--font-body);
+  transition: all 0.15s;
+}
+.cropper-preset-btn:hover {
+  background: rgba(196, 162, 101, 0.08);
+  color: var(--gold-bright);
+  border-color: var(--gold);
 }
 .cropper-status {
   padding: 8px 12px;

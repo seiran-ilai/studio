@@ -7589,6 +7589,17 @@ const PortraitCropper = (function () {
     ySlider.addEventListener("input", onSliderChange);
     scaleSlider.addEventListener("input", onSliderChange);
 
+    // 快速套用 preset 按鈕(重設 / 頭部 / 半身 / 全身)
+    document.querySelectorAll(".cropper-preset-btn").forEach(btn => {
+      btn.addEventListener("click", () => {
+        const c = getCurrentChar();
+        if (!c) return;
+        c.portraitY = parseInt(btn.dataset.y, 10);
+        c.portraitScale = parseInt(btn.dataset.s, 10);
+        render();
+      });
+    });
+
     stage.addEventListener("mousedown", onDragStart);
     stage.addEventListener("touchstart", onDragStart, { passive: false });
     document.addEventListener("mousemove", onDragMove);
@@ -7643,9 +7654,10 @@ const PortraitCropper = (function () {
     if (!dragging || !editingCharId) return;
     const rect = stage.getBoundingClientRect();
     const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-    const dyPct = ((clientY - dragStartY) / rect.height) * 100;
+    // ×200 敏感度,讓拖曳一次可覆蓋全 -200~+200 範圍
+    const dyPct = ((clientY - dragStartY) / rect.height) * 200;
     const c = getCurrentChar();
-    c.portraitY = Math.max(-50, Math.min(50, Math.round(dragStartYVal + dyPct)));
+    c.portraitY = Math.max(-200, Math.min(200, Math.round(dragStartYVal + dyPct)));
     render();
   }
 
