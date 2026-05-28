@@ -1,0 +1,1169 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=1280">
+<meta name="description" content="Visual Novel Studio — 純前端的視覺小說劇本編輯、預覽、截圖與錄影工具。">
+<meta property="og:title" content="Visual Novel Studio">
+<meta property="og:description" content="純前端的視覺小說劇本編輯、預覽、截圖與錄影工具。">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Visual Novel Studio">
+<meta name="twitter:description" content="純前端的視覺小說劇本編輯、預覽、截圖與錄影工具。">
+<title>Visual Novel Studio</title>
+<!-- Google Fonts: 中文 / 日文 混排 -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&family=Noto+Serif+TC:wght@400;500;700&family=Noto+Sans+JP:wght@400;500;700;900&family=Noto+Serif+JP:wght@400;500;700&family=Klee+One:wght@400;600&family=Zen+Maru+Gothic:wght@400;500;700&family=DotGothic16&display=swap" rel="stylesheet">
+
+<!-- Justfont 粉圓體(免費繁中) -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/justfont/open-huninn-font@2.1/font.css">
+
+<!-- Dexie.js — IndexedDB wrapper(CG/專案大量資料儲存用) -->
+<script src="https://cdn.jsdelivr.net/npm/dexie@4.0.10/dist/dexie.min.js"></script>
+
+<!-- JSZip — 專案匯出 .vns.zip 用 -->
+<script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
+
+<!-- gif.js — 簡易模式 GIF 輸出用 -->
+<script src="https://cdn.jsdelivr.net/npm/gif.js@0.2.0/dist/gif.js"></script>
+
+<link rel="stylesheet" href="index.css">
+</head>
+<body>
+
+<!-- Mobile block:點任意處跳回入口 -->
+<a id="mobile-block" href="../" role="alertdialog" aria-labelledby="mobile-block-title">
+  <div class="block-icon" aria-hidden="true">🖥️</div>
+  <h1 id="mobile-block-title">本工具只支援電腦版</h1>
+  <p>請使用桌面瀏覽器開啟以獲得完整體驗。</p>
+  <p class="block-hint">點擊任意處回到入口頁</p>
+</a>
+
+<!-- IndexedDB 不可用警告(隱私模式 / 舊瀏覽器 / 使用者停用) -->
+<div id="vns-idb-block" role="alertdialog" aria-labelledby="vns-idb-block-title">
+  <div class="block-icon" aria-hidden="true">⚠️</div>
+  <h1 id="vns-idb-block-title">此瀏覽器不支援 IndexedDB</h1>
+  <p>Visual Novel Studio 需要 IndexedDB 來儲存 CG 與攝影片資料。</p>
+  <p class="block-hint">
+    可能原因:使用無痕 / 隱私模式、瀏覽器版本過舊。<br>
+    建議使用一般瀏覽模式的 Chrome、Firefox 或 Edge 最新版本。
+  </p>
+</div>
+<script>
+  (function () {
+    var el = document.getElementById("mobile-block");
+    function check() { el.classList.toggle("show", window.innerWidth < 1024); }
+    check();
+    window.addEventListener("resize", check);
+  })();
+</script>
+
+<div class="app">
+
+  <!-- Top Bar -->
+  <header class="topbar">
+    <div class="brand">
+      <div class="brand-mark">Visual Novel Studio</div>
+    </div>
+    <div class="topbar-mode-toggle" role="tablist">
+      <button class="mode-btn active" data-mode="simple" title="一張卡 = 一張 CG + 對白">💬 簡易</button>
+      <button class="mode-btn" data-mode="detail" title="完整劇本語法">📝 細節</button>
+    </div>
+    <div class="topbar-status">
+      <span class="save-indicator" id="saveIndicator" title="自動存檔狀態">
+        <span class="save-dot"></span>
+        <span class="save-text">已儲存</span>
+      </span>
+      <span class="storage-dot" id="storageDot" title="本機儲存量"></span>
+    </div>
+    <div class="topbar-actions">
+      <!-- 次要功能 -->
+      <button class="btn" id="btnProjects"><span class="btn-emoji">📁</span><span class="btn-text">我的專案</span></button>
+      <button class="btn" id="btnChars"><span class="btn-emoji">👥</span><span class="btn-text">角色</span></button>
+      <button class="btn" id="btnStyle"><span class="btn-emoji">🎨</span><span class="btn-text">樣式</span></button>
+
+      <!-- 視覺分隔線 -->
+      <span class="topbar-divider"></span>
+
+      <!-- 主要輸出 -->
+      <button class="btn" id="btnScreenshot"><span class="btn-emoji">📸</span><span class="btn-text">截圖</span></button>
+      <button class="btn btn-primary" id="btnRecord"><span class="btn-emoji">🎬</span><span class="btn-text">錄影</span></button>
+
+      <!-- 系統設定 -->
+      <button class="btn" id="btnSettings"><span class="btn-emoji">⚙</span><span class="btn-text">設定</span></button>
+
+      <!-- 更多功能選單 -->
+      <div class="topbar-more">
+        <button class="btn btn-ghost" id="btnMore" title="更多" aria-haspopup="true">⋯</button>
+        <div class="topbar-menu" id="topbarMenu" hidden>
+          <button class="topbar-menu-item" id="btnImport">📥 匯入專案</button>
+          <button class="topbar-menu-item" id="btnShare">📤 匯出專案</button>
+          <button class="topbar-menu-item" id="btnExportClip">📤 匯出分享字串</button>
+          <div class="topbar-menu-sep"></div>
+          <button class="topbar-menu-item" id="btnResetScript">↻ 只重設劇本</button>
+          <button class="topbar-menu-item" id="btnResetStyle">↻ 只重設樣式</button>
+          <button class="topbar-menu-item danger" id="btnReset">↻ 全部重設</button>
+          <div class="topbar-menu-sep"></div>
+          <div class="topbar-menu-label">最近開啟</div>
+          <div id="recentList"></div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main -->
+  <main class="main">
+
+    <div class="mobile-pane-tabs">
+      <button class="mobile-pane-tab active" data-pane="script">劇本</button>
+      <button class="mobile-pane-tab" data-pane="preview">預覽</button>
+    </div>
+
+    <!-- Script Pane -->
+    <section class="pane pane-script mobile-active">
+      <div class="pane-header">
+        <div class="pane-title">劇本</div>
+        <div class="pane-meta" id="lineCount">0 行</div>
+      </div>
+      <div class="script-wrap">
+        <div class="script-current-line" id="scriptCurrentLine"></div>
+        <div class="script-highlight" id="scriptHighlight" aria-hidden="true"></div>
+        <textarea
+          id="scriptArea"
+          class="script-area"
+          spellcheck="false"
+          placeholder="學長[微笑][左]：嗨，原來你也在這裡。&#10;&#10;點下方按鈕插入語法，或點「⌨ 語法說明」查看完整教學。"
+        ></textarea>
+      </div>
+      <div class="script-toolbar">
+        <div class="snippet-group">
+          <button class="snippet-btn" data-snippet="bg">🌄 背景</button>
+          <button class="snippet-btn" data-snippet="exit">🚪 離場</button>
+          <div class="snippet-cg-group">
+            <button class="snippet-btn" data-snippet="cg">🖼 CG</button>
+            <button class="snippet-btn-more" id="cgMoreBtn" title="CG 變體" aria-haspopup="true">▾</button>
+            <div class="snippet-cg-menu" id="cgMenu" hidden>
+              <button data-snippet="cg">CG（含對話框、UI）</button>
+              <button data-snippet="cgsolo">CG solo（含對話框、無 UI）</button>
+              <button data-snippet="cgfull">CG full（純圖、無對話框）</button>
+            </div>
+          </div>
+          <button class="snippet-btn" data-snippet="choices">📝 選項</button>
+          <button class="snippet-btn" data-snippet="light">💡 光線</button>
+        </div>
+        <button class="syntax-help-btn" id="btnSyntaxHelp">⌨ 語法說明</button>
+      </div>
+    </section>
+
+    <!-- Simple Pane — 兩欄式:左側攝影片列表 / 右側編輯區 -->
+    <section class="pane pane-simple" id="paneSimple" hidden>
+
+      <!-- 左側:攝影片列表 -->
+      <aside class="simple-sidebar" aria-label="攝影片列表">
+        <div class="simple-sidebar-header">
+          <span class="simple-sidebar-title">攝影片</span>
+          <span class="simple-sidebar-count" id="simpleSidebarCount">0</span>
+        </div>
+        <div class="simple-slide-list" id="simpleSlideList">
+          <!-- JS 動態填入 .simple-slide-item -->
+        </div>
+        <button class="simple-add-slide-btn" id="simpleAddSlideBtn">＋ 新增攝影片</button>
+      </aside>
+
+      <!-- 右側:編輯區 -->
+      <div class="simple-editor" id="simpleEditor">
+
+        <!-- 預覽框 -->
+        <div class="simple-preview" id="simplePreview">
+          <div class="simple-preview-stage" id="simplePreviewStage" data-ratio="16:9">
+            <div class="simple-preview-empty" id="simplePreviewEmpty">
+              <div class="simple-preview-empty-icon" aria-hidden="true">💬</div>
+              <p class="simple-preview-empty-text">選一張攝影片開始編輯</p>
+              <p class="simple-preview-empty-hint">或點「＋ 新增攝影片」建立第一張</p>
+            </div>
+            <div class="simple-preview-cg" id="simplePreviewCg" hidden></div>
+            <div class="simple-preview-dialog" id="simplePreviewDialog" hidden></div>
+          </div>
+        </div>
+
+        <!-- 方向 -->
+        <div class="simple-row simple-orientation">
+          <span class="simple-row-label">方向</span>
+          <div class="simple-ratio-toggle" role="tablist">
+            <button class="active" data-ratio="16:9" type="button">橫 16:9</button>
+            <button data-ratio="9:16" type="button">直 9:16</button>
+          </div>
+        </div>
+
+        <!-- CG / 背景 -->
+        <div class="simple-row simple-cg-row">
+          <div class="simple-row-label">📷 CG / 背景</div>
+          <div class="simple-cg-zone" id="simpleCgZone">
+            <div class="simple-cg-zone-empty" id="simpleCgZoneEmpty">
+              <p>拖曳圖片到此或點擊選擇</p>
+              <div class="simple-cg-zone-actions">
+                <button class="btn" id="simpleCgUploadBtn" type="button">上傳圖片</button>
+                <button class="btn btn-ghost" id="simpleCgLibraryBtn" type="button">從 CG 庫選擇 📁</button>
+              </div>
+            </div>
+            <div class="simple-cg-zone-preview" id="simpleCgZonePreview" hidden>
+              <img id="simpleCgZoneImg" alt="">
+              <div class="simple-cg-zone-actions">
+                <button class="btn btn-ghost" id="simpleCgReplaceBtn" type="button">換一張</button>
+                <button class="btn btn-ghost" id="simpleCgClearBtn" type="button">移除</button>
+              </div>
+            </div>
+            <input type="file" id="simpleCgFileInput" accept="image/jpeg,image/png,image/webp,image/gif" hidden>
+          </div>
+        </div>
+
+        <!-- 對話框樣式 -->
+        <div class="simple-row simple-dialog-style-row">
+          <div class="simple-row-label">🎨 對話框樣式</div>
+          <div class="simple-dialog-style-line">
+            <select class="simple-dialog-style-select" id="simpleDialogStyleSelect"></select>
+            <button class="btn btn-ghost" id="simpleOpenStyleModalBtn" type="button">→ 調整</button>
+          </div>
+        </div>
+
+        <!-- 對話文字 -->
+        <div class="simple-row simple-dialog-text-row">
+          <div class="simple-row-label">💬 對話</div>
+          <textarea
+            id="simpleDialogText"
+            class="simple-dialog-text"
+            placeholder="學長:你今天看起來不太一樣。&#10;&#10;我:(他是不是發現我換髮型了?)&#10;&#10;沒有啊,跟平常一樣。"
+            rows="6"
+            spellcheck="false"
+            autocomplete="off"
+            autocorrect="off"
+            autocapitalize="off"
+          ></textarea>
+          <div class="simple-syntax-hint">
+            💡 語法:<code>角色:對話</code> / <code>角色:(內心話)</code> / <code>(內心話)</code> / 直接文字=旁白
+          </div>
+          <div class="simple-syntax-warn" id="simpleSyntaxWarn" hidden>
+            ⚠ 簡易模式不支援 <code>[bg:]</code> / <code>[cg:]</code> / <code>[選項]</code> / <code>[好感度]</code> 等場景指令,需要這些功能請使用「細節模式」。
+          </div>
+        </div>
+
+        <!-- 輸出按鈕列 -->
+        <div class="simple-row simple-output-row">
+          <button class="btn" id="simplePreviewPlayBtn" type="button">▶ 預覽播放</button>
+          <button class="btn" id="simpleScreenshotBtn" type="button">📷 截圖</button>
+          <button class="btn" id="simpleGifBtn" type="button">🎬 GIF</button>
+          <button class="btn btn-primary" id="simpleMp4Btn" type="button">🎥 MP4</button>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- Preview Pane -->
+    <section class="pane pane-preview">
+      <div class="preview-controls">
+        <div class="ratio-toggle" role="tablist">
+          <button class="active" data-ratio="16:9">16 : 9</button>
+          <button data-ratio="9:16">9 : 16</button>
+        </div>
+      </div>
+      <div class="stage-container">
+        <div class="stage" id="stage" data-ratio="16:9">
+          <div class="game-ui-layer" id="gameUiLayer">
+            <div class="ui-chapter" id="uiChapter" hidden></div>
+            <div class="ui-love" id="uiLove" hidden>
+              <div class="ui-love-icon">♥</div>
+              <div class="ui-love-content">
+                <div class="ui-love-name" id="uiLoveName"></div>
+                <div class="ui-love-bar"><div class="ui-love-fill" id="uiLoveFill"></div></div>
+              <div class="ui-love-num" id="uiLoveNum">50</div>
+              </div>
+            </div>
+            <div class="ui-autoskip" id="uiAutoSkip" hidden>
+              <button class="ui-skip-btn">SKIP</button>
+              <button class="ui-skip-btn active">AUTO</button>
+            </div>
+          </div>
+          <div class="stage-bg stage-bg-default" id="stageBg"></div>
+          <div class="characters" id="characters"></div>
+          <div class="stage-cg" id="stageCg"></div>
+          <div class="choices-overlay" id="choicesOverlay"></div>
+          <div class="dialog-box" id="dialogBox">
+            <div class="dialog-speaker" id="dialogSpeaker"></div>
+            <div class="dialog-text" id="dialogText"></div>
+            <div class="dialog-progress" id="dialogProgress"></div>
+            <div class="dialog-indicator" id="dialogIndicator"></div>
+          </div>
+          <div class="stage-nav-zone left" id="stageNavLeft" title="上一句">‹</div>
+          <div class="stage-nav-zone right" id="stageNavRight" title="下一句">›</div>
+          <div class="preview-counter" id="previewCounter" title="點擊跳到指定句">
+            <span id="previewCounterCurrent">0</span> / <span id="previewCounterTotal">0</span>
+          </div>
+          <div class="stage-hint" id="stageHint" hidden>點擊畫面繼續 →</div>
+        </div>
+      </div>
+
+      <!-- Batch 5:預覽播放控制 -->
+      <div class="preview-playback" id="previewPlayback">
+        <div class="playback-controls">
+          <button class="playback-btn" id="playbackPrev" title="上一句">⏮</button>
+          <button class="playback-btn playback-play" id="playbackPlayPause" title="播放/暫停">▶</button>
+          <button class="playback-btn" id="playbackNext" title="下一句">⏭</button>
+          <div class="playback-speed-wrap">
+            <select class="playback-speed" id="playbackSpeed" title="播放速度">
+              <option value="0.5">0.5×</option>
+              <option value="1" selected>1×</option>
+              <option value="1.5">1.5×</option>
+              <option value="2">2×</option>
+              <option value="3">3×</option>
+            </select>
+          </div>
+        </div>
+        <div class="playback-progress-wrap">
+          <input type="range" class="playback-progress" id="playbackProgress" min="0" max="100" value="0" step="0.1">
+        </div>
+        <div class="playback-meta">
+          <span id="playbackTime">00:00 / 00:00</span>
+          <span class="playback-meta-sep">·</span>
+          <span id="playbackStep">0 / 0</span>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Batch 6:Status bar -->
+  <div class="status-bar" id="statusBar">
+    <span class="status-item">
+      <span class="status-label">檔案預估容量:</span>
+      <strong id="statusExportSize">0 KB</strong>
+    </span>
+    <span class="status-item">
+      <span class="status-label">資產:</span>
+      <strong id="statusAssetCount">0 角色 · 0 張</strong>
+    </span>
+    <span class="status-item" id="statusRecentSave">
+      <span class="status-label">最後存檔:</span>
+      <strong id="statusRecentSaveTime">剛剛</strong>
+    </span>
+  </div>
+
+  <!-- Footer:作者資訊(低調列) -->
+  <footer class="app-footer">
+    <span class="app-footer-title">Visual Novel Studio</span>
+    <span class="app-footer-sep" aria-hidden="true">·</span>
+    <span class="app-footer-author">Made by ilai</span>
+    <span class="app-footer-sep" aria-hidden="true">·</span>
+    <a
+      class="app-footer-link"
+      href="https://www.threads.net/@ilainosu.ffxiv"
+      target="_blank"
+      rel="noopener noreferrer"
+      aria-label="作者的 Threads 頁面(新分頁開啟)"
+    >Threads</a>
+    <span class="app-footer-sep" aria-hidden="true">·</span>
+    <a
+      class="app-footer-link"
+      href="https://www.plurk.com/ilai_sei"
+      target="_blank"
+      rel="noopener noreferrer"
+      aria-label="作者的 Plurk 頁面(新分頁開啟)"
+    >Plurk</a>
+  </footer>
+</div>
+
+<!-- ========== Asset Manager Modal ========== -->
+<div class="modal-backdrop" id="assetsModal">
+  <div class="modal" role="dialog" aria-modal="true">
+    <div class="modal-header">
+      <div class="modal-title" id="modalTitle">資產管理</div>
+      <button class="modal-close" id="modalClose" aria-label="關閉">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="tabs" role="tablist">
+        <button class="tab active" data-tab="chars">角色 立繪</button>
+        <button class="tab" data-tab="bgs">場景 背景</button>
+        <button class="tab" data-tab="cgs">CG 圖卡</button>
+      </div>
+
+      <div class="tab-panel active" id="tab-chars" data-tab="chars">
+        <div class="upload-hint">
+          💡 立繪建議規格:
+          <ul>
+            <li>透明背景 PNG</li>
+            <li>人物滿版約 800×1600(直幅)</li>
+            <li>上傳後用每張卡片的「📐 取景」調整位置與縮放</li>
+          </ul>
+        </div>
+        <div class="char-list" id="charList"></div>
+        <button class="add-card-btn" id="addCharBtn" style="margin-top:12px;">+ 新增角色</button>
+      </div>
+
+      <div class="tab-panel" id="tab-bgs" data-tab="bgs">
+        <div class="bg-list" id="bgList"></div>
+        <button class="add-card-btn" id="addBgBtn" style="margin-top:12px;">+ 新增背景</button>
+      </div>
+
+      <div class="tab-panel" id="tab-cgs" data-tab="cgs">
+        <div class="cg-grid" id="cgList"></div>
+        <button class="add-card-btn" id="addCgBtn" style="margin-top:12px;">+ 新增 CG</button>
+        <div style="margin-top:14px; font-size:11px; color:var(--text-faint); line-height:1.7;">
+          CG 是「全螢幕圖卡」,適合放告白、回憶、特寫等關鍵場景。<br>
+          劇本用 <span style="color:var(--gold-bright); font-family:var(--font-mono);">[cg: 名字]</span> 顯示、<span style="color:var(--gold-bright); font-family:var(--font-mono);">[cg full: 名字]</span> 純圖模式、<span style="color:var(--gold-bright); font-family:var(--font-mono);">[cg off]</span> 關閉。
+        </div>
+      </div>
+
+    </div>
+    <div class="modal-footer">
+      <div class="storage-meter" id="storageMeter">儲存:計算中...</div>
+      <button class="btn btn-primary" id="modalDoneBtn">完成</button>
+    </div>
+  </div>
+</div>
+
+<!-- ========== Style Modal ========== -->
+<div class="modal-backdrop" id="styleModal">
+  <div class="modal style-modal-wide" role="dialog" aria-modal="true">
+    <div class="modal-header">
+      <div class="modal-title">🎨 對話框樣式</div>
+      <button class="modal-close" id="styleModalClose" aria-label="關閉">×</button>
+    </div>
+    <div class="modal-body style-modal-body">
+     <div class="style-modal-grid">
+      <!-- LEFT:可滾的設定區 -->
+      <div class="style-modal-settings">
+
+      <div class="style-modal-hint">💡 想切換整個工具的明暗主題?請到右上角「⚙ 設定」</div>
+
+      <!-- Tab 切換(縮減為 2 分頁) -->
+      <div class="style-tabs">
+        <button class="style-tab active" data-tab="preset">風格組合</button>
+        <button class="style-tab" data-tab="fonts">字體設定</button>
+      </div>
+
+      <!-- Tab 0: 風格組合 -->
+      <div class="style-panel active" data-tab="preset">
+        <div class="style-preset-grid" id="stylePresetGrid"></div>
+        <div class="style-anim-toggle" style="margin-top:16px; padding:12px 14px; background:rgba(196,162,101,0.06); border-radius:6px;">
+          <label style="display:flex; align-items:center; gap:8px; font-size:13px; cursor:pointer;">
+            <input type="checkbox" id="animationsToggle" checked>
+            <span>啟用動畫效果</span>
+          </label>
+          <div style="font-size:11px; color:var(--text-faint); margin-top:4px;">關閉後所有風格只顯示靜態效果</div>
+        </div>
+
+        <div class="style-section">
+          <div class="style-label">對話框形狀</div>
+          <div class="shape-grid" id="dialogShapeGrid"></div>
+        </div>
+        <div class="style-section">
+          <div class="style-label">角色光線</div>
+          <div class="light-mode-row">
+            <button class="light-mode-btn" data-mode="聚光" title="只有說話者正常亮度，其他角色罩半透明黑">
+              <div class="light-mode-icon spotlight"></div>
+              <span>聚光</span>
+            </button>
+            <button class="light-mode-btn" data-mode="同亮" title="所有角色都正常顯示">
+              <div class="light-mode-icon all-lit"></div>
+              <span>同亮</span>
+            </button>
+            <button class="light-mode-btn" data-mode="全暗" title="所有角色都罩半透明黑（用於回憶 / 夢境）">
+              <div class="light-mode-icon all-dim"></div>
+              <span>全暗</span>
+            </button>
+          </div>
+          <div class="style-preview-note">
+            劇本可用 <code>[聚光]</code> / <code>[同亮]</code> / <code>[全暗]</code>
+          </div>
+        </div>
+        <div class="style-section">
+          <div class="style-label">遊戲介面元素</div>
+          <div class="game-ui-settings">
+            <div class="ui-toggle-row">
+              <label class="ui-toggle-label">
+                <input type="checkbox" id="uiChapterToggle">
+                <span>章節標題</span>
+              </label>
+              <input type="text" id="uiChapterText" placeholder="第一章 — 序幕" maxlength="40">
+            </div>
+            <div class="ui-toggle-row ui-love-row">
+              <label class="ui-toggle-label">
+                <input type="checkbox" id="uiLoveToggle">
+                <span>好感度</span>
+              </label>
+              <select id="uiLoveCharSelect"></select>
+              <div class="ui-love-slider-wrap">
+                <input type="range" id="uiLoveValue" min="0" max="100" value="50">
+                <strong id="uiLoveValueLabel">50</strong>
+              </div>
+            </div>
+            <div class="ui-toggle-row">
+              <label class="ui-toggle-label">
+                <input type="checkbox" id="uiAutoSkipToggle">
+                <span>AUTO / SKIP 按鈕</span>
+              </label>
+              <span class="ui-toggle-hint">右下角裝飾按鈕（不可點）</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tab 1: 字體設定(合併原本字體預覽 + 全域預設) -->
+      <div class="style-panel" data-tab="fonts">
+        <div class="defaults-section">
+          <h3>🌐 全域預設樣式</h3>
+          <p class="defaults-hint">行內 tag 優先。</p>
+
+          <div class="default-row">
+            <label>角色名</label>
+            <span class="default-row-empty">—</span>
+            <input type="range" id="fontSizeSpeaker" class="default-size-range" min="12" max="32" step="1" value="16">
+            <span class="default-size-label" id="fontSizeSpeakerLabel">16 pt</span>
+          </div>
+
+          <div class="default-row">
+            <label>旁白</label>
+            <select id="defNarrationFont">
+              <option value="">(無)</option>
+              <option value="luoyan">辰宇落雁</option>
+              <option value="serif">明體</option>
+              <option value="sans">黑體</option>
+              <option value="round">粉圓</option>
+              <option value="iansui">芫荽</option>
+              <option value="marker">麥克黑</option>
+              <option value="pixel">點陣</option>
+            </select>
+            <input type="range" id="fontSizeNarration" class="default-size-range" min="12" max="32" step="1" value="16">
+            <span class="default-size-label" id="fontSizeNarrationLabel">16 pt</span>
+          </div>
+
+          <div class="default-row">
+            <label>內心話</label>
+            <select id="defInnerFont">
+              <option value="">(無)</option>
+              <option value="luoyan">辰宇落雁</option>
+              <option value="serif">明體</option>
+              <option value="sans">黑體</option>
+              <option value="round">粉圓</option>
+              <option value="iansui">芫荽</option>
+              <option value="marker">麥克黑</option>
+              <option value="pixel">點陣</option>
+            </select>
+            <input type="range" id="fontSizeInner" class="default-size-range" min="12" max="32" step="1" value="15">
+            <span class="default-size-label" id="fontSizeInnerLabel">15 pt</span>
+          </div>
+
+          <div class="default-row">
+            <label>對話</label>
+            <select id="defDialogFont">
+              <option value="">(無)</option>
+              <option value="luoyan">辰宇落雁</option>
+              <option value="serif">明體</option>
+              <option value="sans">黑體</option>
+              <option value="round">粉圓</option>
+              <option value="iansui">芫荽</option>
+              <option value="marker">麥克黑</option>
+              <option value="pixel">點陣</option>
+            </select>
+            <input type="range" id="fontSizeDialog" class="default-size-range" min="12" max="32" step="1" value="18">
+            <span class="default-size-label" id="fontSizeDialogLabel">18 pt</span>
+          </div>
+
+        </div>
+
+        <div class="defaults-section" style="margin-top:24px;">
+          <h3>🖋 字體預覽</h3>
+          <div class="font-preview-list" id="fontPreviewList">
+            <!-- JS 動態填入 -->
+          </div>
+        </div>
+      </div>
+
+      </div>
+      <!-- RIGHT:固定不滾的即時預覽 -->
+      <aside class="style-modal-preview" aria-label="即時預覽">
+        <div class="style-modal-preview-label">即時預覽</div>
+        <div class="style-modal-preview-stage">
+          <div class="style-preview-box" id="modalPreviewBox" data-shape="classic">
+            <div class="style-preview-narration" id="modalPreviewNarration">夕陽透過窗戶灑進來。</div>
+            <div class="style-preview-dialog-block">
+              <div class="style-preview-speaker" id="modalPreviewSpeaker">學長</div>
+              <div class="style-preview-dialog" id="modalPreviewDialog">你今天看起來不太一樣。</div>
+            </div>
+            <div class="style-preview-inner" id="modalPreviewInner">(他在看我嗎?)</div>
+          </div>
+        </div>
+      </aside>
+     </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-primary" id="styleModalDone">完成</button>
+    </div>
+  </div>
+</div>
+
+<!-- ========== Settings Modal (系統設定:介面主題等) ========== -->
+<!-- ========== CG Library Modal (🖼 CG 庫) ========== -->
+<div class="modal-backdrop" id="cgLibraryModal">
+  <div class="modal" role="dialog" aria-modal="true" style="max-width: 760px;">
+    <div class="modal-header">
+      <div class="modal-title">🖼 CG 庫</div>
+      <button class="modal-close" id="cgLibraryModalClose" aria-label="關閉">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="cg-library-toolbar">
+        <button class="btn btn-primary" id="cgLibraryUploadBtn">＋ 上傳新 CG</button>
+        <input type="file" id="cgLibraryUploadInput" accept="image/jpeg,image/png,image/webp,image/gif" hidden>
+        <span class="cg-library-hint">點圖縮選用到當前攝影片</span>
+      </div>
+      <div class="cg-library-grid" id="cgLibraryGrid">
+        <!-- JS 動態填入 -->
+      </div>
+      <div class="cg-library-empty" id="cgLibraryEmpty" hidden>
+        <div class="cg-library-empty-icon" aria-hidden="true">🖼</div>
+        <div>CG 庫還是空的</div>
+        <div class="cg-library-empty-sub">點上方「＋ 上傳新 CG」開始</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ========== Projects Modal (我的專案) ========== -->
+<div class="modal-backdrop" id="projectsModal">
+  <div class="modal" role="dialog" aria-modal="true" style="max-width: 640px;">
+    <div class="modal-header">
+      <div class="modal-title">📁 我的專案</div>
+      <button class="modal-close" id="projectsModalClose" aria-label="關閉">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="projects-toolbar">
+        <button class="btn btn-primary" id="projectsNewBtn">＋ 新專案</button>
+        <span class="projects-count" id="projectsCount"></span>
+      </div>
+      <div class="projects-list" id="projectsList">
+        <!-- JS 動態填入 -->
+      </div>
+      <div class="projects-empty" id="projectsEmpty" hidden>
+        <div class="projects-empty-icon" aria-hidden="true">📭</div>
+        <div>還沒有任何專案</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal-backdrop" id="settingsModal">
+  <div class="modal" role="dialog" aria-modal="true" style="max-width: 480px;">
+    <div class="modal-header">
+      <div class="modal-title">⚙ 系統設定</div>
+      <button class="modal-close" id="settingsModalClose" aria-label="關閉">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="style-section">
+        <div class="style-label">介面主題</div>
+        <div class="theme-switcher">
+          <button class="theme-btn active" data-theme="violet">紫月</button>
+          <button class="theme-btn" data-theme="daylight">白晝</button>
+        </div>
+        <div class="settings-theme-desc">
+          <div><strong>紫月：</strong>深紫底 + 金邊,沉浸感強,適合夜間創作</div>
+          <div><strong>白晝：</strong>米白底 + 香檳金,清爽,適合白天/截圖貼文用</div>
+        </div>
+        <div class="settings-theme-note">
+          切換主題會影響整個工具的背景、按鈕、modal 配色,<br>
+          不影響劇本內的對話框樣式(那個在「🎨 樣式」設定)
+        </div>
+      </div>
+
+      <!-- 💾 儲存空間 -->
+      <div class="settings-storage" id="settingsStorage">
+        <div class="settings-storage-label">💾 儲存空間</div>
+        <div class="storage-bar" aria-hidden="true">
+          <div class="storage-bar-fill" id="storageBarFill" style="width:0%"></div>
+        </div>
+        <div class="storage-summary" id="storageSummary">偵測中…</div>
+        <div class="storage-breakdown" id="storageBreakdown"></div>
+        <div class="storage-actions">
+          <button class="btn" id="storageManageProjects">📁 管理專案</button>
+          <button class="btn" id="storageManageCgs">🖼 管理 CG 庫</button>
+          <button class="btn btn-ghost" id="storageRefresh" title="重新計算用量">↻</button>
+        </div>
+        <div class="storage-actions">
+          <button class="btn" id="storageExportProject">📦 匯出專案</button>
+          <button class="btn" id="storageImportProject">📥 匯入 .vns</button>
+          <input type="file" id="storageImportFileInput" accept=".vns,.zip,application/zip" style="display:none">
+        </div>
+        <div class="storage-persist-note" id="storagePersistNote" hidden></div>
+      </div>
+
+      <div class="settings-author">
+        <div class="settings-author-label">關於作者</div>
+        <div class="settings-author-name">Made by ilai</div>
+        <div class="settings-author-links">
+          <a
+            class="settings-author-link"
+            href="https://www.threads.net/@ilainosu.ffxiv"
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label="作者的 Threads 頁面(新分頁開啟)"
+          >
+            <span class="settings-author-platform">Threads</span>
+            <span class="settings-author-handle">@ilainosu.ffxiv</span>
+            <span class="settings-author-arrow" aria-hidden="true">→</span>
+          </a>
+          <a
+            class="settings-author-link"
+            href="https://www.plurk.com/ilai_sei"
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label="作者的 Plurk 頁面(新分頁開啟)"
+          >
+            <span class="settings-author-platform">Plurk</span>
+            <span class="settings-author-handle">@ilai_sei</span>
+            <span class="settings-author-arrow" aria-hidden="true">→</span>
+          </a>
+        </div>
+        <div class="settings-author-msg">
+          希望每個喜歡 FFXIV 的玩家、<br>
+          喜歡創作的創作者們,喜歡這份工具!💛
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-primary" id="settingsModalDone">完成</button>
+    </div>
+  </div>
+</div>
+
+<!-- ========== Syntax Help Modal ========== -->
+<div class="modal-backdrop" id="syntaxModal">
+  <div class="modal" role="dialog" aria-modal="true" style="max-width: 720px;">
+    <div class="modal-header">
+      <div class="modal-title">📖 語法說明</div>
+      <button class="modal-close" id="syntaxModalClose" aria-label="關閉">×</button>
+    </div>
+    <div class="modal-body syntax-modal-body">
+
+      <!-- Tab 切換列 -->
+      <div class="syntax-tabs" role="tablist">
+        <button class="syntax-tab active" data-tab="dialog" role="tab">💬 對話</button>
+        <button class="syntax-tab" data-tab="scene" role="tab">🎬 場景</button>
+        <button class="syntax-tab" data-tab="choices" role="tab">📝 選項</button>
+        <button class="syntax-tab" data-tab="style" role="tab">🎨 樣式</button>
+        <button class="syntax-tab" data-tab="keys" role="tab">⌨ 快捷鍵</button>
+      </div>
+
+      <!-- Tab 1: 對話 -->
+      <div class="syntax-panel active" data-tab="dialog">
+        <div class="syntax-section-header">最常用</div>
+        <div class="syntax-row">
+          <code>夕陽灑進來。</code>
+          <span>場景旁白(灰字、不顯示說話者)</span>
+          <button class="syntax-try" data-insert="夕陽灑進來。&#10;">▶ 試試</button>
+        </div>
+        <div class="syntax-row">
+          <code>(這該怎麼辦?)</code>
+          <span>內心獨白(自動去括號、與旁白同樣式)</span>
+          <button class="syntax-try" data-insert="(這該怎麼辦?)&#10;">▶ 試試</button>
+        </div>
+        <div class="syntax-row">
+          <code>我:你好。</code>
+          <span>主角開口(顯示名字、無立繪)</span>
+          <button class="syntax-try" data-insert="我:你好。&#10;">▶ 試試</button>
+        </div>
+        <div class="syntax-row">
+          <code>學長[微笑][右]:嗨。</code>
+          <span>配角對話(顯示名字 + 立繪)</span>
+          <button class="syntax-try" data-insert="學長[微笑][右]:嗨。&#10;">▶ 試試</button>
+        </div>
+
+        <details class="syntax-advanced">
+          <summary>進階用法</summary>
+          <div class="syntax-row">
+            <code>角色[表情][中]:…</code>
+            <span>位置 = 左 / 中 / 右(一個人建議用中)</span>
+          </div>
+          <div class="syntax-row">
+            <code>角色[表情][替代名]:…</code>
+            <span>用替代名顯示、隱藏真名(揭穿身份時拿掉即可)</span>
+          </div>
+          <div class="syntax-tip">
+            💡 替代名要寫在表情之後:<code>學長[神秘][神祕旅人][右]:…</code> → 對話框顯示「神祕旅人」
+          </div>
+        </details>
+      </div>
+
+      <!-- Tab 2: 場景 -->
+      <div class="syntax-panel" data-tab="scene">
+        <div class="syntax-section-header">最常用</div>
+        <div class="syntax-row">
+          <code>[bg: 教室]</code>
+          <span>切換背景</span>
+          <button class="syntax-try" data-insert="[bg: ]">▶ 試試</button>
+        </div>
+        <div class="syntax-row">
+          <code>[離場]</code>
+          <span>清空舞台所有角色</span>
+          <button class="syntax-try" data-insert="[離場]&#10;">▶ 試試</button>
+        </div>
+        <div class="syntax-row">
+          <code>[cg: 告白]</code>
+          <span>顯示 CG(保留對話框與 UI)</span>
+          <button class="syntax-try" data-insert="[cg: ]&#10;旁白文字...&#10;[cg off]&#10;">▶ 試試</button>
+        </div>
+        <div class="syntax-row">
+          <code>[cg off]</code>
+          <span>關閉 CG</span>
+          <button class="syntax-try" data-insert="[cg off]&#10;">▶ 試試</button>
+        </div>
+
+        <details class="syntax-advanced">
+          <summary>進階用法</summary>
+          <div class="syntax-row">
+            <code>[cg solo: 告白]</code>
+            <span>CG + 對話框(隱藏假 UI、適合 CG 中的對話)</span>
+          </div>
+          <div class="syntax-row">
+            <code>[cg full: 告白]</code>
+            <span>純圖模式(隱藏對話框與假 UI)</span>
+          </div>
+          <div class="syntax-section-header" style="margin-top: 14px;">光線模式</div>
+          <div class="syntax-row">
+            <code>[聚光]</code>
+            <span>只亮說話者(其他角色罩半透明黑)</span>
+          </div>
+          <div class="syntax-row">
+            <code>[同亮]</code>
+            <span>所有角色都正常亮</span>
+          </div>
+          <div class="syntax-row">
+            <code>[全暗]</code>
+            <span>所有角色都罩黑(回憶/夢境)</span>
+          </div>
+        </details>
+      </div>
+
+      <!-- Tab 3: 選項 -->
+      <div class="syntax-panel" data-tab="choices">
+        <div class="syntax-section-header">用法</div>
+        <div class="syntax-row" style="flex-direction: column; align-items: flex-start; gap: 6px;">
+          <code style="white-space: pre-line;">[選項]
+- 好啊
+- 改天吧
+- * 我...我也喜歡你</code>
+          <span style="margin-top: 4px;">三個選項;<code>*</code> 標記正解(最終答案)</span>
+          <button class="syntax-try" data-insert="[選項]&#10;- &#10;- &#10;- * &#10;">▶ 插入範本</button>
+        </div>
+
+        <div class="syntax-tip" style="margin-top: 14px;">
+          💡 選項至少要 2 個,沒有上限。<code>*</code> 可不標記(只是給作者自己看的記號)。
+        </div>
+      </div>
+
+      <!-- Tab 4: 樣式 -->
+      <div class="syntax-panel" data-tab="style">
+        <div class="syntax-section-header">字體</div>
+        <div class="syntax-row">
+          <code>角色[微笑][辰宇落雁]:…</code>
+          <span>單句使用辰宇落雁手寫字體</span>
+          <button class="syntax-try" data-insert="[辰宇落雁]">▶ 插入</button>
+        </div>
+        <div class="syntax-tip">
+          💡 可用字體:<code>[辰宇落雁]</code>、<code>[明體]</code>、<code>[黑體]</code>、<code>[粉圓]</code>、<code>[打字機]</code>。完整預覽見「🎨 樣式」 modal 的「字體預覽」分頁。
+        </div>
+
+        <div class="syntax-section-header" style="margin-top: 18px;">大小 / 粗 / 斜</div>
+        <div class="syntax-row">
+          <code>角色[微笑][大]:…</code>
+          <span>放大 1.3 倍</span>
+          <button class="syntax-try" data-insert="[大]">▶ 插入</button>
+        </div>
+        <div class="syntax-row">
+          <code>角色[微笑][小]:…</code>
+          <span>縮小至 0.85 倍(內心 OS 適用)</span>
+          <button class="syntax-try" data-insert="[小]">▶ 插入</button>
+        </div>
+        <div class="syntax-row">
+          <code>角色[微笑][粗]:…</code>
+          <span>粗體強調</span>
+          <button class="syntax-try" data-insert="[粗]">▶ 插入</button>
+        </div>
+        <div class="syntax-row">
+          <code>角色[微笑][斜]:…</code>
+          <span>斜體</span>
+          <button class="syntax-try" data-insert="[斜]">▶ 插入</button>
+        </div>
+
+        <div class="syntax-section-header" style="margin-top: 18px;">組合使用</div>
+        <div class="syntax-row">
+          <code>我[辰宇落雁][大]:我喜歡你!</code>
+          <span>多個樣式 tag 可同時套用</span>
+        </div>
+        <div class="syntax-row">
+          <code>[辰宇落雁](他在看我嗎?)</code>
+          <span>內心獨白也支援(tag 放最前面)</span>
+        </div>
+
+        <div class="syntax-tip" style="margin-top: 14px;">
+          💡 樣式 tag 跟其他 tag 順序不影響結果。<code>[微笑][右][辰宇落雁][大]</code> 跟 <code>[大][辰宇落雁][微笑][右]</code> 效果相同。
+        </div>
+      </div>
+
+      <!-- Tab 5: 快捷鍵 -->
+      <div class="syntax-panel" data-tab="keys">
+        <div class="syntax-section-header">編輯快捷鍵</div>
+        <div class="syntax-row">
+          <kbd>Tab</kbd>
+          <span>展開縮寫(bg/cg/cgs/cgf/cgoff/離場/選項/?)、補冒號、接受候選</span>
+        </div>
+        <div class="syntax-row">
+          <kbd>Enter</kbd>
+          <span>對話行尾 = 自動帶同前綴;候選清單 = 接受並停留</span>
+        </div>
+        <div class="syntax-row">
+          <kbd>↑</kbd> <kbd>↓</kbd>
+          <span>切換候選</span>
+        </div>
+        <div class="syntax-row">
+          <kbd>Esc</kbd>
+          <span>撤銷剛才的自動插入 / 關閉候選</span>
+        </div>
+        <div class="syntax-row">
+          <kbd>Ctrl</kbd>+<kbd>Backspace</kbd>
+          <span>刪掉最近的一個 [xxx]</span>
+        </div>
+
+        <div class="syntax-tip" style="margin-top: 14px;">
+          💡 邊打邊跳候選清單,照著按 <kbd>Tab</kbd> 就會自動填完整行。
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- ========== Record Settings Modal ========== -->
+<div class="modal-backdrop" id="recordModal">
+  <div class="modal" role="dialog" aria-modal="true" style="max-width: 480px;">
+    <div class="modal-header">
+      <div class="modal-title">錄影輸出</div>
+      <button class="modal-close" id="recordModalClose" aria-label="關閉">×</button>
+    </div>
+    <div class="modal-body record-modal-body">
+
+      <div class="record-setting">
+        <div class="record-setting-label"><span>起點</span></div>
+        <div class="record-range-row">
+          <label><input type="radio" name="recStart" value="head" checked> 從頭開始</label>
+          <label><input type="radio" name="recStart" value="current"> 從目前位置（第 <strong id="recCurrentBeat">1</strong> 拍）</label>
+        </div>
+      </div>
+
+      <div class="record-setting">
+        <div class="record-setting-label"><span>終點</span></div>
+        <div class="record-range-row">
+          <label><input type="radio" name="recEnd" value="last" checked> 到最後一拍</label>
+          <label>
+            <input type="radio" name="recEnd" value="custom"> 到第
+            <input type="number" id="recEndBeat" min="1" value="1" style="width:60px;"> 拍
+          </label>
+        </div>
+      </div>
+
+      <div class="record-setting">
+        <div class="record-setting-label">
+          <span>打字機速度</span>
+          <strong id="typeSpeedLabel">中速 · 45ms</strong>
+        </div>
+        <input type="range" id="typeSpeed" min="20" max="100" step="5" value="45">
+      </div>
+
+      <div class="record-setting">
+        <div class="record-setting-label">
+          <span>每句停留時間</span>
+          <strong id="holdTimeLabel">1.5 秒</strong>
+        </div>
+        <input type="range" id="holdTime" min="0.5" max="4" step="0.1" value="1.5">
+      </div>
+
+      <div class="record-setting">
+        <div class="record-setting-label">
+          <span>場景切換停留</span>
+          <strong id="bgHoldLabel">0.6 秒</strong>
+        </div>
+        <input type="range" id="bgHold" min="0.2" max="2" step="0.1" value="0.6">
+      </div>
+
+      <div class="record-estimate" id="recordEstimate">
+        預計片長:<strong>...</strong>
+      </div>
+
+      <div style="font-size: 11px; color: var(--text-faint); line-height: 1.7;">
+        💡 沒有時間上限,但檔案大小會隨片長線性增加（約 0.5 MB/秒）。<br>
+        📱 錄影中請勿切換分頁或鎖屏,否則動畫會卡頓。可隨時按「■ 停止」結束。<br>
+        ⚠️ 此功能輸出靜音影片,不包含背景音樂或音效。如需配音請後製加入。
+      </div>
+
+    </div>
+    <div class="modal-footer">
+      <div class="storage-meter" id="recordFormatInfo">偵測格式中...</div>
+      <button class="btn btn-primary" id="recordStartBtn">▶ 開始錄影</button>
+    </div>
+  </div>
+</div>
+
+<!-- ========== 簡易模式輸出進度浮層(MP4 / GIF 共用) ========== -->
+<div class="vns-export-overlay" id="vnsExportOverlay">
+  <div class="vns-export-content">
+    <div class="vns-export-title" id="vnsExportTitle">錄影中…</div>
+    <div class="vns-export-canvas-wrap">
+      <canvas id="vnsExportCanvas"></canvas>
+      <div class="vns-export-rec-badge" id="vnsExportRecBadge">● REC</div>
+    </div>
+    <div class="vns-export-progress" id="vnsExportProgress">準備中…</div>
+    <div class="vns-export-bar"><div class="vns-export-bar-fill" id="vnsExportBarFill"></div></div>
+    <button class="btn btn-ghost" id="vnsExportCancelBtn" type="button">取消</button>
+  </div>
+</div>
+
+<!-- ========== Recording Overlay (during recording) ========== -->
+<div class="recording-overlay" id="recordingOverlay">
+  <div class="recording-stage-wrap">
+    <canvas class="recording-canvas" id="recordingCanvas"></canvas>
+    <div class="rec-indicator">
+      <span class="rec-dot"></span>
+      <span>REC</span>
+    </div>
+  </div>
+  <div class="rec-controls">
+    <div class="rec-timer" id="recTimer"><strong>00:00</strong></div>
+    <button class="btn btn-stop" id="recStopBtn">■ 停止</button>
+  </div>
+</div>
+
+<!-- ========== Result Modal ========== -->
+<div class="modal-backdrop" id="resultModal">
+  <div class="modal" role="dialog" aria-modal="true" style="max-width: 560px;">
+    <div class="modal-header">
+      <div class="modal-title" id="resultTitle">✨ 錄影完成</div>
+      <button class="modal-close" id="resultModalClose" aria-label="關閉">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="result-preview">
+        <video class="result-video" id="resultVideo" controls></video>
+        <div class="result-meta" id="resultMeta"></div>
+        <div class="result-actions" id="resultActions"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- hidden file inputs -->
+<input type="file" class="file-input" id="charImgInput" accept="image/jpeg,image/png,image/webp">
+<input type="file" class="file-input" id="bgImgInput" accept="image/jpeg,image/png,image/webp">
+<input type="file" class="file-input" id="cgImgInput" accept="image/jpeg,image/png,image/webp">
+<input type="file" class="file-input" id="projectInput" accept="application/json,.json">
+
+<!-- 立繪取景器 -->
+<div class="modal-backdrop" id="portraitCropperModal">
+  <div class="modal" role="dialog" aria-modal="true" style="max-width: 760px;">
+    <div class="modal-header">
+      <div class="modal-title">📐 立繪取景 · <span id="cropperCharName">角色名</span></div>
+      <button class="modal-close" id="cropperClose" aria-label="關閉">×</button>
+    </div>
+    <div class="modal-body" style="padding: 16px 20px;">
+      <div class="cropper-stage" id="cropperStage">
+        <div class="cropper-figure-container" id="cropperFigureContainer"></div>
+        <div class="cropper-dialog-mock">
+          <div class="cropper-dialog-name" id="cropperDialogName">伊萊諾斯</div>
+          <div class="cropper-dialog-text">在這種地方睡著,不怕感冒嗎?</div>
+        </div>
+      </div>
+
+      <div class="cropper-controls">
+        <div class="cropper-block">
+          <div class="cropper-block-title"><span id="cropperEditingName">學長</span> · 取景設定</div>
+
+          <div class="cropper-slider-row">
+            <label>Y 軸</label>
+            <input type="range" id="cropperYSlider" min="-200" max="200" value="0" step="1">
+            <span class="cropper-val" id="cropperYVal">0%</span>
+          </div>
+          <div class="cropper-range-info">範圍 -200% ~ +200%(正值下沉)</div>
+
+          <div class="cropper-slider-row">
+            <label>縮放</label>
+            <input type="range" id="cropperScaleSlider" min="30" max="400" value="100" step="1">
+            <span class="cropper-val" id="cropperScaleVal">100%</span>
+          </div>
+          <div class="cropper-range-info">範圍 30% ~ 400%</div>
+
+          <div class="cropper-preset-row">
+            <button class="cropper-preset-btn" data-y="0" data-s="100">重設</button>
+            <button class="cropper-preset-btn" data-y="80" data-s="150">頭部</button>
+            <button class="cropper-preset-btn" data-y="50" data-s="130">半身</button>
+            <button class="cropper-preset-btn" data-y="0" data-s="100">全身</button>
+          </div>
+
+          <div class="cropper-status" id="cropperStatus">
+            Y 位置 <code>0%</code> · 縮放 <code>100%</code>
+          </div>
+        </div>
+
+        <div class="cropper-block">
+          <div class="cropper-block-title">對比其他角色</div>
+          <div class="cropper-compare-list" id="cropperCompareList"></div>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn" id="cropperReset">重設</button>
+      <button class="btn btn-primary" id="cropperSave">儲存(套用所有表情)</button>
+    </div>
+  </div>
+</div>
+
+<!-- Batch 4:首次選風格 overlay -->
+<div class="style-picker-overlay" id="stylePickerOverlay" hidden>
+  <div class="style-picker-content">
+    <div class="style-picker-title">選一個風格開始</div>
+    <div class="style-picker-grid" id="stylePickerGrid"></div>
+    <div class="style-picker-skip">
+      <button id="stylePickerSkip">先跳過,之後再選</button>
+    </div>
+  </div>
+</div>
+
+<!-- Batch 4:CG 選擇器 overlay -->
+<div class="cg-picker-overlay" id="cgPickerOverlay" hidden>
+  <div class="cg-picker-content">
+    <div class="cg-picker-header">
+      <div class="cg-picker-title">選一張 CG</div>
+      <button class="cg-picker-close" id="cgPickerClose" aria-label="關閉">×</button>
+    </div>
+    <div class="cg-picker-grid" id="cgPickerGrid"></div>
+    <button class="cg-picker-upload" id="cgPickerUpload">＋ 上傳新的 CG</button>
+  </div>
+</div>
+
+<!-- Batch 4:預覽全部 overlay -->
+<div class="preview-all-overlay" id="previewAllOverlay" hidden>
+  <button class="preview-all-close" id="previewAllClose" aria-label="關閉">×</button>
+  <div class="preview-all-main" id="previewAllMain"></div>
+  <div class="preview-all-controls">
+    <button class="preview-all-btn" id="previewAllPrev" aria-label="上一張">‹</button>
+    <button class="preview-all-btn play" id="previewAllPlayPause" aria-label="播放/暫停">⏸</button>
+    <button class="preview-all-btn" id="previewAllNext" aria-label="下一張">›</button>
+    <span class="preview-all-index" id="previewAllIndex">1 / 1</span>
+  </div>
+  <div class="preview-all-thumbs" id="previewAllThumbs"></div>
+</div>
+
+<!-- O5:反白整行 → 浮動樣式 popup -->
+<div id="floatStylePopup" class="float-style-popup" style="display:none;"></div>
+
+<!-- toast -->
+<div class="toast-container" id="toastContainer"></div>
+
+<script src="index.js"></script>
+</body>
+</html>

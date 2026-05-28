@@ -1654,4 +1654,4 @@ $('#btnMp4').addEventListener('click', async () => {
   rec.stop();
 });
 
-// GLITCH STUDIO loaded
+// Glitch Studio loaded

@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=1280">
+  <meta name="description" content="Glitch Studio — 圖片與影片故障特效工具,賽博龐克風格濾鏡與動畫。">
+  <meta property="og:title" content="Glitch Studio">
+  <meta property="og:description" content="圖片與影片故障特效工具,賽博龐克風格濾鏡與動畫。">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="Glitch Studio">
+  <meta name="twitter:description" content="圖片與影片故障特效工具,賽博龐克風格濾鏡與動畫。">
+  <title>Glitch Studio</title>
+  <link rel="stylesheet" href="index.css">
+  <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Bebas+Neue&family=VT323&family=Major+Mono+Display&family=Orbitron:wght@700;900&family=Press+Start+2P&family=Noto+Sans+JP:wght@900&family=Noto+Serif+JP:wght@700&family=M+PLUS+Rounded+1c:wght@700&family=Zen+Maru+Gothic:wght@700&display=swap" rel="stylesheet">
+</head>
+<body>
+  <!-- Glitch Studio v6.0 -->
+
+  <!-- Mobile block:點任意處跳回入口 -->
+  <a id="mobile-block" href="../" role="alertdialog" aria-labelledby="mobile-block-title">
+    <div class="block-icon" aria-hidden="true">🖥️</div>
+    <h1 id="mobile-block-title">本工具只支援電腦版</h1>
+    <p>請使用桌面瀏覽器開啟以獲得完整體驗。</p>
+    <p class="block-hint">點擊任意處回到入口頁</p>
+  </a>
+  <script>
+    (function () {
+      var el = document.getElementById("mobile-block");
+      function check() { el.classList.toggle("show", window.innerWidth < 1024); }
+      check();
+      window.addEventListener("resize", check);
+    })();
+  </script>
+  
+  <div class="app-wrap">
+    <!-- ═ Header ═ -->
+    <header class="header">
+      <div class="logo-area">
+        <div class="logo">
+          <span class="g1">Gl</span><span class="g2">it</span><span class="g3">ch</span>
+          <br>
+          <span class="s1">St</span><span class="s2">ud</span><span class="s3">io</span>
+        </div>
+      </div>
+
+      <div class="ui-sizes">
+        <button class="us-btn on" data-size="1.375">100%</button>
+        <button class="us-btn" data-size="1.65">121%</button>
+        <button class="us-btn" data-size="1.1">80%</button>
+      </div>
+
+      <button class="info-btn" id="btnInfo" type="button" aria-label="關於與其他工具">ℹ</button>
+
+      <div class="dot-anim"></div>
+    </header>
+
+    <!-- ═ Main Layout ═ -->
+    <div class="lay">
+      <!-- 左：預覽區 -->
+      <div class="left-pane">
+        <div class="meta">
+          <span id="metaFx">FILM</span> • <span id="metaSize">—</span>
+        </div>
+        <div id="dz" class="dropzone">
+          <canvas id="cvs"></canvas>
+          <div id="uploadPrompt">
+            <p style="margin: 0 0 8px 0; font-weight: 900;">⬆ 拖曳圖片或影片</p>
+            <p style="margin: 0; font-size: 12px; color: var(--m);">或 <button style="background:none; border:none; color:inherit; cursor:pointer; text-decoration:underline;" id="btnUpload" onclick="$('#fi').click()">點擊選擇</button></p>
+          </div>
+        </div>
+
+        <!-- 影片時間軸（只在加載影片時顯示） -->
+        <div id="trimBar" class="trim-bar" style="display:none;">
+          <div class="trim-labels">
+            <span id="trimStartTime" class="trim-start-time">0s</span>
+            <span id="trimDur">總長 —</span>
+            <span id="trimEndTime" class="trim-end-time">0s</span>
+          </div>
+          <div class="trim-track">
+            <div id="trimRange" class="trim-range"></div>
+            <div id="trimStart" class="trim-handle trim-handle-start"></div>
+            <div id="trimEnd" class="trim-handle trim-handle-end"></div>
+            <div id="trimPlayhead" class="trim-playhead"></div>
+          </div>
+        </div>
+
+        <!-- 進度條 -->
+        <div class="prog-bar" id="progBar" style="display:none;">
+          <div id="progFill" class="prog-fill"></div>
+          <p id="progText" style="display:none; position:absolute; top:50%; left:50%; transform:translate(-50%, -50%); font-size:11px; font-weight:bold; white-space:nowrap; color:var(--t); margin:0; pointer-events:none;">—</p>
+        </div>
+      </div>
+
+      <!-- 右：控制面板 -->
+      <div class="right-pane">
+        <div class="tabs">
+          <button class="tab on" data-tab="fx">特效</button>
+          <button class="tab" data-tab="txt">文字</button>
+          <button class="tab" data-tab="out">輸出</button>
+        </div>
+
+        <!-- ─ Tab 1：特效 ─ -->
+        <div class="panel on" data-panel="fx">
+          <div class="fx-grid">
+            <button class="fx-btn fx-film on" data-fx="film">
+              <span class="label">膠卷</span>
+              <span class="fx-name">FILM</span>
+            </button>
+            <button class="fx-btn fx-cyber" data-fx="cyber">
+              <span class="label">賽博</span>
+              <span class="fx-name">CYBER</span>
+            </button>
+            <button class="fx-btn fx-retro" data-fx="retro">
+              <span class="label">復古</span>
+              <span class="fx-name">RETRO</span>
+            </button>
+            <button class="fx-btn fx-err" data-fx="err">
+              <span class="label">故障</span>
+              <span class="fx-name">404</span>
+            </button>
+            <button class="fx-btn fx-cctv" data-fx="cctv">
+              <span class="label">監視</span>
+              <span class="fx-name">CCTV</span>
+            </button>
+            <button class="fx-btn fx-hack" data-fx="hack">
+              <span class="label">駭客</span>
+              <span class="fx-name">HACK</span>
+            </button>
+          </div>
+
+          <!-- 特效強度 -->
+          <table class="fxc-table">
+            <tr><td class="label">噪音</td><td><input type="range" id="sNO" min="0" max="10" value="5"></td><td><span id="vNO">5</span></td></tr>
+            <tr><td class="label">色差</td><td><input type="range" id="sCO" min="0" max="10" value="5"></td><td><span id="vCO">5</span></td></tr>
+            <tr><td class="label">暗角</td><td><input type="range" id="sDK" min="0" max="10" value="5"></td><td><span id="vDK">5</span></td></tr>
+            <tr><td class="label">強調</td><td><input type="range" id="sHU" min="0" max="10" value="5"></td><td><span id="vHU">5</span></td></tr>
+            <tr><td class="label">速率</td><td><input type="range" id="sSP" min="0" max="10" value="5"></td><td><span id="vSP">5</span></td></tr>
+          </table>
+
+          <!-- 色調調整 -->
+          <div class="section">
+            <h4>色調 / 飽和度</h4>
+            <div style="display:grid; grid-template-columns:1fr 3fr 1fr; gap:8px; align-items:center; font-size:12px;">
+              <span>色相</span>
+              <input type="range" id="sHUE" min="-180" max="180" value="0" style="width:100%;">
+              <span id="vHUE">0°</span>
+              <span>飽和</span>
+              <input type="range" id="sSAT" min="0" max="200" value="100" style="width:100%;">
+              <span id="vSAT">100%</span>
+            </div>
+          </div>
+
+          <!-- 焦點模式 -->
+          <div class="section">
+            <h4>焦點</h4>
+            <div style="display:grid; grid-template-columns:repeat(2,1fr); gap:6px;">
+              <button class="focus-btn on" data-focus="auto">全幅</button>
+              <button class="focus-btn" data-focus="tl">左上</button>
+              <button class="focus-btn" data-focus="tr">右上</button>
+              <button class="focus-btn" data-focus="bl">左下</button>
+              <button class="focus-btn" data-focus="br">右下</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- ─ Tab 2：文字 ─ -->
+        <div class="panel" data-panel="txt">
+          <!-- 段落清單 -->
+          <div style="margin-bottom:12px; border:1px solid var(--b); border-radius:3px; background:rgba(0,0,0,.3);">
+            <div id="txtList" style="max-height:140px; overflow-y:auto;"></div>
+            <button id="addTxt" style="width:100%; padding:6px 0; background:var(--b); color:var(--t); border:none; cursor:pointer; border-top:1px solid var(--b);">+ 新增段落</button>
+          </div>
+
+          <!-- 文字輸入 -->
+          <div class="section" style="margin-bottom:12px;">
+            <textarea id="txtText" style="width:100%; height:60px; background:var(--b); color:var(--t); border:1px solid var(--b); padding:6px; resize:none; font-family:'Share Tech Mono',monospace; font-size:11px;" placeholder="輸入文字..."></textarea>
+          </div>
+
+          <!-- 字型選擇 -->
+          <div class="section">
+            <div style="display:flex; gap:6px; margin-bottom:8px;">
+              <button class="lang-btn on" data-lang="en" style="flex:1;">English</button>
+              <button class="lang-btn" data-lang="jp" style="flex:1;">日本語</button>
+            </div>
+            <div id="fontsEn">
+              <div style="display:grid; grid-template-columns:repeat(2,1fr); gap:4px; margin-bottom:8px;">
+                <button class="font-btn on" data-font="orbitron">ORBITRON</button>
+                <button class="font-btn" data-font="tech">Share Tech</button>
+                <button class="font-btn" data-font="vt">VT323</button>
+                <button class="font-btn" data-font="major">Major Mono</button>
+                <button class="font-btn" data-font="bebas">Bebas</button>
+                <button class="font-btn" data-font="pixel">PIXEL</button>
+              </div>
+            </div>
+            <div id="fontsJp" class="hidden">
+              <div style="display:grid; grid-template-columns:repeat(2,1fr); gap:4px; margin-bottom:8px;">
+                <button class="font-btn" data-font="jp-sans">Noto Sans</button>
+                <button class="font-btn" data-font="jp-serif">Noto Serif</button>
+                <button class="font-btn" data-font="jp-round">M PLUS</button>
+                <button class="font-btn" data-font="jp-maru">Zen Maru</button>
+                <button class="font-btn" data-font="huninn">Huninn</button>
+                <button class="font-btn" data-font="chenyu">ChenYu</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- 大小 / 不透明度 -->
+          <div class="section">
+            <div style="display:grid; grid-template-columns:1fr 3fr 1fr; gap:8px; align-items:center; margin-bottom:8px;">
+              <span style="font-size:12px;">大小</span>
+              <input type="range" id="txtSize" min="12" max="300" value="42" style="width:100%;">
+              <span id="vTxtSize" style="text-align:right;">42</span>
+            </div>
+            <div style="display:grid; grid-template-columns:1fr 3fr 1fr; gap:8px; align-items:center;">
+              <span style="font-size:12px;">透明</span>
+              <input type="range" id="txtOpacity" min="0" max="100" value="90" style="width:100%;">
+              <span id="vTxtOpacity" style="text-align:right;">90%</span>
+            </div>
+          </div>
+
+          <!-- 位置 -->
+          <div class="section">
+            <div style="display:grid; grid-template-columns:1fr 3fr 1fr; gap:8px; align-items:center; margin-bottom:8px;">
+              <span style="font-size:12px;">X 位置</span>
+              <input type="range" id="txtX" min="0" max="100" value="50" style="width:100%;">
+              <span id="vTxtX" style="text-align:right;">50%</span>
+            </div>
+            <div style="display:grid; grid-template-columns:1fr 3fr 1fr; gap:8px; align-items:center;">
+              <span style="font-size:12px;">Y 位置</span>
+              <input type="range" id="txtY" min="0" max="100" value="50" style="width:100%;">
+              <span id="vTxtY" style="text-align:right;">50%</span>
+            </div>
+          </div>
+
+          <!-- 顏色 -->
+          <div class="section">
+            <div style="display:flex; gap:4px; margin-bottom:8px;">
+              <div class="sw on" data-color="#ffffff" style="background:#fff; border:2px solid var(--a2);"></div>
+              <div class="sw" data-color="#ff2244" style="background:#ff2244;"></div>
+              <div class="sw" data-color="#00ffcc" style="background:#00ffcc;"></div>
+              <div class="sw" data-color="#ffff00" style="background:#ffff00;"></div>
+              <div class="sw" data-color="#000000" style="background:#000;"></div>
+              <input type="color" id="txtColor" value="#ffffff" style="flex:1; min-height:28px; cursor:pointer;">
+            </div>
+          </div>
+
+          <!-- 文字樣式 -->
+          <div class="section">
+            <div style="display:grid; grid-template-columns:repeat(4,1fr); gap:4px; margin-bottom:8px;">
+              <button class="style-btn" data-style="bold" style="border-color:var(--b);">粗</button>
+              <button class="style-btn" data-style="italic" style="border-color:var(--b);">斜</button>
+              <button class="style-btn" data-style="underline" style="border-color:var(--b);">底</button>
+              <button class="style-btn" data-style="shadow" style="border-color:var(--b);">影</button>
+            </div>
+          </div>
+
+          <!-- 對齊 -->
+          <div class="section">
+            <h4 style="margin:0 0 6px 0;">對齊</h4>
+            <div id="alignH" style="display:grid; grid-template-columns:repeat(3,1fr); gap:4px; margin-bottom:8px;">
+              <button class="align-btn on" data-align="left">左</button>
+              <button class="align-btn" data-align="center">中</button>
+              <button class="align-btn" data-align="right">右</button>
+            </div>
+            <div id="alignV" class="hidden" style="display:none; grid-template-columns:repeat(3,1fr); gap:4px; margin-bottom:8px;">
+              <button class="valign-btn on" data-valign="top">頂</button>
+              <button class="valign-btn" data-valign="middle">中</button>
+              <button class="valign-btn" data-valign="bottom">底</button>
+            </div>
+          </div>
+
+          <!-- 進階選項 -->
+          <details style="margin-bottom:12px;">
+            <summary style="cursor:pointer; font-weight:bold; color:var(--a2); font-size:13px;">▼ 進階</summary>
+            <div style="padding:12px 0; font-size:12px;">
+              <div style="margin-bottom:8px;">
+                <label style="display:block; margin-bottom:4px;">行距</label>
+                <input type="range" id="txtLineH" min="50" max="300" value="120" style="width:100%;">
+                <span id="vTxtLineH">1.2</span>
+              </div>
+              <div style="margin-bottom:8px;">
+                <label style="display:block; margin-bottom:4px;">字距</label>
+                <input type="range" id="txtLetterSp" min="-10" max="30" value="0" style="width:100%;">
+                <span id="vTxtLetterSp">0</span>
+              </div>
+              <div style="margin-bottom:8px;">
+                <label style="display:block; margin-bottom:4px;">旋轉</label>
+                <input type="range" id="txtRotate" min="-180" max="180" value="0" style="width:100%;">
+                <span id="vTxtRotate">0°</span>
+              </div>
+              <div style="margin-bottom:8px;">
+                <label style="display:block; margin-bottom:4px;">描邊</label>
+                <input type="range" id="txtStroke" min="0" max="50" value="0" style="width:100%;">
+                <span id="vTxtStroke">0%</span>
+              </div>
+              <div style="margin-bottom:8px;">
+                <label style="display:block; margin-bottom:4px;"><input type="checkbox" id="bgEnableToggle" style="margin-right:4px;">背景色塊</label>
+                <div style="margin-left:20px; display:grid; grid-template-columns:1fr 1fr; gap:4px;">
+                  <input type="color" id="txtBgColor" value="#000000" style="height:26px;">
+                  <div style="display:flex; gap:4px;"><span style="min-width:40px;">不透明</span><input type="range" id="txtBgOpacity" min="0" max="100" value="60" style="flex:1;"><span id="vTxtBgOpacity" style="min-width:30px;">60%</span></div>
+                  <span style="font-size:11px;">墊邊距</span>
+                  <div style="display:flex; gap:4px;"><input type="range" id="txtBgPad" min="0" max="50" value="10" style="flex:1;"><span id="vTxtBgPad" style="min-width:30px;">10</span></div>
+                </div>
+              </div>
+              <div style="margin-bottom:8px;"><label style="display:block; margin-bottom:4px;"><input type="checkbox" id="glowToggle" style="margin-right:4px;">外光</label><input type="range" id="txtGlow" min="0" max="40" value="15" style="width:100%;"><span id="vTxtGlow">15</span></div>
+              <div style="margin-bottom:8px;"><label style="display:block; margin-bottom:4px;"><input type="checkbox" id="borderToggle" style="margin-right:4px;">外框</label><input type="range" id="txtBorderW" min="1" max="10" value="2" style="width:100%;"><span id="vTxtBorderW">2px</span></div>
+              <div style="margin-bottom:8px;"><label style="display:block; margin-bottom:4px;"><input type="checkbox" id="verticalToggle" style="margin-right:4px;">垂直書寫</label></div>
+              <div style="margin-bottom:8px;"><label style="display:block; margin-bottom:4px;">動畫效果</label><div style="display:grid; grid-template-columns:1fr 1fr; gap:4px;"><button class="effect-btn on" data-effect="none">無</button><button class="effect-btn" data-effect="flicker">閃爍</button><button class="effect-btn" data-effect="rgb">RGB</button><button class="effect-btn" data-effect="type">打字機</button></div></div>
+            </div>
+          </details>
+        </div>
+
+        <!-- ─ Tab 3：輸出 ─ -->
+        <div class="panel" data-panel="out">
+          <div class="section">
+            <input type="file" id="fi" accept="image/*,video/*" style="display:none;">
+            <button id="btnReplace" style="display:none; width:100%; padding:8px; background:var(--b); color:var(--t); border:1px solid var(--b); cursor:pointer; margin-bottom:12px; border-radius:3px;">🔄 換媒體</button>
+            <button id="btnPause" style="display:none; width:100%; padding:8px; background:var(--b); color:var(--t); border:1px solid var(--b); cursor:pointer; margin-bottom:12px; border-radius:3px;">⏸ 暫停</button>
+          </div>
+
+          <div class="section">
+            <h4>輸出解析度</h4>
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:4px; margin-bottom:8px;">
+              <button class="res-btn on" data-res="recommended">推薦</button>
+              <button class="res-btn" data-res="original">原始</button>
+              <button class="res-btn" data-res="custom">自訂</button>
+            </div>
+            <div id="customWidthRow" style="display:none; align-items:center; gap:8px; margin-bottom:8px; font-size:12px;">
+              <span>寬度</span>
+              <input type="number" id="customWidth" min="320" max="4000" value="1080" style="flex:1; padding:4px; background:var(--b); color:var(--t); border:1px solid var(--b); border-radius:2px;">
+              <span id="vCustomWidth">1080</span>px
+            </div>
+            <p id="resInfo" style="margin:0; font-size:11px; color:var(--m);">請先上傳圖片或影片</p>
+          </div>
+
+          <div id="durSection" class="section">
+            <h4>輸出長度</h4>
+            <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:4px; margin-bottom:8px;">
+              <button class="dur-btn on" data-d="2">2 秒</button>
+              <button class="dur-btn" data-d="5">5 秒</button>
+              <button class="dur-btn" data-d="10">10 秒</button>
+            </div>
+            <p id="frameInfo" style="margin:0; font-size:11px; color:var(--m);">預計 30 幀 @ 15fps</p>
+          </div>
+
+          <div class="section">
+            <h4>影片畫質 (MP4)</h4>
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:4px; margin-bottom:8px;">
+              <button class="qual-btn on" data-qual="standard">標準</button>
+              <button class="qual-btn" data-qual="low">低</button>
+              <button class="qual-btn" data-qual="high">高</button>
+              <button class="qual-btn" data-qual="ultra">極致</button>
+            </div>
+            <p id="qualInfo" style="margin:0; font-size:11px; color:var(--m);">標準：1080p ≈ 4–8 Mbps（適合社群上傳）</p>
+          </div>
+
+          <div class="section">
+            <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:4px;">
+              <button id="btnPng" disabled style="padding:12px; background:var(--a); color:#000; font-weight:bold; border:none; cursor:pointer; border-radius:3px;">🖼️ PNG</button>
+              <button id="btnGif" disabled style="padding:12px; background:var(--a2); color:#000; font-weight:bold; border:none; cursor:pointer; border-radius:3px;">🎬 GIF</button>
+              <button id="btnMp4" disabled style="padding:12px; background:var(--a); color:#000; font-weight:bold; border:none; cursor:pointer; border-radius:3px;">🎥 MP4</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═ Footer ═ -->
+    <footer class="site-footer">
+      <span class="footer-tool-name">Glitch Studio</span>
+      <span class="footer-divider" aria-hidden="true">·</span>
+      <span class="footer-author">Made by ilai</span>
+      <span class="footer-divider" aria-hidden="true">·</span>
+      <a href="https://www.threads.net/@ilainosu.ffxiv" target="_blank" rel="noopener noreferrer" aria-label="作者的 Threads 頁面(新分頁開啟)">Threads</a>
+      <span class="footer-divider" aria-hidden="true">·</span>
+      <a href="https://www.plurk.com/ilai_sei" target="_blank" rel="noopener noreferrer" aria-label="作者的 Plurk 頁面(新分頁開啟)">Plurk</a>
+      <span class="footer-divider" aria-hidden="true">·</span>
+      <a href="../" aria-label="回到 ilai's Studios 入口">All Studios</a>
+    </footer>
+  </div>
+
+  <!-- ═ About dialog ═ -->
+  <dialog class="about-dialog" id="aboutDialog">
+    <form method="dialog" class="about-form">
+      <button class="about-close" type="submit" value="cancel" aria-label="關閉">×</button>
+
+      <h2 class="about-title">關於作者</h2>
+      <div class="about-name">Made by ilai</div>
+      <div class="about-links">
+        <a class="about-link" href="https://www.threads.net/@ilainosu.ffxiv" target="_blank" rel="noopener noreferrer" aria-label="作者的 Threads 頁面(新分頁開啟)">
+          <span class="about-platform">Threads</span>
+          <span class="about-handle">@ilainosu.ffxiv</span>
+          <span class="about-arrow" aria-hidden="true">→</span>
+        </a>
+        <a class="about-link" href="https://www.plurk.com/ilai_sei" target="_blank" rel="noopener noreferrer" aria-label="作者的 Plurk 頁面(新分頁開啟)">
+          <span class="about-platform">Plurk</span>
+          <span class="about-handle">@ilai_sei</span>
+          <span class="about-arrow" aria-hidden="true">→</span>
+        </a>
+      </div>
+      <p class="about-msg">
+        希望每個喜歡 FFXIV 的玩家、<br>
+        喜歡創作的創作者們,喜歡這份工具!💛
+      </p>
+
+      <hr class="about-sep">
+
+      <h2 class="about-title">其他工具</h2>
+      <div class="about-tools">
+        <a class="about-tool" href="../visual-novel/" aria-label="開啟 Visual Novel Studio - 視覺小說與影片製作工具">
+          <span class="about-tool-icon" aria-hidden="true">📖</span>
+          <span class="about-tool-name">Visual Novel Studio</span>
+          <span class="about-tool-arrow" aria-hidden="true">→</span>
+        </a>
+        <div class="about-tool about-tool-current" aria-current="page">
+          <span class="about-tool-icon" aria-hidden="true">⚡</span>
+          <span class="about-tool-name">Glitch Studio</span>
+          <span class="about-tool-badge">使用中</span>
+        </div>
+        <a class="about-tool" href="../macro/" aria-label="開啟 RP Macro Studio - FFXIV 角色扮演巨集工具">
+          <span class="about-tool-icon" aria-hidden="true">⌨</span>
+          <span class="about-tool-name">RP Macro Studio</span>
+          <span class="about-tool-arrow" aria-hidden="true">→</span>
+        </a>
+      </div>
+    </form>
+  </dialog>
+
+  <script>
+    // About dialog open / backdrop-close
+    (function () {
+      var dlg = document.getElementById("aboutDialog");
+      var btn = document.getElementById("btnInfo");
+      if (!dlg || !btn) return;
+      btn.addEventListener("click", function () { dlg.showModal(); });
+      dlg.addEventListener("click", function (e) {
+        if (e.target === dlg) dlg.close();
+      });
+    })();
+  </script>
+  <script src="index.js"></script>
+</body>
+</html>

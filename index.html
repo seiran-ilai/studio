@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=1280">
+<title>ilai's Studios</title>
+<meta name="description" content="Tools for FFXIV roleplayers and creators by ilai. Visual Novel Studio, Glitch Studio, RP Macro Studio.">
+<meta property="og:title" content="ilai's Studios">
+<meta property="og:description" content="Tools for FFXIV roleplayers and creators">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://seiran-ilai.github.io/studio/">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="ilai's Studios">
+<meta name="twitter:description" content="Tools for FFXIV roleplayers and creators">
+<style>
+  :root {
+    --bg-page: #1a0e1f;
+    --bg-card: #2a1b30;
+    --bg-card-hover: #36243e;
+    --border-card: #4a3550;
+    --border-card-hover: #7a5a82;
+    --gold: #d4a574;
+    --gold-bright: #e8c695;
+    --text-primary: #f0e6d2;
+    --text-secondary: #c9b89c;
+    --text-muted: #8b7355;
+    --font-serif: "Cormorant Garamond", "EB Garamond", "Playfair Display", "Noto Serif TC", "Songti TC", "PingFang TC", Georgia, serif;
+    --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang TC", "Noto Sans TC", "Microsoft JhengHei", sans-serif;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html, body {
+    background: var(--bg-page);
+    color: var(--text-primary);
+    font-family: var(--font-sans);
+    min-height: 100vh;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  body {
+    background:
+      radial-gradient(ellipse 60% 40% at 20% 0%, rgba(139, 95, 184, 0.18), transparent 65%),
+      radial-gradient(ellipse 50% 35% at 80% 100%, rgba(212, 134, 154, 0.10), transparent 65%),
+      var(--bg-page);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 80px 24px 40px;
+  }
+
+  /* ===== Header ===== */
+  .hero {
+    text-align: center;
+    margin-bottom: 64px;
+    max-width: 720px;
+  }
+  .hero-title {
+    font-family: var(--font-serif);
+    font-size: clamp(40px, 7vw, 64px);
+    font-weight: 500;
+    font-style: italic;
+    background: linear-gradient(135deg, var(--gold-bright), var(--gold), #c89878);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    letter-spacing: 0.02em;
+    line-height: 1.15;
+  }
+  .hero-sub {
+    margin-top: 14px;
+    font-size: 14px;
+    color: var(--text-muted);
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+  }
+
+  /* ===== Tool cards ===== */
+  .tools {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 20px;
+    width: 100%;
+    max-width: 1080px;
+    margin-bottom: 80px;
+  }
+
+  .tool-card {
+    display: flex;
+    flex-direction: column;
+    background: var(--bg-card);
+    border: 1px solid var(--border-card);
+    border-radius: 8px;
+    padding: 32px 26px 26px;
+    color: var(--text-primary);
+    text-decoration: none;
+    transition: transform 0.22s ease, background 0.22s ease, border-color 0.22s ease, box-shadow 0.22s ease;
+    position: relative;
+    overflow: hidden;
+  }
+  .tool-card::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, rgba(212, 165, 116, 0.05), transparent 50%);
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.22s ease;
+  }
+  .tool-card:hover {
+    transform: translateY(-4px);
+    background: var(--bg-card-hover);
+    border-color: var(--border-card-hover);
+    box-shadow: 0 12px 32px -8px rgba(139, 95, 184, 0.3),
+                0 0 0 1px rgba(212, 165, 116, 0.15);
+  }
+  .tool-card:hover::before { opacity: 1; }
+  .tool-card:focus-visible {
+    outline: 2px solid var(--gold-bright);
+    outline-offset: 4px;
+  }
+
+  .tool-icon {
+    font-size: 44px;
+    line-height: 1;
+    margin-bottom: 18px;
+    user-select: none;
+  }
+  .tool-name {
+    font-family: var(--font-serif);
+    font-size: 26px;
+    font-weight: 500;
+    font-style: italic;
+    color: var(--gold-bright);
+    line-height: 1.2;
+    letter-spacing: 0.02em;
+    margin-bottom: 8px;
+  }
+  .tool-desc {
+    font-size: 13px;
+    color: var(--text-secondary);
+    line-height: 1.7;
+    flex: 1;
+    margin-bottom: 22px;
+    letter-spacing: 0.03em;
+  }
+  .tool-open {
+    font-size: 13px;
+    color: var(--gold);
+    letter-spacing: 0.08em;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    transition: gap 0.2s ease, color 0.2s ease;
+  }
+  .tool-card:hover .tool-open {
+    color: var(--gold-bright);
+    gap: 10px;
+  }
+
+  /* ===== Author ===== */
+  .author {
+    text-align: center;
+    border-top: 1px solid rgba(74, 53, 80, 0.5);
+    padding: 40px 20px 20px;
+    width: 100%;
+    max-width: 540px;
+  }
+  .author-heading {
+    font-family: var(--font-serif);
+    font-style: italic;
+    font-size: 22px;
+    color: var(--text-primary);
+    margin-bottom: 22px;
+    letter-spacing: 0.04em;
+  }
+  .author-links {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 28px;
+    align-items: center;
+  }
+  .author-link {
+    display: inline-grid;
+    grid-template-columns: 70px 1fr auto;
+    align-items: center;
+    gap: 14px;
+    padding: 8px 18px;
+    background: rgba(74, 53, 80, 0.3);
+    border: 1px solid rgba(74, 53, 80, 0.6);
+    border-radius: 4px;
+    color: var(--text-secondary);
+    text-decoration: none;
+    font-size: 14px;
+    min-width: 280px;
+    transition: all 0.18s ease;
+  }
+  .author-link:hover {
+    background: rgba(74, 53, 80, 0.55);
+    border-color: var(--gold);
+    color: var(--text-primary);
+    transform: translateX(2px);
+  }
+  .author-platform {
+    color: var(--gold-bright);
+    font-weight: 500;
+    letter-spacing: 0.05em;
+    text-align: left;
+  }
+  .author-handle {
+    font-family: ui-monospace, "SF Mono", "JetBrains Mono", "Consolas", monospace;
+    font-size: 12.5px;
+    color: inherit;
+    text-align: left;
+  }
+  .author-arrow {
+    color: var(--text-muted);
+    font-size: 14px;
+    transition: color 0.18s ease, transform 0.18s ease;
+  }
+  .author-link:hover .author-arrow {
+    color: var(--gold-bright);
+    transform: translateX(2px);
+  }
+  .author-msg {
+    font-size: 13px;
+    color: var(--text-muted);
+    line-height: 1.95;
+    font-style: italic;
+    letter-spacing: 0.03em;
+  }
+
+  /* ===== Mobile block (僅展示,不可跳轉,因為已在入口頁) ===== */
+  #mobile-block {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 99999;
+    background: var(--bg-page);
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 32px;
+    text-align: center;
+    color: var(--text-primary);
+  }
+  #mobile-block.show { display: flex; }
+  #mobile-block .block-icon { font-size: 56px; margin-bottom: 20px; }
+  #mobile-block h1 {
+    font-family: var(--font-serif);
+    font-style: italic;
+    font-size: 28px;
+    color: var(--gold-bright);
+    margin-bottom: 12px;
+    letter-spacing: 0.04em;
+  }
+  #mobile-block p {
+    color: var(--text-secondary);
+    font-size: 14px;
+    line-height: 1.8;
+  }
+</style>
+</head>
+<body>
+
+  <!-- Mobile block:展示用,入口頁不跳轉 -->
+  <div id="mobile-block" role="alertdialog" aria-labelledby="mobile-block-title">
+    <div class="block-icon" aria-hidden="true">🖥️</div>
+    <h1 id="mobile-block-title">本站只支援電腦版</h1>
+    <p>請使用桌面瀏覽器訪問</p>
+  </div>
+  <script>
+    (function () {
+      var el = document.getElementById("mobile-block");
+      function check() { el.classList.toggle("show", window.innerWidth < 1024); }
+      check();
+      window.addEventListener("resize", check);
+    })();
+  </script>
+
+  <header class="hero">
+    <h1 class="hero-title">ilai's Studios</h1>
+    <div class="hero-sub">Tools for FFXIV roleplayers &amp; makers</div>
+  </header>
+
+  <nav class="tools" aria-label="工具列表">
+    <a
+      class="tool-card"
+      href="./visual-novel/"
+      aria-label="開啟 Visual Novel Studio - 視覺小說與影片製作工具"
+    >
+      <div class="tool-icon" aria-hidden="true">📖</div>
+      <div class="tool-name">Visual Novel<br>Studio</div>
+      <div class="tool-desc">視覺小說 / 影片製作<br>劇本編輯、預覽、截圖、錄影</div>
+      <div class="tool-open">Open <span aria-hidden="true">→</span></div>
+    </a>
+
+    <a
+      class="tool-card"
+      href="./glitch/"
+      aria-label="開啟 Glitch Studio - 圖片與影片故障特效工具"
+    >
+      <div class="tool-icon" aria-hidden="true">⚡</div>
+      <div class="tool-name">Glitch<br>Studio</div>
+      <div class="tool-desc">圖片 / 影片故障特效<br>賽博龐克風格濾鏡與動畫</div>
+      <div class="tool-open">Open <span aria-hidden="true">→</span></div>
+    </a>
+
+    <a
+      class="tool-card"
+      href="./macro/"
+      aria-label="開啟 RP Macro Studio - FFXIV 角色扮演巨集編輯工具"
+    >
+      <div class="tool-icon" aria-hidden="true">⌨</div>
+      <div class="tool-name">RP Macro<br>Studio</div>
+      <div class="tool-desc">FF14 角扮巨集工具<br>動作補全、頻道指令、wait 標籤</div>
+      <div class="tool-open">Open <span aria-hidden="true">→</span></div>
+    </a>
+  </nav>
+
+  <footer class="author">
+    <div class="author-heading">Made by ilai</div>
+    <div class="author-links">
+      <a
+        class="author-link"
+        href="https://www.threads.net/@ilainosu.ffxiv"
+        target="_blank"
+        rel="noopener noreferrer"
+        aria-label="作者的 Threads 頁面(新分頁開啟)"
+      >
+        <span class="author-platform">Threads</span>
+        <span class="author-handle">@ilainosu.ffxiv</span>
+        <span class="author-arrow" aria-hidden="true">→</span>
+      </a>
+      <a
+        class="author-link"
+        href="https://www.plurk.com/ilai_sei"
+        target="_blank"
+        rel="noopener noreferrer"
+        aria-label="作者的 Plurk 頁面(新分頁開啟)"
+      >
+        <span class="author-platform">Plurk</span>
+        <span class="author-handle">@ilai_sei</span>
+        <span class="author-arrow" aria-hidden="true">→</span>
+      </a>
+    </div>
+    <p class="author-msg">
+      希望每個喜歡 FFXIV 的玩家、<br>
+      喜歡創作的創作者們,喜歡這些工具!💛
+    </p>
+  </footer>
+
+</body>
+</html>

@@ -4,15 +4,19 @@
 
 ## 專案結構規則
 
-每個專案由三個同名檔案組成:
-- `{name}.html` — 結構
-- `{name}.css` — 樣式
-- `{name}.js` — 邏輯
+每個工具放在自己的 kebab-case 資料夾,內部固定三個檔案:
+- `{tool}/index.html` — 結構
+- `{tool}/index.css` — 樣式
+- `{tool}/index.js` — 邏輯
 
-目前的專案:
-- `otome-studio` — 乙女戀愛遊戲模擬器(劇本編輯 + 預覽 + 截圖 + 錄影)
-- `glitch_studio` — [請補充用途]
-- `RP_marco` — [請補充用途]
+目前的工具:
+- `visual-novel/` — Visual Novel Studio:視覺小說劇本編輯 + 預覽 + 截圖 + 錄影
+- `glitch/` — Glitch Studio:圖片/影片故障特效
+- `macro/` — RP Macro Studio:FF14 角扮巨集編輯器
+
+`studio/index.html` 是總入口頁,展示三張工具卡片。
+`studio/{otome-studio,glitch_studio,RP_marco}.html` 是舊路徑的 meta-refresh redirect,
+讓舊收藏的連結還能跳轉到新位置。
 
 ## 共通技術棧
 

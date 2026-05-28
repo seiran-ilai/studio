@@ -1,5 +1,5 @@
 /* ═══════════════════════════════════════════════════
-   GLITCH STUDIO v6.0 - CSS
+   Glitch Studio v6.0 - CSS
    配合 v6.0 HTML 結構
 ═══════════════════════════════════════════════════ */
 
@@ -510,12 +510,252 @@ input[type=checkbox] {
   accent-color: var(--a2);
 }
 
-/* ═══ 響應式 ═══ */
-@media (max-width: 900px) {
-  .lay {
-    grid-template-columns: 1fr;
-    grid-template-rows: 1fr auto;
-  }
-  .left-pane { border-right: none; border-bottom: 1px solid var(--b); min-height: 400px; }
-  .right-pane { max-height: 50vh; }
+/* ═══ Info button (ℹ 關於) — header 右側 ═══ */
+.info-btn {
+  margin-left: auto;
+  width: 28px;
+  height: 28px;
+  background: transparent;
+  border: 1px solid var(--b);
+  color: var(--m);
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 2px;
+}
+.info-btn:hover {
+  border-color: var(--a2);
+  color: var(--a2);
+  box-shadow: 0 0 8px rgba(0, 255, 204, 0.3);
+}
+
+/* ═══ Site footer — 低調列 ═══ */
+.site-footer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 24px;
+  border-top: 1px solid var(--b);
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 12px;
+  color: var(--m);
+  flex-wrap: wrap;
+  flex-shrink: 0;
+  background: rgba(0, 0, 0, 0.3);
+}
+.footer-tool-name {
+  color: var(--a2);
+  font-weight: 600;
+  letter-spacing: 0.06em;
+}
+.footer-author { color: var(--t); }
+.footer-divider { color: var(--b); opacity: 0.8; }
+.site-footer a {
+  color: var(--m);
+  text-decoration: none;
+  padding: 2px 4px;
+  border-radius: 2px;
+  transition: color 0.15s, background 0.15s;
+}
+.site-footer a:hover {
+  color: var(--a2);
+  background: rgba(0, 255, 204, 0.08);
+}
+
+/* ═══ About dialog ═══ */
+.about-dialog {
+  background: var(--bg);
+  border: 1px solid var(--a2);
+  color: var(--t);
+  border-radius: 4px;
+  max-width: 460px;
+  width: calc(100% - 32px);
+  padding: 0;
+  box-shadow:
+    0 0 0 1px rgba(0, 255, 204, 0.15),
+    0 30px 80px -10px rgba(0, 0, 0, 0.8),
+    0 0 60px -10px rgba(0, 255, 204, 0.25);
+}
+.about-dialog::backdrop {
+  background: rgba(10, 10, 10, 0.78);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+}
+.about-form {
+  position: relative;
+  padding: 26px 28px 22px;
+}
+.about-close {
+  position: absolute;
+  top: 8px;
+  right: 10px;
+  width: 32px;
+  height: 32px;
+  background: transparent;
+  border: none;
+  color: var(--m);
+  font-size: 22px;
+  cursor: pointer;
+  border-radius: 2px;
+  transition: color 0.15s, background 0.15s;
+  padding: 0;
+}
+.about-close:hover {
+  color: var(--a);
+  background: rgba(255, 34, 68, 0.12);
+}
+.about-title {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 16px;
+  letter-spacing: 0.18em;
+  color: var(--a2);
+  margin: 0 0 12px;
+  font-weight: 400;
+}
+.about-name {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 22px;
+  letter-spacing: 0.06em;
+  color: var(--t);
+  margin-bottom: 14px;
+}
+.about-links {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 14px;
+}
+.about-link,
+.about-tool {
+  display: grid;
+  grid-template-columns: 76px 1fr auto;
+  align-items: center;
+  gap: 12px;
+  padding: 9px 12px;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid var(--b);
+  border-radius: 2px;
+  color: var(--m);
+  text-decoration: none;
+  font-size: 12.5px;
+  transition: all 0.15s ease;
+}
+.about-link:hover,
+.about-tool:not(.about-tool-current):hover {
+  background: rgba(0, 255, 204, 0.06);
+  border-color: var(--a2);
+  color: var(--t);
+}
+.about-platform {
+  color: var(--a2);
+  font-weight: 600;
+  letter-spacing: 0.08em;
+}
+.about-handle {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 12px;
+  color: inherit;
+}
+.about-arrow { color: var(--m); transition: color 0.15s, transform 0.15s; }
+.about-link:hover .about-arrow,
+.about-tool:hover .about-tool-arrow { color: var(--a2); transform: translateX(2px); }
+.about-msg {
+  font-size: 12px;
+  color: var(--m);
+  line-height: 1.95;
+  text-align: center;
+  font-style: italic;
+  padding: 8px 4px 2px;
+  letter-spacing: 0.04em;
+}
+.about-sep {
+  margin: 18px 0;
+  border: none;
+  border-top: 1px dashed var(--b);
+}
+.about-tools {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.about-tool {
+  grid-template-columns: 28px 1fr auto;
+}
+.about-tool-icon {
+  font-size: 18px;
+  text-align: center;
+  user-select: none;
+}
+.about-tool-name {
+  color: inherit;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+}
+.about-tool-arrow {
+  color: var(--m);
+  font-size: 13px;
+  transition: color 0.15s, transform 0.15s;
+}
+.about-tool-current {
+  cursor: default;
+  border-color: var(--a);
+  background: rgba(255, 34, 68, 0.06);
+  color: var(--t);
+}
+.about-tool-badge {
+  font-size: 10px;
+  color: var(--a);
+  border: 1px solid var(--a);
+  padding: 1px 6px;
+  border-radius: 999px;
+  letter-spacing: 0.08em;
+}
+
+/* ═══ Mobile block — 僅支援桌面 (≥1024px) ═══ */
+#mobile-block {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 99999;
+  background: var(--bg);
+  color: var(--t);
+  text-align: center;
+  padding: 32px;
+  text-decoration: none;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Share Tech Mono', monospace;
+  cursor: pointer;
+}
+#mobile-block.show { display: flex; }
+#mobile-block .block-icon {
+  font-size: 56px;
+  margin-bottom: 22px;
+  line-height: 1;
+}
+#mobile-block h1 {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 28px;
+  color: var(--a2);
+  margin-bottom: 14px;
+  letter-spacing: 0.12em;
+  font-weight: 400;
+}
+#mobile-block p {
+  color: var(--m);
+  font-size: 14px;
+  line-height: 1.9;
+  margin: 0;
+}
+#mobile-block .block-hint {
+  color: var(--b);
+  font-size: 12px;
+  margin-top: 24px;
+  letter-spacing: 0.05em;
 }

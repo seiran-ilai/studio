@@ -492,7 +492,9 @@ function migrateStyle(s) {
   const out = { preset: "loveLetter", variant: "roseGold", animationsEnabled: true, firstStyleSelected: false };
   if (s && typeof s === "object") {
     if (typeof s.preset === "string" && STYLE_PRESETS[s.preset]) out.preset = s.preset;
-    if (typeof s.variant === "string" && STYLE_PRESETS[out.preset] && STYLE_PRESETS[out.preset].variants[s.variant]) {
+    if (typeof s.variant === "string"
+        && (s.variant === "custom"
+            || (STYLE_PRESETS[out.preset] && STYLE_PRESETS[out.preset].variants[s.variant]))) {
       out.variant = s.variant;
     } else {
       out.variant = getDefaultVariantId(out.preset);
@@ -503,13 +505,45 @@ function migrateStyle(s) {
   return out;
 }
 
+// 每個風格的「自訂」變體配色 — 一個物件 per preset。
+// 第一次點某風格的「自訂」時用當下的變體配色初始化,之後使用者調整的顏色都存在這裡。
+function migrateCustomVariants(c) {
+  const out = {};
+  if (!c || typeof c !== "object") return out;
+  for (const presetId of Object.keys(STYLE_PRESETS)) {
+    const v = c[presetId];
+    if (v && typeof v === "object"
+        && typeof v.borderColor === "string"
+        && typeof v.bgColor === "string"
+        && typeof v.nameColor === "string"
+        && typeof v.textColor === "string") {
+      out[presetId] = {
+        borderColor: v.borderColor,
+        bgColor:     v.bgColor,
+        bgOpacity:   typeof v.bgOpacity === "number"
+                       ? Math.max(0, Math.min(1, v.bgOpacity))
+                       : 0.9,
+        nameColor:   v.nameColor,
+        textColor:   v.textColor,
+        basedOn:     (typeof v.basedOn === "string"
+                       && STYLE_PRESETS[presetId].variants[v.basedOn])
+                       ? v.basedOn
+                       : getDefaultVariantId(presetId),
+      };
+    }
+  }
+  return out;
+}
+
 function migrateFontSizes(f) {
-  const out = { dialog: 16, speaker: 18 };
+  // 四類獨立字級,範圍統一 12 ~ 32 pt
+  const out = { dialog: 18, speaker: 16, narration: 16, inner: 15 };
   if (f && typeof f === "object") {
-    const d = Number(f.dialog);
-    const s = Number(f.speaker);
-    if (Number.isFinite(d)) out.dialog = Math.max(10, Math.min(24, Math.round(d)));
-    if (Number.isFinite(s)) out.speaker = Math.max(10, Math.min(24, Math.round(s)));
+    const clamp = (v) => Math.max(12, Math.min(32, Math.round(v)));
+    for (const k of Object.keys(out)) {
+      const v = Number(f[k]);
+      if (Number.isFinite(v)) out[k] = clamp(v);
+    }
   }
   return out;
 }
@@ -520,6 +554,99 @@ function migrateGameUI(g) {
     out[k] = { ...DEFAULT_GAME_UI[k], ...((g && g[k]) || {}) };
   }
   return out;
+}
+
+// 簡易模式攝影片資料結構(任務 2)
+// {
+//   id: 'slide_xxx',
+//   cg: { type: 'none'|'upload'|'library', name?, dataUrl?, cgId? },
+//   dialogStyle: null | { family: 'cyberpunk', variant: 'neonTokyo' | 'custom' },
+//   dialogText: '原始多行文字',
+//   parsedLines: [{ type, speaker?, content }]   // 任務 3 在此填入
+// }
+function _vnsSimpleSlideUuid() {
+  return "slide_" + (typeof vnsUuid === "function" ? vnsUuid() : (Date.now().toString(36) + Math.random().toString(36).slice(2, 8)));
+}
+
+function createEmptySlide() {
+  return {
+    id: _vnsSimpleSlideUuid(),
+    cg: { type: "none" },
+    dialogStyle: null,
+    dialogText: "",
+    parsedLines: [],
+  };
+}
+
+function migrateSimpleCard(c) {
+  if (!c || typeof c !== "object") return null;
+  const id = (typeof c.id === "string" && c.id) ? c.id : _vnsSimpleSlideUuid();
+
+  // CG 欄位:舊版 cgName 字串 → 新版 cg 物件
+  let cg;
+  if (c.cg && typeof c.cg === "object") {
+    cg = {
+      type: (c.cg.type === "upload" || c.cg.type === "library") ? c.cg.type : "none",
+      name: c.cg.name || null,
+      dataUrl: c.cg.dataUrl || null,
+      cgId: c.cg.cgId || null,
+    };
+  } else if (typeof c.cgName === "string" && c.cgName) {
+    cg = { type: "library", name: c.cgName, cgName: c.cgName };
+  } else {
+    cg = { type: "none" };
+  }
+
+  // dialogStyle 欄位:接受 {family, variant} 物件,其他一律 null(沿用全域樣式)
+  let dialogStyle = null;
+  if (c.dialogStyle && typeof c.dialogStyle === "object" && typeof c.dialogStyle.family === "string") {
+    dialogStyle = {
+      family: c.dialogStyle.family,
+      variant: typeof c.dialogStyle.variant === "string" ? c.dialogStyle.variant : null,
+    };
+  }
+
+  // dialogText 欄位:優先用字串,否則從舊 dialogs 陣列拼回去
+  let dialogText = "";
+  if (typeof c.dialogText === "string") {
+    dialogText = c.dialogText;
+  } else if (Array.isArray(c.dialogs)) {
+    dialogText = c.dialogs.map(d => {
+      if (!d) return "";
+      if (d.speaker) return d.speaker + ":" + (d.text || "");
+      return d.text || "";
+    }).join("\n\n");
+  }
+
+  return {
+    id, cg, dialogStyle, dialogText,
+    parsedLines: Array.isArray(c.parsedLines) ? c.parsedLines : [],
+  };
+}
+
+function migrateSimpleCards(arr) {
+  if (!Array.isArray(arr)) return [];
+  return arr.map(migrateSimpleCard).filter(Boolean);
+}
+
+// 取當前選中的攝影片;若 simpleCurrentSlideId 不存在或對不上,自動 fallback 到第一張
+function getCurrentSlide() {
+  const cards = state.simpleCards || [];
+  if (!cards.length) return null;
+  if (state.simpleCurrentSlideId) {
+    const found = cards.find(s => s.id === state.simpleCurrentSlideId);
+    if (found) return found;
+  }
+  // fallback:回到第一張並更新 id
+  state.simpleCurrentSlideId = cards[0].id;
+  return cards[0];
+}
+
+function getCurrentSlideIdx() {
+  const cards = state.simpleCards || [];
+  if (!state.simpleCurrentSlideId) return cards.length ? 0 : -1;
+  const i = cards.findIndex(s => s.id === state.simpleCurrentSlideId);
+  return i < 0 ? (cards.length ? 0 : -1) : i;
 }
 
 // Older saves have no `kind` — default to supporting.
@@ -560,16 +687,22 @@ const state = {
   fullText: "",
   dialogStyle: { ...DEFAULT_DIALOG_STYLE },
   gameUI: JSON.parse(JSON.stringify(DEFAULT_GAME_UI)),
-  // O5:全域預設樣式(沒寫樣式 tag 的行會自動套用)
+  // O5:全域預設樣式(沒寫樣式 tag 的行會自動套用)— 只剩字型,字級獨立到 fontSizes
   styleDefaults: {
-    narration: { font: "", size: "" },
-    inner:     { font: "luoyan", size: "" },
-    dialog:    { font: "", size: "" },
+    narration: { font: "" },
+    inner:     { font: "luoyan" },
+    dialog:    { font: "" },
   },
-  // Task 1.5:對話/角色名字級獨立 pt slider(10-24pt)
-  fontSizes: { dialog: 16, speaker: 18 },
+  // 四類獨立字級,單位 pt,範圍 12 ~ 32
+  fontSizes: { dialog: 18, speaker: 16, narration: 16, inner: 15 },
   // Batch 2:風格組合(整套配色)
   style: { preset: "loveLetter", variant: "roseGold", animationsEnabled: true, firstStyleSelected: false },
+  // 6 個風格各一份自訂配色;空物件表示尚未初始化(第一次點該風格的「自訂」會以當下變體為起點建立)
+  customVariants: {},
+  // IndexedDB:當前編輯中的 project id。啟動時由 vnsEnsureDefaultProject 設定。
+  currentProjectId: null,
+  // 簡易模式 — 當前選中攝影片的 id(沒有就是 null,getCurrentSlide() 會自動取第一張)
+  simpleCurrentSlideId: null,
   // Batch 3:好感度系統 — 每個角色獨立數值
   loveValues: {},     // { "學長": 50, ... } — runtime,由 computeStageStateAt 重算
   loveInitial: {},    // { "學長": 50, ... } — 角色卡設的初始值
@@ -586,16 +719,9 @@ const state = {
   }
 };
 
-// Curated presets for the dialog box appearance.
-const DIALOG_PRESETS = [
-  { id: "default",  name: "深紫（預設）", color: "#0d0716", opacity: 0.88 },
-  { id: "midnight", name: "深夜藍",       color: "#0a1628", opacity: 0.85 },
-  { id: "rose",     name: "玫瑰",         color: "#3a1424", opacity: 0.82 },
-  { id: "forest",   name: "森林",         color: "#0f2118", opacity: 0.85 },
-  { id: "wine",     name: "酒紅",         color: "#2a0a14", opacity: 0.85 },
-  { id: "parchment",name: "羊皮紙",       color: "#3a2810", opacity: 0.82 },
-  { id: "ink",      name: "純黑",         color: "#000000", opacity: 0.78 },
-];
+// 「對話框預設 / 自訂底色」UI 已移除(改由風格組合 + 自訂變體控制),
+// 但 state.dialogStyle / applyDialogStyle 保留,因為背景色/透明度的 CSS 變數
+// 還是要靠這條路徑寫進 :root,自訂顏色組合(任務 3)會用到。
 
 // ============================================================
 //  Parser
@@ -1131,19 +1257,19 @@ function escHtml(s) {
     .replace(/"/g, "&quot;").replace(/'/g, "&#39;");
 }
 
-// 行的「有效樣式」:行內 tag 優先,缺的用 state.styleDefaults 補
+// 行的「有效樣式」:行內 tag 優先,缺的用 state.styleDefaults 補字型
+// size 不再由 defaults 提供(已改為各類獨立 pt 字級,見 state.fontSizes),
+// 只接受行內 [大]/[小] 作為對基底字級的倍率修飾
 function getEffectiveStyle(line) {
   let font = line && line.styleFont;
-  let size = line && line.styleSize;
+  const size = line && line.styleSize;
   if (line && line.type === "narration") {
     const kind = line.subtype === "inner" ? "inner" : "narration";
     const def = (state.styleDefaults && state.styleDefaults[kind]) || {};
     if (!font && def.font) font = def.font;
-    if (!size && def.size) size = def.size;
   } else if (line && line.type === "dialog") {
     const def = (state.styleDefaults && state.styleDefaults.dialog) || {};
     if (!font && def.font) font = def.font;
-    if (!size && def.size) size = def.size;
   }
   return {
     font: font || null,
@@ -1151,6 +1277,15 @@ function getEffectiveStyle(line) {
     bold: !!(line && line.styleBold),
     italic: !!(line && line.styleItalic),
   };
+}
+
+// 依行類型挑出對應的基底字級(pt → px 等價,直接套上 element)
+function basePxForLine(line) {
+  const fs = state.fontSizes || { dialog: 18, speaker: 16, narration: 16, inner: 15 };
+  if (line && line.type === "narration") {
+    return line.subtype === "inner" ? (fs.inner || 15) : (fs.narration || 16);
+  }
+  return fs.dialog || 18;
 }
 
 // 句中 Markdown → HTML(預覽用)
@@ -1230,14 +1365,12 @@ function applyStyleToDialogText(ln) {
     el.style.fontFamily = "";
   }
 
-  // 2. 大小
-  if (eff.size === "large") {
-    el.style.fontSize = "1.3em";
-  } else if (eff.size === "small") {
-    el.style.fontSize = "0.85em";
-  } else {
-    el.style.fontSize = "";
-  }
+  // 2. 大小 — 基底用該行類型的 pt,行內 [大]/[小] 對基底乘倍率
+  const basePx = basePxForLine(ln);
+  let finalPx = basePx;
+  if (eff.size === "large") finalPx = basePx * 1.3;
+  else if (eff.size === "small") finalPx = basePx * 0.85;
+  el.style.fontSize = Math.round(finalPx) + "px";
 
   // 3. 粗體:明確 [粗] tag > 字體固有 weight > 清空
   if (eff.bold) el.style.fontWeight = "700";
@@ -2025,7 +2158,7 @@ function saveToStorage() {
         Object.entries(state.backgrounds).filter(([k, v]) => v.type === "image")
       ),
       bgOrder: state.bgOrder,
-      cgs: state.cgs,
+      cgs: _stripCgDataUrls(state.cgs),
       cgOrder: state.cgOrder,
       ratio: state.ratio,
       dialogStyle: state.dialogStyle,
@@ -2034,15 +2167,21 @@ function saveToStorage() {
       styleDefaults: state.styleDefaults,
       fontSizes: state.fontSizes,
       style: state.style,
+      customVariants: state.customVariants,
       loveInitial: state.loveInitial,
       mode: state.mode,
       simpleCards: state.simpleCards,
+      simpleCurrentSlideId: state.simpleCurrentSlideId,
     };
     localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
     updateStorageMeter();
     setSaveIndicator("saved");
     if (typeof updateStatusBar === "function") updateStatusBar();
     if (typeof updateRecentSaveTime === "function") updateRecentSaveTime();
+    // 同時排程寫入 IndexedDB(3 秒 debounce,不阻塞使用者操作)
+    if (typeof vnsScheduleAutoSave === "function") vnsScheduleAutoSave();
+    // 背景把新上傳的 CG 鏡到 cg_library(localStorage 已不含 dataUrl)
+    if (typeof _scheduleMirrorCgsToLibrary === "function") _scheduleMirrorCgsToLibrary();
     return true;
   } catch (e) {
     setSaveIndicator("error");
@@ -2110,9 +2249,9 @@ function loadFromStorage() {
       for (const k of ["narration", "inner", "dialog"]) {
         const d = payload.styleDefaults[k];
         if (d && typeof d === "object") {
+          // 舊版有 size: "large"/"small",新版字級獨立到 fontSizes,size 丟棄
           state.styleDefaults[k] = {
             font: typeof d.font === "string" ? d.font : "",
-            size: typeof d.size === "string" ? d.size : "",
           };
         }
       }
@@ -2123,6 +2262,7 @@ function loadFromStorage() {
     if (payload.style && typeof payload.style === "object") {
       state.style = migrateStyle(payload.style);
     }
+    state.customVariants = migrateCustomVariants(payload.customVariants);
     if (payload.loveInitial && typeof payload.loveInitial === "object") {
       state.loveInitial = {};
       for (const [k, v] of Object.entries(payload.loveInitial)) {
@@ -2131,7 +2271,8 @@ function loadFromStorage() {
       }
     }
     if (payload.mode === "simple" || payload.mode === "detail") state.mode = payload.mode;
-    if (Array.isArray(payload.simpleCards)) state.simpleCards = payload.simpleCards;
+    if (Array.isArray(payload.simpleCards)) state.simpleCards = migrateSimpleCards(payload.simpleCards);
+    if (typeof payload.simpleCurrentSlideId === "string") state.simpleCurrentSlideId = payload.simpleCurrentSlideId;
     return true;
   } catch (e) {
     console.warn("Failed to load from storage:", e);
@@ -2180,6 +2321,695 @@ function updateStorageMeter() {
     }
     dot.title = `本機儲存:${fmtBytes(used)} / 約 5 MB · ${charCount} 角色 · ${imgCount} 張圖`;
   }
+}
+
+// ============================================================
+//  IndexedDB(Dexie wrapper)— 大量資料層
+//  用途:
+//    - cg_library      原始 CG Blob(讀寫慢但容量大,輸出用)
+//    - cg_thumbnails   200×200 縮圖 Blob(列表用,快)
+//    - projects        每個專案的攝影片資料(簡易模式 slides / 細節模式 script)
+//    - app_state       單筆 'current' 紀錄 currentProjectId / mode,
+//                      讓重新整理頁面後恢復上一次編輯的專案
+//  localStorage 維持沿用:主題、樣式、字體、custom variant 等「小、頻繁、不能丟失」設定。
+// ============================================================
+
+const DB_NAME = "vns_database";
+const DB_VERSION = 1;
+
+// Dexie 透過 CDN <script> 載入時掛在 window.Dexie。
+// 若 IndexedDB 不可用(隱私模式 / 舊瀏覽器)會在任務 8 用 vnsDbReady 暴露給 UI 層判斷。
+let vnsDb = null;
+let vnsDbReady = null;     // Promise:resolve 後表示 db.open() 完成
+let vnsDbFailed = false;   // true 表示 IndexedDB 不可用(無法 fallback)
+
+function initVnsDb() {
+  if (vnsDbReady) return vnsDbReady;
+  if (typeof Dexie === "undefined") {
+    vnsDbFailed = true;
+    vnsDbReady = Promise.resolve(null);
+    return vnsDbReady;
+  }
+  try {
+    vnsDb = new Dexie(DB_NAME);
+    vnsDb.version(DB_VERSION).stores({
+      // primary key 寫在第一個欄位;其他欄位是次要索引
+      cg_library:    "id, uploadedAt, lastUsedAt",
+      cg_thumbnails: "id",
+      projects:      "id, modifiedAt, mode",
+      app_state:     "id",
+    });
+    vnsDbReady = vnsDb.open().then(() => vnsDb).catch((err) => {
+      console.error("[vnsDb] open failed:", err);
+      vnsDbFailed = true;
+      return null;
+    });
+  } catch (e) {
+    console.error("[vnsDb] init failed:", e);
+    vnsDbFailed = true;
+    vnsDbReady = Promise.resolve(null);
+  }
+  return vnsDbReady;
+}
+
+// 取得 Dexie 實例(供其他 helper 用),若失敗回傳 null。
+async function getVnsDb() {
+  await initVnsDb();
+  return vnsDbFailed ? null : vnsDb;
+}
+
+// ---------- 通用工具 ----------
+
+function vnsUuid() {
+  if (typeof crypto !== "undefined" && crypto.randomUUID) return crypto.randomUUID();
+  // fallback:時間 + 隨機;不需要嚴格 UUID,只要在這顆瀏覽器內唯一
+  return "id_" + Date.now().toString(36) + "_" + Math.random().toString(36).slice(2, 10);
+}
+
+function vnsNow() { return new Date().toISOString(); }
+
+// ---------- cg_library / cg_thumbnails ----------
+
+async function vnsAddCg(blob, name, thumbBlob) {
+  const db = await getVnsDb();
+  if (!db) return null;
+  const id = "cg_" + vnsUuid();
+  const now = vnsNow();
+  const ok = await vnsDbWrite("addCg", () =>
+    db.transaction("rw", db.cg_library, db.cg_thumbnails, async () => {
+      await db.cg_library.put({
+        id,
+        name: name || "未命名 CG",
+        mimeType: blob.type || "application/octet-stream",
+        blob,
+        fileSize: blob.size,
+        uploadedAt: now,
+        lastUsedAt: now,
+      });
+      if (thumbBlob) await db.cg_thumbnails.put({ id, blob: thumbBlob });
+      return id;
+    }));
+  return ok;
+}
+
+async function vnsGetCg(id) {
+  const db = await getVnsDb();
+  if (!db) return null;
+  return db.cg_library.get(id);
+}
+
+async function vnsGetCgThumbnail(id) {
+  const db = await getVnsDb();
+  if (!db) return null;
+  return db.cg_thumbnails.get(id);
+}
+
+async function vnsListCgs(opts) {
+  const db = await getVnsDb();
+  if (!db) return [];
+  // 預設依 lastUsedAt 降序(最近用過的在前)
+  const orderBy = (opts && opts.orderBy) || "lastUsedAt";
+  return db.cg_library.orderBy(orderBy).reverse().toArray();
+}
+
+async function vnsTouchCg(id) {
+  const db = await getVnsDb();
+  if (!db) return;
+  await vnsDbWrite("touchCg", () => db.cg_library.update(id, { lastUsedAt: vnsNow() }));
+}
+
+async function vnsDeleteCg(id) {
+  const db = await getVnsDb();
+  if (!db) return;
+  await vnsDbWrite("deleteCg", () =>
+    db.transaction("rw", db.cg_library, db.cg_thumbnails, async () => {
+      await db.cg_library.delete(id);
+      await db.cg_thumbnails.delete(id);
+    }));
+}
+
+// ---------- projects ----------
+
+async function vnsAddProject(name, mode, data) {
+  const db = await getVnsDb();
+  if (!db) return null;
+  const id = "proj_" + vnsUuid();
+  const now = vnsNow();
+  const ok = await vnsDbWrite("addProject", () =>
+    db.projects.put({
+      id,
+      name: name || "未命名專案",
+      mode: mode || "simple",
+      data: data || {},
+      createdAt: now,
+      modifiedAt: now,
+    }));
+  return ok === null ? null : id;
+}
+
+async function vnsUpdateProject(id, patch) {
+  const db = await getVnsDb();
+  if (!db) return;
+  const now = vnsNow();
+  await vnsDbWrite("updateProject", () =>
+    db.projects.update(id, Object.assign({}, patch, { modifiedAt: now })));
+}
+
+async function vnsGetProject(id) {
+  const db = await getVnsDb();
+  if (!db) return null;
+  return db.projects.get(id);
+}
+
+async function vnsListProjects() {
+  const db = await getVnsDb();
+  if (!db) return [];
+  return db.projects.orderBy("modifiedAt").reverse().toArray();
+}
+
+async function vnsDeleteProject(id) {
+  const db = await getVnsDb();
+  if (!db) return;
+  await vnsDbWrite("deleteProject", () => db.projects.delete(id));
+}
+
+// ---------- app_state(單筆 'current') ----------
+
+async function vnsGetAppState() {
+  const db = await getVnsDb();
+  if (!db) return null;
+  return db.app_state.get("current");
+}
+
+async function vnsSetAppState(patch) {
+  const db = await getVnsDb();
+  if (!db) return;
+  await vnsDbWrite("setAppState", async () => {
+    const cur = (await db.app_state.get("current")) || { id: "current" };
+    return db.app_state.put(Object.assign({}, cur, patch, { id: "current" }));
+  });
+}
+
+// 寫入操作的統一 try-catch:寫入失敗時 toast 提示。讀取/列表失敗回傳 null/[],
+// 不打擾使用者(空狀態自然會在 UI 顯示)。
+async function vnsDbWrite(label, fn) {
+  try {
+    return await fn();
+  } catch (err) {
+    console.error("[vnsDb] " + label + " failed:", err);
+    if (typeof showToast === "function") {
+      showToast("儲存失敗,請檢查瀏覽器空間或重新整理頁面。", "warn", 4000);
+    }
+    return null;
+  }
+}
+
+// IndexedDB 相容性偵測 — 在 Dexie 之外再做一次最低限度檢測,
+// 處理「Dexie 載入成功但底層 IndexedDB 因隱私模式被閹割」的情境。
+async function vnsCheckIdbAvailability() {
+  if (typeof window === "undefined" || !window.indexedDB) return false;
+  return new Promise((resolve) => {
+    try {
+      const req = window.indexedDB.open("__vns_probe__");
+      req.onsuccess = () => {
+        try { req.result.close(); window.indexedDB.deleteDatabase("__vns_probe__"); } catch (e) {}
+        resolve(true);
+      };
+      req.onerror = () => resolve(false);
+      req.onblocked = () => resolve(false);
+    } catch (e) { resolve(false); }
+  });
+}
+
+// 啟動時非同步開啟 DB;後續任務的 UI 程式碼用 await getVnsDb() 或 vnsDbReady 等待。
+// 若失敗,顯示全屏警告 overlay(隱私模式 / 舊瀏覽器)。
+(async function bootstrapVnsDb() {
+  const idbOk = await vnsCheckIdbAvailability();
+  if (!idbOk) {
+    vnsDbFailed = true;
+    const block = document.getElementById("vns-idb-block");
+    if (block) block.classList.add("show");
+    return;
+  }
+  await initVnsDb();
+  if (vnsDbFailed) {
+    const block = document.getElementById("vns-idb-block");
+    if (block) block.classList.add("show");
+    return;
+  }
+  // DB 就緒後:把舊版 localStorage 內的 base64 dataUrl 遷移到 cg_library,
+  // 並為 state.cgs 補上 Object URL(rehydrate)。完成後再做後續初始化。
+  await vnsRehydrateCgsFromLibrary();
+  // 重繪 UI(rehydrate 後 state.cgs 才有 dataUrl,需要重新渲染才看得到 CG)
+  if (typeof renderSimpleSlideList === "function") renderSimpleSlideList();
+  if (typeof renderSimpleEditor === "function") renderSimpleEditor();
+  if (typeof reparseAndRender === "function" && state.mode === "detail") reparseAndRender(false);
+  // 遷移成功後 saveToStorage 寫入的就是 stripped 版本,localStorage 自然瘦身
+  if (typeof saveToStorage === "function") saveToStorage();
+
+  // 確保有 currentProjectId(沒有就建立預設專案)
+  await vnsEnsureDefaultProject();
+  // 嘗試取得 Persistent Storage 權限(Chrome 通常自動給,Firefox 跳本機提示,Safari 不支援)
+  await vnsRequestPersistentStorage();
+})();
+
+// ---------- CG 上傳工作流(高層) ----------
+
+const VNS_CG_MAX_BYTES = 10 * 1024 * 1024;   // 單檔 10MB 上限
+const VNS_CG_MIME_OK = new Set(["image/jpeg", "image/png", "image/webp", "image/gif"]);
+const VNS_THUMB_MAX = 200;                   // 縮圖長邊上限
+const VNS_THUMB_QUALITY = 0.7;
+
+// 檔案合法性檢查 — 回傳 { ok: true } 或 { ok: false, reason: "..." }
+function vnsValidateCgFile(file) {
+  if (!file || !(file instanceof File || file instanceof Blob)) {
+    return { ok: false, reason: "無效的檔案。" };
+  }
+  if (file.size > VNS_CG_MAX_BYTES) {
+    return { ok: false, reason: "檔案超過 10 MB 上限。" };
+  }
+  if (file.type && !VNS_CG_MIME_OK.has(file.type)) {
+    return { ok: false, reason: "不支援的格式(僅接受 JPG / PNG / WebP / GIF)。" };
+  }
+  return { ok: true };
+}
+
+// Canvas resize 產生縮圖 — 用 OffscreenCanvas(若不支援 fallback 到 HTMLCanvasElement)
+async function vnsCreateThumbnail(blob, maxSize) {
+  const max = maxSize || VNS_THUMB_MAX;
+  // createImageBitmap:現代瀏覽器都有
+  let bmp;
+  try {
+    bmp = await createImageBitmap(blob);
+  } catch (e) {
+    // GIF 等格式 createImageBitmap 可能失敗,fallback 到 <img>
+    const url = URL.createObjectURL(blob);
+    try {
+      const img = await new Promise((resolve, reject) => {
+        const im = new Image();
+        im.onload = () => resolve(im);
+        im.onerror = reject;
+        im.src = url;
+      });
+      bmp = img;
+    } finally { URL.revokeObjectURL(url); }
+  }
+  const ow = bmp.width || bmp.naturalWidth;
+  const oh = bmp.height || bmp.naturalHeight;
+  const ratio = Math.min(1, max / Math.max(ow, oh));
+  const w = Math.max(1, Math.round(ow * ratio));
+  const h = Math.max(1, Math.round(oh * ratio));
+
+  // OffscreenCanvas 比 HTMLCanvasElement 快也不會閃白屏;不支援時 fallback
+  if (typeof OffscreenCanvas !== "undefined") {
+    const canvas = new OffscreenCanvas(w, h);
+    const ctx = canvas.getContext("2d");
+    ctx.drawImage(bmp, 0, 0, w, h);
+    return canvas.convertToBlob({ type: "image/jpeg", quality: VNS_THUMB_QUALITY });
+  }
+  // fallback
+  const canvas = document.createElement("canvas");
+  canvas.width = w; canvas.height = h;
+  const ctx = canvas.getContext("2d");
+  ctx.drawImage(bmp, 0, 0, w, h);
+  return new Promise((resolve) => canvas.toBlob(resolve, "image/jpeg", VNS_THUMB_QUALITY));
+}
+
+// 高層工作流:驗證 → 產縮圖 → 寫入兩個 store → 回傳 { id, error? }
+// UI 層只需 try { const { id } = await vnsAddCgFromFile(file); } 就完成上傳
+async function vnsAddCgFromFile(file) {
+  const v = vnsValidateCgFile(file);
+  if (!v.ok) return { id: null, error: v.reason };
+  // 配額預檢:不足直接擋下,避免寫到一半失敗造成 store 不一致
+  const canStore = await vnsCanStoreFile(file.size);
+  if (!canStore) {
+    return { id: null, error: "瀏覽器儲存空間不足。請到「⚙ 設定 → 儲存空間」清理,或匯出備份後刪除部分專案。" };
+  }
+  let thumb = null;
+  try {
+    thumb = await vnsCreateThumbnail(file);
+  } catch (e) {
+    console.warn("[vnsAddCgFromFile] 縮圖產生失敗,只存原圖:", e);
+    // 縮圖失敗不致命,原圖仍可寫入(列表會 fallback 顯示原圖)
+  }
+  const id = await vnsAddCg(file, file.name || "未命名 CG", thumb);
+  if (!id) return { id: null, error: "寫入資料庫失敗。" };
+  return { id };
+}
+
+// 從 cg id 取得可用於 <img src> 的 Object URL(取原圖)。
+// 呼叫端用完務必 vnsRevokeCgUrl(url) 釋放,避免 Blob 記憶體洩漏。
+async function vnsCgUrlFromId(id, opts) {
+  const useThumb = !!(opts && opts.thumbnail);
+  const rec = useThumb ? await vnsGetCgThumbnail(id) : await vnsGetCg(id);
+  if (!rec || !rec.blob) return null;
+  return URL.createObjectURL(rec.blob);
+}
+function vnsRevokeCgUrl(url) {
+  if (url) { try { URL.revokeObjectURL(url); } catch (e) {} }
+}
+
+// 列出 CG 縮圖供 CG 庫 modal 用 — 預先把縮圖轉成 Object URL 一次回傳,
+// caller 顯示完後呼叫 vnsRevokeCgUrl 釋放每一筆。
+async function vnsListCgsWithThumbUrls() {
+  const cgs = await vnsListCgs();
+  const out = [];
+  for (const cg of cgs) {
+    let thumbUrl = null;
+    const thumbRec = await vnsGetCgThumbnail(cg.id);
+    if (thumbRec && thumbRec.blob) thumbUrl = URL.createObjectURL(thumbRec.blob);
+    else if (cg.blob) thumbUrl = URL.createObjectURL(cg.blob);  // fallback:沒縮圖時用原圖
+    out.push({
+      id: cg.id,
+      name: cg.name,
+      fileSize: cg.fileSize,
+      uploadedAt: cg.uploadedAt,
+      lastUsedAt: cg.lastUsedAt,
+      thumbUrl,
+    });
+  }
+  return out;
+}
+
+// ---------- 配額監控 ----------
+
+const VNS_QUOTA_SAFETY_MARGIN = 50 * 1024 * 1024;  // 預留 50MB 安全空間
+let _vnsPersistentGranted = null;   // null=尚未檢查, true=已 grant, false=被拒
+
+async function vnsCheckStorageQuota() {
+  if (!navigator.storage || !navigator.storage.estimate) {
+    return { supported: false };
+  }
+  try {
+    const { quota = 0, usage = 0 } = await navigator.storage.estimate();
+    return {
+      supported: true,
+      quota,
+      usage,
+      usagePercent: quota > 0 ? (usage / quota) * 100 : 0,
+      available: Math.max(0, quota - usage),
+    };
+  } catch (e) {
+    return { supported: false };
+  }
+}
+
+async function vnsCanStoreFile(blobSize) {
+  const q = await vnsCheckStorageQuota();
+  if (!q.supported) return true;  // 偵測不到就放行,寫入失敗會走 vnsDbWrite 的 catch
+  return blobSize < (q.available - VNS_QUOTA_SAFETY_MARGIN);
+}
+
+async function vnsRequestPersistentStorage() {
+  if (!navigator.storage || !navigator.storage.persist) {
+    _vnsPersistentGranted = false;
+    return false;
+  }
+  try {
+    const already = navigator.storage.persisted ? await navigator.storage.persisted() : false;
+    if (already) { _vnsPersistentGranted = true; return true; }
+    const granted = await navigator.storage.persist();
+    _vnsPersistentGranted = granted;
+    return granted;
+  } catch (e) {
+    _vnsPersistentGranted = false;
+    return false;
+  }
+}
+
+// 從各 store 估算各類資料總量(回傳 bytes)。
+// 注意:IndexedDB 沒有直接的「per-store size」API,只能 sum 個別 record 的 blob.size。
+async function vnsBreakdownUsage() {
+  const out = { cgs: 0, cgCount: 0, projects: 0, projectCount: 0 };
+  const db = await getVnsDb();
+  if (!db) return out;
+  try {
+    await db.cg_library.each((r) => { out.cgs += (r.fileSize || 0); out.cgCount++; });
+    // 縮圖也算
+    await db.cg_thumbnails.each((r) => { if (r.blob) out.cgs += r.blob.size || 0; });
+    const projs = await db.projects.toArray();
+    out.projectCount = projs.length;
+    // 粗估 project.data JSON 字串長度(UTF-16 約 ×2 bytes)
+    for (const p of projs) {
+      try { out.projects += JSON.stringify(p.data || {}).length * 2; } catch (e) {}
+    }
+  } catch (e) {
+    console.warn("[breakdownUsage]", e);
+  }
+  return out;
+}
+
+function vnsFmtBytes(n) {
+  if (n == null) return "—";
+  if (n < 1024) return n + " B";
+  if (n < 1024 * 1024) return (n / 1024).toFixed(1) + " KB";
+  if (n < 1024 * 1024 * 1024) return (n / 1024 / 1024).toFixed(1) + " MB";
+  return (n / 1024 / 1024 / 1024).toFixed(2) + " GB";
+}
+
+// ---------- 自動儲存到 IndexedDB projects ----------
+
+// 3 秒 debounce:使用者編輯多次只觸發一次寫入。
+let _vnsAutoSaveTimer = null;
+// 寫入失敗(配額爆)後停掉自動儲存,直到使用者手動重試或處理空間。
+let _vnsAutoSaveStopped = false;
+
+// 收集目前 state 的 project 子集 — 任務 9 會把 localStorage 與 IDB 的職責切乾淨;
+// 在此之前先把 saveToStorage 的 payload 整份塞進來當作快照。
+function vnsCollectProjectData() {
+  return {
+    v: 1,
+    script: state.script,
+    characters: state.characters,
+    backgrounds: Object.fromEntries(
+      Object.entries(state.backgrounds || {}).filter(([, v]) => v && v.type === "image")
+    ),
+    bgOrder: state.bgOrder,
+    cgs: _stripCgDataUrls(state.cgs),
+    cgOrder: state.cgOrder,
+    ratio: state.ratio,
+    dialogStyle: state.dialogStyle,
+    gameUI: state.gameUI,
+    lightMode: state.lightMode,
+    loveInitial: state.loveInitial,
+    mode: state.mode,
+    simpleCards: state.simpleCards,
+    simpleCurrentSlideId: state.simpleCurrentSlideId,
+  };
+}
+
+// 標記為髒,3 秒後寫入。多次呼叫會 reset timer。
+function vnsScheduleAutoSave() {
+  if (_vnsAutoSaveStopped) return;
+  if (!state.currentProjectId || vnsDbFailed) return;
+  if (_vnsAutoSaveTimer) clearTimeout(_vnsAutoSaveTimer);
+  // 視覺提示:✏ 編輯中 — 但只在「目前不是 saving 中」才覆寫
+  const el = document.getElementById("saveIndicator");
+  if (el) {
+    const t = el.querySelector(".save-text");
+    el.classList.remove("saved", "error");
+    el.classList.add("dirty");
+    if (t) t.textContent = "編輯中…";
+  }
+  _vnsAutoSaveTimer = setTimeout(() => {
+    _vnsAutoSaveTimer = null;
+    vnsAutoSaveCurrentProject();
+  }, 3000);
+}
+
+async function vnsAutoSaveCurrentProject() {
+  if (vnsDbFailed || !state.currentProjectId) return;
+  const data = vnsCollectProjectData();
+  const db = await getVnsDb();
+  if (!db) return;
+  try {
+    await db.projects.update(state.currentProjectId, {
+      data,
+      mode: state.mode || "simple",
+      modifiedAt: vnsNow(),
+    });
+    // ✓ 已儲存到 IDB(1 秒提示後落回「已儲存」)
+    const el = document.getElementById("saveIndicator");
+    if (el) {
+      const t = el.querySelector(".save-text");
+      el.classList.remove("dirty", "error");
+      el.classList.add("saved");
+      if (t) t.textContent = "已儲存到 IDB";
+      setTimeout(() => {
+        const tt = el.querySelector(".save-text");
+        if (tt && tt.textContent === "已儲存到 IDB") tt.textContent = "已儲存";
+      }, 1000);
+    }
+  } catch (e) {
+    console.error("[autoSave] failed:", e);
+    _vnsAutoSaveStopped = true;
+    const el = document.getElementById("saveIndicator");
+    if (el) {
+      const t = el.querySelector(".save-text");
+      el.classList.remove("saved", "dirty");
+      el.classList.add("error");
+      if (t) t.textContent = "自動儲存停止";
+    }
+    if (typeof showToast === "function") {
+      showToast("自動儲存失敗,已暫停。請到「⚙ 設定 → 儲存空間」處理。", "warn", 5000);
+    }
+  }
+}
+
+// 給使用者「重試 / 處理空間後恢復」呼叫
+function vnsResumeAutoSave() {
+  _vnsAutoSaveStopped = false;
+  vnsScheduleAutoSave();
+}
+
+// 把 state.cgs 序列化前剝掉 dataUrl 欄位 — 避免每張 CG 的 base64/blob URL
+// 把 localStorage payload 灌爆(5MB 限制)。dataUrl 只在 runtime 由
+// vnsRehydrateCgsFromLibrary 從 IndexedDB cg_library 重新生成 Object URL。
+function _stripCgDataUrls(cgs) {
+  const out = {};
+  if (!cgs || typeof cgs !== "object") return out;
+  for (const [k, v] of Object.entries(cgs)) {
+    if (!v || typeof v !== "object") continue;
+    out[k] = {
+      cgId: v.cgId || null,
+      name: v.name || k,
+    };
+  }
+  return out;
+}
+
+// 背景任務:把 state.cgs 內含 data:base64 但尚未有 cgId 的 entry 鏡到 cg_library。
+// saveToStorage 後呼叫;不 await,讓使用者操作流暢,1~2 秒內完成持久化。
+function _scheduleMirrorCgsToLibrary() {
+  if (vnsDbFailed) return;
+  setTimeout(async () => {
+    const cgs = state.cgs;
+    if (!cgs) return;
+    for (const [name, entry] of Object.entries(cgs)) {
+      if (!entry || typeof entry !== "object") continue;
+      if (entry.cgId) continue;   // 已遷移
+      const du = entry.dataUrl;
+      if (typeof du !== "string" || !du.startsWith("data:")) continue;
+      try {
+        const blob = await (await fetch(du)).blob();
+        let thumb = null;
+        try { thumb = await vnsCreateThumbnail(blob); } catch (e) {}
+        const cgId = await vnsAddCg(blob, name, thumb);
+        if (cgId) {
+          entry.cgId = cgId;
+          // 換成 Object URL — 大幅縮短記憶體佔用(原本是 dataUrl 字串)
+          entry.dataUrl = URL.createObjectURL(blob);
+        }
+      } catch (e) { console.warn("[mirror cg]", name, e); }
+    }
+  }, 0);
+}
+
+// 開機時呼叫 — 從 IndexedDB cg_library 為 state.cgs 補回 dataUrl(Object URL),
+// 並把 legacy(localStorage 中的 base64 data URL)一次性遷移到 cg_library。
+async function vnsRehydrateCgsFromLibrary() {
+  if (vnsDbFailed) return;
+  const cgs = state.cgs;
+  if (!cgs || typeof cgs !== "object") return;
+  for (const [name, entry] of Object.entries(cgs)) {
+    if (!entry || typeof entry !== "object") continue;
+    const du = entry.dataUrl;
+    // 1. legacy: data:base64 → 寫進 cg_library + 換成 Object URL
+    if (typeof du === "string" && du.startsWith("data:")) {
+      try {
+        const blob = await (await fetch(du)).blob();
+        let thumb = null;
+        try { thumb = await vnsCreateThumbnail(blob); } catch (e) {}
+        const cgId = await vnsAddCg(blob, name, thumb);
+        if (cgId) {
+          entry.cgId = cgId;
+          entry.dataUrl = URL.createObjectURL(blob);
+        }
+      } catch (e) { console.warn("[cgs migrate]", name, e); }
+      continue;
+    }
+    // 2. 有 cgId 但沒 dataUrl(rehydrate 情境)→ 從 cg_library 取 Object URL
+    if (entry.cgId && !entry.dataUrl) {
+      try {
+        const url = await vnsCgUrlFromId(entry.cgId);
+        if (url) entry.dataUrl = url;
+      } catch (e) {}
+    }
+  }
+}
+
+// localStorage 內是否曾有舊版攝影片資料 — 用來判斷首次啟動時是不是「遷移」情境
+function vnsHasLegacyLocalData() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return false;
+    const parsed = JSON.parse(raw);
+    // 有 script 或 simpleCards 才視為「有實質內容」,空殼不算
+    if (typeof parsed.script === "string" && parsed.script.trim().length > 0) return true;
+    if (Array.isArray(parsed.simpleCards) && parsed.simpleCards.length > 0) return true;
+    if (Array.isArray(parsed.characters) && parsed.characters.length > 0) return true;
+    return false;
+  } catch (e) { return false; }
+}
+
+// 啟動時:若 app_state 內有 currentProjectId 且 project 還在 → 沿用;
+// 否則建立預設專案,把當前 state 塞進去做為起點。
+// 如果偵測到舊版 localStorage 資料,把預設專案命名為「舊的專案(自動遷移)」並推遲一則提示 toast。
+const VNS_MIGRATE_FLAG_KEY = "vns_migration_done_v1";
+async function vnsEnsureDefaultProject() {
+  if (vnsDbFailed) return;
+  const appState = await vnsGetAppState();
+  if (appState && appState.currentProjectId) {
+    const p = await vnsGetProject(appState.currentProjectId);
+    if (p) {
+      state.currentProjectId = appState.currentProjectId;
+      return;
+    }
+  }
+  // 沒有 app_state 或 project 已被刪除 → 建預設 project
+  const isLegacy = !localStorage.getItem(VNS_MIGRATE_FLAG_KEY) && vnsHasLegacyLocalData();
+  const name = isLegacy ? "舊的專案(自動遷移)" : "我的專案";
+  const id = await vnsAddProject(name, state.mode || "simple", vnsCollectProjectData());
+  if (id) {
+    state.currentProjectId = id;
+    await vnsSetAppState({ currentProjectId: id });
+  }
+  if (isLegacy) {
+    try { localStorage.setItem(VNS_MIGRATE_FLAG_KEY, vnsNow()); } catch (e) {}
+    // 等 UI 就緒一段時間再 toast,確保使用者看得到
+    setTimeout(() => {
+      if (typeof showToast === "function") {
+        showToast("已將舊資料遷移到新儲存系統 · 可在「📁 我的專案」管理", "info", 5000);
+      }
+    }, 1200);
+  }
+}
+
+// 刪除 CG 並把所有 projects 內引用此 cgId 的位置設為 null。
+// 回傳 { affectedProjects: N } 供 UI 顯示影響範圍。
+async function vnsDeleteCgAndDereference(cgId) {
+  const db = await getVnsDb();
+  if (!db) return { affectedProjects: 0 };
+  let affected = 0;
+  await vnsDbWrite("deleteCgAndDereference", () =>
+    db.transaction("rw", db.cg_library, db.cg_thumbnails, db.projects, async () => {
+      await db.cg_library.delete(cgId);
+      await db.cg_thumbnails.delete(cgId);
+      // 逐筆掃描 projects,把引用此 cgId 的 slide.cgId 設為 null
+      const all = await db.projects.toArray();
+      for (const p of all) {
+        if (!p.data || !Array.isArray(p.data.slides)) continue;
+        let dirty = false;
+        for (const s of p.data.slides) {
+          if (s && s.cgId === cgId) { s.cgId = null; dirty = true; }
+        }
+        if (dirty) {
+          await db.projects.update(p.id, { data: p.data, modifiedAt: vnsNow() });
+          affected++;
+        }
+      }
+    }));
+  return { affectedProjects: affected };
 }
 
 // ============================================================
@@ -2395,48 +3225,13 @@ function applyDialogStyle() {
   root.style.setProperty("--dialog-bg-rgb", `${r}, ${g}, ${b}`);
   root.style.setProperty("--dialog-bg-rgb-2", `${r2}, ${g2}, ${b2}`);
   root.style.setProperty("--dialog-bg-alpha", String(opacity));
+  // 樣式 modal 右側即時預覽同步(主要是對話框形狀)
+  if (typeof updateDefaultsPreview === "function") updateDefaultsPreview();
 }
 
 function renderStyleTab() {
-  const presetsEl = document.getElementById("dialogPresets");
-  const colorEl = document.getElementById("dialogColorInput");
-  const opEl = document.getElementById("dialogOpacityInput");
-  const opLabel = document.getElementById("dialogOpacityLabel");
-  if (!presetsEl || !colorEl || !opEl) return;
-
-  presetsEl.innerHTML = "";
-  for (const p of DIALOG_PRESETS) {
-    const btn = document.createElement("button");
-    btn.className = "style-preset";
-    const isActive =
-      p.color.toLowerCase() === (state.dialogStyle.color || "").toLowerCase() &&
-      Math.abs((p.opacity || 0) - state.dialogStyle.opacity) < 0.01;
-    if (isActive) btn.classList.add("active");
-    btn.dataset.id = p.id;
-    btn.title = `${p.name}（${p.color} · ${Math.round(p.opacity * 100)}%）`;
-
-    const swatch = document.createElement("div");
-    swatch.className = "style-preset-swatch";
-    const { r, g, b } = hexToRgb(p.color);
-    swatch.style.background = `linear-gradient(180deg, rgba(${r},${g},${b},${p.opacity - 0.03}), rgba(${Math.min(255,r+10)},${Math.min(255,g+6)},${Math.min(255,b+14)},${p.opacity}))`;
-    btn.appendChild(swatch);
-    const label = document.createElement("span");
-    label.textContent = p.name;
-    btn.appendChild(label);
-
-    btn.addEventListener("click", () => {
-      state.dialogStyle = { ...state.dialogStyle, color: p.color, opacity: p.opacity };
-      applyDialogStyle();
-      saveToStorage();
-      renderStyleTab();
-    });
-    presetsEl.appendChild(btn);
-  }
-
-  colorEl.value = state.dialogStyle.color;
-  opEl.value = String(Math.round(state.dialogStyle.opacity * 100));
-  opLabel.textContent = `${Math.round(state.dialogStyle.opacity * 100)}%`;
-
+  // 對話框預設 / 自訂底色 的 UI 已移除,renderStyleTab 現在只負責
+  // 風格組合分頁裡的 sub-section:對話框形狀、角色光線、遊戲介面元素
   renderShapeGrid();
   bindGameUISettings();
   renderLightModeButtons();
@@ -2518,37 +3313,7 @@ function renderShapeGrid() {
   });
 }
 
-// Wire up live inputs once.
-(function wireDialogStyleInputs() {
-  const colorEl = document.getElementById("dialogColorInput");
-  const opEl = document.getElementById("dialogOpacityInput");
-  const opLabel = document.getElementById("dialogOpacityLabel");
-  const resetBtn = document.getElementById("dialogStyleReset");
-  if (!colorEl || !opEl || !resetBtn) return;
-  colorEl.addEventListener("input", (e) => {
-    state.dialogStyle.color = e.target.value;
-    applyDialogStyle();
-    saveToStorage();
-    // refresh preset highlights
-    renderStyleTab();
-  });
-  opEl.addEventListener("input", (e) => {
-    const v = parseInt(e.target.value, 10) / 100;
-    state.dialogStyle.opacity = v;
-    opLabel.textContent = `${e.target.value}%`;
-    applyDialogStyle();
-  });
-  opEl.addEventListener("change", () => {
-    saveToStorage();
-    renderStyleTab();
-  });
-  resetBtn.addEventListener("click", () => {
-    state.dialogStyle = { ...DEFAULT_DIALOG_STYLE };
-    applyDialogStyle();
-    saveToStorage();
-    renderStyleTab();
-  });
-})();
+// (對話框預設 / 自訂底色的 live input wiring 已隨 UI 一併移除)
 
 // ----- Character list -----
 
@@ -3441,6 +4206,7 @@ function openStyleModal() {
   styleModalEl.classList.add("show");
   renderStyleTab();
   renderFontPreviewList();
+  if (typeof renderStylePresetGrid === "function") renderStylePresetGrid();
   if (typeof syncStyleDefaultsUI === "function") syncStyleDefaultsUI();
   // 開啟時預設回到第一個 tab
   const tabs = styleModalEl.querySelectorAll(".style-tab");
@@ -3460,6 +4226,7 @@ styleModalEl.addEventListener("click", (e) => {
 });
 
 // M8:字體預覽清單
+// 字體預覽 — 純展示,不提供插入。要套用請到「全域預設樣式」或在劇本寫 [字型名]。
 function renderFontPreviewList() {
   const list = document.getElementById("fontPreviewList");
   if (!list) return;
@@ -3468,26 +4235,15 @@ function renderFontPreviewList() {
   FONT_PRESETS.forEach(f => {
     const item = document.createElement("div");
     item.className = "font-preview-item";
-    item.dataset.font = f.id;  // M16:供 CSS 針對特定字體微調
-
-    const meta = document.createElement("div");
-    meta.className = "font-preview-meta";
+    item.dataset.font = f.id;
 
     const nameEl = document.createElement("span");
     nameEl.className = "font-preview-name";
     nameEl.textContent = f.name;
-    // ★ M15 關鍵:名稱本身要套用該字體
     if (f.stack) {
       nameEl.style.fontFamily = f.stack;
       if (f.weight) nameEl.style.fontWeight = f.weight;
     }
-
-    const tagEl = document.createElement("span");
-    tagEl.className = "font-preview-tag";
-    tagEl.textContent = f.id === "default" ? "(無 tag)" : `[${f.name}]`;
-
-    meta.appendChild(nameEl);
-    meta.appendChild(tagEl);
 
     const sample = document.createElement("div");
     sample.className = "font-preview-sample";
@@ -3497,7 +4253,7 @@ function renderFontPreviewList() {
       if (f.weight) sample.style.fontWeight = f.weight;
     }
 
-    // ★ M17:檢測該字體是否已載入
+    // 檢測該字體是否已載入,未載入時加上 loading class
     if (f.stack && f.id !== "default") {
       const primaryFont = f.stack.split(",")[0].trim().replace(/^["']|["']$/g, "");
       if (document.fonts && document.fonts.check) {
@@ -3518,30 +4274,8 @@ function renderFontPreviewList() {
       }
     }
 
-    const btn = document.createElement("button");
-    btn.className = "font-preview-insert";
-    if (f.id === "default") {
-      btn.textContent = "—";
-      btn.disabled = true;
-    } else {
-      btn.textContent = "▶ 插入";
-      btn.addEventListener("click", (e) => {
-        e.stopPropagation();
-        const ta = els.scriptArea;
-        const start = ta.selectionStart;
-        const tagText = `[${f.name}]`;
-        ta.value = ta.value.substring(0, start) + tagText + ta.value.substring(ta.selectionEnd);
-        ta.selectionStart = ta.selectionEnd = start + tagText.length;
-        ta.dispatchEvent(new Event("input", { bubbles: true }));
-        styleModalEl.classList.remove("show");
-        ta.focus();
-        if (typeof ensureCaretVisible === "function") ensureCaretVisible(ta);
-      });
-    }
-
-    item.appendChild(meta);
+    item.appendChild(nameEl);
     item.appendChild(sample);
-    item.appendChild(btn);
     list.appendChild(item);
   });
 }
@@ -3561,85 +4295,170 @@ function renderFontPreviewList() {
   });
 })();
 
-// O5:全域預設樣式分頁 ←→ state.styleDefaults
+// O5:全域預設樣式分頁
+// 四列(角色名 / 旁白 / 內心話 / 對話),每列字型 + 獨立 pt 字級。
+// 字型存 state.styleDefaults[key].font(角色名無字型),字級存 state.fontSizes[key]。
 const STYLE_DEFAULT_FIELDS = [
-  { key: "narration", font: "defNarrationFont", size: "defNarrationSize" },
-  { key: "inner",     font: "defInnerFont",     size: "defInnerSize" },
-  { key: "dialog",    font: "defDialogFont",    size: "defDialogSize" },
+  { key: "speaker",   font: null,               size: "fontSizeSpeaker",   label: "fontSizeSpeakerLabel" },
+  { key: "narration", font: "defNarrationFont", size: "fontSizeNarration", label: "fontSizeNarrationLabel" },
+  { key: "inner",     font: "defInnerFont",     size: "fontSizeInner",     label: "fontSizeInnerLabel" },
+  { key: "dialog",    font: "defDialogFont",    size: "fontSizeDialog",    label: "fontSizeDialogLabel" },
 ];
+
+function applyFontSizes() {
+  const fs = state.fontSizes || { dialog: 18, speaker: 16, narration: 16, inner: 15 };
+  const root = document.documentElement;
+  root.style.setProperty("--dialog-font-size", fs.dialog + "px");
+  root.style.setProperty("--speaker-font-size", fs.speaker + "px");
+  root.style.setProperty("--narration-font-size", fs.narration + "px");
+  root.style.setProperty("--inner-font-size", fs.inner + "px");
+}
+
 function syncStyleDefaultsUI() {
   for (const f of STYLE_DEFAULT_FIELDS) {
-    const fe = document.getElementById(f.font);
+    if (f.font) {
+      const fe = document.getElementById(f.font);
+      const d = state.styleDefaults[f.key] || { font: "" };
+      if (fe) fe.value = d.font || "";
+    }
     const se = document.getElementById(f.size);
-    const d = state.styleDefaults[f.key] || { font: "", size: "" };
-    if (fe) fe.value = d.font || "";
-    if (se) se.value = d.size || "";
+    const le = document.getElementById(f.label);
+    const v = (state.fontSizes && state.fontSizes[f.key]) || 16;
+    if (se) se.value = v;
+    if (le) le.textContent = v + " pt";
+  }
+  updateDefaultsPreview();
+}
+
+// 樣式 modal 右側即時預覽:同步字級、字型、對話框形狀。
+// 對話框背景/邊框/角色名色/文字色透過 :root 上的 --style-* CSS 變數
+// 自動繼承,不需要在這裡 set。
+function updateDefaultsPreview() {
+  const fs = state.fontSizes || { dialog: 18, speaker: 16, narration: 16, inner: 15 };
+  const sd = state.styleDefaults || {};
+  const fontStack = (id) => {
+    const f = id && FONT_BY_ID[id];
+    return f && f.stack;
+  };
+  const fontWeight = (id) => {
+    const f = id && FONT_BY_ID[id];
+    return f && f.weight;
+  };
+  const apply = (el, px, stack, weight) => {
+    if (!el) return;
+    el.style.fontSize = px + "px";
+    el.style.fontFamily = stack || "";
+    el.style.fontWeight = weight ? String(weight) : "";
+  };
+  apply(document.getElementById("modalPreviewSpeaker"), fs.speaker, null, null);
+  apply(document.getElementById("modalPreviewDialog"),
+        fs.dialog, fontStack(sd.dialog && sd.dialog.font), fontWeight(sd.dialog && sd.dialog.font));
+  apply(document.getElementById("modalPreviewNarration"),
+        fs.narration, fontStack(sd.narration && sd.narration.font), fontWeight(sd.narration && sd.narration.font));
+  apply(document.getElementById("modalPreviewInner"),
+        fs.inner, fontStack(sd.inner && sd.inner.font), fontWeight(sd.inner && sd.inner.font));
+  // 同步對話框形狀(classic / soft / window)
+  const box = document.getElementById("modalPreviewBox");
+  if (box && state.dialogStyle && state.dialogStyle.shape) {
+    box.setAttribute("data-shape", state.dialogStyle.shape);
   }
 }
+
 (function initStyleDefaultsPanel() {
   for (const f of STYLE_DEFAULT_FIELDS) {
-    const fe = document.getElementById(f.font);
+    // 字型 select(角色名沒有)
+    if (f.font) {
+      const fe = document.getElementById(f.font);
+      if (fe) fe.addEventListener("change", () => {
+        if (!state.styleDefaults[f.key]) state.styleDefaults[f.key] = { font: "" };
+        state.styleDefaults[f.key].font = fe.value;
+        saveToStorage();
+        updateDefaultsPreview();
+        reparseAndRender(false);
+      });
+    }
+    // 字級 slider — 使用 input 事件做即時更新
     const se = document.getElementById(f.size);
-    if (fe) fe.addEventListener("change", () => {
-      state.styleDefaults[f.key].font = fe.value;
-      saveToStorage();
-      reparseAndRender(false);
-    });
-    if (se) se.addEventListener("change", () => {
-      state.styleDefaults[f.key].size = se.value;
+    const le = document.getElementById(f.label);
+    if (se) se.addEventListener("input", () => {
+      const v = Math.max(12, Math.min(32, parseInt(se.value, 10) || 16));
+      if (!state.fontSizes) state.fontSizes = { dialog: 18, speaker: 16, narration: 16, inner: 15 };
+      state.fontSizes[f.key] = v;
+      if (le) le.textContent = v + " pt";
+      applyFontSizes();
+      updateDefaultsPreview();
       saveToStorage();
       reparseAndRender(false);
     });
   }
 })();
-
-// Task 1.5:對話/角色名字級獨立 pt slider
-function applyFontSizes() {
-  const fs = state.fontSizes || { dialog: 16, speaker: 18 };
-  document.documentElement.style.setProperty("--dialog-font-size", fs.dialog + "px");
-  document.documentElement.style.setProperty("--speaker-font-size", fs.speaker + "px");
-}
-function syncFontSizesUI() {
-  const fs = state.fontSizes || { dialog: 16, speaker: 18 };
-  const d = document.getElementById("fontSizeDialog");
-  const s = document.getElementById("fontSizeSpeaker");
-  const dl = document.getElementById("fontSizeDialogLabel");
-  const sl = document.getElementById("fontSizeSpeakerLabel");
-  if (d) d.value = fs.dialog;
-  if (s) s.value = fs.speaker;
-  if (dl) dl.textContent = fs.dialog + " pt";
-  if (sl) sl.textContent = fs.speaker + " pt";
-}
-(function initFontSizePanel() {
-  const d = document.getElementById("fontSizeDialog");
-  const s = document.getElementById("fontSizeSpeaker");
-  const dl = document.getElementById("fontSizeDialogLabel");
-  const sl = document.getElementById("fontSizeSpeakerLabel");
-  if (d) d.addEventListener("input", () => {
-    const v = Math.max(10, Math.min(24, parseInt(d.value, 10) || 16));
-    state.fontSizes.dialog = v;
-    if (dl) dl.textContent = v + " pt";
-    applyFontSizes();
-    saveToStorage();
-  });
-  if (s) s.addEventListener("input", () => {
-    const v = Math.max(10, Math.min(24, parseInt(s.value, 10) || 18));
-    state.fontSizes.speaker = v;
-    if (sl) sl.textContent = v + " pt";
-    applyFontSizes();
-    saveToStorage();
-  });
-})();
 applyFontSizes();
-syncFontSizesUI();
+syncStyleDefaultsUI();
 
 // ============================================================
 // Batch 2:Style preset 套用
 // ============================================================
+// 取得「自訂」變體 — 若 customVariants[presetId] 不存在,以當前選中的變體為起點建立。
+function getOrInitCustomVariant(presetId) {
+  const style = STYLE_PRESETS[presetId];
+  if (!style) return null;
+  // 決定 basedOn 起點:已存在的 → 沿用;否則用目前同一風格的變體;否則用該風格的預設變體
+  let cv = state.customVariants && state.customVariants[presetId];
+  if (!cv) {
+    const baseVariantId =
+      (state.style.preset === presetId
+        && state.style.variant
+        && state.style.variant !== "custom"
+        && style.variants[state.style.variant])
+        ? state.style.variant
+        : getDefaultVariantId(presetId);
+    const baseVariant = style.variants[baseVariantId];
+    if (!baseVariant) return null;
+    cv = {
+      borderColor: baseVariant.dialog.borderColor,
+      bgColor:     baseVariant.dialog.bgColor,
+      bgOpacity:   typeof baseVariant.dialog.opacity === "number" ? baseVariant.dialog.opacity : 0.9,
+      nameColor:   baseVariant.speaker.color,
+      textColor:   baseVariant.dialogText.color,
+      basedOn:     baseVariantId,
+    };
+    if (!state.customVariants) state.customVariants = {};
+    state.customVariants[presetId] = cv;
+  }
+  return cv;
+}
+
+// 把自訂配色套到 basedOn 變體之上,組出一個 synthetic variant 物件。
+function buildCustomVariant(presetId) {
+  const style = STYLE_PRESETS[presetId];
+  if (!style) return null;
+  const cv = getOrInitCustomVariant(presetId);
+  if (!cv) return null;
+  const baseVariant = style.variants[cv.basedOn] || style.variants[getDefaultVariantId(presetId)];
+  // deep clone 以免動到 STYLE_PRESETS 原始資料
+  const v = JSON.parse(JSON.stringify(baseVariant));
+  v.name = "自訂";
+  v.dialog.borderColor = cv.borderColor;
+  v.dialog.bgColor     = cv.bgColor;
+  v.dialog.opacity     = cv.bgOpacity;
+  v.speaker.color      = cv.nameColor;
+  v.dialogText.color   = cv.textColor;
+  return v;
+}
+
 function applyStylePreset(presetId, variantId, opts) {
-  const result = getStylePreset(presetId, variantId);
-  if (!result) return;
-  const { style, variant } = result;
+  let style, variant;
+  if (variantId === "custom") {
+    style = STYLE_PRESETS[presetId];
+    if (!style) return;
+    variant = buildCustomVariant(presetId);
+    if (!variant) return;
+  } else {
+    const result = getStylePreset(presetId, variantId);
+    if (!result) return;
+    style = result.style;
+    variant = result.variant;
+  }
   const root = document.documentElement;
 
   // 1. 標記 active + animation id
@@ -3689,6 +4508,9 @@ function applyStylePreset(presetId, variantId, opts) {
   state.style.preset = presetId;
   state.style.variant = variantId;
   if (!opts || !opts.skipSave) saveToStorage();
+
+  // 8. 樣式 modal 右側即時預覽同步
+  if (typeof updateDefaultsPreview === "function") updateDefaultsPreview();
 }
 
 function applyAnimationsToggle(enabled) {
@@ -3719,7 +4541,115 @@ function renderStylePresetGrid() {
       });
       varContainer.appendChild(btn);
     }
+    // 第 4 顆「自訂」變體 — 點下去切到 custom 並展開 inline 編輯器
+    const isCustomActive = state.style.preset === styleId && state.style.variant === "custom";
+    const customBtn = document.createElement("button");
+    customBtn.className = "variant-btn variant-btn-custom" + (isCustomActive ? " active" : "");
+    customBtn.textContent = "自訂";
+    customBtn.title = "以當前變體配色為起點,自訂顏色組合";
+    customBtn.addEventListener("click", () => {
+      applyStylePreset(styleId, "custom");
+      renderStylePresetGrid();
+    });
+    varContainer.appendChild(customBtn);
+
+    // 若目前正在編輯這個風格的自訂變體,卡片下方展開顏色編輯器
+    if (isCustomActive) {
+      const editor = buildCustomVariantEditor(styleId);
+      if (editor) card.appendChild(editor);
+    }
   }
+}
+
+// 建立自訂變體的 inline 顏色編輯區
+function buildCustomVariantEditor(presetId) {
+  const cv = getOrInitCustomVariant(presetId);
+  if (!cv) return null;
+  const style = STYLE_PRESETS[presetId];
+  const basedOnName = (style.variants[cv.basedOn] && style.variants[cv.basedOn].name) || cv.basedOn;
+
+  const wrap = document.createElement("div");
+  wrap.className = "style-custom-editor";
+
+  const title = document.createElement("div");
+  title.className = "style-custom-editor-title";
+  title.textContent = `自訂配色(${style.name})`;
+  wrap.appendChild(title);
+
+  const rows = [
+    { key: "borderColor", label: "邊框色",   type: "color" },
+    { key: "bgColor",     label: "背景色",   type: "color" },
+    { key: "bgOpacity",   label: "背景透明度", type: "range" },
+    { key: "nameColor",   label: "角色名色", type: "color" },
+    { key: "textColor",   label: "對話文字色", type: "color" },
+  ];
+
+  for (const r of rows) {
+    const row = document.createElement("div");
+    row.className = "style-custom-editor-row";
+
+    const label = document.createElement("label");
+    label.textContent = r.label;
+    row.appendChild(label);
+
+    if (r.type === "color") {
+      const input = document.createElement("input");
+      input.type = "color";
+      input.value = cv[r.key];
+      input.addEventListener("input", () => {
+        state.customVariants[presetId][r.key] = input.value;
+        applyStylePreset(presetId, "custom");
+        saveToStorage();
+      });
+      row.appendChild(input);
+      const code = document.createElement("code");
+      code.className = "style-custom-editor-code";
+      code.textContent = cv[r.key];
+      input.addEventListener("input", () => { code.textContent = input.value; });
+      row.appendChild(code);
+    } else if (r.type === "range") {
+      const input = document.createElement("input");
+      input.type = "range";
+      input.min = "0"; input.max = "100"; input.step = "1";
+      input.value = String(Math.round((cv.bgOpacity || 0) * 100));
+      const val = document.createElement("strong");
+      val.className = "style-custom-editor-val";
+      val.textContent = input.value + "%";
+      input.addEventListener("input", () => {
+        const pct = parseInt(input.value, 10) || 0;
+        val.textContent = pct + "%";
+        state.customVariants[presetId].bgOpacity = pct / 100;
+        applyStylePreset(presetId, "custom");
+        saveToStorage();
+      });
+      row.appendChild(input);
+      row.appendChild(val);
+    }
+    wrap.appendChild(row);
+  }
+
+  const resetBtn = document.createElement("button");
+  resetBtn.type = "button";
+  resetBtn.className = "style-custom-editor-reset";
+  resetBtn.textContent = `↻ 還原為「${basedOnName}」配色`;
+  resetBtn.addEventListener("click", () => {
+    const baseVariant = style.variants[cv.basedOn];
+    if (!baseVariant) return;
+    state.customVariants[presetId] = {
+      borderColor: baseVariant.dialog.borderColor,
+      bgColor:     baseVariant.dialog.bgColor,
+      bgOpacity:   typeof baseVariant.dialog.opacity === "number" ? baseVariant.dialog.opacity : 0.9,
+      nameColor:   baseVariant.speaker.color,
+      textColor:   baseVariant.dialogText.color,
+      basedOn:     cv.basedOn,
+    };
+    applyStylePreset(presetId, "custom");
+    saveToStorage();
+    renderStylePresetGrid();
+  });
+  wrap.appendChild(resetBtn);
+
+  return wrap;
 }
 
 (function initAnimationsToggle() {
@@ -3747,6 +4677,643 @@ function applyTheme(t) {
 applyTheme(localStorage.getItem(THEME_KEY) || "violet");
 document.querySelectorAll(".theme-btn").forEach(b => {
   b.addEventListener("click", () => applyTheme(b.dataset.theme));
+});
+
+// ----- Settings modal (系統設定:介面主題等) -----
+const settingsModalEl = document.getElementById("settingsModal");
+async function renderStorageSection() {
+  const summary = document.getElementById("storageSummary");
+  const fill = document.getElementById("storageBarFill");
+  const breakdown = document.getElementById("storageBreakdown");
+  const note = document.getElementById("storagePersistNote");
+  if (!summary || !fill || !breakdown) return;
+
+  if (vnsDbFailed) {
+    summary.textContent = "IndexedDB 不可用";
+    fill.style.width = "0%";
+    breakdown.innerHTML = "";
+    return;
+  }
+
+  const [q, br] = await Promise.all([vnsCheckStorageQuota(), vnsBreakdownUsage()]);
+
+  if (q.supported) {
+    const pct = Math.min(100, q.usagePercent || 0);
+    fill.style.width = pct.toFixed(1) + "%";
+    fill.classList.remove("warn", "danger");
+    if (pct >= 90) fill.classList.add("danger");
+    else if (pct >= 70) fill.classList.add("warn");
+    summary.textContent = `${vnsFmtBytes(q.usage)} / ${vnsFmtBytes(q.quota)} (${pct.toFixed(1)}%)`;
+  } else {
+    fill.style.width = "0%";
+    summary.textContent = "瀏覽器不支援用量偵測";
+  }
+
+  breakdown.innerHTML = "";
+  const rows = [
+    { label: `CG 圖片(${br.cgCount} 張)`, val: vnsFmtBytes(br.cgs) },
+    { label: `攝影片資料(${br.projectCount} 個專案)`, val: vnsFmtBytes(br.projects) },
+  ];
+  for (const r of rows) {
+    const row = document.createElement("div");
+    row.className = "storage-breakdown-row";
+    const a = document.createElement("span");
+    a.textContent = r.label;
+    const b = document.createElement("strong");
+    b.textContent = r.val;
+    row.appendChild(a); row.appendChild(b);
+    breakdown.appendChild(row);
+  }
+
+  // Persistent storage 提示
+  if (note) {
+    if (_vnsPersistentGranted === false) {
+      note.hidden = false;
+      note.textContent = "⚠ 此瀏覽器未授予永久儲存權,清除瀏覽器資料時 CG 庫可能會被刪除。建議定期使用「匯出專案」備份到本機。";
+    } else {
+      note.hidden = true;
+    }
+  }
+}
+
+function openSettingsModal() {
+  if (!settingsModalEl) return;
+  settingsModalEl.classList.add("show");
+  // 同步當前主題到按鈕 active 狀態
+  const cur = document.documentElement.getAttribute("data-theme") || "violet";
+  settingsModalEl.querySelectorAll(".theme-btn").forEach(b => {
+    b.classList.toggle("active", b.dataset.theme === cur);
+  });
+  // 開啟時更新儲存空間用量
+  renderStorageSection();
+}
+function closeSettingsModal() {
+  if (!settingsModalEl) return;
+  settingsModalEl.classList.remove("show");
+}
+const btnSettings = document.getElementById("btnSettings");
+if (btnSettings) btnSettings.addEventListener("click", openSettingsModal);
+const settingsModalCloseEl = document.getElementById("settingsModalClose");
+if (settingsModalCloseEl) settingsModalCloseEl.addEventListener("click", closeSettingsModal);
+const settingsModalDoneEl = document.getElementById("settingsModalDone");
+if (settingsModalDoneEl) settingsModalDoneEl.addEventListener("click", closeSettingsModal);
+if (settingsModalEl) settingsModalEl.addEventListener("click", (e) => {
+  if (e.target === settingsModalEl) closeSettingsModal();
+});
+
+// ----- 💾 儲存空間按鈕(管理專案 / 管理 CG 庫 / 重新計算) -----
+const storageManageProjectsBtn = document.getElementById("storageManageProjects");
+if (storageManageProjectsBtn) storageManageProjectsBtn.addEventListener("click", () => {
+  closeSettingsModal();
+  openProjectsModal();
+});
+const storageManageCgsBtn = document.getElementById("storageManageCgs");
+if (storageManageCgsBtn) storageManageCgsBtn.addEventListener("click", () => {
+  // CG 庫 modal 在簡易模式重設計任務中建立;這裡先給溫和提示
+  showToast("CG 庫管理介面將在簡易模式中提供", "info", 3000);
+});
+const storageRefreshBtn = document.getElementById("storageRefresh");
+if (storageRefreshBtn) storageRefreshBtn.addEventListener("click", renderStorageSection);
+
+// ----- 📦 專案匯出 / 📥 專案匯入 -----
+const VNS_EXPORT_FORMAT_VERSION = "1.0";
+const VNS_APP_VERSION = "1.0.0";
+
+// 掃描專案 data 中所有引用的 cgId(slides[].cgId、其他可能位置)
+function vnsCollectReferencedCgIds(data) {
+  const ids = new Set();
+  if (!data || typeof data !== "object") return ids;
+  if (Array.isArray(data.slides)) {
+    for (const s of data.slides) {
+      if (s && typeof s.cgId === "string") ids.add(s.cgId);
+    }
+  }
+  // 預留:細節模式 / 其他資料結構可能引用 cgId,日後補
+  return ids;
+}
+
+// 把當前專案打包成 .vns.zip 並觸發下載
+async function exportCurrentProject() {
+  if (typeof JSZip === "undefined") {
+    showToast("JSZip 未載入,無法匯出", "warn");
+    return;
+  }
+  if (vnsDbFailed || !state.currentProjectId) {
+    showToast("沒有可匯出的專案", "warn");
+    return;
+  }
+  const project = await vnsGetProject(state.currentProjectId);
+  if (!project) { showToast("找不到當前專案", "warn"); return; }
+
+  const cgIds = vnsCollectReferencedCgIds(project.data);
+  // 預估大小(僅 CG 部分,JSON 量小忽略)
+  let estBytes = 0;
+  const cgInfos = [];
+  for (const cgId of cgIds) {
+    const cg = await vnsGetCg(cgId);
+    if (cg && cg.blob) {
+      estBytes += cg.fileSize || cg.blob.size || 0;
+      cgInfos.push(cg);
+    }
+  }
+
+  const confirmed = await inlineConfirm({
+    title: "匯出專案",
+    message: `專案:${project.name}\n模式:${project.mode === "simple" ? "簡易模式" : "細節模式"}\nCG 圖片:${cgInfos.length} 張\n預估大小:${vnsFmtBytes(estBytes + 4096)}\n\n會匯出 .vns 檔案到下載資料夾。`,
+    okText: "匯出 .vns",
+  });
+  if (!confirmed) return;
+
+  showToast("正在打包…", "info", 2000);
+
+  try {
+    const zip = new JSZip();
+
+    // 1. cgs 資料夾:把 referenced CGs 寫進去,記錄路徑供 project.json 引用
+    const cgFolder = zip.folder("cgs");
+    const idToPath = {};
+    for (const cg of cgInfos) {
+      const ext = (cg.mimeType && cg.mimeType.split("/")[1]) || "bin";
+      const safeExt = ext.replace(/[^a-z0-9]/gi, "").toLowerCase() || "bin";
+      const filename = `${cg.id}.${safeExt}`;
+      cgFolder.file(filename, cg.blob);
+      idToPath[cg.id] = `cgs/${filename}`;
+    }
+
+    // 2. project.json:slides 的 cgId 同時保留並加上 cgRef 指向 zip 內路徑
+    const exportData = JSON.parse(JSON.stringify(project.data || {}));
+    if (Array.isArray(exportData.slides)) {
+      for (const s of exportData.slides) {
+        if (s && s.cgId && idToPath[s.cgId]) {
+          s.cgRef = idToPath[s.cgId];
+        }
+      }
+    }
+    zip.file("project.json", JSON.stringify(exportData, null, 2));
+
+    // 3. settings.json:樣式 + 字體 + custom variant(沿用 localStorage 的子集)
+    const settings = {
+      dialogStyle: state.dialogStyle,
+      styleDefaults: state.styleDefaults,
+      fontSizes: state.fontSizes,
+      style: state.style,
+      customVariants: state.customVariants,
+    };
+    zip.file("settings.json", JSON.stringify(settings, null, 2));
+
+    // 4. manifest.json:版本、metadata
+    const manifest = {
+      formatVersion: VNS_EXPORT_FORMAT_VERSION,
+      appName: "Visual Novel Studio",
+      appVersion: VNS_APP_VERSION,
+      exportedAt: vnsNow(),
+      projectName: project.name,
+      mode: project.mode,
+      slideCount: Array.isArray(project.data && project.data.slides) ? project.data.slides.length : 0,
+      cgCount: cgInfos.length,
+    };
+    zip.file("manifest.json", JSON.stringify(manifest, null, 2));
+
+    // 5. 產 Blob + 觸發下載
+    const blob = await zip.generateAsync({
+      type: "blob",
+      compression: "DEFLATE",
+      compressionOptions: { level: 4 },
+    });
+    const safeName = (project.name || "project").replace(/[\\/:*?"<>|]/g, "_");
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `${safeName}.vns.zip`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+
+    showToast(`已匯出 ${safeName}.vns.zip(${vnsFmtBytes(blob.size)})`, "success", 3000);
+  } catch (e) {
+    console.error("[exportCurrentProject]", e);
+    showToast("匯出失敗:" + (e.message || e), "warn", 4000);
+  }
+}
+
+const storageExportBtn = document.getElementById("storageExportProject");
+if (storageExportBtn) storageExportBtn.addEventListener("click", exportCurrentProject);
+
+// ----- 📥 專案匯入 -----
+
+function vnsCompareSemver(a, b) {
+  // 比較 major.minor.patch;a=b 回 0;a<b 回 -1;a>b 回 1
+  const pa = String(a || "0").split(".").map(n => parseInt(n, 10) || 0);
+  const pb = String(b || "0").split(".").map(n => parseInt(n, 10) || 0);
+  for (let i = 0; i < 3; i++) {
+    if ((pa[i] || 0) < (pb[i] || 0)) return -1;
+    if ((pa[i] || 0) > (pb[i] || 0)) return 1;
+  }
+  return 0;
+}
+
+// 解析 .vns.zip → 回傳 { manifest, projectData, settings, cgs: [{ path, blob }] }
+// 或 throw error 帶可讀訊息
+async function parseVnsZip(file) {
+  if (typeof JSZip === "undefined") throw new Error("JSZip 未載入");
+  const zip = await JSZip.loadAsync(file);
+
+  const manifestFile = zip.file("manifest.json");
+  if (!manifestFile) throw new Error("不是合法的 .vns 檔案(缺少 manifest.json)");
+  const manifestText = await manifestFile.async("string");
+  let manifest;
+  try { manifest = JSON.parse(manifestText); } catch (e) { throw new Error("manifest.json 格式錯誤"); }
+  if (manifest.appName !== "Visual Novel Studio") {
+    throw new Error("此檔案不是 Visual Novel Studio 專案");
+  }
+  // 版本相容性:major 相同才可載入;更新的 major 直接拒絕
+  const cur = VNS_EXPORT_FORMAT_VERSION;
+  const cmp = vnsCompareSemver(manifest.formatVersion, cur);
+  if (cmp > 0) {
+    throw new Error(`此檔案由較新版本(${manifest.formatVersion})匯出,請更新工具後再試。`);
+  }
+
+  const projectFile = zip.file("project.json");
+  if (!projectFile) throw new Error("缺少 project.json");
+  const projectData = JSON.parse(await projectFile.async("string"));
+
+  let settings = null;
+  const settingsFile = zip.file("settings.json");
+  if (settingsFile) {
+    try { settings = JSON.parse(await settingsFile.async("string")); } catch (e) {}
+  }
+
+  // 收集 cgs/ 內的所有檔案
+  const cgs = [];
+  const cgFolder = zip.folder("cgs");
+  if (cgFolder) {
+    const entries = [];
+    cgFolder.forEach((relPath, entry) => {
+      if (!entry.dir) entries.push({ relPath, entry });
+    });
+    for (const { relPath, entry } of entries) {
+      const blob = await entry.async("blob");
+      const mime = blob.type || "image/jpeg";
+      cgs.push({
+        path: "cgs/" + relPath,
+        filename: relPath,
+        blob: new Blob([blob], { type: mime }),
+      });
+    }
+  }
+
+  return { manifest, projectData, settings, cgs };
+}
+
+async function confirmAndImport(file) {
+  let pkg;
+  try {
+    pkg = await parseVnsZip(file);
+  } catch (e) {
+    showToast("匯入失敗:" + (e.message || e), "warn", 5000);
+    return;
+  }
+
+  const m = pkg.manifest;
+  const importedAt = m.exportedAt ? formatRelTime(m.exportedAt) : "未知";
+  const ok = await inlineConfirm({
+    title: "匯入專案",
+    message: `專案:${m.projectName || "未命名"}\n模式:${m.mode === "simple" ? "簡易模式" : "細節模式"}\n張數:${m.slideCount || 0}\nCG:${pkg.cgs.length} 張\n匯出於:${importedAt}\n\n會在 IndexedDB 新增一筆專案(不覆蓋當前)。`,
+    okText: "確認匯入",
+  });
+  if (!ok) return;
+
+  // 配額預檢
+  const totalSize = pkg.cgs.reduce((s, c) => s + (c.blob.size || 0), 0);
+  if (!(await vnsCanStoreFile(totalSize))) {
+    showToast("瀏覽器空間不足以匯入此專案", "warn", 5000);
+    return;
+  }
+
+  showToast(`匯入中…(${pkg.cgs.length} 張 CG)`, "info", 3000);
+
+  try {
+    // 1. 路徑 → 新 cgId 對照表(每張 CG 一個新 id,避免和現有衝突)
+    const pathToNewId = {};
+    for (const cg of pkg.cgs) {
+      let thumb = null;
+      try { thumb = await vnsCreateThumbnail(cg.blob); } catch (e) {}
+      const newId = await vnsAddCg(cg.blob, cg.filename, thumb);
+      if (newId) pathToNewId[cg.path] = newId;
+    }
+
+    // 2. 重寫 projectData 中的 cgId / cgRef 指向新 id
+    const newData = JSON.parse(JSON.stringify(pkg.projectData));
+    if (Array.isArray(newData.slides)) {
+      for (const s of newData.slides) {
+        if (!s) continue;
+        // 優先用 cgRef(zip 內路徑)轉新 id;若沒有則保留(舊資料相容)
+        if (s.cgRef && pathToNewId[s.cgRef]) {
+          s.cgId = pathToNewId[s.cgRef];
+        }
+        delete s.cgRef;  // 不要把這個欄位留在 IDB
+      }
+    }
+
+    // 3. 寫入 projects store
+    const projectId = await vnsAddProject(m.projectName || "匯入的專案", m.mode || "simple", newData);
+    if (!projectId) { showToast("寫入專案失敗", "warn"); return; }
+
+    showToast(`✓ 已匯入「${m.projectName}」(${pkg.cgs.length} 張 CG)`, "success", 3000);
+    // 自動切到新匯入的專案
+    await switchToProject(projectId);
+    // 重整 projects modal 若開著
+    renderProjectsList();
+  } catch (e) {
+    console.error("[confirmAndImport]", e);
+    showToast("匯入過程出錯:" + (e.message || e), "warn", 4000);
+  }
+}
+
+const storageImportBtn = document.getElementById("storageImportProject");
+const storageImportInput = document.getElementById("storageImportFileInput");
+if (storageImportBtn && storageImportInput) {
+  storageImportBtn.addEventListener("click", () => storageImportInput.click());
+  storageImportInput.addEventListener("change", async (e) => {
+    const file = e.target.files && e.target.files[0];
+    if (file) await confirmAndImport(file);
+    e.target.value = "";  // 清掉以便下次選相同檔案也能觸發 change
+  });
+}
+
+// ----- 拖曳 .vns / .vns.zip 到頁面任何位置自動匯入 -----
+// capture phase:在其他 drop handler(CG dropzone 等)之前先攔截,
+// 只在偵測到副檔名為 .vns 或 .vns.zip 時才消費事件,其他類型 fall through。
+function _vnsLooksLikeVnsFile(file) {
+  if (!file) return false;
+  const name = (file.name || "").toLowerCase();
+  return name.endsWith(".vns") || name.endsWith(".vns.zip");
+}
+document.addEventListener("dragover", (e) => {
+  if (e.dataTransfer && e.dataTransfer.types && e.dataTransfer.types.includes("Files")) {
+    // 拖曳檔案進來時不知道副檔名,只能 preventDefault 才能觸發 drop
+    e.preventDefault();
+  }
+}, true);
+document.addEventListener("drop", (e) => {
+  const files = e.dataTransfer && e.dataTransfer.files;
+  if (!files || !files.length) return;
+  for (const f of files) {
+    if (_vnsLooksLikeVnsFile(f)) {
+      e.preventDefault();
+      e.stopPropagation();
+      confirmAndImport(f);
+      return;
+    }
+  }
+  // 不是 .vns 檔 → 不消費,讓其他 handler(CG dropzone 等)處理
+}, true);
+
+// ----- 📁 我的專案 modal -----
+const projectsModalEl = document.getElementById("projectsModal");
+
+function formatRelTime(iso) {
+  if (!iso) return "—";
+  const t = new Date(iso).getTime();
+  if (!t) return "—";
+  const sec = Math.floor((Date.now() - t) / 1000);
+  if (sec < 60) return "剛剛";
+  if (sec < 3600) return Math.floor(sec / 60) + " 分鐘前";
+  if (sec < 86400) return Math.floor(sec / 3600) + " 小時前";
+  if (sec < 86400 * 7) return Math.floor(sec / 86400) + " 天前";
+  const d = new Date(iso);
+  return d.toISOString().slice(0, 10);
+}
+
+function projectMetaText(p) {
+  const parts = [];
+  if (p.mode === "simple") {
+    const slides = (p.data && Array.isArray(p.data.simpleCards)) ? p.data.simpleCards.length : 0;
+    parts.push(slides + " 張");
+  } else {
+    const chars = (p.data && typeof p.data.script === "string") ? p.data.script.length : 0;
+    parts.push(chars + " 字");
+  }
+  parts.push("最近編輯:" + formatRelTime(p.modifiedAt));
+  return parts;
+}
+
+async function renderProjectsList() {
+  const list = document.getElementById("projectsList");
+  const empty = document.getElementById("projectsEmpty");
+  const count = document.getElementById("projectsCount");
+  if (!list) return;
+  list.innerHTML = "";
+  if (vnsDbFailed) {
+    if (empty) { empty.hidden = false; empty.querySelector("div:last-child").textContent = "IndexedDB 不可用,無法列出專案"; }
+    return;
+  }
+  const projects = await vnsListProjects();
+  if (count) count.textContent = projects.length + " 個專案";
+  if (!projects.length) {
+    if (empty) empty.hidden = false;
+    return;
+  }
+  if (empty) empty.hidden = true;
+
+  for (const p of projects) {
+    const card = document.createElement("div");
+    card.className = "project-card" + (p.id === state.currentProjectId ? " current" : "");
+
+    const main = document.createElement("div");
+    main.className = "project-card-main";
+
+    const title = document.createElement("div");
+    title.className = "project-card-title";
+    const nameInput = document.createElement("input");
+    nameInput.type = "text";
+    nameInput.value = p.name || "未命名專案";
+    nameInput.maxLength = 40;
+    nameInput.addEventListener("change", async () => {
+      const v = nameInput.value.trim() || "未命名專案";
+      await vnsUpdateProject(p.id, { name: v });
+      renderProjectsList();
+    });
+    title.appendChild(nameInput);
+    if (p.id === state.currentProjectId) {
+      const badge = document.createElement("span");
+      badge.className = "project-card-current-badge";
+      badge.textContent = "使用中";
+      title.appendChild(badge);
+    }
+    const modeTag = document.createElement("span");
+    modeTag.className = "project-card-mode";
+    modeTag.textContent = p.mode === "simple" ? "SIMPLE" : "DETAIL";
+    title.appendChild(modeTag);
+    main.appendChild(title);
+
+    const meta = document.createElement("div");
+    meta.className = "project-card-meta";
+    const metaParts = projectMetaText(p);
+    metaParts.forEach((part, i) => {
+      if (i > 0) {
+        const sep = document.createElement("span");
+        sep.className = "project-card-meta-sep";
+        sep.textContent = "·";
+        meta.appendChild(sep);
+      }
+      const span = document.createElement("span");
+      span.textContent = part;
+      meta.appendChild(span);
+    });
+    main.appendChild(meta);
+
+    const openBtn = document.createElement("button");
+    openBtn.className = "project-card-open";
+    openBtn.textContent = p.id === state.currentProjectId ? "已開啟" : "開啟";
+    openBtn.disabled = (p.id === state.currentProjectId);
+    openBtn.addEventListener("click", () => switchToProject(p.id));
+
+    const delBtn = document.createElement("button");
+    delBtn.className = "project-card-delete";
+    delBtn.title = "刪除專案";
+    delBtn.setAttribute("aria-label", "刪除專案");
+    delBtn.textContent = "×";
+    delBtn.addEventListener("click", () => deleteProjectFlow(p));
+
+    card.appendChild(main);
+    card.appendChild(openBtn);
+    card.appendChild(delBtn);
+    list.appendChild(card);
+  }
+}
+
+async function switchToProject(projectId) {
+  if (projectId === state.currentProjectId) return;
+  // 先把目前專案的當前 state 強制 flush 到 IDB(避免 3 秒 debounce 還沒寫入就被覆蓋)
+  if (typeof _vnsAutoSaveTimer !== "undefined" && _vnsAutoSaveTimer) {
+    clearTimeout(_vnsAutoSaveTimer);
+    _vnsAutoSaveTimer = null;
+    await vnsAutoSaveCurrentProject();
+  }
+  const target = await vnsGetProject(projectId);
+  if (!target) {
+    showToast("專案不存在", "warn");
+    renderProjectsList();
+    return;
+  }
+  state.currentProjectId = projectId;
+  await vnsSetAppState({ currentProjectId: projectId });
+  // 把 project.data 套回 state(用 localStorage 同一條 migrate 路徑,把 data 當 payload)
+  applyProjectDataToState(target.data || {}, target.mode || "simple");
+  // 重繪整個 UI
+  if (typeof reparseAndRender === "function") reparseAndRender(true);
+  if (typeof renderMainView === "function") renderMainView();
+  if (typeof renderCharList === "function") renderCharList();
+  if (typeof renderBgList === "function") renderBgList();
+  if (typeof renderCgList === "function") renderCgList();
+  if (typeof updateStorageMeter === "function") updateStorageMeter();
+  if (typeof updateStatusBar === "function") updateStatusBar();
+  renderProjectsList();
+  showToast("已切換到「" + (target.name || "專案") + "」");
+}
+
+// 把 project.data(localStorage payload 同形狀)套回 state
+function applyProjectDataToState(data, mode) {
+  if (!data || typeof data !== "object") return;
+  if (typeof data.script === "string") state.script = data.script;
+  if (Array.isArray(data.characters)) state.characters = data.characters;
+  if (data.backgrounds && typeof data.backgrounds === "object") state.backgrounds = data.backgrounds;
+  if (Array.isArray(data.bgOrder)) state.bgOrder = data.bgOrder;
+  if (data.cgs && typeof data.cgs === "object") state.cgs = data.cgs;
+  if (Array.isArray(data.cgOrder)) state.cgOrder = data.cgOrder;
+  if (typeof data.ratio === "string") state.ratio = data.ratio;
+  if (data.dialogStyle && typeof data.dialogStyle === "object") state.dialogStyle = data.dialogStyle;
+  if (data.gameUI && typeof data.gameUI === "object") state.gameUI = data.gameUI;
+  if (typeof data.lightMode === "string") state.lightMode = data.lightMode;
+  if (data.loveInitial && typeof data.loveInitial === "object") state.loveInitial = data.loveInitial;
+  if (Array.isArray(data.simpleCards)) state.simpleCards = migrateSimpleCards(data.simpleCards);
+  if (typeof data.simpleCurrentSlideId === "string") state.simpleCurrentSlideId = data.simpleCurrentSlideId;
+  state.mode = mode || "simple";
+}
+
+async function deleteProjectFlow(p) {
+  if (p.id === state.currentProjectId) {
+    showToast("無法刪除使用中的專案,請先切換到其他專案", "warn", 4000);
+    return;
+  }
+  const ok = typeof inlineConfirm === "function"
+    ? await inlineConfirm({
+        title: "刪除「" + (p.name || "專案") + "」?",
+        message: "此操作無法復原。建議先匯出備份。\n\nCG 庫不會受影響,可從其他專案繼續使用。",
+        okText: "確認刪除",
+        danger: true,
+      })
+    : confirm("刪除「" + (p.name || "專案") + "」?");
+  if (!ok) return;
+  await vnsDeleteProject(p.id);
+  renderProjectsList();
+  showToast("已刪除");
+}
+
+function pickProjectMode() {
+  // 兩個按鈕的簡易選擇器 — 用既有的 _openInlineModal helper
+  return new Promise((resolve) => {
+    const handle = _openInlineModal((wrap) => {
+      wrap.innerHTML = `
+        <div class="inline-modal-title">新專案模式</div>
+        <div class="inline-modal-body" style="display:flex;flex-direction:column;gap:8px;margin-bottom:14px;">
+          <button class="btn" data-mode="simple" style="justify-content:flex-start;text-align:left;padding:12px 16px;">
+            <span style="font-size:16px;font-weight:600;">💬 簡易模式</span>
+            <span style="font-size:11px;color:var(--text-faint);margin-left:8px;">一張卡 = 一張 CG + 對白</span>
+          </button>
+          <button class="btn" data-mode="detail" style="justify-content:flex-start;text-align:left;padding:12px 16px;">
+            <span style="font-size:16px;font-weight:600;">📝 細節模式</span>
+            <span style="font-size:11px;color:var(--text-faint);margin-left:8px;">完整劇本語法</span>
+          </button>
+        </div>
+        <div class="inline-modal-footer">
+          <button class="btn btn-ghost" data-act="cancel">取消</button>
+        </div>
+      `;
+      wrap.querySelectorAll("button[data-mode]").forEach(b => {
+        b.addEventListener("click", () => { handle.close(); resolve(b.dataset.mode); });
+      });
+      wrap.querySelector("[data-act=cancel]").addEventListener("click", () => { handle.close(); resolve(null); });
+    }, (e, close) => {
+      if (e.key === "Escape") { e.preventDefault(); close(); resolve(null); }
+    });
+  });
+}
+
+async function newProjectFlow() {
+  const modePick = await pickProjectMode();
+  if (!modePick) return;
+  const fallbackName = "未命名專案 " + ((await vnsListProjects()).length + 1);
+  const name = (await inlinePrompt({
+    title: "專案名稱",
+    defaultValue: fallbackName,
+    placeholder: fallbackName,
+  })) || fallbackName;
+  const initData = { v: 1, mode: modePick, script: "", simpleCards: [] };
+  const id = await vnsAddProject(name, modePick, initData);
+  if (!id) { showToast("建立失敗", "warn"); return; }
+  await switchToProject(id);
+}
+
+function openProjectsModal() {
+  if (!projectsModalEl) return;
+  projectsModalEl.classList.add("show");
+  renderProjectsList();
+}
+function closeProjectsModal() {
+  if (!projectsModalEl) return;
+  projectsModalEl.classList.remove("show");
+}
+const btnProjects = document.getElementById("btnProjects");
+if (btnProjects) btnProjects.addEventListener("click", openProjectsModal);
+const projectsModalCloseEl = document.getElementById("projectsModalClose");
+if (projectsModalCloseEl) projectsModalCloseEl.addEventListener("click", closeProjectsModal);
+const projectsNewBtnEl = document.getElementById("projectsNewBtn");
+if (projectsNewBtnEl) projectsNewBtnEl.addEventListener("click", newProjectFlow);
+if (projectsModalEl) projectsModalEl.addEventListener("click", (e) => {
+  if (e.target === projectsModalEl) closeProjectsModal();
 });
 
 // ----- Syntax help modal -----
@@ -4781,7 +6348,7 @@ document.getElementById("btnScreenshot").addEventListener("click", async () => {
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = `otome-${timestamp()}.png`;
+      a.download = `visual-novel-studio-${timestamp()}.png`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
@@ -4834,7 +6401,7 @@ document.getElementById("btnShare").addEventListener("click", () => {
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `otome-project-${timestamp()}.json`;
+    a.download = `visual-novel-studio-project-${timestamp()}.json`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -4898,7 +6465,7 @@ async function applyImportedPayload(data) {
     }
 
     const ok = await inlineConfirm({
-      title: isOtome ? "匯入 Otome Studio 專案?" : "匯入「劇本速寫」檔案?",
+      title: isOtome ? "匯入 Visual Novel Studio 專案?" : "匯入「劇本速寫」檔案?",
       message: isOtome
         ? "會覆蓋目前所有資料：劇本、角色及立繪、背景。\n\n建議先按 📤 備份目前的專案。"
         : "會覆蓋目前的劇本和角色設定。\n背景和立繪圖片不受影響。\n\n建議先按 📤 備份目前的專案。",
@@ -4933,6 +6500,7 @@ async function applyImportedPayload(data) {
       if (data.style) {
         state.style = migrateStyle(data.style);
       }
+      state.customVariants = migrateCustomVariants(data.customVariants);
       if (data.loveInitial && typeof data.loveInitial === "object") {
         state.loveInitial = {};
         for (const [k, v] of Object.entries(data.loveInitial)) {
@@ -4969,7 +6537,7 @@ async function applyImportedPayload(data) {
     applyDialogStyle();
     applyGameUI();
     applyFontSizes();
-    syncFontSizesUI();
+    syncStyleDefaultsUI();
     applyStylePreset(state.style.preset, state.style.variant, { skipSave: true });
     applyAnimationsToggle(state.style.animationsEnabled);
     renderStylePresetGrid();
@@ -5651,7 +7219,7 @@ function showRecordingResult(blob, mime) {
   dlBtn.addEventListener("click", () => {
     const a = document.createElement("a");
     a.href = url;
-    a.download = `otome-${timestamp()}.${ext}`;
+    a.download = `visual-novel-studio-${timestamp()}.${ext}`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -5733,7 +7301,7 @@ setRatio(localStorage.getItem(RATIO_KEY) || state.ratio || "16:9");
 els.scriptArea.value = state.script;
 applyDialogStyle();
 applyFontSizes();
-syncFontSizesUI();
+syncStyleDefaultsUI();
 applyStylePreset(state.style.preset, state.style.variant, { skipSave: true });
 applyAnimationsToggle(state.style.animationsEnabled);
 renderStylePresetGrid();
@@ -7866,27 +9434,35 @@ function syncSimpleToScript() {
   }
 }
 
+// 簡易模式 ↔ 細節模式 = 兩個獨立工具流程。切換時不轉換、不互通,
+// 若當前模式有內容,先警告並由使用者確認清空。
+// (這與舊版的 cardsToScript / scriptToCards 雙向轉換不同)
+function vnsCurrentModeHasContent() {
+  if (state.mode === "simple") {
+    return Array.isArray(state.simpleCards) && state.simpleCards.length > 0;
+  }
+  return typeof state.script === "string" && state.script.trim().length > 0;
+}
+
 async function switchMode(newMode) {
   if (newMode === state.mode) return;
-  if (newMode === "detail") {
-    if (state.simpleCards && state.simpleCards.length) {
-      state.script = cardsToScript(state.simpleCards);
-      els.scriptArea.value = state.script;
-    }
+  if (vnsCurrentModeHasContent()) {
+    const fromLabel = state.mode === "simple" ? "簡易模式攝影片" : "細節模式劇本";
+    const toLabel = newMode === "simple" ? "簡易模式" : "細節模式";
+    const ok = await inlineConfirm({
+      title: "切換模式?",
+      message: `切換到「${toLabel}」會清空當前的${fromLabel}。\n\n此操作無法復原。建議先用「📦 匯出專案」備份,或到「📁 我的專案」開另一個專案使用其他模式。\n\n是否繼續?`,
+      okText: "確認切換",
+      danger: true,
+    });
+    if (!ok) return;
+  }
+  // 確認後清空當前模式的資料(另一個模式的欄位不動,讓未來切回時還能保留先前狀態)
+  if (state.mode === "simple") {
+    state.simpleCards = [];
   } else {
-    const lossless = scriptToCards(state.script);
-    if (lossless !== null) {
-      state.simpleCards = lossless;
-    } else {
-      const ok = await inlineConfirm({
-        title: "切到簡易模式?",
-        message: "這份劇本有進階功能(背景、選項、好感度…),簡易模式只會保留 CG 和對白,進階指令會丟掉。\n\n要繼續?",
-        okText: "繼續切換",
-        danger: true,
-      });
-      if (!ok) return;
-      state.simpleCards = scriptToCardsLossy(state.script);
-    }
+    state.script = "";
+    if (els.scriptArea) els.scriptArea.value = "";
   }
   state.mode = newMode;
   document.documentElement.setAttribute("data-mode", newMode);
@@ -7904,8 +9480,1360 @@ function renderMainView() {
   // mobile pane tabs 在簡易模式也藏
   const mobTabs = document.querySelector(".mobile-pane-tabs");
   if (mobTabs) mobTabs.style.display = simple ? "none" : "";
-  if (simple) renderSimpleCards();
-  else reparseAndRender(false);
+  if (simple) {
+    renderSimpleSlideList();
+    renderSimpleEditor();
+  } else {
+    reparseAndRender(false);
+  }
+}
+
+// === 簡易模式:左側攝影片列表 ===
+function renderSimpleSlideList() {
+  const list = document.getElementById("simpleSlideList");
+  const countEl = document.getElementById("simpleSidebarCount");
+  if (!list) return;
+  list.innerHTML = "";
+  const cards = state.simpleCards || [];
+  if (countEl) countEl.textContent = String(cards.length);
+  const curIdx = getCurrentSlideIdx();
+
+  cards.forEach((card, idx) => {
+    const isCurrent = idx === curIdx;
+    const item = document.createElement("div");
+    item.className = "simple-slide-item" + (isCurrent ? " current" : "");
+    item.dataset.slideId = card.id;
+    item.draggable = true;
+
+    const thumb = document.createElement("div");
+    thumb.className = "simple-slide-thumb";
+    const cgUrl = _resolveSlideCgUrl(card);
+    if (cgUrl) {
+      thumb.style.backgroundImage = `url(${cgUrl})`;
+    } else {
+      thumb.classList.add("empty");
+      thumb.textContent = "📷";
+    }
+
+    const meta = document.createElement("div");
+    meta.className = "simple-slide-meta";
+    const indexEl = document.createElement("div");
+    indexEl.className = "simple-slide-index";
+    indexEl.textContent = String(idx + 1).padStart(2, "0");
+    const linesEl = document.createElement("div");
+    linesEl.className = "simple-slide-lines";
+    const lineCount = (typeof card.dialogText === "string"
+      ? card.dialogText.split(/\n\n+/).filter(s => s.trim()).length
+      : 0);
+    linesEl.textContent = lineCount + " 行";
+    meta.appendChild(indexEl);
+    meta.appendChild(linesEl);
+
+    item.appendChild(thumb);
+    item.appendChild(meta);
+
+    if (isCurrent) {
+      const badge = document.createElement("span");
+      badge.className = "simple-slide-current-badge";
+      badge.textContent = "✓";
+      item.appendChild(badge);
+    } else {
+      const del = document.createElement("button");
+      del.className = "simple-slide-delete";
+      del.type = "button";
+      del.title = "刪除攝影片";
+      del.textContent = "×";
+      del.addEventListener("click", (e) => {
+        e.stopPropagation();
+        deleteSimpleSlide(card.id);
+      });
+      item.appendChild(del);
+    }
+
+    item.addEventListener("click", () => selectSimpleSlide(card.id));
+
+    // 拖曳重排
+    item.addEventListener("dragstart", (ev) => {
+      ev.dataTransfer.effectAllowed = "move";
+      ev.dataTransfer.setData("text/x-vns-slide-id", card.id);
+      item.classList.add("dragging");
+    });
+    item.addEventListener("dragend", () => {
+      item.classList.remove("dragging");
+      list.querySelectorAll(".simple-slide-item.drop-target").forEach(n => n.classList.remove("drop-target"));
+    });
+    item.addEventListener("dragover", (ev) => {
+      const types = ev.dataTransfer && ev.dataTransfer.types;
+      if (!types || !types.includes("text/x-vns-slide-id")) return;
+      ev.preventDefault();
+      ev.dataTransfer.dropEffect = "move";
+      item.classList.add("drop-target");
+    });
+    item.addEventListener("dragleave", () => item.classList.remove("drop-target"));
+    item.addEventListener("drop", (ev) => {
+      ev.preventDefault();
+      item.classList.remove("drop-target");
+      const draggedId = ev.dataTransfer.getData("text/x-vns-slide-id");
+      if (!draggedId || draggedId === card.id) return;
+      const cards2 = state.simpleCards;
+      const from = cards2.findIndex(s => s.id === draggedId);
+      const to = cards2.findIndex(s => s.id === card.id);
+      if (from < 0 || to < 0) return;
+      const [moved] = cards2.splice(from, 1);
+      cards2.splice(to, 0, moved);
+      saveToStorage();
+      renderSimpleSlideList();
+    });
+
+    list.appendChild(item);
+  });
+}
+
+// IndexedDB CG 的 Object URL session cache:鍵=cgId,值=URL。
+// 首次 sync 讀到 cgId 時若 cache miss,非同步 prefetch 並在 ready 後觸發重繪。
+const _cgUrlCache = new Map();
+const _cgUrlPending = new Set();
+
+async function _prefetchCgUrl(cgId) {
+  if (_cgUrlCache.has(cgId) || _cgUrlPending.has(cgId)) return;
+  _cgUrlPending.add(cgId);
+  try {
+    const url = await vnsCgUrlFromId(cgId);
+    if (url) _cgUrlCache.set(cgId, url);
+  } catch (e) {}
+  _cgUrlPending.delete(cgId);
+  // 載入完觸發重繪
+  if (state.mode === "simple") {
+    if (typeof renderSimpleSlideList === "function") renderSimpleSlideList();
+    if (typeof renderSimpleEditor === "function") renderSimpleEditor();
+  }
+}
+
+// === 簡易模式對話文字解析(任務 3)===
+// 規則:
+//   1. 段落分隔 = 空行(\n\n);段落內單 \n 視為換行
+//   2. 整段被全/半形 (...) 完整包住 → inner monologue
+//   3. `角色:內容` 或 `角色:(內心話)` → dialog 或 inner(帶 speaker)
+//   4. 其他 → narration(無 speaker)
+//   5. [bg:] / [cg:] / [選項] / [好感度] / [離場] / [聚光] 等場景指令在簡易模式不支援,
+//      會被記錄在 unsupportedTags 供 UI 提示,內容仍當文字渲染。
+//
+// 樣式 tag [辰宇落雁] / [大] / [粗] / [微笑] 等保留在 content 內,
+// 由任務 4 的渲染層或既有 parseLine 機制處理。
+const SIMPLE_UNSUPPORTED_PREFIXES = [
+  /^\[bg\s*[:：]/i,
+  /^\[cg\s*[:：]/i,
+  /^\[cg\s+off\]/i,
+  /^\[cg\s+(?:solo|full)\s*[:：]/i,
+  /^\[選項\]/,
+  /^\[好感度/,
+  /^\[離場\]/,
+  /^\[聚光\]/,
+  /^\[同亮\]/,
+  /^\[全暗\]/,
+];
+
+function _hasUnsupportedScript(line) {
+  for (const re of SIMPLE_UNSUPPORTED_PREFIXES) if (re.test(line)) return true;
+  return false;
+}
+
+// 從一段已 trim 的文字解析出 parsed line。
+// 回傳 { type, speaker?, content }
+function _parseSimpleParagraph(text) {
+  const trimmed = text.trim();
+  if (!trimmed) return null;
+
+  // 整段被括號包住 → inner(無 speaker)
+  const innerWhole = trimmed.match(/^[（(]([\s\S]*?)[）)]$/);
+  if (innerWhole) {
+    return { type: "inner", speaker: null, content: innerWhole[1].trim() };
+  }
+
+  // 嘗試 `名字:內容` / `名字:(內心話)`
+  // 名字限制:不含 : 或 : 或 空白起頭;允許帶 [tag](因為樣式 tag 可能在名字後)
+  // 簡化:取 \n 之前第一個 : 或 : 切兩段
+  const colonMatch = trimmed.match(/^([^\s:：][^:：\n]*?)[:：]([\s\S]*)$/);
+  if (colonMatch) {
+    const speaker = colonMatch[1].trim();
+    const rest = colonMatch[2].trim();
+    // rest 整段被括號包住 → 帶 speaker 的 inner
+    const innerWithSpeaker = rest.match(/^[（(]([\s\S]*?)[）)]$/);
+    if (innerWithSpeaker) {
+      return { type: "inner", speaker, content: innerWithSpeaker[1].trim() };
+    }
+    return { type: "dialog", speaker, content: rest };
+  }
+
+  // 其他 → narration
+  return { type: "narration", speaker: null, content: trimmed };
+}
+
+function parseSimpleDialogText(text) {
+  const out = { parsedLines: [], unsupported: [] };
+  if (typeof text !== "string" || !text.trim()) return out;
+  // 段落分隔 = 連續空行
+  const paragraphs = text.split(/\n{2,}/);
+  for (const p of paragraphs) {
+    const t = p.trim();
+    if (!t) continue;
+    if (_hasUnsupportedScript(t)) {
+      out.unsupported.push(t);
+      // 仍當 narration 渲染,只是另外標記給 UI 用
+      const ln = _parseSimpleParagraph(t);
+      if (ln) out.parsedLines.push(ln);
+      continue;
+    }
+    const ln = _parseSimpleParagraph(t);
+    if (ln) out.parsedLines.push(ln);
+  }
+  return out;
+}
+
+// 取攝影片的 CG 預覽 URL — 從 cg 物件或舊版 cgName fallback。
+// 注意:cg.cgId 走 IndexedDB,首次 sync 讀回 null 並 prefetch,完成後會再重繪。
+function _resolveSlideCgUrl(card) {
+  if (!card || !card.cg) {
+    if (card && typeof card.cgName === "string") {
+      const d = state.cgs && state.cgs[card.cgName];
+      if (d && d.dataUrl) return d.dataUrl;
+    }
+    return null;
+  }
+  const cg = card.cg;
+  if (cg.type === "upload" && cg.dataUrl) return cg.dataUrl;
+  if (cg.type === "library") {
+    if (cg.cgId) {
+      const cached = _cgUrlCache.get(cg.cgId);
+      if (cached) return cached;
+      _prefetchCgUrl(cg.cgId);
+      return null;
+    }
+    if (cg.name) {
+      const d = state.cgs && state.cgs[cg.name];
+      if (d && d.dataUrl) return d.dataUrl;
+    }
+  }
+  return null;
+}
+
+// 從 file 寫入 CG 庫 + 套到當前攝影片
+async function attachCgFileToCurrentSlide(file) {
+  const cur = getCurrentSlide();
+  if (!cur) { showToast("沒有可用的攝影片", "warn"); return; }
+  const res = await vnsAddCgFromFile(file);
+  if (!res.id) {
+    showToast(res.error || "上傳失敗", "warn", 4000);
+    return;
+  }
+  // 預存 URL 到 cache,讓 render 立即拿到
+  const url = await vnsCgUrlFromId(res.id);
+  if (url) _cgUrlCache.set(res.id, url);
+  cur.cg = { type: "library", cgId: res.id, name: file.name };
+  // 同時更新 lastUsedAt
+  vnsTouchCg(res.id);
+  saveToStorage();
+  renderSimpleSlideList();
+  renderSimpleEditor();
+}
+
+// 從 CG 庫挑選一張套到當前攝影片
+async function attachCgIdToCurrentSlide(cgId) {
+  const cur = getCurrentSlide();
+  if (!cur) return;
+  // 確保 URL 已 cache
+  if (!_cgUrlCache.has(cgId)) {
+    const url = await vnsCgUrlFromId(cgId);
+    if (url) _cgUrlCache.set(cgId, url);
+  }
+  const cgRec = await vnsGetCg(cgId);
+  cur.cg = { type: "library", cgId, name: (cgRec && cgRec.name) || null };
+  vnsTouchCg(cgId);
+  saveToStorage();
+  renderSimpleSlideList();
+  renderSimpleEditor();
+}
+
+function clearCgFromCurrentSlide() {
+  const cur = getCurrentSlide();
+  if (!cur) return;
+  cur.cg = { type: "none" };
+  saveToStorage();
+  renderSimpleSlideList();
+  renderSimpleEditor();
+}
+
+function selectSimpleSlide(slideId) {
+  if (slideId === state.simpleCurrentSlideId) return;
+  state.simpleCurrentSlideId = slideId;
+  saveToStorage();
+  renderSimpleSlideList();
+  renderSimpleEditor();
+}
+
+function addSimpleSlide() {
+  if (!Array.isArray(state.simpleCards)) state.simpleCards = [];
+  const slide = createEmptySlide();
+  state.simpleCards.push(slide);
+  state.simpleCurrentSlideId = slide.id;
+  saveToStorage();
+  renderSimpleSlideList();
+  renderSimpleEditor();
+}
+
+function deleteSimpleSlide(slideId) {
+  if (!Array.isArray(state.simpleCards)) return;
+  const idx = state.simpleCards.findIndex(s => s.id === slideId);
+  if (idx < 0) return;
+  state.simpleCards.splice(idx, 1);
+  if (state.simpleCurrentSlideId === slideId) {
+    state.simpleCurrentSlideId = state.simpleCards.length
+      ? state.simpleCards[Math.min(idx, state.simpleCards.length - 1)].id
+      : null;
+  }
+  saveToStorage();
+  renderSimpleSlideList();
+  renderSimpleEditor();
+}
+
+// 任務 10:鍵盤快捷鍵
+function moveCurrentSlide(direction) {
+  const cards = state.simpleCards || [];
+  const idx = getCurrentSlideIdx();
+  if (idx < 0) return;
+  const target = idx + (direction === "up" ? -1 : 1);
+  if (target < 0 || target >= cards.length) return;
+  // swap
+  [cards[idx], cards[target]] = [cards[target], cards[idx]];
+  saveToStorage();
+  renderSimpleSlideList();
+}
+function navigateSimpleSlide(direction) {
+  const cards = state.simpleCards || [];
+  const idx = getCurrentSlideIdx();
+  if (idx < 0) return;
+  const target = idx + (direction === "up" ? -1 : 1);
+  if (target < 0 || target >= cards.length) return;
+  selectSimpleSlide(cards[target].id);
+}
+async function deleteCurrentSlideWithConfirm() {
+  const cards = state.simpleCards || [];
+  const idx = getCurrentSlideIdx();
+  if (idx < 0) return;
+  const ok = await inlineConfirm({
+    title: "刪除這張攝影片?",
+    message: "此操作無法復原。\n所引用的 CG 仍會保留在 CG 庫中。",
+    okText: "確認刪除",
+    danger: true,
+  });
+  if (!ok) return;
+  deleteSimpleSlide(cards[idx].id);
+}
+
+// === 任務 7:輸出功能(截圖 / GIF / MP4)===
+
+function _vnsLoadImage(url) {
+  return new Promise((resolve, reject) => {
+    const im = new Image();
+    im.crossOrigin = "anonymous";
+    im.onload = () => resolve(im);
+    im.onerror = reject;
+    im.src = url;
+  });
+}
+
+function _vnsDrawWrappedText(ctx, text, x, y, maxWidth, lineHeight) {
+  if (!text) return y;
+  // 中文/英文混排 wrap:逐字測寬,直到該行超過 maxWidth 就換行
+  let line = "";
+  let curY = y;
+  for (const ch of text) {
+    if (ch === "\n") {
+      ctx.fillText(line, x, curY);
+      line = "";
+      curY += lineHeight;
+      continue;
+    }
+    const test = line + ch;
+    if (ctx.measureText(test).width > maxWidth && line.length > 0) {
+      ctx.fillText(line, x, curY);
+      line = ch;
+      curY += lineHeight;
+    } else {
+      line = test;
+    }
+  }
+  if (line.length) {
+    ctx.fillText(line, x, curY);
+    curY += lineHeight;
+  }
+  return curY;
+}
+
+// CG 圖片 cache(避免 MP4 錄影時每 frame 重新 _vnsLoadImage)
+const _vnsCgImageCache = new Map();
+async function _vnsPreloadCgImage(slide) {
+  const url = _resolveSlideCgUrl(slide);
+  if (!url) return null;
+  if (_vnsCgImageCache.has(url)) return _vnsCgImageCache.get(url);
+  try {
+    const img = await _vnsLoadImage(url);
+    _vnsCgImageCache.set(url, img);
+    return img;
+  } catch (e) { return null; }
+}
+
+// 把當前 slide(或指定 line + 部分文字 + 對話框 opacity)渲染到 canvas
+// opts: { lineIdx, partialText, boxOpacity }
+function _vnsRenderSlideFrame(canvas, slide, opts) {
+  opts = opts || {};
+  const lineIdx = opts.lineIdx != null ? opts.lineIdx : 0;
+  const boxOpacity = opts.boxOpacity != null ? opts.boxOpacity : 1;
+  const ctx = canvas.getContext("2d");
+  const w = canvas.width;
+  const h = canvas.height;
+  const styles = getComputedStyle(document.documentElement);
+
+  // 底色
+  const stageBg = styles.getPropertyValue("--style-stage-bg").trim() || "#000";
+  ctx.fillStyle = stageBg;
+  ctx.fillRect(0, 0, w, h);
+
+  // CG(從 cache)
+  const cgUrl = _resolveSlideCgUrl(slide);
+  const img = cgUrl ? _vnsCgImageCache.get(cgUrl) : null;
+  if (img) {
+    const scale = Math.max(w / img.width, h / img.height);
+    const sw = img.width * scale, sh = img.height * scale;
+    ctx.drawImage(img, (w - sw) / 2, (h - sh) / 2, sw, sh);
+  }
+
+  const lines = slide.parsedLines || [];
+  const line = lines[lineIdx];
+  if (!line || boxOpacity <= 0) return;
+
+  ctx.save();
+  ctx.globalAlpha = boxOpacity;
+
+  const dlgBg = styles.getPropertyValue("--style-dialog-bg").trim() || "rgba(13,7,22,0.88)";
+  const dlgBorder = styles.getPropertyValue("--style-dialog-border").trim() || "#c4a265";
+  const dlgBorderW = parseFloat(styles.getPropertyValue("--style-dialog-border-width")) || 1;
+  const txtColor = styles.getPropertyValue("--style-dialog-text-color").trim() || "#f3e9d8";
+  const spkColor = styles.getPropertyValue("--style-speaker-color").trim() || "#e6c989";
+
+  const padLR = w * 0.04;
+  const padBottom = h * 0.04;
+  const boxW = w - padLR * 2;
+  const boxH = h * 0.22;
+  const boxX = padLR;
+  const boxY = h - padBottom - boxH;
+
+  ctx.fillStyle = dlgBg;
+  ctx.fillRect(boxX, boxY, boxW, boxH);
+  ctx.strokeStyle = dlgBorder;
+  ctx.lineWidth = Math.max(1, dlgBorderW * (w / 680));
+  ctx.strokeRect(boxX, boxY, boxW, boxH);
+
+  const innerPadX = boxW * 0.04;
+  const innerPadY = boxH * 0.16;
+  let textY = boxY + innerPadY;
+
+  if (line.speaker && line.type !== "narration") {
+    const spkSize = Math.round(h * 0.025);
+    ctx.font = `italic 500 ${spkSize}px 'Cormorant Garamond', 'Noto Serif TC', serif`;
+    const charColor = _vnsResolveSpeakerColor(line.speaker) || spkColor;
+    ctx.fillStyle = charColor;
+    ctx.textBaseline = "top";
+    ctx.fillText(line.speaker, boxX + innerPadX, textY);
+    textY += spkSize * 1.5;
+  }
+
+  const fullContent = _stripStyleTags(line.content);
+  const visible = opts.partialText != null ? opts.partialText : fullContent;
+  const wrapped = (line.type === "inner") ? `(${visible})` : visible;
+  const fontSize = Math.round(h * 0.028);
+  ctx.font = `${fontSize}px 'Noto Serif TC', 'PingFang TC', sans-serif`;
+  ctx.fillStyle = (line.type === "narration") ? "#bdb3a8" : txtColor;
+  ctx.textBaseline = "top";
+  _vnsDrawWrappedText(ctx, wrapped, boxX + innerPadX, textY, boxW - innerPadX * 2, fontSize * 1.7);
+
+  ctx.restore();
+}
+
+// 截圖用:單 frame 不需動畫,先預載 CG 再 render
+async function _vnsRenderSlideToCanvas(canvas, slide, lineIdx) {
+  await _vnsPreloadCgImage(slide);
+  _vnsRenderSlideFrame(canvas, slide, { lineIdx: lineIdx, boxOpacity: 1 });
+}
+
+async function exportSimpleScreenshot() {
+  const cur = getCurrentSlide();
+  if (!cur) { showToast("沒有可截圖的攝影片", "warn"); return; }
+  const ratio = state.ratio || "16:9";
+  const w = ratio === "9:16" ? 1080 : 1920;
+  const h = ratio === "9:16" ? 1920 : 1080;
+  const canvas = document.createElement("canvas");
+  canvas.width = w;
+  canvas.height = h;
+  showToast("產生截圖中…", "info", 1500);
+  await _vnsRenderSlideToCanvas(canvas, cur, 0);
+  canvas.toBlob((blob) => {
+    if (!blob) { showToast("截圖失敗", "warn"); return; }
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `visual-novel-studio-${timestamp()}.png`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+    showToast("已下載截圖", "info", 2500);
+  }, "image/png");
+}
+
+// MP4 / WebM 透過 MediaRecorder + canvas.captureStream 即時錄製
+// 動畫時序與預覽相同:fade-in 300ms → typewriter 45ms/char → hold 500ms → fade-out 300ms
+const _vnsExportState = { running: false, cancelled: false };
+
+function _vnsSleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+// 輸出進度浮層 — MP4 / GIF 共用
+function _vnsExportOverlayOpen(title, badgeText) {
+  const ov = document.getElementById("vnsExportOverlay");
+  const titleEl = document.getElementById("vnsExportTitle");
+  const badgeEl = document.getElementById("vnsExportRecBadge");
+  if (!ov) return null;
+  if (titleEl) titleEl.textContent = title || "輸出中…";
+  if (badgeEl) badgeEl.textContent = badgeText || "● REC";
+  _vnsExportSetProgress("準備中…", 0);
+  ov.classList.add("show");
+  return document.getElementById("vnsExportCanvas");
+}
+function _vnsExportOverlayClose() {
+  const ov = document.getElementById("vnsExportOverlay");
+  if (ov) ov.classList.remove("show");
+  // 取消旗標一律重置(下次開啟才是乾淨的)
+  _vnsExportState.cancelled = false;
+}
+function _vnsExportSetProgress(text, pct) {
+  const t = document.getElementById("vnsExportProgress");
+  const b = document.getElementById("vnsExportBarFill");
+  if (t) t.textContent = text;
+  if (b) b.style.width = Math.max(0, Math.min(100, pct || 0)) + "%";
+}
+
+// 取消按鈕 — 設旗標,輸出迴圈下次檢查時中斷
+{
+  const cancelBtn = document.getElementById("vnsExportCancelBtn");
+  if (cancelBtn) cancelBtn.addEventListener("click", () => {
+    if (_vnsExportState.running) {
+      _vnsExportState.cancelled = true;
+      _vnsExportSetProgress("取消中…請稍候", 0);
+    } else {
+      _vnsExportOverlayClose();
+    }
+  });
+}
+
+// 計算總 frame / line 數,給進度條用
+function _vnsCountTotalLines(cards) {
+  let n = 0;
+  for (const s of cards) {
+    const lines = (s.parsedLines && s.parsedLines.length) ? s.parsedLines : [{ content: "" }];
+    n += lines.length;
+  }
+  return n;
+}
+
+async function exportSimpleMp4() {
+  if (_vnsExportState.running) { showToast("已有錄影進行中", "warn"); return; }
+  const cards = state.simpleCards || [];
+  if (!cards.length) { showToast("沒有可錄影的攝影片", "warn"); return; }
+  if (typeof MediaRecorder === "undefined") {
+    showToast("此瀏覽器不支援 MediaRecorder", "warn", 4000);
+    return;
+  }
+
+  const ratio = state.ratio || "16:9";
+  const w = ratio === "9:16" ? 1080 : 1920;
+  const h = ratio === "9:16" ? 1920 : 1080;
+
+  // 用 overlay 內的 canvas 當作 render 目標,使用者可即時看到錄影內容
+  const canvas = _vnsExportOverlayOpen("MP4 錄影中", "● REC");
+  if (!canvas) return;
+  canvas.width = w; canvas.height = h;
+
+  const mimeOptions = [
+    "video/mp4;codecs=avc1.42E01F",
+    "video/mp4",
+    "video/webm;codecs=vp9",
+    "video/webm;codecs=vp8",
+    "video/webm",
+  ];
+  let mime = "";
+  for (const m of mimeOptions) {
+    if (MediaRecorder.isTypeSupported(m)) { mime = m; break; }
+  }
+  if (!mime) {
+    _vnsExportOverlayClose();
+    showToast("瀏覽器不支援任何錄影格式", "warn", 4000);
+    return;
+  }
+
+  _vnsExportSetProgress("預載 CG 圖片…", 1);
+  for (const slide of cards) await _vnsPreloadCgImage(slide);
+
+  const stream = canvas.captureStream(30);
+  const recorder = new MediaRecorder(stream, { mimeType: mime, videoBitsPerSecond: 8_000_000 });
+  const chunks = [];
+  recorder.ondataavailable = (e) => { if (e.data && e.data.size) chunks.push(e.data); };
+  const stopped = new Promise(resolve => { recorder.onstop = resolve; });
+
+  _vnsExportState.running = true;
+  _vnsExportState.cancelled = false;
+  recorder.start();
+
+  const totalLines = _vnsCountTotalLines(cards);
+  let doneLines = 0;
+
+  try {
+    const FADE_MS = 300;
+    const TYPE_MS = 45;
+    const HOLD_MS = 500;
+    const FRAME_MS = 1000 / 30;
+
+    for (let si = 0; si < cards.length; si++) {
+      if (_vnsExportState.cancelled) break;
+      const slide = cards[si];
+      const lines = (slide.parsedLines && slide.parsedLines.length)
+        ? slide.parsedLines
+        : [{ type: "narration", speaker: null, content: "" }];
+      for (let li = 0; li < lines.length; li++) {
+        if (_vnsExportState.cancelled) break;
+        const line = lines[li];
+        const full = _stripStyleTags(line.content || "");
+        _vnsExportSetProgress(
+          `攝影片 ${si + 1} / ${cards.length} · 第 ${li + 1} 段 / ${lines.length}`,
+          (doneLines / totalLines) * 100
+        );
+        // fade in
+        const fadeFrames = Math.max(2, Math.round(FADE_MS / FRAME_MS));
+        for (let f = 0; f < fadeFrames; f++) {
+          if (_vnsExportState.cancelled) break;
+          _vnsRenderSlideFrame(canvas, slide, { lineIdx: li, partialText: "", boxOpacity: f / (fadeFrames - 1) });
+          await _vnsSleep(FRAME_MS);
+        }
+        // typewriter
+        if (full.length === 0) {
+          await _vnsSleep(HOLD_MS);
+        } else {
+          for (let i = 1; i <= full.length; i++) {
+            if (_vnsExportState.cancelled) break;
+            _vnsRenderSlideFrame(canvas, slide, { lineIdx: li, partialText: full.slice(0, i), boxOpacity: 1 });
+            await _vnsSleep(TYPE_MS);
+          }
+          await _vnsSleep(HOLD_MS);
+        }
+        // fade out
+        for (let f = fadeFrames - 1; f >= 0; f--) {
+          if (_vnsExportState.cancelled) break;
+          _vnsRenderSlideFrame(canvas, slide, { lineIdx: li, partialText: full, boxOpacity: f / (fadeFrames - 1) });
+          await _vnsSleep(FRAME_MS);
+        }
+        doneLines++;
+      }
+    }
+    if (!_vnsExportState.cancelled) await _vnsSleep(500);
+  } finally {
+    recorder.stop();
+    await stopped;
+    _vnsExportState.running = false;
+  }
+
+  const cancelled = _vnsExportState.cancelled;
+  _vnsExportOverlayClose();
+
+  if (cancelled) {
+    showToast("已取消錄影", "info", 2000);
+    return;
+  }
+
+  const blob = new Blob(chunks, { type: mime });
+  const ext = mime.startsWith("video/mp4") ? "mp4" : "webm";
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `visual-novel-studio-${timestamp()}.${ext}`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 2000);
+  showToast(`已下載影片(${ext.toUpperCase()},${vnsFmtBytes(blob.size)})`, "info", 3500);
+}
+
+// GIF:用 gif.js(CDN)逐 frame 編碼
+async function exportSimpleGif() {
+  if (_vnsExportState.running) { showToast("已有錄影進行中", "warn"); return; }
+  const cards = state.simpleCards || [];
+  if (!cards.length) { showToast("沒有可錄製的攝影片", "warn"); return; }
+  if (typeof GIF === "undefined") {
+    showToast("GIF 編碼器未載入(請檢查網路)", "warn", 4000);
+    return;
+  }
+
+  const ratio = state.ratio || "16:9";
+  const w = ratio === "9:16" ? 720 : 1280;
+  const h = ratio === "9:16" ? 1280 : 720;
+  const canvas = _vnsExportOverlayOpen("GIF 編碼中", "● ENC");
+  if (!canvas) return;
+  canvas.width = w; canvas.height = h;
+
+  _vnsExportSetProgress("預載 CG 圖片…", 1);
+  for (const slide of cards) await _vnsPreloadCgImage(slide);
+
+  _vnsExportState.running = true;
+  _vnsExportState.cancelled = false;
+
+  const gif = new GIF({
+    workers: 2,
+    quality: 10,
+    width: w,
+    height: h,
+    workerScript: "https://cdn.jsdelivr.net/npm/gif.js@0.2.0/dist/gif.worker.js",
+  });
+
+  const FPS = 15;
+  const FRAME_MS = 1000 / FPS;
+  const FADE_FRAMES = 5;
+  const TYPE_FRAMES_PER_CHAR = 1;
+  const HOLD_FRAMES = 8;
+
+  const totalLines = _vnsCountTotalLines(cards);
+  let doneLines = 0;
+
+  try {
+    for (let si = 0; si < cards.length; si++) {
+      if (_vnsExportState.cancelled) break;
+      const slide = cards[si];
+      const lines = (slide.parsedLines && slide.parsedLines.length)
+        ? slide.parsedLines
+        : [{ type: "narration", speaker: null, content: "" }];
+      for (let li = 0; li < lines.length; li++) {
+        if (_vnsExportState.cancelled) break;
+        const line = lines[li];
+        const full = _stripStyleTags(line.content || "");
+        _vnsExportSetProgress(
+          `渲染 ${si + 1} / ${cards.length} · 第 ${li + 1} 段(共 ${lines.length})`,
+          (doneLines / totalLines) * 50   // 前半段是渲染進度
+        );
+        for (let f = 0; f < FADE_FRAMES; f++) {
+          _vnsRenderSlideFrame(canvas, slide, { lineIdx: li, partialText: "", boxOpacity: f / (FADE_FRAMES - 1) });
+          gif.addFrame(canvas, { copy: true, delay: FRAME_MS });
+        }
+        if (full.length === 0) {
+          for (let f = 0; f < HOLD_FRAMES; f++) {
+            _vnsRenderSlideFrame(canvas, slide, { lineIdx: li, partialText: "", boxOpacity: 1 });
+            gif.addFrame(canvas, { copy: true, delay: FRAME_MS });
+          }
+        } else {
+          for (let i = 1; i <= full.length; i++) {
+            _vnsRenderSlideFrame(canvas, slide, { lineIdx: li, partialText: full.slice(0, i), boxOpacity: 1 });
+            for (let f = 0; f < TYPE_FRAMES_PER_CHAR; f++) {
+              gif.addFrame(canvas, { copy: true, delay: FRAME_MS });
+            }
+          }
+          for (let f = 0; f < HOLD_FRAMES; f++) {
+            gif.addFrame(canvas, { copy: true, delay: FRAME_MS });
+          }
+        }
+        for (let f = FADE_FRAMES - 1; f >= 0; f--) {
+          _vnsRenderSlideFrame(canvas, slide, { lineIdx: li, partialText: full, boxOpacity: f / (FADE_FRAMES - 1) });
+          gif.addFrame(canvas, { copy: true, delay: FRAME_MS });
+        }
+        doneLines++;
+        // 讓出 thread,避免 UI 卡住(也讓 cancel 點擊有機會 propagate)
+        await _vnsSleep(0);
+      }
+    }
+  } catch (e) {
+    _vnsExportState.running = false;
+    _vnsExportOverlayClose();
+    showToast("GIF 渲染失敗:" + (e.message || e), "warn", 4000);
+    return;
+  }
+
+  if (_vnsExportState.cancelled) {
+    gif.abort && gif.abort();
+    _vnsExportState.running = false;
+    _vnsExportOverlayClose();
+    showToast("已取消 GIF 編碼", "info", 2000);
+    return;
+  }
+
+  gif.on("progress", (p) => {
+    // 後半段是 worker 編碼進度(0~1)
+    _vnsExportSetProgress(`Worker 編碼中…(${Math.round(p * 100)}%)`, 50 + p * 50);
+  });
+  gif.on("finished", (blob) => {
+    _vnsExportState.running = false;
+    _vnsExportOverlayClose();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `visual-novel-studio-${timestamp()}.gif`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 2000);
+    showToast(`已下載 GIF(${vnsFmtBytes(blob.size)})`, "info", 3500);
+  });
+  _vnsExportSetProgress("送入 Worker 編碼…", 50);
+  gif.render();
+}
+
+document.addEventListener("keydown", (e) => {
+  if (state.mode !== "simple") return;
+  // 是否在輸入元素內(textarea / input / contenteditable):大部分快捷鍵讓給原生編輯
+  const t = e.target;
+  const inEditor = t && (
+    t.tagName === "TEXTAREA" ||
+    (t.tagName === "INPUT" && t.type !== "checkbox" && t.type !== "range") ||
+    t.isContentEditable
+  );
+
+  // Esc:停止播放(任何情境都生效)
+  if (e.key === "Escape" && _vnsSimplePlayback.playing) {
+    e.preventDefault();
+    stopSimplePlayback();
+    return;
+  }
+
+  // Space:播放/暫停 — 只在「不在輸入區」時生效,避免吃掉空白鍵
+  if (e.key === " " && !inEditor && !e.ctrlKey && !e.metaKey && !e.altKey) {
+    e.preventDefault();
+    if (_vnsSimplePlayback.playing) stopSimplePlayback();
+    else startSimplePlayback();
+    return;
+  }
+
+  // 以下需要 Ctrl/Meta
+  if (!e.ctrlKey && !e.metaKey) return;
+
+  // Ctrl + Enter:新增攝影片(輸入區內也允許)
+  if (e.key === "Enter") {
+    e.preventDefault();
+    addSimpleSlide();
+    return;
+  }
+
+  // Ctrl + Delete / Backspace:刪當前攝影片
+  if (e.key === "Delete") {
+    e.preventDefault();
+    deleteCurrentSlideWithConfirm();
+    return;
+  }
+
+  // Ctrl + (Shift?) + 上下:切換 / 移動
+  if (e.key === "ArrowUp") {
+    e.preventDefault();
+    if (e.shiftKey) moveCurrentSlide("up");
+    else navigateSimpleSlide("up");
+    return;
+  }
+  if (e.key === "ArrowDown") {
+    e.preventDefault();
+    if (e.shiftKey) moveCurrentSlide("down");
+    else navigateSimpleSlide("down");
+    return;
+  }
+}, true);
+
+// === 簡易模式:右側編輯區 ===
+function renderSimpleEditor() {
+  // 樣式快選同步 + 即時套用該 slide 的 dialogStyle
+  if (typeof syncDialogStyleForCurrentSlide === "function") syncDialogStyleForCurrentSlide();
+  const cur = getCurrentSlide();
+  const emptyEl = document.getElementById("simplePreviewEmpty");
+  const cgEl = document.getElementById("simplePreviewCg");
+  const dialogEl = document.getElementById("simplePreviewDialog");
+  const textArea = document.getElementById("simpleDialogText");
+
+  if (!cur) {
+    if (emptyEl) emptyEl.hidden = false;
+    if (cgEl) { cgEl.hidden = true; cgEl.style.backgroundImage = ""; }
+    if (dialogEl) { dialogEl.hidden = true; dialogEl.textContent = ""; }
+    if (textArea) textArea.value = "";
+    return;
+  }
+
+  if (emptyEl) emptyEl.hidden = true;
+  const cgUrl = _resolveSlideCgUrl(cur);
+  if (cgEl) {
+    if (cgUrl) {
+      cgEl.hidden = false;
+      cgEl.style.backgroundImage = `url(${cgUrl})`;
+    } else {
+      cgEl.hidden = true;
+      cgEl.style.backgroundImage = "";
+    }
+  }
+  // CG 區的預覽縮圖
+  const cgZoneEmpty = document.getElementById("simpleCgZoneEmpty");
+  const cgZonePreview = document.getElementById("simpleCgZonePreview");
+  const cgZoneImg = document.getElementById("simpleCgZoneImg");
+  if (cgZoneEmpty && cgZonePreview) {
+    if (cgUrl) {
+      cgZoneEmpty.hidden = true;
+      cgZonePreview.hidden = false;
+      if (cgZoneImg) cgZoneImg.src = cgUrl;
+    } else {
+      cgZoneEmpty.hidden = false;
+      cgZonePreview.hidden = true;
+      if (cgZoneImg) cgZoneImg.src = "";
+    }
+  }
+  if (textArea && textArea.value !== (cur.dialogText || "")) {
+    textArea.value = cur.dialogText || "";
+    // 切到不同 slide 時:若 parsedLines 還沒算過(舊版資料),補算一次
+    if (!Array.isArray(cur.parsedLines) || cur.parsedLines.length === 0) {
+      const r = parseSimpleDialogText(cur.dialogText);
+      cur.parsedLines = r.parsedLines;
+      cur._unsupportedHint = r.unsupported.length > 0;
+    }
+  }
+  const warnEl = document.getElementById("simpleSyntaxWarn");
+  if (warnEl) warnEl.hidden = !cur._unsupportedHint;
+  // 任務 4:靜態預覽顯示「第一段」parsed line(無文字機,即時跟著編輯走);
+  // 播放時由 _vnsSimplePlayback 控制取代之。
+  if (!_vnsSimplePlayback.playing) {
+    const lines = (cur.parsedLines && cur.parsedLines.length) ? cur.parsedLines : [];
+    if (lines.length && dialogEl) {
+      _renderPreviewLine(dialogEl, lines[0], null, false);
+    } else if (dialogEl) {
+      dialogEl.hidden = true;
+      dialogEl.innerHTML = "";
+    }
+  }
+}
+
+// 任務 4:預覽渲染 helper + 文字機播放引擎
+
+function _stripStyleTags(s) {
+  // 暫時:把所有 [xxx] tag 從顯示內容剝掉(實際樣式 apply 在 task 4 之後做)
+  return String(s || "").replace(/\[[^\]]+\]/g, "");
+}
+
+// 任務 8:角色綁定 — 名字若在 👥 角色 modal 已定義,用角色設定的顏色;
+// 否則沿用當前對話框樣式的 speaker color(CSS var)。
+// 簡易模式不另外提供 speaker color picker / 字級調整,
+// 修改角色顏色一律到 👥 角色 modal。
+function _vnsResolveSpeakerColor(speaker) {
+  if (!speaker) return null;
+  const chars = state.characters || [];
+  const found = chars.find(c => c && c.name === speaker);
+  return found && found.color ? found.color : null;
+}
+
+function _renderSpeakerHtml(speaker) {
+  if (!speaker) return "";
+  const color = _vnsResolveSpeakerColor(speaker);
+  const styleAttr = color ? ` style="color:${_shEsc(color)}"` : "";
+  return `<div class="simple-preview-speaker"${styleAttr}>${_shEsc(speaker)}</div>`;
+}
+
+function _renderPreviewLine(dialogEl, line, partial, faded) {
+  if (!dialogEl || !line) return;
+  dialogEl.hidden = false;
+  dialogEl.classList.toggle("faded", !!faded);
+  const showText = partial != null ? partial : line.content;
+  const clean = _stripStyleTags(showText);
+  if (line.type === "narration") {
+    dialogEl.innerHTML = `<div class="simple-preview-narration">${_shEsc(clean)}</div>`;
+  } else if (line.type === "inner") {
+    dialogEl.innerHTML = `${_renderSpeakerHtml(line.speaker)}<div class="simple-preview-inner">(${_shEsc(clean)})</div>`;
+  } else {
+    dialogEl.innerHTML = `${_renderSpeakerHtml(line.speaker)}<div class="simple-preview-content">${_shEsc(clean)}</div>`;
+  }
+}
+
+const _vnsSimplePlayback = {
+  playing: false,
+  lineIdx: 0,
+  typeTimer: null,
+  holdTimer: null,
+  fadeTimer: null,
+  typeSpeed: 45,    // ms / char
+  holdMs: 500,
+  fadeMs: 300,
+};
+
+function _vnsSPClearTimers() {
+  if (_vnsSimplePlayback.typeTimer) { clearInterval(_vnsSimplePlayback.typeTimer); _vnsSimplePlayback.typeTimer = null; }
+  if (_vnsSimplePlayback.holdTimer) { clearTimeout(_vnsSimplePlayback.holdTimer); _vnsSimplePlayback.holdTimer = null; }
+  if (_vnsSimplePlayback.fadeTimer) { clearTimeout(_vnsSimplePlayback.fadeTimer); _vnsSimplePlayback.fadeTimer = null; }
+}
+
+function startSimplePlayback() {
+  const cur = getCurrentSlide();
+  if (!cur || !Array.isArray(cur.parsedLines) || !cur.parsedLines.length) {
+    showToast("沒有可播放的對話", "info");
+    return;
+  }
+  _vnsSPClearTimers();
+  _vnsSimplePlayback.playing = true;
+  _vnsSimplePlayback.lineIdx = 0;
+  _vnsUpdatePlaybackBtn();
+  _playSimpleLine();
+}
+
+function stopSimplePlayback() {
+  _vnsSPClearTimers();
+  _vnsSimplePlayback.playing = false;
+  _vnsUpdatePlaybackBtn();
+  renderSimpleEditor();
+}
+
+function _vnsUpdatePlaybackBtn() {
+  const btn = document.getElementById("simplePreviewPlayBtn");
+  if (!btn) return;
+  btn.textContent = _vnsSimplePlayback.playing ? "⏸ 暫停" : "▶ 預覽播放";
+}
+
+function _playSimpleLine() {
+  if (!_vnsSimplePlayback.playing) return;
+  const cur = getCurrentSlide();
+  const dialogEl = document.getElementById("simplePreviewDialog");
+  if (!cur || !dialogEl) return stopSimplePlayback();
+  const lines = cur.parsedLines || [];
+  const idx = _vnsSimplePlayback.lineIdx;
+  if (idx >= lines.length) return stopSimplePlayback();
+  const line = lines[idx];
+
+  // 1. fade in 新段落(先用 faded 渲染、下一個 frame 移除 faded)
+  _renderPreviewLine(dialogEl, line, "", true);
+  // 強制 reflow 後移除 faded → 觸發 fade-in
+  // requestAnimationFrame 兩次確保 transition 啟動
+  requestAnimationFrame(() => requestAnimationFrame(() => {
+    dialogEl.classList.remove("faded");
+    // 2. 文字機 — 逐字填入
+    const full = _stripStyleTags(line.content);
+    let i = 0;
+    _vnsSimplePlayback.typeTimer = setInterval(() => {
+      i++;
+      _renderPreviewLine(dialogEl, line, full.slice(0, i), false);
+      if (i >= full.length) {
+        clearInterval(_vnsSimplePlayback.typeTimer);
+        _vnsSimplePlayback.typeTimer = null;
+        // 3. 停留 holdMs
+        _vnsSimplePlayback.holdTimer = setTimeout(() => {
+          _vnsSimplePlayback.holdTimer = null;
+          // 4. fade out
+          dialogEl.classList.add("faded");
+          _vnsSimplePlayback.fadeTimer = setTimeout(() => {
+            _vnsSimplePlayback.fadeTimer = null;
+            _vnsSimplePlayback.lineIdx++;
+            _playSimpleLine();
+          }, _vnsSimplePlayback.fadeMs);
+        }, _vnsSimplePlayback.holdMs);
+      }
+    }, _vnsSimplePlayback.typeSpeed);
+  }));
+}
+
+// 編輯區事件綁定 — 只綁一次
+(function initSimpleEditorBindings() {
+  const addBtn = document.getElementById("simpleAddSlideBtn");
+  if (addBtn) addBtn.addEventListener("click", addSimpleSlide);
+
+  const textArea = document.getElementById("simpleDialogText");
+  if (textArea) textArea.addEventListener("input", () => {
+    const cur = getCurrentSlide();
+    if (!cur) return;
+    cur.dialogText = textArea.value;
+    // 即時解析 parsedLines + 偵測不支援指令
+    const r = parseSimpleDialogText(cur.dialogText);
+    cur.parsedLines = r.parsedLines;
+    cur._unsupportedHint = r.unsupported.length > 0;
+    saveToStorage();
+    renderSimpleSlideList();
+    renderSimpleEditor();
+  });
+
+  // 方向切換
+  document.querySelectorAll(".simple-ratio-toggle button").forEach(b => {
+    b.addEventListener("click", () => {
+      const r = b.dataset.ratio;
+      document.querySelectorAll(".simple-ratio-toggle button").forEach(bb => {
+        bb.classList.toggle("active", bb === b);
+      });
+      const stage = document.getElementById("simplePreviewStage");
+      if (stage) stage.setAttribute("data-ratio", r);
+      state.ratio = r;
+      saveToStorage();
+    });
+  });
+
+  // 打開樣式 modal
+  const openStyleBtn = document.getElementById("simpleOpenStyleModalBtn");
+  if (openStyleBtn) openStyleBtn.addEventListener("click", () => {
+    if (typeof openStyleModal === "function") openStyleModal();
+  });
+
+  // 對話框樣式快選
+  const styleSelect = document.getElementById("simpleDialogStyleSelect");
+  if (styleSelect) {
+    populateSimpleDialogStyleSelect();
+    styleSelect.addEventListener("change", () => {
+      const cur = getCurrentSlide();
+      if (!cur) return;
+      const v = styleSelect.value;
+      if (v === "__inherit__") {
+        cur.dialogStyle = null;
+      } else {
+        const [family, variant] = v.split("|");
+        cur.dialogStyle = { family, variant };
+        // 即時套到 CSS vars(影響預覽與輸出)
+        if (typeof applyStylePreset === "function") applyStylePreset(family, variant);
+      }
+      saveToStorage();
+      renderSimpleEditor();
+    });
+  }
+
+  // CG 區:上傳 / 換 / 移除 / 從庫選擇 / 拖曳
+  const cgZone = document.getElementById("simpleCgZone");
+  const cgInput = document.getElementById("simpleCgFileInput");
+  const cgUploadBtn = document.getElementById("simpleCgUploadBtn");
+  const cgReplaceBtn = document.getElementById("simpleCgReplaceBtn");
+  const cgClearBtn = document.getElementById("simpleCgClearBtn");
+  const cgLibBtn = document.getElementById("simpleCgLibraryBtn");
+
+  function triggerCgInput() { if (cgInput) cgInput.click(); }
+  if (cgUploadBtn) cgUploadBtn.addEventListener("click", triggerCgInput);
+  if (cgReplaceBtn) cgReplaceBtn.addEventListener("click", triggerCgInput);
+  if (cgClearBtn) cgClearBtn.addEventListener("click", clearCgFromCurrentSlide);
+  if (cgInput) cgInput.addEventListener("change", async (e) => {
+    const file = e.target.files && e.target.files[0];
+    if (file) await attachCgFileToCurrentSlide(file);
+    e.target.value = "";
+  });
+  if (cgLibBtn) cgLibBtn.addEventListener("click", openCgLibraryModal);
+
+  // 預覽播放按鈕
+  const playBtn = document.getElementById("simplePreviewPlayBtn");
+  if (playBtn) playBtn.addEventListener("click", () => {
+    if (_vnsSimplePlayback.playing) stopSimplePlayback();
+    else startSimplePlayback();
+  });
+  // 輸出按鈕
+  const ssBtn = document.getElementById("simpleScreenshotBtn");
+  if (ssBtn) ssBtn.addEventListener("click", exportSimpleScreenshot);
+  const gifBtn = document.getElementById("simpleGifBtn");
+  if (gifBtn) gifBtn.addEventListener("click", exportSimpleGif);
+  const mp4Btn = document.getElementById("simpleMp4Btn");
+  if (mp4Btn) mp4Btn.addEventListener("click", exportSimpleMp4);
+
+  // 拖曳到 cg-zone 上傳
+  if (cgZone) {
+    cgZone.addEventListener("dragover", (e) => {
+      if (e.dataTransfer && e.dataTransfer.types && e.dataTransfer.types.includes("Files")) {
+        e.preventDefault();
+        cgZone.classList.add("dragover");
+      }
+    });
+    cgZone.addEventListener("dragleave", () => cgZone.classList.remove("dragover"));
+    cgZone.addEventListener("drop", async (e) => {
+      cgZone.classList.remove("dragover");
+      const files = e.dataTransfer && e.dataTransfer.files;
+      if (!files || !files.length) return;
+      const f = files[0];
+      if (f.type && f.type.startsWith("image/")) {
+        e.preventDefault();
+        e.stopPropagation();
+        await attachCgFileToCurrentSlide(f);
+      }
+    });
+  }
+})();
+
+// 填充對話框樣式 select(family optgroup → variant options + 自訂)
+function populateSimpleDialogStyleSelect() {
+  const sel = document.getElementById("simpleDialogStyleSelect");
+  if (!sel || typeof STYLE_PRESETS === "undefined") return;
+  // 紀錄當前值以便重填後還原
+  const prev = sel.value;
+  sel.innerHTML = "";
+
+  // 第一個選項:沿用全域樣式
+  const inheritOpt = document.createElement("option");
+  inheritOpt.value = "__inherit__";
+  inheritOpt.textContent = "(沿用全域樣式)";
+  sel.appendChild(inheritOpt);
+
+  for (const [familyId, family] of Object.entries(STYLE_PRESETS)) {
+    const og = document.createElement("optgroup");
+    og.label = family.name;
+    for (const [variantId, variant] of Object.entries(family.variants)) {
+      const opt = document.createElement("option");
+      opt.value = `${familyId}|${variantId}`;
+      opt.textContent = variant.name;
+      og.appendChild(opt);
+    }
+    // 自訂變體
+    const customOpt = document.createElement("option");
+    customOpt.value = `${familyId}|custom`;
+    customOpt.textContent = "自訂";
+    og.appendChild(customOpt);
+    sel.appendChild(og);
+  }
+  if (prev) sel.value = prev;
+}
+
+// 同步:當前 slide 的 dialogStyle 推回 select + apply CSS vars
+function syncDialogStyleForCurrentSlide() {
+  const sel = document.getElementById("simpleDialogStyleSelect");
+  if (!sel) return;
+  const cur = getCurrentSlide();
+  if (!cur) return;
+  if (cur.dialogStyle && cur.dialogStyle.family) {
+    const v = `${cur.dialogStyle.family}|${cur.dialogStyle.variant || ""}`;
+    if (sel.querySelector(`option[value="${v}"]`)) {
+      sel.value = v;
+      // 套到 CSS vars
+      if (typeof applyStylePreset === "function") {
+        applyStylePreset(cur.dialogStyle.family, cur.dialogStyle.variant);
+      }
+      return;
+    }
+  }
+  sel.value = "__inherit__";
+  // 沿用全域:不額外 apply,維持目前全域樣式
+}
+
+// === CG 庫 modal ===
+let _cgLibraryThumbUrls = [];  // 用於關閉時 revoke
+
+async function openCgLibraryModal() {
+  const modal = document.getElementById("cgLibraryModal");
+  if (!modal) return;
+  modal.classList.add("show");
+  await renderCgLibraryGrid();
+}
+function closeCgLibraryModal() {
+  const modal = document.getElementById("cgLibraryModal");
+  if (modal) modal.classList.remove("show");
+  // 釋放縮圖 Object URL(原圖 URL 在 _cgUrlCache 仍可能被使用,不在此 revoke)
+  for (const url of _cgLibraryThumbUrls) vnsRevokeCgUrl(url);
+  _cgLibraryThumbUrls = [];
+}
+
+async function renderCgLibraryGrid() {
+  const grid = document.getElementById("cgLibraryGrid");
+  const empty = document.getElementById("cgLibraryEmpty");
+  if (!grid) return;
+  // 先釋放前一輪縮圖
+  for (const url of _cgLibraryThumbUrls) vnsRevokeCgUrl(url);
+  _cgLibraryThumbUrls = [];
+  grid.innerHTML = "";
+
+  const items = await vnsListCgsWithThumbUrls();
+  if (!items.length) {
+    if (empty) empty.hidden = false;
+    return;
+  }
+  if (empty) empty.hidden = true;
+
+  for (const it of items) {
+    if (it.thumbUrl) _cgLibraryThumbUrls.push(it.thumbUrl);
+    const tile = document.createElement("div");
+    tile.className = "cg-library-tile";
+
+    const img = document.createElement("img");
+    img.alt = it.name || "";
+    img.loading = "lazy";
+    img.src = it.thumbUrl || "";
+    tile.appendChild(img);
+
+    const meta = document.createElement("div");
+    meta.className = "cg-library-tile-meta";
+    const name = document.createElement("span");
+    name.className = "cg-library-tile-name";
+    name.textContent = it.name || "(未命名)";
+    name.title = it.name || "";
+    const size = document.createElement("span");
+    size.className = "cg-library-tile-size";
+    size.textContent = vnsFmtBytes(it.fileSize);
+    meta.appendChild(name);
+    meta.appendChild(size);
+    tile.appendChild(meta);
+
+    const del = document.createElement("button");
+    del.className = "cg-library-tile-delete";
+    del.type = "button";
+    del.title = "刪除這張 CG";
+    del.setAttribute("aria-label", "刪除 CG");
+    del.textContent = "×";
+    del.addEventListener("click", async (e) => {
+      e.stopPropagation();
+      const ok = await inlineConfirm({
+        title: "刪除這張 CG?",
+        message: "若有攝影片正在引用它,該攝影片的 CG 會變空。\n此操作無法復原。",
+        okText: "確認刪除",
+        danger: true,
+      });
+      if (!ok) return;
+      const r = await vnsDeleteCgAndDereference(it.id);
+      _cgUrlCache.delete(it.id);
+      showToast(r.affectedProjects > 0
+        ? `已刪除(影響 ${r.affectedProjects} 個專案)`
+        : "已刪除", "info");
+      await renderCgLibraryGrid();
+      renderSimpleSlideList();
+      renderSimpleEditor();
+    });
+    tile.appendChild(del);
+
+    tile.addEventListener("click", () => {
+      attachCgIdToCurrentSlide(it.id);
+      closeCgLibraryModal();
+    });
+    grid.appendChild(tile);
+  }
+}
+
+const cgLibraryModalCloseEl = document.getElementById("cgLibraryModalClose");
+if (cgLibraryModalCloseEl) cgLibraryModalCloseEl.addEventListener("click", closeCgLibraryModal);
+const cgLibraryUploadBtnEl = document.getElementById("cgLibraryUploadBtn");
+const cgLibraryUploadInputEl = document.getElementById("cgLibraryUploadInput");
+if (cgLibraryUploadBtnEl && cgLibraryUploadInputEl) {
+  cgLibraryUploadBtnEl.addEventListener("click", () => cgLibraryUploadInputEl.click());
+  cgLibraryUploadInputEl.addEventListener("change", async (e) => {
+    const file = e.target.files && e.target.files[0];
+    if (file) {
+      const res = await vnsAddCgFromFile(file);
+      if (!res.id) showToast(res.error || "上傳失敗", "warn", 4000);
+      else await renderCgLibraryGrid();
+    }
+    e.target.value = "";
+  });
+}
+const cgLibraryModalEl = document.getElementById("cgLibraryModal");
+if (cgLibraryModalEl) cgLibraryModalEl.addEventListener("click", (e) => {
+  if (e.target === cgLibraryModalEl) closeCgLibraryModal();
+});
+
+// 設定 modal 內「🖼 管理 CG 庫」按鈕改成真的開 CG 庫 modal
+{
+  const _btn = document.getElementById("storageManageCgs");
+  if (_btn) {
+    // 移除前一個 toast handler 並接上正確的開 modal 行為
+    const fresh = _btn.cloneNode(true);
+    _btn.parentNode.replaceChild(fresh, _btn);
+    fresh.addEventListener("click", () => {
+      closeSettingsModal();
+      openCgLibraryModal();
+    });
+  }
 }
 
 function renderSimpleCards() {
@@ -8550,6 +11478,11 @@ function renderStepAtTime(step, elapsedMs) {
       }
       if (els.dialogText) {
         els.dialogText.classList.toggle("narration", step.type === "narration");
+        // 在打字機開始前就把樣式(字體/大小/粗/斜)套到容器,
+        // 這樣每一個被打出來的字從第一刻就用對的字型
+        if (step.type === "dialog" || step.type === "narration") {
+          applyStyleToDialogText(step);
+        }
         els.dialogText.textContent = "";
       }
     }
@@ -8710,6 +11643,7 @@ function estimateExportSize() {
       styleDefaults: state.styleDefaults,
       fontSizes: state.fontSizes,
       style: state.style,
+      customVariants: state.customVariants,
       loveInitial: state.loveInitial,
       mode: state.mode,
       simpleCards: state.simpleCards,
