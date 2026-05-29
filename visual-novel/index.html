@@ -44,10 +44,18 @@
 <div id="vns-idb-block" role="alertdialog" aria-labelledby="vns-idb-block-title">
   <div class="block-icon" aria-hidden="true">⚠️</div>
   <h1 id="vns-idb-block-title">此瀏覽器不支援 IndexedDB</h1>
-  <p>Visual Novel Studio 需要 IndexedDB 來儲存 CG 與攝影片資料。</p>
+  <p>Visual Novel Studio 需要 IndexedDB 來儲存 CG 與幕資料。</p>
   <p class="block-hint">
     可能原因:使用無痕 / 隱私模式、瀏覽器版本過舊。<br>
     建議使用一般瀏覽模式的 Chrome、Firefox 或 Edge 最新版本。
+  </p>
+</div>
+<div id="vns-fs-block" role="alertdialog" aria-labelledby="vns-fs-block-title">
+  <div class="block-icon" aria-hidden="true">⚠️</div>
+  <h1 id="vns-fs-block-title">此瀏覽器不支援檔案系統存取</h1>
+  <p>Visual Novel Studio 需要 Chrome 或 Edge 瀏覽器,以便將作品儲存到本地。</p>
+  <p class="block-hint">
+    請改用 Chrome 或 Edge 開啟。
   </p>
 </div>
 <script>
@@ -63,44 +71,33 @@
 
   <!-- Top Bar -->
   <header class="topbar">
-    <div class="brand">
-      <div class="brand-mark">Visual Novel Studio</div>
-    </div>
-    <div class="topbar-mode-toggle" role="tablist">
-      <button class="mode-btn active" data-mode="simple" title="一張卡 = 一張 CG + 對白">💬 簡易</button>
-      <button class="mode-btn" data-mode="detail" title="完整劇本語法">📝 細節</button>
-    </div>
-    <div class="topbar-status">
-      <span class="save-indicator" id="saveIndicator" title="自動存檔狀態">
-        <span class="save-dot"></span>
-        <span class="save-text">已儲存</span>
+    <div class="topbar-left">
+      <div class="brand">
+        <div class="brand-mark">Visual Novel Studio</div>
+      </div>
+      <!-- 任務 5:五種狀態指示(就緒時隱藏,由 setEditorStatus 控制) -->
+      <span class="editor-status" id="editorStatus" hidden>
+        <span class="editor-status-icon" id="editorStatusIcon" aria-hidden="true"></span>
+        <span class="editor-status-text" id="editorStatusText"></span>
       </span>
       <span class="storage-dot" id="storageDot" title="本機儲存量"></span>
     </div>
+    <!-- 細節版尚未完成,暫時隱藏「簡易／細節」切換入口。程式碼保留,未來把這個 toggle 加回即可重新開放。 -->
     <div class="topbar-actions">
-      <!-- 次要功能 -->
-      <button class="btn" id="btnProjects"><span class="btn-emoji">📁</span><span class="btn-text">我的專案</span></button>
-      <button class="btn" id="btnChars"><span class="btn-emoji">👥</span><span class="btn-text">角色</span></button>
+      <!-- 工具設定:樣式(高頻)→ 設定 -->
       <button class="btn" id="btnStyle"><span class="btn-emoji">🎨</span><span class="btn-text">樣式</span></button>
+      <button class="btn" id="btnSettings"><span class="btn-emoji">⚙</span><span class="btn-text">設定</span></button>
 
-      <!-- 視覺分隔線 -->
-      <span class="topbar-divider"></span>
-
-      <!-- 主要輸出 -->
+      <!-- 細節版專用(簡易版隱藏:setMode 的 topbarDetailOnly 控制) -->
+      <span class="topbar-divider topbar-divider-detail"></span>
+      <button class="btn" id="btnChars"><span class="btn-emoji">🎭</span><span class="btn-text">素材</span></button>
       <button class="btn" id="btnScreenshot"><span class="btn-emoji">📸</span><span class="btn-text">截圖</span></button>
       <button class="btn btn-primary" id="btnRecord"><span class="btn-emoji">🎬</span><span class="btn-text">錄影</span></button>
 
-      <!-- 系統設定 -->
-      <button class="btn" id="btnSettings"><span class="btn-emoji">⚙</span><span class="btn-text">設定</span></button>
-
-      <!-- 更多功能選單 -->
+      <!-- 更多功能選單(重設 / 最近開啟。任務 1:專案匯入匯出已移除,改用 💾 儲存 / 📂 開啟) -->
       <div class="topbar-more">
         <button class="btn btn-ghost" id="btnMore" title="更多" aria-haspopup="true">⋯</button>
         <div class="topbar-menu" id="topbarMenu" hidden>
-          <button class="topbar-menu-item" id="btnImport">📥 匯入專案</button>
-          <button class="topbar-menu-item" id="btnShare">📤 匯出專案</button>
-          <button class="topbar-menu-item" id="btnExportClip">📤 匯出分享字串</button>
-          <div class="topbar-menu-sep"></div>
           <button class="topbar-menu-item" id="btnResetScript">↻ 只重設劇本</button>
           <button class="topbar-menu-item" id="btnResetStyle">↻ 只重設樣式</button>
           <button class="topbar-menu-item danger" id="btnReset">↻ 全部重設</button>
@@ -109,6 +106,11 @@
           <div id="recentList"></div>
         </div>
       </div>
+
+      <!-- 檔案操作:垂直分隔線後 開啟 / 儲存(儲存固定在最右側,任務 1)-->
+      <span class="topbar-divider topbar-divider-files"></span>
+      <button class="btn" id="btnOpenFile"><span class="btn-emoji">📂</span><span class="btn-text">開啟</span></button>
+      <button class="btn btn-primary" id="btnSaveFile"><span class="btn-emoji">💾</span><span class="btn-text">儲存</span></button>
     </div>
   </header>
 
@@ -156,19 +158,37 @@
       </div>
     </section>
 
-    <!-- Simple Pane — 兩欄式:左側攝影片列表 / 右側編輯區 -->
+    <!-- Simple Pane — 兩欄式:左側幕列表 / 右側編輯區 -->
     <section class="pane pane-simple" id="paneSimple" hidden>
 
-      <!-- 左側:攝影片列表 -->
-      <aside class="simple-sidebar" aria-label="攝影片列表">
+      <!-- 左側:幕列表 -->
+      <aside class="simple-sidebar" aria-label="幕列表">
         <div class="simple-sidebar-header">
-          <span class="simple-sidebar-title">攝影片</span>
+          <span class="simple-sidebar-title">幕</span>
           <span class="simple-sidebar-count" id="simpleSidebarCount">0</span>
         </div>
         <div class="simple-slide-list" id="simpleSlideList">
           <!-- JS 動態填入 .simple-slide-item -->
         </div>
-        <button class="simple-add-slide-btn" id="simpleAddSlideBtn">＋ 新增攝影片</button>
+        <div class="simple-add-slide-wrap">
+          <button class="simple-add-slide-btn" id="simpleAddSlideBtn" type="button" aria-haspopup="true" aria-expanded="false">＋ 新增 ▾</button>
+          <div class="simple-add-slide-menu" id="simpleAddSlideMenu" hidden>
+            <button class="simple-add-slide-menu-item" data-add-type="dialog" type="button">
+              <span class="simple-add-menu-icon" aria-hidden="true">💬</span>
+              <span class="simple-add-menu-text">
+                <span class="simple-add-menu-title">一般幕</span>
+                <span class="simple-add-menu-desc">CG + 對話</span>
+              </span>
+            </button>
+            <button class="simple-add-slide-menu-item" data-add-type="choice" type="button">
+              <span class="simple-add-menu-icon" aria-hidden="true">🔀</span>
+              <span class="simple-add-menu-text">
+                <span class="simple-add-menu-title">選項幕</span>
+                <span class="simple-add-menu-desc">顯示選項並演出選擇</span>
+              </span>
+            </button>
+          </div>
+        </div>
       </aside>
 
       <!-- 右側:編輯區 -->
@@ -179,56 +199,49 @@
           <div class="simple-preview-stage" id="simplePreviewStage" data-ratio="16:9">
             <div class="simple-preview-empty" id="simplePreviewEmpty">
               <div class="simple-preview-empty-icon" aria-hidden="true">💬</div>
-              <p class="simple-preview-empty-text">選一張攝影片開始編輯</p>
-              <p class="simple-preview-empty-hint">或點「＋ 新增攝影片」建立第一張</p>
+              <p class="simple-preview-empty-text">還沒有任何幕</p>
+              <p class="simple-preview-empty-hint">點「＋ 新增幕」建立第一幕</p>
+            </div>
+            <div class="simple-preview-upload" id="simplePreviewUpload" hidden title="點擊或拖曳圖片上傳 CG">
+              <div class="simple-preview-upload-icon" aria-hidden="true">📷</div>
+              <p class="simple-preview-upload-text">拖曳圖片到此</p>
+              <p class="simple-preview-upload-hint">或點擊上傳</p>
+              <button class="btn btn-ghost" id="simplePreviewLibraryBtn" type="button">從 CG 庫選擇 📁</button>
             </div>
             <div class="simple-preview-cg" id="simplePreviewCg" hidden></div>
             <div class="simple-preview-dialog" id="simplePreviewDialog" hidden></div>
+            <!-- 選項幕功能:選項列表(下半部置中) -->
+            <div class="simple-preview-choices" id="simplePreviewChoices" hidden></div>
           </div>
         </div>
 
-        <!-- 方向 -->
-        <div class="simple-row simple-orientation">
-          <span class="simple-row-label">方向</span>
-          <div class="simple-ratio-toggle" role="tablist">
-            <button class="active" data-ratio="16:9" type="button">橫 16:9</button>
-            <button data-ratio="9:16" type="button">直 9:16</button>
-          </div>
-        </div>
-
-        <!-- CG / 背景 -->
-        <div class="simple-row simple-cg-row">
-          <div class="simple-row-label">📷 CG / 背景</div>
-          <div class="simple-cg-zone" id="simpleCgZone">
-            <div class="simple-cg-zone-empty" id="simpleCgZoneEmpty">
-              <p>拖曳圖片到此或點擊選擇</p>
-              <div class="simple-cg-zone-actions">
-                <button class="btn" id="simpleCgUploadBtn" type="button">上傳圖片</button>
-                <button class="btn btn-ghost" id="simpleCgLibraryBtn" type="button">從 CG 庫選擇 📁</button>
-              </div>
+        <!-- 任務 4:CG 操作列 — 僅在有 CG 時顯示(方向 + 換 / 移除) -->
+        <div class="simple-cg-ops" id="simpleCgOps" hidden>
+          <div class="simple-cg-ops-dir">
+            <span class="simple-row-label">方向</span>
+            <div class="simple-ratio-toggle" role="tablist">
+              <button class="active" data-ratio="16:9" type="button">橫</button>
+              <button data-ratio="9:16" type="button">直</button>
             </div>
-            <div class="simple-cg-zone-preview" id="simpleCgZonePreview" hidden>
-              <img id="simpleCgZoneImg" alt="">
-              <div class="simple-cg-zone-actions">
-                <button class="btn btn-ghost" id="simpleCgReplaceBtn" type="button">換一張</button>
-                <button class="btn btn-ghost" id="simpleCgClearBtn" type="button">移除</button>
-              </div>
-            </div>
-            <input type="file" id="simpleCgFileInput" accept="image/jpeg,image/png,image/webp,image/gif" hidden>
+          </div>
+          <div class="simple-cg-ops-actions">
+            <button class="btn btn-ghost" id="simpleCgReplaceBtn" type="button">↻ 換 CG</button>
+            <button class="btn btn-ghost" id="simpleCgClearBtn" type="button">✕ 移除 CG</button>
           </div>
         </div>
+        <!-- CG 上傳用的隱藏 file input(預覽框上傳入口 / 換 CG 共用) -->
+        <input type="file" id="simpleCgFileInput" accept="image/jpeg,image/png,image/webp,image/gif" hidden>
 
-        <!-- 對話框樣式 -->
-        <div class="simple-row simple-dialog-style-row">
-          <div class="simple-row-label">🎨 對話框樣式</div>
-          <div class="simple-dialog-style-line">
-            <select class="simple-dialog-style-select" id="simpleDialogStyleSelect"></select>
-            <button class="btn btn-ghost" id="simpleOpenStyleModalBtn" type="button">→ 調整</button>
-          </div>
+        <!-- 選項幕:選項編輯(取代對話 textarea) -->
+        <div class="simple-row simple-choice-row" id="simpleChoiceEditor" hidden>
+          <div class="simple-row-label">🔀 選項</div>
+          <div class="simple-choice-list" id="simpleChoiceList"></div>
+          <button class="btn btn-ghost simple-choice-add" id="simpleChoiceAddBtn" type="button">＋ 新增選項</button>
+          <div class="simple-choice-warn" id="simpleChoiceWarn" hidden>⚠ 必須勾選一個選項為正解</div>
         </div>
 
         <!-- 對話文字 -->
-        <div class="simple-row simple-dialog-text-row">
+        <div class="simple-row simple-dialog-text-row" id="simpleDialogTextRow">
           <div class="simple-row-label">💬 對話</div>
           <textarea
             id="simpleDialogText"
@@ -241,22 +254,38 @@
             autocapitalize="off"
           ></textarea>
           <div class="simple-syntax-hint">
-            💡 語法:<code>角色:對話</code> / <code>角色:(內心話)</code> / <code>(內心話)</code> / 直接文字=旁白
+            💡 <code>誰:對話</code> / <code>誰:(內心話)</code> / <code>(內心話)</code> / 純文字=旁白
           </div>
           <div class="simple-syntax-warn" id="simpleSyntaxWarn" hidden>
             ⚠ 簡易模式不支援 <code>[bg:]</code> / <code>[cg:]</code> / <code>[選項]</code> / <code>[好感度]</code> 等場景指令,需要這些功能請使用「細節模式」。
           </div>
         </div>
 
-        <!-- 輸出按鈕列 -->
-        <div class="simple-row simple-output-row">
-          <button class="btn" id="simplePreviewPlayBtn" type="button">▶ 預覽播放</button>
-          <button class="btn" id="simpleScreenshotBtn" type="button">📷 截圖</button>
-          <button class="btn" id="simpleGifBtn" type="button">🎬 GIF</button>
-          <button class="btn btn-primary" id="simpleMp4Btn" type="button">🎥 MP4</button>
-        </div>
-
       </div>
+
+      <!-- 任務 5:底部固定公版工具列 — 左:全域對話框樣式 / 右:輸出操作 -->
+      <footer class="simple-bottombar">
+        <div class="simple-bottombar-left">
+          <span class="simple-bottombar-label">🎨 對話框樣式</span>
+          <div class="simple-style-picker">
+            <button class="simple-style-trigger" id="simpleStyleTriggerBtn" type="button" aria-haspopup="true" aria-expanded="false">
+              <span id="simpleStyleTriggerLabel">—</span>
+              <span class="simple-style-caret" aria-hidden="true">▾</span>
+            </button>
+            <div class="simple-style-popover" id="simpleStylePopover" hidden>
+              <div class="simple-style-popover-list" id="simpleStylePopoverList"></div>
+              <button class="simple-style-advanced" id="simpleStyleAdvancedBtn" type="button">→ 進階設定(字體、自訂顏色)</button>
+            </div>
+          </div>
+        </div>
+        <span class="simple-bottombar-spacer"></span>
+        <div class="simple-bottombar-right">
+          <button class="btn" id="barPreviewPlayBtn" type="button">▶ 預覽</button>
+          <button class="btn" id="barScreenshotBtn" type="button">📷 截圖</button>
+          <button class="btn" id="barGifBtn" type="button">🎞 GIF</button>
+          <button class="btn btn-primary" id="barMp4Btn" type="button">🎥 MP4</button>
+        </div>
+      </footer>
     </section>
 
     <!-- Preview Pane -->
@@ -356,19 +385,33 @@
     <span class="app-footer-sep" aria-hidden="true">·</span>
     <a
       class="app-footer-link"
-      href="https://www.threads.net/@ilainosu.ffxiv"
+      href="https://www.threads.com/@ilai_sei"
       target="_blank"
       rel="noopener noreferrer"
-      aria-label="作者的 Threads 頁面(新分頁開啟)"
-    >Threads</a>
+      aria-label="作者的 Threads 帳號 ilai_sei(個人/工具,新分頁開啟)"
+    >@ilai_sei</a>
+    <span class="app-footer-sep" aria-hidden="true">·</span>
+    <a
+      class="app-footer-link"
+      href="https://www.threads.com/@ilainosu.ffxiv"
+      target="_blank"
+      rel="noopener noreferrer"
+      aria-label="作者的 FFXIV 創作 Threads 帳號 ilainosu.ffxiv(新分頁開啟)"
+    >@ilainosu.ffxiv</a>
     <span class="app-footer-sep" aria-hidden="true">·</span>
     <a
       class="app-footer-link"
       href="https://www.plurk.com/ilai_sei"
       target="_blank"
       rel="noopener noreferrer"
-      aria-label="作者的 Plurk 頁面(新分頁開啟)"
+      aria-label="作者的 Plurk 帳號 @ilai_sei(新分頁開啟)"
     >Plurk</a>
+    <span class="app-footer-sep" aria-hidden="true">·</span>
+    <a
+      class="app-footer-link"
+      href="../"
+      aria-label="回到 ilai's Studios 入口"
+    >All Studios</a>
   </footer>
 </div>
 
@@ -381,9 +424,9 @@
     </div>
     <div class="modal-body">
       <div class="tabs" role="tablist">
-        <button class="tab active" data-tab="chars">角色 立繪</button>
-        <button class="tab" data-tab="bgs">場景 背景</button>
-        <button class="tab" data-tab="cgs">CG 圖卡</button>
+        <button class="tab active" data-tab="chars">立繪</button>
+        <button class="tab" data-tab="bgs">背景</button>
+        <button class="tab" data-tab="cgs">CG</button>
       </div>
 
       <div class="tab-panel active" id="tab-chars" data-tab="chars">
@@ -435,81 +478,12 @@
 
       <div class="style-modal-hint">💡 想切換整個工具的明暗主題?請到右上角「⚙ 設定」</div>
 
-      <!-- Tab 切換(縮減為 2 分頁) -->
-      <div class="style-tabs">
-        <button class="style-tab active" data-tab="preset">風格組合</button>
-        <button class="style-tab" data-tab="fonts">字體設定</button>
-      </div>
-
-      <!-- Tab 0: 風格組合 -->
-      <div class="style-panel active" data-tab="preset">
+      <!-- 對話框配色(Latte / Espresso / 自訂) -->
+      <div class="style-section">
+        <div class="style-label">對話框配色</div>
         <div class="style-preset-grid" id="stylePresetGrid"></div>
-        <div class="style-anim-toggle" style="margin-top:16px; padding:12px 14px; background:rgba(196,162,101,0.06); border-radius:6px;">
-          <label style="display:flex; align-items:center; gap:8px; font-size:13px; cursor:pointer;">
-            <input type="checkbox" id="animationsToggle" checked>
-            <span>啟用動畫效果</span>
-          </label>
-          <div style="font-size:11px; color:var(--text-faint); margin-top:4px;">關閉後所有風格只顯示靜態效果</div>
-        </div>
-
-        <div class="style-section">
-          <div class="style-label">對話框形狀</div>
-          <div class="shape-grid" id="dialogShapeGrid"></div>
-        </div>
-        <div class="style-section">
-          <div class="style-label">角色光線</div>
-          <div class="light-mode-row">
-            <button class="light-mode-btn" data-mode="聚光" title="只有說話者正常亮度，其他角色罩半透明黑">
-              <div class="light-mode-icon spotlight"></div>
-              <span>聚光</span>
-            </button>
-            <button class="light-mode-btn" data-mode="同亮" title="所有角色都正常顯示">
-              <div class="light-mode-icon all-lit"></div>
-              <span>同亮</span>
-            </button>
-            <button class="light-mode-btn" data-mode="全暗" title="所有角色都罩半透明黑（用於回憶 / 夢境）">
-              <div class="light-mode-icon all-dim"></div>
-              <span>全暗</span>
-            </button>
-          </div>
-          <div class="style-preview-note">
-            劇本可用 <code>[聚光]</code> / <code>[同亮]</code> / <code>[全暗]</code>
-          </div>
-        </div>
-        <div class="style-section">
-          <div class="style-label">遊戲介面元素</div>
-          <div class="game-ui-settings">
-            <div class="ui-toggle-row">
-              <label class="ui-toggle-label">
-                <input type="checkbox" id="uiChapterToggle">
-                <span>章節標題</span>
-              </label>
-              <input type="text" id="uiChapterText" placeholder="第一章 — 序幕" maxlength="40">
-            </div>
-            <div class="ui-toggle-row ui-love-row">
-              <label class="ui-toggle-label">
-                <input type="checkbox" id="uiLoveToggle">
-                <span>好感度</span>
-              </label>
-              <select id="uiLoveCharSelect"></select>
-              <div class="ui-love-slider-wrap">
-                <input type="range" id="uiLoveValue" min="0" max="100" value="50">
-                <strong id="uiLoveValueLabel">50</strong>
-              </div>
-            </div>
-            <div class="ui-toggle-row">
-              <label class="ui-toggle-label">
-                <input type="checkbox" id="uiAutoSkipToggle">
-                <span>AUTO / SKIP 按鈕</span>
-              </label>
-              <span class="ui-toggle-hint">右下角裝飾按鈕（不可點）</span>
-            </div>
-          </div>
-        </div>
       </div>
 
-      <!-- Tab 1: 字體設定(合併原本字體預覽 + 全域預設) -->
-      <div class="style-panel" data-tab="fonts">
         <div class="defaults-section">
           <h3>🌐 全域預設樣式</h3>
           <p class="defaults-hint">行內 tag 優先。</p>
@@ -577,20 +551,18 @@
             <!-- JS 動態填入 -->
           </div>
         </div>
-      </div>
 
       </div>
       <!-- RIGHT:固定不滾的即時預覽 -->
       <aside class="style-modal-preview" aria-label="即時預覽">
         <div class="style-modal-preview-label">即時預覽</div>
         <div class="style-modal-preview-stage">
+          <!-- 任務 6:預覽順序 角色名 → 旁白 → 內心話 → 對話 -->
           <div class="style-preview-box" id="modalPreviewBox" data-shape="classic">
+            <div class="style-preview-speaker" id="modalPreviewSpeaker">學長</div>
             <div class="style-preview-narration" id="modalPreviewNarration">夕陽透過窗戶灑進來。</div>
-            <div class="style-preview-dialog-block">
-              <div class="style-preview-speaker" id="modalPreviewSpeaker">學長</div>
-              <div class="style-preview-dialog" id="modalPreviewDialog">你今天看起來不太一樣。</div>
-            </div>
             <div class="style-preview-inner" id="modalPreviewInner">(他在看我嗎?)</div>
+            <div class="style-preview-dialog" id="modalPreviewDialog">你今天看起來不太一樣。</div>
           </div>
         </div>
       </aside>
@@ -614,7 +586,7 @@
       <div class="cg-library-toolbar">
         <button class="btn btn-primary" id="cgLibraryUploadBtn">＋ 上傳新 CG</button>
         <input type="file" id="cgLibraryUploadInput" accept="image/jpeg,image/png,image/webp,image/gif" hidden>
-        <span class="cg-library-hint">點圖縮選用到當前攝影片</span>
+        <span class="cg-library-hint">點圖選用到當前幕</span>
       </div>
       <div class="cg-library-grid" id="cgLibraryGrid">
         <!-- JS 動態填入 -->
@@ -683,14 +655,8 @@
         <div class="storage-summary" id="storageSummary">偵測中…</div>
         <div class="storage-breakdown" id="storageBreakdown"></div>
         <div class="storage-actions">
-          <button class="btn" id="storageManageProjects">📁 管理專案</button>
           <button class="btn" id="storageManageCgs">🖼 管理 CG 庫</button>
           <button class="btn btn-ghost" id="storageRefresh" title="重新計算用量">↻</button>
-        </div>
-        <div class="storage-actions">
-          <button class="btn" id="storageExportProject">📦 匯出專案</button>
-          <button class="btn" id="storageImportProject">📥 匯入 .vns</button>
-          <input type="file" id="storageImportFileInput" accept=".vns,.zip,application/zip" style="display:none">
         </div>
         <div class="storage-persist-note" id="storagePersistNote" hidden></div>
       </div>
@@ -701,12 +667,23 @@
         <div class="settings-author-links">
           <a
             class="settings-author-link"
-            href="https://www.threads.net/@ilainosu.ffxiv"
+            href="https://www.threads.com/@ilai_sei"
             target="_blank"
             rel="noopener noreferrer"
-            aria-label="作者的 Threads 頁面(新分頁開啟)"
+            aria-label="作者的 Threads 主帳號 @ilai_sei(個人/工具,新分頁開啟)"
           >
-            <span class="settings-author-platform">Threads</span>
+            <span class="settings-author-platform">Threads (個人 / 工具)</span>
+            <span class="settings-author-handle">@ilai_sei</span>
+            <span class="settings-author-arrow" aria-hidden="true">→</span>
+          </a>
+          <a
+            class="settings-author-link"
+            href="https://www.threads.com/@ilainosu.ffxiv"
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label="作者的 FFXIV 創作 Threads 帳號 @ilainosu.ffxiv(新分頁開啟)"
+          >
+            <span class="settings-author-platform">Threads (FFXIV 創作)</span>
             <span class="settings-author-handle">@ilainosu.ffxiv</span>
             <span class="settings-author-arrow" aria-hidden="true">→</span>
           </a>
@@ -715,7 +692,7 @@
             href="https://www.plurk.com/ilai_sei"
             target="_blank"
             rel="noopener noreferrer"
-            aria-label="作者的 Plurk 頁面(新分頁開啟)"
+            aria-label="作者的 Plurk 帳號 @ilai_sei(新分頁開啟)"
           >
             <span class="settings-author-platform">Plurk</span>
             <span class="settings-author-handle">@ilai_sei</span>
@@ -1061,7 +1038,6 @@
 <input type="file" class="file-input" id="charImgInput" accept="image/jpeg,image/png,image/webp">
 <input type="file" class="file-input" id="bgImgInput" accept="image/jpeg,image/png,image/webp">
 <input type="file" class="file-input" id="cgImgInput" accept="image/jpeg,image/png,image/webp">
-<input type="file" class="file-input" id="projectInput" accept="application/json,.json">
 
 <!-- 立繪取景器 -->
 <div class="modal-backdrop" id="portraitCropperModal">
@@ -1164,6 +1140,7 @@
 <!-- toast -->
 <div class="toast-container" id="toastContainer"></div>
 
-<script src="index.js"></script>
+<script type="module" src="js/main.js"></script>
+<script defer src="index.js"></script>
 </body>
 </html>

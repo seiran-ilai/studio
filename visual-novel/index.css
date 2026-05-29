@@ -40,9 +40,12 @@
   --plum: #6b3d6f;
   --violet: #8b5fb8;
   --text-primary: #f3e9d8;
+  --text-secondary: #c4b3d4;
   --text-muted: #9a8aa8;
   --text-faint: #5d4d70;
   --danger: #d47186;
+  --accent: #86c79a;
+  --warning: #e0a86a;
 
   --font-display: "Cormorant Garamond", "Noto Serif TC", "PingFang TC", "Microsoft JhengHei", serif;
   --font-body: "PingFang TC", "Microsoft JhengHei", "Noto Sans TC", system-ui, sans-serif;
@@ -63,8 +66,11 @@
   --bg-elev: #e7d8b8;
   /* 文字:深棕灰、中棕、暖棕,皆與米白底維持 4.5:1 以上 */
   --text-primary: #2a1f15;
+  --text-secondary: #4a3a2a;
   --text-muted: #5d4a35;
   --text-faint: #7a6650;
+  --accent: #3f8a5a;
+  --warning: #b5701f;
   /* 邊框:加深飽和度,在米白底上才看得到 */
   --border-soft: rgba(168, 110, 50, 0.3);
   --border-strong: rgba(139, 107, 61, 0.6);
@@ -216,59 +222,40 @@ body::after {
   align-items: center;
 }
 
-.topbar-status {
+/* 任務 5:左側 = Logo + 五態狀態指示 + 儲存量警示點 */
+.topbar-left {
   display: flex;
   align-items: center;
   gap: 14px;
-  margin-left: auto;
-  margin-right: 14px;
-  font-family: var(--font-mono);
-  font-size: 11px;
-  color: var(--text-faint);
 }
-.save-indicator {
+
+/* 五態狀態指示:就緒(hidden)/編輯中/暫存瀏覽器/已儲存/有未儲存變更 */
+.editor-status {
   display: inline-flex;
   align-items: center;
   gap: 6px;
   user-select: none;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.02em;
+  color: var(--text-muted);
   transition: color 0.2s ease;
 }
-.save-dot {
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  background: var(--gold);
-  box-shadow: 0 0 6px rgba(196, 162, 101, 0.5);
-  transition: background 0.2s ease, box-shadow 0.2s ease;
+.editor-status[hidden] { display: none; }
+.editor-status-icon {
+  font-size: 11px;
+  line-height: 1;
 }
-.save-indicator.saving { color: var(--text-muted); }
-.save-indicator.saving .save-dot {
-  background: var(--rose);
-  box-shadow: 0 0 6px rgba(212, 134, 154, 0.6);
-  animation: save-pulse 0.8s ease infinite;
+.editor-status.is-editing { color: var(--text-muted); }
+.editor-status.is-editing .editor-status-icon {
+  animation: editor-status-pulse 1.2s ease-in-out infinite;
 }
-.save-indicator.saved { color: var(--text-faint); }
-.save-indicator.saved .save-dot {
-  background: var(--gold);
-  box-shadow: 0 0 6px rgba(196, 162, 101, 0.5);
-}
-.save-indicator.error { color: var(--danger); }
-.save-indicator.error .save-dot {
-  background: var(--danger);
-  box-shadow: 0 0 6px rgba(212, 113, 134, 0.6);
-}
-@keyframes save-pulse {
-  0%, 100% { transform: scale(1); opacity: 1; }
-  50% { transform: scale(1.4); opacity: 0.6; }
-}
-.save-indicator.dirty { color: var(--gold-bright); }
-.save-indicator.dirty .save-dot {
-  background: var(--gold-bright);
-  box-shadow: 0 0 8px rgba(230, 201, 137, 0.5);
-  animation: save-dirty-pulse 1.6s ease-in-out infinite;
-}
-@keyframes save-dirty-pulse {
-  0%, 100% { opacity: 0.5; }
+.editor-status.is-cached { color: var(--text-secondary); }
+.editor-status.is-saved { color: var(--accent); }
+.editor-status.is-unsaved { color: var(--warning); }
+.editor-status.is-error { color: var(--danger); }
+@keyframes editor-status-pulse {
+  0%, 100% { opacity: 0.4; }
   50% { opacity: 1; }
 }
 
@@ -2513,11 +2500,6 @@ body::after {
 }
 .style-preview-inner {
   font-style: italic;
-  margin-top: 12px;
-  margin-bottom: 0;
-}
-.style-preview-dialog-block {
-  margin: 4px 0;
 }
 .style-preview-speaker {
   color: var(--style-speaker-color, var(--gold-bright));
@@ -2900,7 +2882,7 @@ body::after {
 }
 .settings-author-link {
   display: grid;
-  grid-template-columns: 80px 1fr auto;
+  grid-template-columns: minmax(150px, max-content) 1fr auto;
   align-items: center;
   gap: 10px;
   padding: 8px 12px;
@@ -2918,10 +2900,15 @@ body::after {
   color: var(--text-primary);
   transform: translateX(2px);
 }
+.settings-author-link:focus-visible {
+  outline: 2px solid var(--gold-bright);
+  outline-offset: 2px;
+}
 .settings-author-platform {
   color: var(--gold-bright);
   font-weight: 500;
   letter-spacing: 0.05em;
+  white-space: nowrap;
 }
 .settings-author-handle {
   font-family: var(--font-mono);
@@ -2982,6 +2969,10 @@ body::after {
 .app-footer-link:hover {
   color: var(--gold-bright);
   background: rgba(196, 162, 101, 0.08);
+}
+.app-footer-link:focus-visible {
+  outline: 2px solid var(--gold-bright);
+  outline-offset: 2px;
 }
 .shape-grid {
   display: grid;
@@ -3942,11 +3933,14 @@ body::after {
   flex: 1;
   display: grid;
   grid-template-columns: 240px minmax(0, 1fr);
+  grid-template-rows: minmax(0, 1fr) auto;
   gap: 0;
   background: linear-gradient(180deg, rgba(23, 13, 36, 0.4), transparent);
   overflow: hidden;
   min-height: 0;
 }
+/* 底部工具列橫跨兩欄,固定在 pane 底部(任務 5) */
+.simple-bottombar { grid-column: 1 / -1; grid-row: 2; }
 .pane-simple[hidden] { display: none; }
 .pane-simple.dragover {
   background: rgba(196, 162, 101, 0.08);
@@ -3954,7 +3948,7 @@ body::after {
   outline-offset: -8px;
 }
 
-/* ===== 左側:攝影片列表 ===== */
+/* ===== 左側:幕列表 ===== */
 .simple-sidebar {
   display: flex;
   flex-direction: column;
@@ -3991,12 +3985,13 @@ body::after {
 .simple-slide-item {
   position: relative;
   display: grid;
-  grid-template-columns: 56px 1fr;
+  grid-template-columns: 40px 1fr;
+  align-items: center;
   gap: 10px;
-  padding: 8px;
+  padding: 6px;
   background: var(--bg-elev);
   border: 1px solid var(--border-soft);
-  border-radius: 4px;
+  border-radius: 6px;
   cursor: pointer;
   transition: border-color 0.15s, background 0.15s;
 }
@@ -4010,9 +4005,10 @@ body::after {
   border-top: 2px solid var(--gold-bright);
 }
 .simple-slide-thumb {
-  width: 56px;
-  height: 56px;
-  border-radius: 3px;
+  position: relative;
+  width: 40px;
+  height: 40px;
+  border-radius: 4px;
   background: #000;
   background-size: cover;
   background-position: center;
@@ -4024,24 +4020,40 @@ body::after {
   align-items: center;
   justify-content: center;
   color: var(--text-faint);
-  font-size: 18px;
+  font-size: 15px;
 }
+/* 選項幕功能:CG 縮圖角落的 🔀 標記 */
+.simple-slide-thumb-choice {
+  position: absolute;
+  right: -3px;
+  bottom: -3px;
+  font-size: 11px;
+  line-height: 1;
+  padding: 2px;
+  background: var(--bg-panel);
+  border-radius: 5px;
+  box-shadow: 0 0 0 1px var(--border-strong);
+}
+/* 選項幕卡片:左側細 accent 區分 */
+.simple-slide-item.choice { border-left: 2px solid rgba(196, 162, 101, 0.5); }
+.simple-slide-lines.warn { color: var(--rose); }
 .simple-slide-meta {
   display: flex;
-  flex-direction: column;
-  gap: 2px;
+  flex-direction: row;
+  align-items: baseline;
+  gap: 6px;
   min-width: 0;
-  justify-content: center;
 }
 .simple-slide-index {
-  font-family: var(--font-mono);
-  font-size: 10px;
-  color: var(--text-faint);
-  letter-spacing: 0.1em;
+  font-size: 13px;
+  color: var(--text-primary);
+  letter-spacing: 0.04em;
+  font-weight: 500;
+  white-space: nowrap;
 }
 .simple-slide-lines {
-  font-size: 12px;
-  color: var(--text-muted);
+  font-size: 11px;
+  color: var(--text-faint);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -4070,15 +4082,19 @@ body::after {
 }
 .simple-slide-item:hover .simple-slide-delete { opacity: 1; }
 .simple-slide-delete:hover { color: var(--danger); }
-.simple-add-slide-btn {
+.simple-add-slide-wrap {
+  position: relative;
   flex-shrink: 0;
   margin: 10px;
+}
+.simple-add-slide-btn {
+  width: 100%;
   padding: 10px;
   background: transparent;
   border: 1px dashed var(--border-strong);
   color: var(--text-muted);
   font-size: 12px;
-  border-radius: 4px;
+  border-radius: 6px;
   cursor: pointer;
   font-family: var(--font-body);
   transition: all 0.15s;
@@ -4088,6 +4104,40 @@ body::after {
   border-color: var(--gold-bright);
   background: rgba(196, 162, 101, 0.04);
 }
+/* 選項幕功能:新增幕下拉選單(往上展開) */
+.simple-add-slide-menu {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: calc(100% + 6px);
+  background: var(--bg-panel);
+  border: 1px solid var(--border-strong);
+  border-radius: 10px;
+  box-shadow: 0 14px 40px -14px rgba(0, 0, 0, 0.7);
+  overflow: hidden;
+  z-index: 50;
+}
+.simple-add-slide-menu[hidden] { display: none; }
+.simple-add-slide-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 10px 12px;
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid var(--border-soft);
+  color: var(--text-primary);
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.14s;
+}
+.simple-add-slide-menu-item:last-child { border-bottom: none; }
+.simple-add-slide-menu-item:hover { background: rgba(196, 162, 101, 0.08); }
+.simple-add-menu-icon { font-size: 18px; line-height: 1; flex-shrink: 0; }
+.simple-add-menu-text { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.simple-add-menu-title { font-size: 13px; font-weight: 500; }
+.simple-add-menu-desc { font-size: 11px; color: var(--text-faint); }
 
 /* ===== 右側:編輯區 ===== */
 .simple-editor {
@@ -4107,12 +4157,13 @@ body::after {
 .simple-preview-stage {
   position: relative;
   width: 100%;
-  max-width: 680px;
+  max-width: 760px;
   /* 沒有 CG 時用變體的舞台底色,fallback 到主題的 bg-elev(不要硬塗黑) */
   background: var(--style-stage-bg, var(--bg-elev));
-  border-radius: 4px;
+  border-radius: 6px;
   overflow: hidden;
-  box-shadow: 0 0 0 1px var(--border-soft), 0 20px 60px -20px rgba(0, 0, 0, 0.7);
+  /* 任務 7-2:預覽框是視覺主角 — 加強邊框對比 */
+  box-shadow: 0 0 0 1px var(--border-strong), 0 24px 70px -22px rgba(0, 0, 0, 0.75);
 }
 .simple-preview-stage[data-ratio="16:9"] { aspect-ratio: 16 / 9; }
 .simple-preview-stage[data-ratio="9:16"] {
@@ -4150,6 +4201,57 @@ body::after {
   color: var(--text-faint);
   letter-spacing: 0.05em;
   margin: 0;
+}
+/* 任務 3:已選幕但無 CG 時,預覽框整片是上傳入口 */
+.simple-preview-upload {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 24px;
+  text-align: center;
+  cursor: pointer;
+  border: 1.5px dashed var(--border-soft);
+  border-radius: 4px;
+  color: var(--text-muted);
+  transition: border-color 0.18s ease, background 0.18s ease, color 0.18s ease;
+}
+.simple-preview-upload:hover {
+  border-color: var(--gold, var(--text-muted));
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--text-primary);
+}
+.simple-preview-upload-icon {
+  font-size: 44px;
+  opacity: 0.5;
+  line-height: 1;
+}
+.simple-preview-upload-text {
+  font-family: var(--font-display);
+  font-style: italic;
+  font-size: 16px;
+  color: var(--text-primary);
+  letter-spacing: 0.04em;
+  margin: 0;
+}
+.simple-preview-upload-hint {
+  font-size: 12px;
+  color: var(--text-faint);
+  letter-spacing: 0.05em;
+  margin: 0 0 4px;
+}
+.simple-preview-upload .btn { pointer-events: auto; }
+/* 拖曳檔案進預覽框時的高亮 */
+.simple-preview-stage.dragover {
+  box-shadow: 0 0 0 2px var(--gold, var(--accent, #c9a86a)),
+    0 20px 60px -20px rgba(0, 0, 0, 0.7);
+}
+.simple-preview-stage.dragover .simple-preview-upload {
+  border-color: var(--gold, var(--text-primary));
+  background: rgba(255, 255, 255, 0.05);
 }
 .simple-preview-cg {
   position: absolute;
@@ -4196,6 +4298,62 @@ body::after {
 .simple-preview-narration { color: var(--text-muted); opacity: 0.85; }
 .simple-preview-inner { font-style: italic; color: var(--text-muted); }
 
+/* ===== 選項幕功能:選項在預覽框的視覺(套用當前對話框樣式配色) ===== */
+.simple-preview-choices {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 7%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 0 8%;
+  /* 播放動畫:整體淡入/淡出 + 滑入 */
+  transition: opacity 0.5s ease, transform 0.5s ease;
+}
+.simple-preview-choices[hidden] { display: none; }
+.simple-preview-choices.anim-enter { opacity: 0; transform: translateY(16px); }
+.simple-preview-choices.anim-exit { opacity: 0; }
+.simple-choice-opt {
+  min-width: 46%;
+  max-width: 84%;
+  text-align: center;
+  padding: 10px 24px;
+  /* 跟隨當前對話框樣式 */
+  background: var(--style-dialog-bg, rgba(var(--dialog-bg-rgb), var(--dialog-bg-alpha)));
+  border: var(--style-dialog-border-width, 2px) solid var(--style-dialog-border, var(--gold));
+  color: var(--style-dialog-text-color, var(--text-primary));
+  font-family: var(--style-dialog-text-font, var(--font-body));
+  letter-spacing: var(--style-dialog-text-spacing, 0.02em);
+  border-radius: 8px;
+  font-size: 15px;
+  line-height: 1.4;
+  transition: opacity 0.4s ease, box-shadow 0.4s ease, border-color 0.4s ease;
+}
+.simple-choice-opt.empty { opacity: 0.5; min-height: 1.4em; }
+.simple-choice-opt.empty::after { content: "(空白選項)"; color: var(--text-faint); }
+/* 選中:邊框高亮 + 輕微 glow,accent 取自 speaker 色 */
+.simple-choice-opt.selected {
+  border-color: var(--style-speaker-color, var(--gold-bright));
+  box-shadow: 0 0 14px var(--style-speaker-color, var(--gold-bright));
+}
+/* 未選中:淡化 */
+.simple-choice-opt.faded { opacity: 0.3; }
+/* 編輯時的微妙正解提示:左側金色細線 + 極淡底色,不破壞播放時才顯現的驚喜 */
+.simple-choice-opt.correct-hint {
+  border-left: 3px solid var(--gold-bright);
+  background-image: linear-gradient(90deg, rgba(196, 162, 101, 0.1), transparent 40%);
+}
+/* 直向(9:16)選項加寬、字距收一點 */
+.simple-preview-stage[data-ratio="9:16"] .simple-preview-choices { bottom: 9%; gap: 8px; }
+.simple-preview-stage[data-ratio="9:16"] .simple-choice-opt {
+  min-width: 70%;
+  max-width: 92%;
+  font-size: 14px;
+  padding: 9px 18px;
+}
+
 /* 通用 row */
 .simple-row {
   display: flex;
@@ -4208,12 +4366,26 @@ body::after {
   letter-spacing: 0.05em;
   font-weight: 500;
 }
-.simple-orientation {
-  flex-direction: row;
+/* 任務 4:CG 操作列(僅有 CG 時顯示)— 左:方向 / 右:換、移除 */
+.simple-cg-ops {
+  display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: 12px;
+  flex-wrap: wrap;
 }
-.simple-orientation .simple-row-label { margin: 0; }
+.simple-cg-ops[hidden] { display: none; }
+.simple-cg-ops-dir {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.simple-cg-ops-dir .simple-row-label { margin: 0; }
+.simple-cg-ops-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
 .simple-ratio-toggle {
   display: inline-flex;
   background: rgba(23, 13, 36, 0.6);
@@ -4239,72 +4411,6 @@ body::after {
   font-weight: 600;
 }
 
-/* CG 區 */
-.simple-cg-zone {
-  border: 1px dashed var(--border-soft);
-  border-radius: 6px;
-  background: rgba(196, 162, 101, 0.03);
-  padding: 16px;
-  min-height: 120px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  position: relative;
-  transition: border-color 0.15s, background 0.15s;
-}
-.simple-cg-zone.dragover {
-  border-color: var(--gold-bright);
-  background: rgba(196, 162, 101, 0.1);
-}
-.simple-cg-zone-empty {
-  text-align: center;
-  color: var(--text-muted);
-  font-size: 13px;
-}
-.simple-cg-zone-empty p { margin-bottom: 12px; }
-.simple-cg-zone-actions {
-  display: flex;
-  gap: 8px;
-  justify-content: center;
-  flex-wrap: wrap;
-}
-.simple-cg-zone-preview {
-  width: 100%;
-  display: flex;
-  align-items: center;
-  gap: 14px;
-}
-.simple-cg-zone-preview img {
-  width: 110px;
-  height: 62px;
-  object-fit: cover;
-  border-radius: 4px;
-  border: 1px solid var(--border-soft);
-  background: #000;
-  flex-shrink: 0;
-}
-
-/* 對話框樣式選擇 */
-.simple-dialog-style-line {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-.simple-dialog-style-select {
-  flex: 1;
-  background: var(--bg-elev);
-  border: 1px solid var(--border-soft);
-  color: var(--text-primary);
-  padding: 8px 12px;
-  font-family: var(--font-body);
-  font-size: 13px;
-  border-radius: 4px;
-  cursor: pointer;
-}
-.simple-dialog-style-select:focus {
-  outline: none;
-  border-color: var(--gold-bright);
-}
 
 /* 對話 textarea */
 .simple-dialog-text {
@@ -4358,16 +4464,213 @@ body::after {
   font-size: 11px;
 }
 
-/* 輸出按鈕列 */
-.simple-output-row {
-  flex-direction: row;
+/* ===== 選項幕功能:選項編輯介面 ===== */
+.simple-choice-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.simple-choice-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 8px;
+  background: var(--bg-elev);
+  border: 1px solid var(--border-soft);
+  border-radius: 8px;
+  transition: border-color 0.14s, background 0.14s, opacity 0.14s;
+}
+.simple-choice-item:hover { border-color: var(--border-strong); }
+.simple-choice-item.dragging { opacity: 0.5; }
+.simple-choice-item.drop-target { border-top: 2px solid var(--gold-bright); }
+.simple-choice-correct {
+  flex-shrink: 0;
+  width: 26px;
+  height: 26px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  color: var(--text-faint);
+  font-size: 16px;
+  cursor: pointer;
+  border-radius: 6px;
+  transition: color 0.14s, background 0.14s;
+}
+.simple-choice-correct:hover { background: rgba(196, 162, 101, 0.1); color: var(--text-muted); }
+.simple-choice-correct.on { color: var(--gold-bright); }
+.simple-choice-num {
+  flex-shrink: 0;
+  width: 18px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--text-faint);
+  text-align: right;
+  cursor: grab;
+}
+.simple-choice-input {
+  flex: 1;
+  min-width: 0;
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid transparent;
+  color: var(--text-primary);
+  font-family: var(--font-body);
+  font-size: 14px;
+  padding: 6px 4px;
+  transition: border-color 0.14s;
+}
+.simple-choice-input:focus {
+  outline: none;
+  border-bottom-color: var(--gold-bright);
+}
+.simple-choice-input::placeholder { color: var(--text-faint); }
+.simple-choice-del {
+  flex-shrink: 0;
+  width: 26px;
+  height: 26px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  color: var(--text-faint);
+  font-size: 13px;
+  cursor: pointer;
+  border-radius: 6px;
+  transition: color 0.14s, background 0.14s;
+}
+.simple-choice-del:hover:not(:disabled) { color: var(--danger); background: rgba(212, 134, 154, 0.08); }
+.simple-choice-del:disabled { opacity: 0.3; cursor: not-allowed; }
+.simple-choice-add {
+  align-self: flex-start;
+  margin-top: 4px;
+}
+.simple-choice-add:disabled { opacity: 0.4; cursor: not-allowed; }
+.simple-choice-warn {
+  font-size: 11px;
+  color: var(--rose);
+  line-height: 1.7;
+  padding: 8px 10px;
+  margin-top: 4px;
+  background: rgba(212, 134, 154, 0.06);
+  border-left: 2px solid var(--rose);
+  border-radius: 3px;
+}
+
+/* 任務 7-4:統一簡易版按鈕(圓角 8px、高度 36px)— 僅限簡易版,不動 topbar / modal 的全域 .btn */
+.pane-simple .btn {
+  border-radius: 8px;
+  min-height: 36px;
+}
+
+/* ===== 任務 5:底部固定公版工具列 ===== */
+.simple-bottombar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 20px;
+  background: var(--bg-panel);
+  border-top: 1px solid var(--border-soft);
+  flex-wrap: wrap;
+}
+.simple-bottombar-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+.simple-bottombar-label {
+  font-size: 12px;
+  color: var(--text-muted);
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+}
+.simple-bottombar-spacer { flex: 1; }
+.simple-bottombar-right {
+  display: flex;
   align-items: center;
   gap: 8px;
   flex-wrap: wrap;
-  margin-top: 6px;
-  padding-top: 14px;
-  border-top: 1px solid var(--border-soft);
 }
+
+/* 對話框樣式 trigger + popover */
+.simple-style-picker { position: relative; }
+.simple-style-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 36px;
+  padding: 0 12px;
+  background: var(--bg-elev);
+  border: 1px solid var(--border-soft);
+  border-radius: 8px;
+  color: var(--text-primary);
+  font-size: 13px;
+  cursor: pointer;
+  transition: border-color 0.16s ease, background 0.16s ease;
+}
+.simple-style-trigger:hover { border-color: var(--border-strong); }
+.simple-style-trigger[aria-expanded="true"] { border-color: var(--gold); }
+.simple-style-caret { font-size: 10px; color: var(--text-faint); }
+
+.simple-style-popover {
+  position: absolute;
+  left: 0;
+  bottom: calc(100% + 8px);
+  width: 320px;
+  max-width: 80vw;
+  max-height: 60vh;
+  overflow-y: auto;
+  padding: 14px;
+  background: var(--bg-panel);
+  border: 1px solid var(--border-strong);
+  border-radius: 12px;
+  box-shadow: 0 18px 50px -16px rgba(0, 0, 0, 0.7);
+  z-index: 60;
+}
+.simple-style-popover[hidden] { display: none; }
+.simple-style-fam { margin-bottom: 14px; }
+.simple-style-fam-name {
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+  margin-bottom: 8px;
+}
+.simple-style-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.simple-style-chip {
+  padding: 6px 12px;
+  background: var(--bg-elev);
+  border: 1px solid var(--border-soft);
+  border-radius: 8px;
+  color: var(--text-primary);
+  font-size: 12px;
+  cursor: pointer;
+  transition: border-color 0.14s ease, background 0.14s ease, color 0.14s ease;
+}
+.simple-style-chip:hover { border-color: var(--border-strong); }
+.simple-style-chip.active {
+  border-color: var(--gold);
+  background: rgba(196, 162, 101, 0.16);
+  color: var(--gold-bright);
+}
+.simple-style-chip--custom { font-style: italic; color: var(--text-muted); }
+.simple-style-advanced {
+  display: block;
+  width: 100%;
+  margin-top: 4px;
+  padding: 10px;
+  background: transparent;
+  border: 1px dashed var(--border-soft);
+  border-radius: 8px;
+  color: var(--text-muted);
+  font-size: 12px;
+  cursor: pointer;
+  transition: border-color 0.14s ease, color 0.14s ease;
+}
+.simple-style-advanced:hover { border-color: var(--gold); color: var(--text-primary); }
 
 .simple-cards-container {
   display: flex;
@@ -5494,15 +5797,10 @@ body::after {
 :root[data-theme="daylight"] .sh-style-tag { color: #6a3d96; }
 :root[data-theme="daylight"] .sh-choice-marker { color: #6a3d96; }
 
-/* === save indicator 點點:在米白底上發光要更實一點 === */
-:root[data-theme="daylight"] .save-dot,
+/* === storage 點點:在米白底上發光要更實一點 === */
 :root[data-theme="daylight"] .storage-dot {
   background: #8b6b3d;
   box-shadow: 0 0 6px rgba(139, 107, 61, 0.45);
-}
-:root[data-theme="daylight"] .save-indicator.dirty .save-dot {
-  background: #c4a265;
-  box-shadow: 0 0 8px rgba(139, 107, 61, 0.5);
 }
 
 /* === ratio-toggle / mode-btn 未選中的文字也要可讀 === */
@@ -5535,7 +5833,8 @@ body::after {
    Mobile block — 工具僅支援桌面 (≥1024px),小螢幕全屏覆蓋
    ============================================================ */
 #mobile-block,
-#vns-idb-block {
+#vns-idb-block,
+#vns-fs-block {
   display: none;
   position: fixed;
   inset: 0;
@@ -5552,15 +5851,18 @@ body::after {
   cursor: pointer;
 }
 #mobile-block.show,
-#vns-idb-block.show { display: flex; }
+#vns-idb-block.show,
+#vns-fs-block.show { display: flex; }
 #mobile-block .block-icon,
-#vns-idb-block .block-icon {
+#vns-idb-block .block-icon,
+#vns-fs-block .block-icon {
   font-size: 56px;
   margin-bottom: 22px;
   line-height: 1;
 }
 #mobile-block h1,
-#vns-idb-block h1 {
+#vns-idb-block h1,
+#vns-fs-block h1 {
   font-family: var(--font-display);
   font-style: italic;
   font-size: 28px;
@@ -5570,21 +5872,24 @@ body::after {
   font-weight: 500;
 }
 #mobile-block p,
-#vns-idb-block p {
+#vns-idb-block p,
+#vns-fs-block p {
   color: var(--text-muted);
   font-size: 14px;
   line-height: 1.9;
   margin: 0;
 }
 #mobile-block .block-hint,
-#vns-idb-block .block-hint {
+#vns-idb-block .block-hint,
+#vns-fs-block .block-hint {
   color: var(--text-faint);
   font-size: 12px;
   margin-top: 24px;
   letter-spacing: 0.05em;
 }
-/* IDB block 不需要點擊互動,游標保持預設 */
-#vns-idb-block { cursor: default; }
+/* IDB / FS block 不需要點擊互動,游標保持預設 */
+#vns-idb-block,
+#vns-fs-block { cursor: default; }
 
 /* ===== 簡易模式輸出進度浮層 ===== */
 .vns-export-overlay {

@@ -651,10 +651,18 @@ input[type=checkbox] {
   border-color: var(--a2);
   color: var(--t);
 }
+/* 作者連結首欄需容納「Threads (FFXIV 創作)」標籤 */
+.about-link { grid-template-columns: minmax(135px, max-content) 1fr auto; }
+.about-link:focus-visible,
+.site-footer a:focus-visible {
+  outline: 2px solid var(--a2);
+  outline-offset: 2px;
+}
 .about-platform {
   color: var(--a2);
   font-weight: 600;
   letter-spacing: 0.08em;
+  white-space: nowrap;
 }
 .about-handle {
   font-family: 'Share Tech Mono', monospace;

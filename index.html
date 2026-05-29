@@ -183,7 +183,7 @@
   }
   .author-link {
     display: inline-grid;
-    grid-template-columns: 70px 1fr auto;
+    grid-template-columns: minmax(150px, max-content) 1fr auto;
     align-items: center;
     gap: 14px;
     padding: 8px 18px;
@@ -193,7 +193,7 @@
     color: var(--text-secondary);
     text-decoration: none;
     font-size: 14px;
-    min-width: 280px;
+    min-width: 320px;
     transition: all 0.18s ease;
   }
   .author-link:hover {
@@ -202,11 +202,16 @@
     color: var(--text-primary);
     transform: translateX(2px);
   }
+  .author-link:focus-visible {
+    outline: 2px solid var(--gold-bright);
+    outline-offset: 2px;
+  }
   .author-platform {
     color: var(--gold-bright);
     font-weight: 500;
     letter-spacing: 0.05em;
     text-align: left;
+    white-space: nowrap;
   }
   .author-handle {
     font-family: ui-monospace, "SF Mono", "JetBrains Mono", "Consolas", monospace;
@@ -324,12 +329,23 @@
     <div class="author-links">
       <a
         class="author-link"
-        href="https://www.threads.net/@ilainosu.ffxiv"
+        href="https://www.threads.com/@ilai_sei"
         target="_blank"
         rel="noopener noreferrer"
-        aria-label="作者的 Threads 頁面(新分頁開啟)"
+        aria-label="作者的 Threads 主帳號 @ilai_sei(個人/工具,新分頁開啟)"
       >
-        <span class="author-platform">Threads</span>
+        <span class="author-platform">Threads (個人 / 工具)</span>
+        <span class="author-handle">@ilai_sei</span>
+        <span class="author-arrow" aria-hidden="true">→</span>
+      </a>
+      <a
+        class="author-link"
+        href="https://www.threads.com/@ilainosu.ffxiv"
+        target="_blank"
+        rel="noopener noreferrer"
+        aria-label="作者的 FFXIV 創作 Threads 帳號 @ilainosu.ffxiv(新分頁開啟)"
+      >
+        <span class="author-platform">Threads (FFXIV 創作)</span>
         <span class="author-handle">@ilainosu.ffxiv</span>
         <span class="author-arrow" aria-hidden="true">→</span>
       </a>
@@ -338,7 +354,7 @@
         href="https://www.plurk.com/ilai_sei"
         target="_blank"
         rel="noopener noreferrer"
-        aria-label="作者的 Plurk 頁面(新分頁開啟)"
+        aria-label="作者的 Plurk 帳號 @ilai_sei(新分頁開啟)"
       >
         <span class="author-platform">Plurk</span>
         <span class="author-handle">@ilai_sei</span>

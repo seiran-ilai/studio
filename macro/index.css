@@ -1469,10 +1469,18 @@
     color: var(--text-primary);
     transform: translateX(2px);
   }
+  /* 作者連結首欄需容納「Threads (FFXIV 創作)」標籤 */
+  .about-link { grid-template-columns: minmax(140px, max-content) 1fr auto; }
+  .about-link:focus-visible,
+  .site-footer a:focus-visible {
+    outline: 2px solid var(--aether-blue);
+    outline-offset: 2px;
+  }
   .about-platform {
     color: var(--aether-blue);
     font-weight: 500;
     letter-spacing: 0.06em;
+    white-space: nowrap;
   }
   .about-handle {
     font-family: var(--font-mono);
