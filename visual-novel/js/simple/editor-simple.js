@@ -62,8 +62,21 @@ async function attachCgFileToCurrentSlide(file) {
 }
 
 async function attachCgIdToCurrentSlide(cgId) {
-  const cur = getCurrentSlide();
-  if (!cur) return;
+  let cur = getCurrentSlide();
+  // 任務 4:空狀態「選擇 CG」→ 沒有任何幕時自動建立第一幕
+  if (!cur) {
+    if (typeof addSimpleSlide === "function") {
+      addSimpleSlide();
+    } else {
+      if (!Array.isArray(state.simpleCards)) state.simpleCards = [];
+      const slide = createEmptySlide();
+      state.simpleCards.push(slide);
+      state.simpleCurrentSlideId = slide.id;
+    }
+    cur = getCurrentSlide();
+    if (!cur) return;
+    showToast("✓ 已建立第一幕", "success", 2500);
+  }
   // 確保 URL 已 cache
   if (!_cgUrlCache.has(cgId)) {
     const url = await vnsCgUrlFromId(cgId);
@@ -77,6 +90,37 @@ async function attachCgIdToCurrentSlide(cgId) {
   renderSimpleEditor();
 }
 
+// 任務 4:空狀態「選擇 CG」按鈕 — CG 庫為空時完全禁用(無法按)。
+// 頁面載入、CG 庫變動、切回空狀態時都會呼叫,讓按鈕狀態跟著 CG 庫即時更新。
+async function updateEmptyStateButtons() {
+  const cgBtn = document.getElementById("simpleEmptyCgBtn");
+  if (!cgBtn) return;
+  let count = 0;
+  try {
+    const list = await vnsListCgs();
+    count = Array.isArray(list) ? list.length : 0;
+  } catch (e) {
+    count = 0;
+  }
+  cgBtn.disabled = count === 0;
+  if (count === 0) cgBtn.setAttribute("title", "CG 庫目前是空的");
+  else cgBtn.removeAttribute("title");
+}
+
+// 任務 1:空狀態「上傳圖片 / 拖曳圖片」→ 自動建立第一幕並把圖片設為該幕 CG。
+async function createFirstSlideWithCg(file) {
+  if (typeof addSimpleSlide === "function") {
+    addSimpleSlide();   // 建幕 + 設為當前 + render
+  } else {
+    if (!Array.isArray(state.simpleCards)) state.simpleCards = [];
+    const slide = createEmptySlide();
+    state.simpleCards.push(slide);
+    state.simpleCurrentSlideId = slide.id;
+  }
+  await attachCgFileToCurrentSlide(file);   // 寫入 cg_library + 綁到當前幕 + render
+  showToast("✓ 已建立第一幕", "success", 2500);
+}
+
 function clearCgFromCurrentSlide() {
   const cur = getCurrentSlide();
   if (!cur) return;
@@ -87,8 +131,6 @@ function clearCgFromCurrentSlide() {
 }
 
 function renderSimpleEditor() {
-  // 樣式快選同步 + 即時套用該 slide 的 dialogStyle
-  if (typeof syncDialogStyleForCurrentSlide === "function") syncDialogStyleForCurrentSlide();
   const cur = getCurrentSlide();
   const emptyEl = document.getElementById("simplePreviewEmpty");
   const uploadEl = document.getElementById("simplePreviewUpload");
@@ -108,6 +150,7 @@ function renderSimpleEditor() {
     if (dialogEl) { dialogEl.hidden = true; dialogEl.textContent = ""; }
     if (choicesBox) { choicesBox.hidden = true; choicesBox.innerHTML = ""; }
     if (textArea) textArea.value = "";
+    updateEmptyStateButtons();   // 任務 4:同步「選擇 CG」按鈕禁用狀態
     return;
   }
 
@@ -166,92 +209,6 @@ function renderSimpleEditor() {
       dialogEl.innerHTML = "";
     }
   }
-}
-
-function syncDialogStyleForCurrentSlide() {
-  updateSimpleStyleTriggerLabel();
-}
-
-function updateSimpleStyleTriggerLabel() {
-  const label = document.getElementById("simpleStyleTriggerLabel");
-  if (!label || !state.style || typeof STYLE_PRESETS === "undefined") return;
-  const fam = STYLE_PRESETS[state.style.preset];
-  if (!fam) { label.textContent = "—"; return; }
-  if (state.style.variant === "custom") {
-    label.textContent = fam.name + " · 自訂";
-  } else {
-    const v = fam.variants[state.style.variant];
-    label.textContent = v ? (fam.name + " · " + v.name) : fam.name;
-  }
-}
-
-function renderSimpleStylePopover() {
-  const list = document.getElementById("simpleStylePopoverList");
-  if (!list || typeof STYLE_PRESETS === "undefined") return;
-  list.innerHTML = "";
-  const activePreset = state.style && state.style.preset;
-  const activeVariant = state.style && state.style.variant;
-  for (const [familyId, family] of Object.entries(STYLE_PRESETS)) {
-    const fam = document.createElement("div");
-    fam.className = "simple-style-fam";
-    const name = document.createElement("div");
-    name.className = "simple-style-fam-name";
-    name.textContent = "對話框配色";
-    fam.appendChild(name);
-    const chips = document.createElement("div");
-    chips.className = "simple-style-chips";
-    for (const [variantId, variant] of Object.entries(family.variants)) {
-      const chip = document.createElement("button");
-      chip.type = "button";
-      chip.className = "simple-style-chip" +
-        (familyId === activePreset && variantId === activeVariant ? " active" : "");
-      chip.textContent = variant.name;
-      chip.addEventListener("click", () => applySimpleStyle(familyId, variantId));
-      chips.appendChild(chip);
-    }
-    // 該風格的自訂變體
-    const customChip = document.createElement("button");
-    customChip.type = "button";
-    customChip.className = "simple-style-chip simple-style-chip--custom" +
-      (familyId === activePreset && activeVariant === "custom" ? " active" : "");
-    customChip.textContent = "自訂";
-    customChip.addEventListener("click", () => applySimpleStyle(familyId, "custom"));
-    chips.appendChild(customChip);
-    fam.appendChild(chips);
-    list.appendChild(fam);
-  }
-}
-
-function applySimpleStyle(familyId, variantId) {
-  if (typeof applyStylePreset === "function") applyStylePreset(familyId, variantId);
-  if (state.style) state.style.firstStyleSelected = true;
-  saveToStorage();
-  updateSimpleStyleTriggerLabel();
-  closeSimpleStylePopover();
-  renderSimpleEditor();
-}
-
-function openSimpleStylePopover() {
-  const pop = document.getElementById("simpleStylePopover");
-  const trigger = document.getElementById("simpleStyleTriggerBtn");
-  if (!pop) return;
-  renderSimpleStylePopover();
-  pop.hidden = false;
-  if (trigger) trigger.setAttribute("aria-expanded", "true");
-}
-
-function closeSimpleStylePopover() {
-  const pop = document.getElementById("simpleStylePopover");
-  const trigger = document.getElementById("simpleStyleTriggerBtn");
-  if (pop) pop.hidden = true;
-  if (trigger) trigger.setAttribute("aria-expanded", "false");
-}
-
-function toggleSimpleStylePopover() {
-  const pop = document.getElementById("simpleStylePopover");
-  if (!pop) return;
-  if (pop.hidden) openSimpleStylePopover();
-  else closeSimpleStylePopover();
 }
 
 // 簡易版編輯區事件綁定(由 index.js 的 IIFE 改為 init 函式,掛載後由 index.js 呼叫)
@@ -364,9 +321,25 @@ function initSimpleEditorBindings() {
   if (cgClearBtn) cgClearBtn.addEventListener("click", clearCgFromCurrentSlide);
   if (cgInput) cgInput.addEventListener("change", async (e) => {
     const file = e.target.files && e.target.files[0];
-    if (file) await attachCgFileToCurrentSlide(file);
+    if (file) {
+      // 沒有任何幕時 → 自動建立第一幕;否則綁到當前幕
+      if (getCurrentSlide()) await attachCgFileToCurrentSlide(file);
+      else await createFirstSlideWithCg(file);
+    }
     e.target.value = "";
   });
+
+  // 任務 4:空狀態歡迎卡兩顆按鈕(極簡,無教學文字)— 上傳圖片 / 選擇 CG
+  const emptyUploadBtn = document.getElementById("simpleEmptyUploadBtn");
+  if (emptyUploadBtn) emptyUploadBtn.addEventListener("click", () => {
+    if (cgInput) cgInput.click();
+  });
+  const emptyCgBtn = document.getElementById("simpleEmptyCgBtn");
+  if (emptyCgBtn) emptyCgBtn.addEventListener("click", () => {
+    if (emptyCgBtn.disabled) return;   // CG 庫為空時禁用
+    openCgLibraryModal();
+  });
+  updateEmptyStateButtons();
 
   // 任務 3:預覽框 = 上傳區。已選幕但無 CG 時整個預覽框可點/可拖曳上傳。
   const previewStage = document.getElementById("simplePreviewStage");
@@ -396,30 +369,12 @@ function initSimpleEditorBindings() {
       if (f.type && f.type.startsWith("image/")) {
         e.preventDefault();
         e.stopPropagation();
-        await attachCgFileToCurrentSlide(f);
+        // 沒有任何幕時 → 自動建立第一幕;否則綁到當前幕(.vns 已由頁面層 capture handler 先攔截)
+        if (getCurrentSlide()) await attachCgFileToCurrentSlide(f);
+        else await createFirstSlideWithCg(f);
       }
     });
   }
-
-  // 任務 5:底部工具列 — 對話框樣式 popover + 輸出按鈕
-  const styleTrigger = document.getElementById("simpleStyleTriggerBtn");
-  if (styleTrigger) styleTrigger.addEventListener("click", (e) => {
-    e.stopPropagation();
-    toggleSimpleStylePopover();
-  });
-  const styleAdvancedBtn = document.getElementById("simpleStyleAdvancedBtn");
-  if (styleAdvancedBtn) styleAdvancedBtn.addEventListener("click", () => {
-    closeSimpleStylePopover();
-    if (typeof openStyleModal === "function") openStyleModal();
-  });
-  // 點 popover 內部不關閉;點外面才關
-  const stylePopover = document.getElementById("simpleStylePopover");
-  if (stylePopover) stylePopover.addEventListener("click", (e) => e.stopPropagation());
-  document.addEventListener("click", () => closeSimpleStylePopover());
-  document.addEventListener("keydown", (e) => {
-    if (e.key === "Escape") closeSimpleStylePopover();
-  });
-  updateSimpleStyleTriggerLabel();
 
   // 底部工具列輸出按鈕(與編輯區舊按鈕共用同一組函式)
   const barPlay = document.getElementById("barPreviewPlayBtn");
@@ -441,13 +396,8 @@ export {
   attachCgFileToCurrentSlide,
   attachCgIdToCurrentSlide,
   clearCgFromCurrentSlide,
+  createFirstSlideWithCg,
+  updateEmptyStateButtons,
   renderSimpleEditor,
-  syncDialogStyleForCurrentSlide,
-  updateSimpleStyleTriggerLabel,
-  renderSimpleStylePopover,
-  applySimpleStyle,
-  openSimpleStylePopover,
-  closeSimpleStylePopover,
-  toggleSimpleStylePopover,
   initSimpleEditorBindings,
 };

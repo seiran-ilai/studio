@@ -3,8 +3,6 @@
    配合 v6.0 HTML 結構
 ═══════════════════════════════════════════════════ */
 
-@import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Bebas+Neue&family=VT323&family=Orbitron:wght@700;900&family=Major+Mono+Display&family=Press+Start+2P&family=Noto+Sans+JP:wght@900&family=Noto+Serif+JP:wght@700&family=M+PLUS+Rounded+1c:wght@700&family=Zen+Maru+Gothic:wght@700&family=Huninn&display=swap');
-
 @font-face {
   font-family: 'ChenYuluoyan';
   src: url('https://cdn.jsdelivr.net/gh/Chenyu-otf/chenyuluoyan_thin/ChenYuluoyan-2.0-Thin.ttf') format('truetype');

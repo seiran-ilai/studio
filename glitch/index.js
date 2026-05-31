@@ -3,7 +3,8 @@
 // ═══════════════════════════════════════════
 // C1 全域狀態
 // ═══════════════════════════════════════════
-const FPS = 15;
+const FPS = 30;        // 預覽與 MP4
+const GIF_FPS = 15;    // GIF 專用，避免檔案爆量
 
 // 預設段落範本
 function newTxt(overrides = {}) {
@@ -55,6 +56,7 @@ const state = {
   // 強度 0-10
   NO: 5, CO: 5, DK: 5, HU: 5, SP: 5,
   HUE: 0, SAT: 100,
+  _graded: null,                // 靜態圖已套色調的 offscreen 快取（影片不用）
   focusMode: 'auto',
 
   // 多段文字
@@ -137,6 +139,7 @@ function clearMedia() {
     state.img = null;
   }
   state.isVideo = false;
+  state._graded = null;
 }
 
 // ─── 影片時間軸（剪輯起訖點 + 播放頭） ───
@@ -232,6 +235,7 @@ function loadImage(file) {
   img.onload = () => {
     state.img = img;
     state.isVideo = false;
+    buildGraded();
     setupMedia(img.naturalWidth, img.naturalHeight);
     $('#metaFx').textContent = state.fx === 'err' ? '404' : state.fx.toUpperCase();
     $('#trimBar').style.display = 'none';
@@ -438,8 +442,8 @@ $$('[data-fx]').forEach(b => b.addEventListener('click', () => {
 });
 
 // 色調
-$('#sHUE').addEventListener('input', e => { state.HUE = +e.target.value; $('#vHUE').textContent = e.target.value + '°'; });
-$('#sSAT').addEventListener('input', e => { state.SAT = +e.target.value; $('#vSAT').textContent = e.target.value + '%'; });
+$('#sHUE').addEventListener('input', e => { state.HUE = +e.target.value; $('#vHUE').textContent = e.target.value + '°'; buildGraded(); });
+$('#sSAT').addEventListener('input', e => { state.SAT = +e.target.value; $('#vSAT').textContent = e.target.value + '%'; buildGraded(); });
 
 // 焦點
 $$('[data-focus]').forEach(b => b.addEventListener('click', () => {
@@ -568,7 +572,7 @@ $$('.dur-btn').forEach(b => b.addEventListener('click', () => {
   $$('.dur-btn').forEach(x => x.classList.remove('on'));
   b.classList.add('on');
   state.duration = +b.dataset.d;
-  $('#frameInfo').textContent = `預計 ${state.duration * FPS} 幀 @ ${FPS}fps`;
+  $('#frameInfo').textContent = `MP4 ${state.duration * FPS} 幀 @ ${FPS}fps · GIF ${state.duration * GIF_FPS} 幀 @ ${GIF_FPS}fps`;
 }));
 
 // 影片畫質
@@ -628,16 +632,33 @@ function play() {
   state.raf = requestAnimationFrame(loop);
 }
 
+// 靜態圖：把色相/飽和度套到一張原圖尺寸的 offscreen 快取，避免每幀重算
+function buildGraded() {
+  if (state.isVideo || !state.img) { state._graded = null; return; }
+  // 預設值免色調，直接畫原圖即可
+  if (state.HUE === 0 && state.SAT === 100) { state._graded = null; return; }
+  const iw = state.img.naturalWidth, ih = state.img.naturalHeight;
+  const g = document.createElement('canvas');
+  g.width = iw; g.height = ih;
+  const gc = g.getContext('2d');
+  gc.drawImage(state.img, 0, 0, iw, ih);
+  applyHueSat(gc, iw, ih);
+  state._graded = g;
+}
+
 function drawFrame(c, w, h, t) {
   const src = state.isVideo ? state.video : state.img;
   if (!src) return;
-  c.imageSmoothingEnabled = true;
-  c.imageSmoothingQuality = 'high';
   c.clearRect(0, 0, w, h);
-  c.drawImage(src, 0, 0, w, h);
-  c.imageSmoothingEnabled = false;
-
-  if (state.HUE !== 0 || state.SAT !== 100) applyHueSat(c, w, h);
+  if (!state.isVideo && state._graded) {
+    c.drawImage(state._graded, 0, 0, w, h);     // 直接畫已套色調的快取
+  } else {
+    c.imageSmoothingEnabled = true;
+    c.imageSmoothingQuality = 'high';
+    c.drawImage(src, 0, 0, w, h);
+    c.imageSmoothingEnabled = false;
+    if (state.isVideo && (state.HUE !== 0 || state.SAT !== 100)) applyHueSat(c, w, h); // 影片仍逐幀
+  }
   FX[state.fx](c, w, h, t);
   state.txts.forEach(tx => {
     if (tx.text) drawText(c, w, h, t, tx);
@@ -982,46 +1003,76 @@ const FX = {
 
   hack(c, w, h, t) {
     const sk = SK(w);
-    const nS = state.NO/5, coSc = state.CO/5, dkSc = state.DK/5, huSc = state.HU/5;
+    const coSc = state.CO / 5, dkSc = state.DK / 5, huSc = state.HU / 5;
     const zone = getZones();
 
+    // 1) 背景壓暗（保留主體可讀，不要洗成全綠）
     if (dkSc > 0) {
-      c.fillStyle = `rgba(0,10,0,${Math.min(.5, .3 + .04 * dkSc)})`;
+      c.fillStyle = `rgba(0,8,2,${Math.min(.45, .18 + .05 * dkSc)})`;
       c.fillRect(0, 0, w, h);
     }
-    if (coSc > 0) {
-      c.fillStyle = `rgba(0,80,30,${.08 * coSc})`;
-      c.fillRect(0, 0, w, h);
-    }
-    if (huSc > 0) {
-      c.font = `bold ${(11 + huSc * 4) * sk}px monospace`;
-      const ch = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789@#$%&アカサタナハマヤラワ';
-      const spots = [];
-      if (zone.tl) spots.push([0, w*.3, 0, h*.4]);
-      if (zone.tr) spots.push([w*.7, w, 0, h*.4]);
-      if (zone.bl) spots.push([0, w*.3, h*.6, h]);
-      if (zone.br) spots.push([w*.7, w, h*.6, h]);
-      if (spots.length === 0) spots.push([0, w, 0, h]);
 
-      const cnt = (0 | 80 * huSc) * Math.max(1, sk * sk * 0.5);
-      for (let i = 0; i < cnt; i++) {
-        const sp = spots[0 | Math.random() * spots.length];
-        const x = sp[0] + Math.random() * (sp[1] - sp[0]);
-        const y = sp[2] + Math.random() * (sp[3] - sp[2]);
-        c.fillStyle = `rgba(0,255,65,${.15 + Math.random() * .7})`;
-        c.fillText(ch[0 | Math.random() * ch.length], x, y);
-      }
-    }
-    if (huSc > 0 && (zone.tl || zone.tr)) {
-      const sbH = (16 + huSc * 8) * sk;
-      c.fillStyle = 'rgba(0,20,0,.88)';
-      c.fillRect(0, 0, w, sbH);
-      c.fillStyle = 'rgba(0,255,65,.95)';
-      c.font = `bold ${(9 + huSc * 3) * sk}px monospace`;
-      if (zone.tl) { c.textAlign = 'left'; c.fillText('[ROOT@TARGET:~$ EXPLOIT_RUNNING]', 10*sk, sbH/2 + 4*sk); }
-      if (zone.tr) { c.textAlign = 'right'; c.fillText(`PID:${String(0 | Math.random() * 9999).padStart(4,'0')}`, w-10*sk, sbH/2 + 4*sk); }
+    // 2) Matrix 數位雨（直欄、向下流動）
+    if (huSc > 0) {
+      const rnd = (a, b) => { const s = Math.sin(a * 127.1 + b * 311.7) * 43758.5453; return s - Math.floor(s); };
+      const charset = 'ｱｲｳｴｵｶｷｸｹｺｻｼｽｾｿﾀﾁﾂﾃﾄﾅﾆﾇﾈ0123456789:."=*+-<>|';
+      const cell = (12 + huSc * 3) * sk;             // 字格大小
+      const cols = Math.ceil(w / cell);
+      const rows = Math.ceil(h / cell) + 1;
+      const trail = 8 + (0 | huSc * 4);              // 拖尾長度
+      const wrap = rows + trail;
+      const activeRatio = 0.35 + 0.12 * huSc;        // 有幾成欄位在下雨
+      c.font = `${cell * 0.95}px monospace`;
       c.textAlign = 'left';
+      c.textBaseline = 'top';
+
+      for (let col = 0; col < cols; col++) {
+        if (rnd(col, 7) > activeRatio) continue;      // 部分欄位留白
+        const speed = 0.25 + rnd(col, 1) * 0.75;      // 掉落速度（行/幀）
+        const phase = rnd(col, 2) * wrap;
+        const head = (t * speed + phase) % wrap;
+        const x = col * cell;
+
+        for (let k = 0; k < trail; k++) {
+          const row = Math.floor(head) - k;
+          if (row < 0 || row >= rows) continue;
+          const y = row * cell;
+          // 焦點象限跳過，保持主體清晰
+          const qy = y < h / 2 ? 't' : 'b';
+          const qx = x < w / 2 ? 'l' : 'r';
+          if (zone[qy + qx] === false) continue;
+
+          const g = charset[0 | rnd(col * 31 + row, 0 | (t / 5)) * charset.length];
+          if (k === 0) {
+            c.fillStyle = 'rgba(200,255,200,0.9)';                       // 欄首近白
+          } else {
+            const a = (1 - k / trail) * Math.min(1, 0.5 + 0.5 * huSc);   // 拖尾漸暗
+            c.fillStyle = `rgba(0,255,70,${a})`;
+          }
+          c.fillText(g, x, y);
+        }
+      }
+      c.textBaseline = 'alphabetic';
     }
+
+    // 3) 輕掃描線（CRT 質感，取代厚重綠罩）
+    if (coSc > 0) {
+      c.fillStyle = `rgba(0,40,15,${.05 * coSc})`;
+      for (let y = 0; y < h; y += Math.max(2, 3 * sk)) c.fillRect(0, y, w, sk);
+    }
+
+    // 4) 終端列（PID 固定不再亂跳）
+    if (state._hackPid == null) state._hackPid = String(1000 + (0 | Math.random() * 8999));
+    const sbH = (16 + huSc * 8) * sk;
+    c.fillStyle = 'rgba(0,20,4,.9)';
+    c.fillRect(0, 0, w, sbH);
+    c.fillStyle = 'rgba(0,255,70,.95)';
+    c.font = `bold ${(9 + huSc * 3) * sk}px monospace`;
+    c.textAlign = 'left';
+    c.fillText('[ROOT@TARGET:~$ EXPLOIT_RUNNING]', 10 * sk, sbH / 2 + 4 * sk);
+    c.textAlign = 'right';
+    c.fillText(`PID:${state._hackPid}`, w - 10 * sk, sbH / 2 + 4 * sk);
+    c.textAlign = 'left';
   }
 };
 
@@ -1484,7 +1535,7 @@ $('#btnGif').addEventListener('click', async () => {
       const v = state.video;
       const startT = state.trimStart;
       const trimDur = state.trimEnd - startT;
-      const total = Math.min(150, Math.ceil(trimDur * FPS));
+      const total = Math.min(150, Math.ceil(trimDur * GIF_FPS));
       v.pause();
       v.loop = false;
 
@@ -1493,16 +1544,16 @@ $('#btnGif').addEventListener('click', async () => {
         v.currentTime = targetTime;
         await new Promise(r => v.addEventListener('seeked', r, { once: true }));
         drawFrame(offCtx, w, h, f);
-        g.addFrame(off, { copy: true, delay: 1000 / FPS | 0 });
+        g.addFrame(off, { copy: true, delay: 1000 / GIF_FPS | 0 });
         showProgress(0 | f / total * 50, `取樣 ${f+1}/${total}`);
       }
       v.loop = true;
     } else {
       // ─── 圖片模式：依 state.duration ───
-      const total = state.duration * FPS;
+      const total = state.duration * GIF_FPS;
       for (let f = 0; f < total; f++) {
         drawFrame(offCtx, w, h, f);
-        g.addFrame(off, { copy: true, delay: 1000 / FPS | 0 });
+        g.addFrame(off, { copy: true, delay: 1000 / GIF_FPS | 0 });
         showProgress(0 | f / total * 50, `渲染 ${f+1}/${total}`);
         await new Promise(r => setTimeout(r, 0));
       }
@@ -1653,5 +1704,16 @@ $('#btnMp4').addEventListener('click', async () => {
   showProgress(98, '封裝中...');
   rec.stop();
 });
+
+// 依瀏覽器實際支援格式調整 MP4 按鈕標示
+(function reflectVideoFormat() {
+  const mp4ok = typeof MediaRecorder !== 'undefined' && MediaRecorder.isTypeSupported('video/mp4');
+  if (!mp4ok) {
+    const btn = $('#btnMp4');
+    if (btn) btn.textContent = '🎥 WebM';
+    const note = $('#mp4Note');
+    if (note) note.textContent = '此瀏覽器將輸出 WebM 格式（非 MP4）';
+  }
+})();
 
 // Glitch Studio loaded

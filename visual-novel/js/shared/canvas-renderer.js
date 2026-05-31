@@ -233,9 +233,71 @@ async function _vnsRenderSlideToCanvas(canvas, slide, lineIdx) {
   _vnsRenderSlideFrame(canvas, slide, { lineIdx: lineIdx, boxOpacity: 1 });
 }
 
-const _vnsExportState = { running: false, cancelled: false };
+const _vnsExportState = {
+  running: false,
+  cancelled: false,
+  gif: null,        // 當前 GIF 實例(供 abort / terminate worker)
+  recorder: null,   // 當前 MediaRecorder(供 stop)
+  progress: 0,      // 最近一次進度百分比(卡死偵測 watchdog 用)
+  watchdog: null,   // setInterval id
+};
 
 function _vnsSleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+// 任務 3:統一取消 / 強制脫離。立即終止編碼、關閉浮層、重置 state,使用者不需重整。
+// showMsg=false 給 watchdog 用(它自己已提示卡住訊息,避免重複 toast)。
+function _vnsExportCancel(showMsg) {
+  _vnsExportState.cancelled = true;
+  _vnsExportStopWatchdog();
+  // 強制終止 GIF worker(gif.abort 會 terminate active workers;順手 terminate idle workers)
+  if (_vnsExportState.gif) {
+    const g = _vnsExportState.gif;
+    try { g.abort && g.abort(); } catch (e) {}
+    try { (g.freeWorkers || []).forEach(w => w && w.terminate()); } catch (e) {}
+    try { (g.activeWorkers || []).forEach(w => w && w.terminate()); } catch (e) {}
+    _vnsExportState.gif = null;
+  }
+  // 停止 MediaRecorder
+  if (_vnsExportState.recorder) {
+    try { if (_vnsExportState.recorder.state !== "inactive") _vnsExportState.recorder.stop(); } catch (e) {}
+    _vnsExportState.recorder = null;
+  }
+  _vnsExportState.running = false;
+  _vnsExportState.progress = 0;
+  _vnsExportOverlayClose();
+  if (showMsg !== false && typeof showToast === "function") showToast("已取消輸出", "info", 2000);
+}
+
+// 卡死偵測:每秒檢查進度;timeoutSec 秒內毫無推進就自動取消並提示。
+function _vnsExportStartWatchdog(timeoutSec) {
+  _vnsExportStopWatchdog();
+  const limit = timeoutSec || 60;
+  let last = -1;
+  let stalled = 0;
+  _vnsExportState.watchdog = setInterval(() => {
+    if (!_vnsExportState.running) { _vnsExportStopWatchdog(); return; }
+    if (_vnsExportState.progress === last) {
+      stalled++;
+      if (stalled >= limit) {
+        _vnsExportStopWatchdog();
+        if (typeof showToast === "function") {
+          showToast("⚠ 輸出卡住,已自動取消。建議減少幕數或縮短內容後重試。", "warn", 5000);
+        }
+        _vnsExportCancel(false);
+      }
+    } else {
+      stalled = 0;
+      last = _vnsExportState.progress;
+    }
+  }, 1000);
+}
+
+function _vnsExportStopWatchdog() {
+  if (_vnsExportState.watchdog) {
+    clearInterval(_vnsExportState.watchdog);
+    _vnsExportState.watchdog = null;
+  }
+}
 
 function _vnsExportOverlayOpen(title, badgeText) {
   const ov = document.getElementById("vnsExportOverlay");
@@ -252,15 +314,18 @@ function _vnsExportOverlayOpen(title, badgeText) {
 function _vnsExportOverlayClose() {
   const ov = document.getElementById("vnsExportOverlay");
   if (ov) ov.classList.remove("show");
-  // 取消旗標一律重置(下次開啟才是乾淨的)
-  _vnsExportState.cancelled = false;
+  _vnsExportStopWatchdog();
+  // cancelled 旗標不在此重置(每次輸出開始時自會設回 false);
+  // 提早重置會讓還在 await 的輸出迴圈漏判取消、繼續寫入已隱藏的畫布。
 }
 
 function _vnsExportSetProgress(text, pct) {
   const t = document.getElementById("vnsExportProgress");
   const b = document.getElementById("vnsExportBarFill");
+  const v = Math.max(0, Math.min(100, pct || 0));
   if (t) t.textContent = text;
-  if (b) b.style.width = Math.max(0, Math.min(100, pct || 0)) + "%";
+  if (b) b.style.width = v + "%";
+  _vnsExportState.progress = v;   // watchdog 用:有推進就重置卡死計時
 }
 
 function _vnsCountTotalLines(cards) {
@@ -284,6 +349,9 @@ export {
   _vnsExportOverlayOpen,
   _vnsExportOverlayClose,
   _vnsExportSetProgress,
+  _vnsExportCancel,
+  _vnsExportStartWatchdog,
+  _vnsExportStopWatchdog,
   _vnsCountTotalLines,
   _vnsCgImageCache,
   _vnsExportState,

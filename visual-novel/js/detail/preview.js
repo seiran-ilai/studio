@@ -122,6 +122,12 @@ function jumpToStart() {
 }
 
 function reparseAndRender(resetIndex = false) {
+  // 任務 2:簡易模式不解析 detail 劇本。樣式 modal 改字型 / 字級 / 配色時會呼叫這裡,
+  //         此時改重繪簡易主預覽,讓字型字級即時反映(配色走 CSS 變數自動套用)。
+  if (state.mode === "simple") {
+    if (typeof renderSimpleEditor === "function") renderSimpleEditor();
+    return;
+  }
   // 保存 textarea 捲動位置(L2) — 防止內部 render 意外重設視野
   const _ta = els.scriptArea;
   const _savedScrollTop = _ta ? _ta.scrollTop : 0;

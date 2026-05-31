@@ -11,6 +11,30 @@ function _renderSpeakerHtml(speaker) {
   return `<div class="simple-preview-speaker">${_shEsc(speaker)}</div>`;
 }
 
+// 任務 2:把全域字型 / 字級套到主預覽(讀最新 state,不快取),
+// 與樣式 modal 右側即時預覽(updateDefaultsPreview)用同一份設定來源。
+function _applySimplePreviewFonts(dialogEl) {
+  if (!dialogEl) return;
+  const fs = state.fontSizes || { dialog: 18, speaker: 16, narration: 16, inner: 15 };
+  const sd = state.styleDefaults || {};
+  const FB = (typeof FONT_BY_ID !== "undefined") ? FONT_BY_ID : {};
+  const stackOf = (id) => { const f = id && FB[id]; return (f && f.stack) || ""; };
+  const weightOf = (id) => { const f = id && FB[id]; return (f && f.weight) ? String(f.weight) : ""; };
+  const apply = (sel, px, fontId) => {
+    const el = dialogEl.querySelector(sel);
+    if (!el) return;
+    if (px != null) el.style.fontSize = px + "px";
+    if (fontId !== undefined) {
+      el.style.fontFamily = stackOf(fontId);
+      el.style.fontWeight = weightOf(fontId);
+    }
+  };
+  apply(".simple-preview-speaker", fs.speaker, undefined);
+  apply(".simple-preview-content", fs.dialog, sd.dialog && sd.dialog.font);
+  apply(".simple-preview-narration", fs.narration, sd.narration && sd.narration.font);
+  apply(".simple-preview-inner", fs.inner, sd.inner && sd.inner.font);
+}
+
 function _renderPreviewLine(dialogEl, line, partial, faded) {
   if (!dialogEl || !line) return;
   dialogEl.hidden = false;
@@ -24,6 +48,7 @@ function _renderPreviewLine(dialogEl, line, partial, faded) {
   } else {
     dialogEl.innerHTML = `${_renderSpeakerHtml(line.speaker)}<div class="simple-preview-content">${_shEsc(clean)}</div>`;
   }
+  _applySimplePreviewFonts(dialogEl);
 }
 
 const _vnsSimplePlayback = {

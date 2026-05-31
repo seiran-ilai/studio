@@ -627,12 +627,11 @@ let vnsDbFailed = false;   // true 表示 IndexedDB 不可用(無法 fallback)
 // 啟動時非同步開啟 DB;後續任務的 UI 程式碼用 await getVnsDb() 或 vnsDbReady 等待。
 // 若失敗,顯示全屏警告 overlay(隱私模式 / 舊瀏覽器)。
 (async function bootstrapVnsDb() {
-  // 任務 1:File System Access API 只支援 Chrome / Edge。不支援就全屏擋下,不做退化下載。
-  if (typeof vnsFileSystemSupported === "function" && !vnsFileSystemSupported()) {
-    const fsBlock = document.getElementById("vns-fs-block");
-    if (fsBlock) fsBlock.classList.add("show");
-    return;
-  }
+  // 分層降級:偵測一次瀏覽器能力,記在 state。不再擋下不支援 File System Access 的瀏覽器
+  // (Firefox / Safari),改走下載 / 上傳的降級路徑(見 saveProject / openProject)。
+  state.browserCapabilities = {
+    fileSystemAccess: (typeof vnsFileSystemSupported === "function") && vnsFileSystemSupported(),
+  };
   const idbOk = await vnsCheckIdbAvailability();
   if (!idbOk) {
     vnsDbFailed = true;
@@ -662,7 +661,32 @@ let vnsDbFailed = false;   // true 表示 IndexedDB 不可用(無法 fallback)
   if (typeof vnsInitBoundFileFromAppState === "function") await vnsInitBoundFileFromAppState();
   // 嘗試取得 Persistent Storage 權限(Chrome 通常自動給,Firefox 跳本機提示,Safari 不支援)
   await vnsRequestPersistentStorage();
+  // 不支援 File System Access 的瀏覽器,首次進入提示降級體驗(只跳一次)
+  maybeShowDowngradeNotice();
 })();
+
+// 降級體驗提示:只在不支援 File System Access 的瀏覽器、且使用者沒看過時跳一次。
+function maybeShowDowngradeNotice() {
+  if (state.browserCapabilities && state.browserCapabilities.fileSystemAccess) return;
+  try {
+    if (localStorage.getItem("vns_seen_downgrade_notice") === "1") return;
+  } catch (e) {}
+  if (typeof inlineConfirm !== "function") return;
+  inlineConfirm({
+    title: "💡 關於儲存體驗",
+    message: { __html: `
+      <p style="margin:0 0 12px">你目前使用的瀏覽器不支援檔案系統存取。</p>
+      <p style="margin:0 0 12px">你仍可正常使用本工具,但按下「儲存」時:</p>
+      <p style="margin:0 0 6px">✅ 仍可儲存作品為 .vns 檔案</p>
+      <p style="margin:0 0 12px">⚠ 每次儲存都會下載新檔案(無法直接覆寫舊檔)</p>
+      <p style="margin:0 0 12px">若希望獲得更好的體驗(一鍵覆寫舊檔),建議改用 Chrome 或 Edge 瀏覽器開啟。</p>
+      <p style="margin:0">你的編輯仍會自動暫存在瀏覽器中,不會因為沒儲存就遺失。</p>
+    ` },
+    okText: "我知道了,繼續使用",
+    hideCancel: true,
+  });
+  try { localStorage.setItem("vns_seen_downgrade_notice", "1"); } catch (e) {}
+}
 
 // ---------- CG 上傳工作流(高層) ----------
 
@@ -1116,19 +1140,23 @@ const settingsModalEl = document.getElementById("settingsModal");
 // ----- 任務 1:本地檔案 儲存 / 開啟(File System Access)-----
 const btnSaveFile = document.getElementById("btnSaveFile");
 if (btnSaveFile) {
-  btnSaveFile.title = "儲存到本地檔案(Ctrl+S)";
-  btnSaveFile.addEventListener("click", () => { saveToVnsFile(); });
+  // 差異化 tooltip:Chrome / Edge 可覆寫本地檔;其餘瀏覽器走下載
+  const _fsa = (state.browserCapabilities && typeof state.browserCapabilities.fileSystemAccess === "boolean")
+    ? state.browserCapabilities.fileSystemAccess
+    : (typeof vnsFileSystemSupported === "function" && vnsFileSystemSupported());
+  btnSaveFile.title = _fsa ? "儲存到本地檔案(Ctrl+S)" : "下載 .vns 檔案到本機(Ctrl+S)";
+  btnSaveFile.addEventListener("click", () => { saveProject(); });
 }
 const btnOpenFile = document.getElementById("btnOpenFile");
 if (btnOpenFile) {
-  btnOpenFile.title = "從本地檔案開啟 .vns";
-  btnOpenFile.addEventListener("click", () => { openVnsFile(); });
+  btnOpenFile.title = "開啟 .vns 檔案";
+  btnOpenFile.addEventListener("click", () => { openProject(); });
 }
 // Ctrl/⌘ + S 儲存
 document.addEventListener("keydown", (e) => {
   if ((e.ctrlKey || e.metaKey) && (e.key === "s" || e.key === "S")) {
     e.preventDefault();
-    if (typeof saveToVnsFile === "function") saveToVnsFile();
+    if (typeof saveProject === "function") saveProject();
   }
 });
 
@@ -2503,17 +2531,17 @@ const _cgUrlPending = new Set();
 
 
 
-// 取消按鈕 — 設旗標,輸出迴圈下次檢查時中斷
+// 取消 / 強制關閉 — 立即終止編碼(abort worker / stop recorder)、關閉浮層、重置 state。
+// 「×」即使編碼邏輯出問題也能強制脫離,不必重整頁面。
 {
+  function forceExitExport() {
+    if (typeof _vnsExportCancel === "function") _vnsExportCancel();
+    else if (typeof _vnsExportOverlayClose === "function") _vnsExportOverlayClose();
+  }
   const cancelBtn = document.getElementById("vnsExportCancelBtn");
-  if (cancelBtn) cancelBtn.addEventListener("click", () => {
-    if (_vnsExportState.running) {
-      _vnsExportState.cancelled = true;
-      _vnsExportSetProgress("取消中…請稍候", 0);
-    } else {
-      _vnsExportOverlayClose();
-    }
-  });
+  if (cancelBtn) cancelBtn.addEventListener("click", forceExitExport);
+  const closeBtn = document.getElementById("vnsExportCloseBtn");
+  if (closeBtn) closeBtn.addEventListener("click", forceExitExport);
 }
 
 // 計算總 frame / line 數,給進度條用

@@ -16,6 +16,8 @@ function closeCgLibraryModal() {
 }
 
 async function renderCgLibraryGrid() {
+  // 任務 4:CG 庫變動(新增 / 刪除)後同步空狀態「選擇 CG」按鈕禁用狀態
+  if (typeof updateEmptyStateButtons === "function") updateEmptyStateButtons();
   const grid = document.getElementById("cgLibraryGrid");
   const empty = document.getElementById("cgLibraryEmpty");
   if (!grid) return;

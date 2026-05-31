@@ -398,7 +398,7 @@ function estimateExportSize() {
 // ============================================================
 //  任務 1:本地檔案儲存 / 載入(File System Access API,.vns)
 //  - 本地檔案是正本;IndexedDB(projects + cg_library)是瀏覽器暫存層。
-//  - 不支援 File System Access 的瀏覽器(非 Chrome / Edge)直接擋下,不做退化下載。
+//  - 分層降級:Chrome / Edge 走 File System Access(可覆寫);其餘瀏覽器走下載 / 上傳。
 // ============================================================
 
 const VNS_SAVE_TYPE = {
@@ -586,6 +586,39 @@ async function saveToVnsFile() {
   showToast(`✓ 已儲存到 ${handle.name}`, "success", 3000);
 }
 
+// Firefox / Safari 降級路徑:每次都產生 .vns Blob 並觸發瀏覽器下載(無法覆寫舊檔)。
+async function saveViaDownload() {
+  if (typeof JSZip === "undefined") { showToast("JSZip 未載入,無法儲存", "warn"); return; }
+  let blobInfo;
+  try { blobInfo = await buildVnsBlobFromState(); }
+  catch (e) { showToast("打包失敗:" + (e.message || e), "warn", 4000); return; }
+
+  // 第一次用「未命名作品.vns」或專案名;之後沿用上次檔名,讓使用者覺得是同一份檔
+  const filename = _vnsBoundFileName || ((blobInfo.projectName || "未命名作品") + ".vns");
+
+  const url = URL.createObjectURL(blobInfo.blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+
+  _vnsSetBoundFile(filename);
+  if (typeof setEditorStatus === "function") setEditorStatus("downloaded");
+  showToast(`📥 已下載 ${filename}`, "success", 3000);
+}
+
+// 儲存統一入口:依瀏覽器能力分流。Chrome / Edge 寫本地檔,其餘觸發下載。
+async function saveProject() {
+  const supported = (state.browserCapabilities && typeof state.browserCapabilities.fileSystemAccess === "boolean")
+    ? state.browserCapabilities.fileSystemAccess
+    : vnsFileSystemSupported();
+  if (supported) await saveToVnsFile();
+  else await saveViaDownload();
+}
+
 function _vnsHasMeaningfulContent() {
   const cards = Array.isArray(state.simpleCards) ? state.simpleCards.length : 0;
   const scriptLen = (state.script || "").trim().length;
@@ -596,7 +629,7 @@ function _vnsHasMeaningfulContent() {
 async function vnsConfirmLoadConflict() {
   if (!_vnsHasMeaningfulContent()) return "load";
   const st = (typeof getEditorStatus === "function") ? getEditorStatus() : "";
-  if (st === "saved") return "load"; // 已與本地檔同步,沒有未存編輯
+  if (st === "saved" || st === "downloaded") return "load"; // 已與本地檔 / 下載同步,沒有未存編輯
   const key = await inlineChoose({
     title: "載入新檔案",
     message: "目前有未儲存到本地檔案的編輯。\n載入新檔案將取代當前內容。",
@@ -731,6 +764,33 @@ async function openVnsFile() {
   await loadVnsIntoCurrentProject(file, handle);
 }
 
+// Firefox / Safari 降級路徑:用傳統 <input type=file> 選 .vns,讀進當前專案(無可寫回 handle)。
+async function openViaFileInput() {
+  const decision = await vnsConfirmLoadConflict();
+  if (decision === "cancel") return;
+  if (decision === "save") await saveProject();
+  return new Promise((resolve) => {
+    const input = document.createElement("input");
+    input.type = "file";
+    input.accept = ".vns,.vns.zip";
+    input.onchange = async (e) => {
+      const file = e.target.files && e.target.files[0];
+      if (file) await loadVnsIntoCurrentProject(file, null);
+      resolve();
+    };
+    input.click();
+  });
+}
+
+// 載入統一入口:依瀏覽器能力分流。Chrome / Edge 走 File System Access,其餘走傳統 input。
+async function openProject() {
+  const supported = (state.browserCapabilities && typeof state.browserCapabilities.fileSystemAccess === "boolean")
+    ? state.browserCapabilities.fileSystemAccess
+    : vnsFileSystemSupported();
+  if (supported) await openVnsFile();
+  else await openViaFileInput();
+}
+
 // 拖曳載入(無可寫回 handle):同樣覆蓋當前內容,但不綁定本地檔。
 async function openVnsFromDroppedFile(file) {
   const decision = await vnsConfirmLoadConflict();
@@ -755,7 +815,11 @@ export {
   vnsInitBoundFileFromAppState,
   buildVnsBlobFromState,
   saveToVnsFile,
+  saveViaDownload,
+  saveProject,
   openVnsFile,
+  openViaFileInput,
+  openProject,
   openVnsFromDroppedFile,
   loadVnsIntoCurrentProject,
 };

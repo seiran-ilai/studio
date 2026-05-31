@@ -26,7 +26,7 @@
 <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
 
 <!-- gif.js — 簡易模式 GIF 輸出用 -->
-<script src="https://cdn.jsdelivr.net/npm/gif.js@0.2.0/dist/gif.js"></script>
+<script src="js/vendor/gif.js"></script>
 
 <link rel="stylesheet" href="index.css">
 </head>
@@ -50,14 +50,6 @@
     建議使用一般瀏覽模式的 Chrome、Firefox 或 Edge 最新版本。
   </p>
 </div>
-<div id="vns-fs-block" role="alertdialog" aria-labelledby="vns-fs-block-title">
-  <div class="block-icon" aria-hidden="true">⚠️</div>
-  <h1 id="vns-fs-block-title">此瀏覽器不支援檔案系統存取</h1>
-  <p>Visual Novel Studio 需要 Chrome 或 Edge 瀏覽器,以便將作品儲存到本地。</p>
-  <p class="block-hint">
-    請改用 Chrome 或 Edge 開啟。
-  </p>
-</div>
 <script>
   (function () {
     var el = document.getElementById("mobile-block");
@@ -75,7 +67,7 @@
       <div class="brand">
         <div class="brand-mark">Visual Novel Studio</div>
       </div>
-      <!-- 任務 5:五種狀態指示(就緒時隱藏,由 setEditorStatus 控制) -->
+      <!-- 任務 5:六種狀態指示(就緒時隱藏,由 setEditorStatus 控制) -->
       <span class="editor-status" id="editorStatus" hidden>
         <span class="editor-status-icon" id="editorStatusIcon" aria-hidden="true"></span>
         <span class="editor-status-text" id="editorStatusText"></span>
@@ -198,9 +190,10 @@
         <div class="simple-preview" id="simplePreview">
           <div class="simple-preview-stage" id="simplePreviewStage" data-ratio="16:9">
             <div class="simple-preview-empty" id="simplePreviewEmpty">
-              <div class="simple-preview-empty-icon" aria-hidden="true">💬</div>
-              <p class="simple-preview-empty-text">還沒有任何幕</p>
-              <p class="simple-preview-empty-hint">點「＋ 新增幕」建立第一幕</p>
+              <div class="simple-preview-empty-actions">
+                <button class="btn btn-primary" id="simpleEmptyUploadBtn" type="button">📷 上傳圖片</button>
+                <button class="btn" id="simpleEmptyCgBtn" type="button">📁 選擇 CG</button>
+              </div>
             </div>
             <div class="simple-preview-upload" id="simplePreviewUpload" hidden title="點擊或拖曳圖片上傳 CG">
               <div class="simple-preview-upload-icon" aria-hidden="true">📷</div>
@@ -263,21 +256,8 @@
 
       </div>
 
-      <!-- 任務 5:底部固定公版工具列 — 左:全域對話框樣式 / 右:輸出操作 -->
+      <!-- 底部固定公版工具列 — 輸出操作(樣式入口統一在頂部「🎨 樣式」) -->
       <footer class="simple-bottombar">
-        <div class="simple-bottombar-left">
-          <span class="simple-bottombar-label">🎨 對話框樣式</span>
-          <div class="simple-style-picker">
-            <button class="simple-style-trigger" id="simpleStyleTriggerBtn" type="button" aria-haspopup="true" aria-expanded="false">
-              <span id="simpleStyleTriggerLabel">—</span>
-              <span class="simple-style-caret" aria-hidden="true">▾</span>
-            </button>
-            <div class="simple-style-popover" id="simpleStylePopover" hidden>
-              <div class="simple-style-popover-list" id="simpleStylePopoverList"></div>
-              <button class="simple-style-advanced" id="simpleStyleAdvancedBtn" type="button">→ 進階設定(字體、自訂顏色)</button>
-            </div>
-          </div>
-        </div>
         <span class="simple-bottombar-spacer"></span>
         <div class="simple-bottombar-right">
           <button class="btn" id="barPreviewPlayBtn" type="button">▶ 預覽</button>
@@ -991,6 +971,7 @@
 <!-- ========== 簡易模式輸出進度浮層(MP4 / GIF 共用) ========== -->
 <div class="vns-export-overlay" id="vnsExportOverlay">
   <div class="vns-export-content">
+    <button class="vns-export-close" id="vnsExportCloseBtn" type="button" aria-label="強制關閉">×</button>
     <div class="vns-export-title" id="vnsExportTitle">錄影中…</div>
     <div class="vns-export-canvas-wrap">
       <canvas id="vnsExportCanvas"></canvas>

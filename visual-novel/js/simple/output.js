@@ -79,10 +79,24 @@ async function exportSimpleMp4() {
 
   _vnsExportState.running = true;
   _vnsExportState.cancelled = false;
+  _vnsExportState.recorder = recorder;
   recorder.start();
+  // 任務 3:卡死偵測 — 60 秒無進度自動取消
+  _vnsExportStartWatchdog(60);
 
   const totalLines = _vnsCountTotalLines(cards);
   let doneLines = 0;
+  const t0 = Date.now();
+  // 任務 4:進度文字 + 預估剩餘。frac 為 0~1 的整體進度(含行內細分,確保連續推進)。
+  function mp4Prog(label, frac) {
+    let eta = "";
+    if (frac > 0.02) {
+      const elapsed = (Date.now() - t0) / 1000;
+      const remain = Math.max(0, Math.round(elapsed / frac * (1 - frac)));
+      eta = `　預估剩餘:約 ${remain} 秒`;
+    }
+    _vnsExportSetProgress(label + eta, frac * 100);
+  }
 
   try {
     const FADE_MS = 300;
@@ -95,7 +109,7 @@ async function exportSimpleMp4() {
       const slide = cards[si];
       // 選項幕功能:錄完整選擇動畫(淡入 → 停留 → 正解高亮 + 其他淡化 → 切下一幕)
       if (isChoiceSlide(slide)) {
-        _vnsExportSetProgress(`幕 ${si + 1} / ${cards.length} · 選項幕`, (doneLines / totalLines) * 100);
+        mp4Prog(`錄影 ${si + 1} / ${cards.length} · 選項幕`, doneLines / totalLines);
         const descs = _vnsChoiceFrameDescriptors(slide, FRAME_MS);
         for (const d of descs) {
           if (_vnsExportState.cancelled) break;
@@ -112,10 +126,7 @@ async function exportSimpleMp4() {
         if (_vnsExportState.cancelled) break;
         const line = lines[li];
         const full = _stripStyleTags(line.content || "");
-        _vnsExportSetProgress(
-          `幕 ${si + 1} / ${cards.length} · 第 ${li + 1} 段 / ${lines.length}`,
-          (doneLines / totalLines) * 100
-        );
+        mp4Prog(`錄影 ${si + 1} / ${cards.length} · 第 ${li + 1} 段 / ${lines.length}`, doneLines / totalLines);
         // fade in
         const fadeFrames = Math.max(2, Math.round(FADE_MS / FRAME_MS));
         for (let f = 0; f < fadeFrames; f++) {
@@ -130,6 +141,9 @@ async function exportSimpleMp4() {
           for (let i = 1; i <= full.length; i++) {
             if (_vnsExportState.cancelled) break;
             _vnsRenderSlideFrame(canvas, slide, { lineIdx: li, partialText: full.slice(0, i), boxOpacity: 1 });
+            // 行內逐字推進整體進度(避免長行讓進度條停滯 / 誤觸 watchdog)
+            mp4Prog(`錄影 ${si + 1} / ${cards.length} · 第 ${li + 1} 段 / ${lines.length} · ${i} / ${full.length} 字`,
+              (doneLines + i / full.length) / totalLines);
             await _vnsSleep(TYPE_MS);
           }
           await _vnsSleep(HOLD_MS);
@@ -145,18 +159,16 @@ async function exportSimpleMp4() {
     }
     if (!_vnsExportState.cancelled) await _vnsSleep(500);
   } finally {
-    recorder.stop();
+    try { if (recorder.state !== "inactive") recorder.stop(); } catch (e) {}
     await stopped;
+    _vnsExportStopWatchdog();
+    _vnsExportState.recorder = null;
     _vnsExportState.running = false;
   }
 
-  const cancelled = _vnsExportState.cancelled;
+  // 取消(按鈕 / watchdog)已經 stop recorder、關閉浮層、提示 → 靜默返回
+  if (_vnsExportState.cancelled) return;
   _vnsExportOverlayClose();
-
-  if (cancelled) {
-    showToast("已取消錄影", "info", 2000);
-    return;
-  }
 
   const blob = new Blob(chunks, { type: mime });
   const ext = mime.startsWith("video/mp4") ? "mp4" : "webm";
@@ -168,7 +180,7 @@ async function exportSimpleMp4() {
   a.click();
   a.remove();
   setTimeout(() => URL.revokeObjectURL(url), 2000);
-  showToast(`已下載影片(${ext.toUpperCase()},${vnsFmtBytes(blob.size)})`, "info", 3500);
+  showToast(`✓ 已輸出 ${a.download}(${vnsFmtBytes(blob.size)})`, "info", 3500);
 }
 
 async function exportSimpleGif() {
@@ -200,8 +212,11 @@ async function exportSimpleGif() {
     quality: 10,
     width: w,
     height: h,
-    workerScript: "https://cdn.jsdelivr.net/npm/gif.js@0.2.0/dist/gif.worker.js",
+    workerScript: "js/vendor/gif.worker.js",
   });
+  _vnsExportState.gif = gif;
+  // 任務 3:卡死偵測 — 60 秒無進度自動取消(涵蓋渲染與 worker 編碼兩階段)
+  _vnsExportStartWatchdog(60);
 
   const FPS = 15;
   const FRAME_MS = 1000 / FPS;
@@ -209,8 +224,37 @@ async function exportSimpleGif() {
   const TYPE_FRAMES_PER_CHAR = 1;
   const HOLD_FRAMES = 8;
 
-  const totalLines = _vnsCountTotalLines(cards);
-  let doneLines = 0;
+  // 任務 4:精準逐幀進度 — 先把總幀數算出來,渲染時逐幀回報「第 X / Y 幀」+ 預估剩餘。
+  let framesTotal = 0;
+  for (const slide of cards) {
+    if (isChoiceSlide(slide)) {
+      framesTotal += _vnsChoiceFrameDescriptors(slide, FRAME_MS).length;
+      continue;
+    }
+    const lns = (slide.parsedLines && slide.parsedLines.length)
+      ? slide.parsedLines : [{ content: "" }];
+    for (const line of lns) {
+      const len = _stripStyleTags(line.content || "").length;
+      framesTotal += FADE_FRAMES * 2 + (len === 0 ? HOLD_FRAMES : len * TYPE_FRAMES_PER_CHAR + HOLD_FRAMES);
+    }
+  }
+  framesTotal = Math.max(1, framesTotal);
+
+  let framesDone = 0;
+  const t0 = Date.now();
+  function addGifFrame() {
+    gif.addFrame(canvas, { copy: true, delay: FRAME_MS });
+    framesDone++;
+    // 渲染佔總進度前半(0~50%);後半是 worker 編碼
+    const ratio = framesDone / framesTotal;
+    let eta = "";
+    if (framesDone >= 5) {
+      const elapsed = (Date.now() - t0) / 1000;
+      const remain = Math.max(0, Math.round(elapsed / framesDone * (framesTotal - framesDone)));
+      eta = `　預估剩餘:約 ${remain} 秒`;
+    }
+    _vnsExportSetProgress(`編碼 GIF… 第 ${framesDone} / ${framesTotal} 幀(${Math.round(ratio * 100)}%)${eta}`, ratio * 50);
+  }
 
   try {
     for (let si = 0; si < cards.length; si++) {
@@ -218,14 +262,12 @@ async function exportSimpleGif() {
       const slide = cards[si];
       // 選項幕功能:GIF 錄完整選擇動畫
       if (isChoiceSlide(slide)) {
-        _vnsExportSetProgress(`渲染 ${si + 1} / ${cards.length} · 選項幕`, (doneLines / totalLines) * 50);
         const descs = _vnsChoiceFrameDescriptors(slide, FRAME_MS);
         for (const d of descs) {
           if (_vnsExportState.cancelled) break;
           _vnsRenderChoiceFrame(canvas, slide, d);
-          gif.addFrame(canvas, { copy: true, delay: FRAME_MS });
+          addGifFrame();
         }
-        doneLines++;
         await _vnsSleep(0);
         continue;
       }
@@ -236,59 +278,61 @@ async function exportSimpleGif() {
         if (_vnsExportState.cancelled) break;
         const line = lines[li];
         const full = _stripStyleTags(line.content || "");
-        _vnsExportSetProgress(
-          `渲染 ${si + 1} / ${cards.length} · 第 ${li + 1} 段(共 ${lines.length})`,
-          (doneLines / totalLines) * 50   // 前半段是渲染進度
-        );
         for (let f = 0; f < FADE_FRAMES; f++) {
           _vnsRenderSlideFrame(canvas, slide, { lineIdx: li, partialText: "", boxOpacity: f / (FADE_FRAMES - 1) });
-          gif.addFrame(canvas, { copy: true, delay: FRAME_MS });
+          addGifFrame();
         }
         if (full.length === 0) {
           for (let f = 0; f < HOLD_FRAMES; f++) {
             _vnsRenderSlideFrame(canvas, slide, { lineIdx: li, partialText: "", boxOpacity: 1 });
-            gif.addFrame(canvas, { copy: true, delay: FRAME_MS });
+            addGifFrame();
           }
         } else {
           for (let i = 1; i <= full.length; i++) {
             _vnsRenderSlideFrame(canvas, slide, { lineIdx: li, partialText: full.slice(0, i), boxOpacity: 1 });
             for (let f = 0; f < TYPE_FRAMES_PER_CHAR; f++) {
-              gif.addFrame(canvas, { copy: true, delay: FRAME_MS });
+              addGifFrame();
             }
           }
           for (let f = 0; f < HOLD_FRAMES; f++) {
-            gif.addFrame(canvas, { copy: true, delay: FRAME_MS });
+            addGifFrame();
           }
         }
         for (let f = FADE_FRAMES - 1; f >= 0; f--) {
           _vnsRenderSlideFrame(canvas, slide, { lineIdx: li, partialText: full, boxOpacity: f / (FADE_FRAMES - 1) });
-          gif.addFrame(canvas, { copy: true, delay: FRAME_MS });
+          addGifFrame();
         }
-        doneLines++;
         // 讓出 thread,避免 UI 卡住(也讓 cancel 點擊有機會 propagate)
         await _vnsSleep(0);
       }
     }
   } catch (e) {
+    _vnsExportStopWatchdog();
+    _vnsExportState.gif = null;
     _vnsExportState.running = false;
     _vnsExportOverlayClose();
     showToast("GIF 渲染失敗:" + (e.message || e), "warn", 4000);
     return;
   }
 
-  if (_vnsExportState.cancelled) {
-    gif.abort && gif.abort();
-    _vnsExportState.running = false;
-    _vnsExportOverlayClose();
-    showToast("已取消 GIF 編碼", "info", 2000);
-    return;
-  }
+  // 取消(按鈕 / watchdog)已經 abort worker、關閉浮層、提示 → 這裡靜默返回即可
+  if (_vnsExportState.cancelled) return;
 
+  const tEnc = Date.now();
   gif.on("progress", (p) => {
     // 後半段是 worker 編碼進度(0~1)
-    _vnsExportSetProgress(`Worker 編碼中…(${Math.round(p * 100)}%)`, 50 + p * 50);
+    let eta = "";
+    if (p > 0.05) {
+      const elapsed = (Date.now() - tEnc) / 1000;
+      const remain = Math.max(0, Math.round(elapsed / p * (1 - p)));
+      eta = `　預估剩餘:約 ${remain} 秒`;
+    }
+    _vnsExportSetProgress(`Worker 編碼中… ${Math.round(p * 100)}%${eta}`, 50 + p * 50);
   });
   gif.on("finished", (blob) => {
+    if (_vnsExportState.cancelled) return;   // 編碼途中被取消 → 不下載
+    _vnsExportStopWatchdog();
+    _vnsExportState.gif = null;
     _vnsExportState.running = false;
     _vnsExportOverlayClose();
     const url = URL.createObjectURL(blob);
@@ -299,7 +343,7 @@ async function exportSimpleGif() {
     a.click();
     a.remove();
     setTimeout(() => URL.revokeObjectURL(url), 2000);
-    showToast(`已下載 GIF(${vnsFmtBytes(blob.size)})`, "info", 3500);
+    showToast(`✓ 已輸出 ${a.download}`, "info", 3500);
   });
   _vnsExportSetProgress("送入 Worker 編碼…", 50);
   gif.render();
