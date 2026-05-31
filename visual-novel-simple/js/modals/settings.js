@@ -55,6 +55,41 @@ async function renderStorageSection() {
   }
 }
 
+// 📹 影片輸出 — 片頭緩衝設定。binding 只綁一次,每次開啟 modal 都同步當前 state。
+let _introBufferBound = false;
+function setupIntroBufferSettings() {
+  const checkbox = document.getElementById("introBufferEnabled");
+  const sub = document.getElementById("introBufferSettings");
+  const range = document.getElementById("introBufferDuration");
+  const valEl = document.getElementById("introBufferDurationVal");
+  if (!checkbox || !sub || !range || !valEl) return;
+  if (!state.outputSettings || !state.outputSettings.intro) {
+    state.outputSettings = (typeof migrateOutputSettings === "function")
+      ? migrateOutputSettings(state.outputSettings)
+      : { intro: { enabled: true, duration: 1.5 } };
+  }
+  const cur = state.outputSettings.intro;
+  // 同步當前值
+  checkbox.checked = !!cur.enabled;
+  range.value = cur.duration;
+  valEl.textContent = `${Number(cur.duration).toFixed(1)} 秒`;
+  sub.classList.toggle("disabled", !cur.enabled);
+  // 只綁一次事件
+  if (_introBufferBound) return;
+  _introBufferBound = true;
+  checkbox.addEventListener("change", () => {
+    state.outputSettings.intro.enabled = checkbox.checked;
+    sub.classList.toggle("disabled", !checkbox.checked);
+    if (typeof saveToStorage === "function") saveToStorage();
+  });
+  range.addEventListener("input", () => {
+    const v = Math.max(0.5, Math.min(3.0, parseFloat(range.value) || 1.5));
+    state.outputSettings.intro.duration = v;
+    valEl.textContent = `${v.toFixed(1)} 秒`;
+    if (typeof saveToStorage === "function") saveToStorage();
+  });
+}
+
 function openSettingsModal() {
   if (!settingsModalEl) return;
   settingsModalEl.classList.add("show");
@@ -63,8 +98,9 @@ function openSettingsModal() {
   settingsModalEl.querySelectorAll(".theme-btn").forEach(b => {
     b.classList.toggle("active", b.dataset.theme === cur);
   });
-  // 開啟時更新儲存空間用量
+  // 開啟時更新儲存空間用量 + 同步影片輸出設定
   renderStorageSection();
+  setupIntroBufferSettings();
 }
 
 function closeSettingsModal() {
@@ -74,6 +110,7 @@ function closeSettingsModal() {
 
 export {
   renderStorageSection,
+  setupIntroBufferSettings,
   openSettingsModal,
   closeSettingsModal,
 };

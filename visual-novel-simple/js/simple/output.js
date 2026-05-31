@@ -116,6 +116,8 @@ async function exportSimpleMp4() {
   const totalLines = _vnsCountTotalLines(cards);
   let doneLines = 0;
   const t0 = Date.now();
+  // 片頭緩衝佔進度條的前段(0~introBase%),幕內容映射到其後,確保進度條單調遞增。
+  let introBase = 0;
   // 任務 4:進度文字 + 預估剩餘。frac 為 0~1 的整體進度(含行內細分,確保連續推進)。
   function mp4Prog(label, frac) {
     let eta = "";
@@ -124,14 +126,29 @@ async function exportSimpleMp4() {
       const remain = Math.max(0, Math.round(elapsed / frac * (1 - frac)));
       eta = `　預估剩餘:約 ${remain} 秒`;
     }
-    _vnsExportSetProgress(label + eta, frac * 100);
+    _vnsExportSetProgress(label + eta, introBase + frac * (100 - introBase));
   }
 
   try {
     const FADE_MS = 300;
-    const TYPE_MS = 45;
+    // 任務 1-4A:一般打字機速度用全域文字速度;任務 2-2:MP4 固定 30fps
+    const TYPE_MS = (typeof getTextSpeedPerChar === "function")
+      ? getTextSpeedPerChar(state.dialogStyle && state.dialogStyle.textSpeed) : 45;
     const HOLD_MS = 500;
     const FRAME_MS = 1000 / 30;
+
+    // 片頭緩衝:第一幕之前先錄一段乾淨 CG(無對話框/文字/特效),方便社群平台抓縮圖。
+    const _intro = state.outputSettings && state.outputSettings.intro;
+    if (_intro && _intro.enabled && _intro.duration > 0) {
+      const introFrames = Math.max(1, Math.round((_intro.duration * 1000) / FRAME_MS));
+      introBase = 5;   // 片頭佔進度條前 5%
+      for (let f = 0; f < introFrames; f++) {
+        if (_vnsExportState.cancelled) break;
+        _vnsRenderIntroFrame(canvas, cards[0]);
+        _vnsExportSetProgress(`錄製片頭緩衝… (${_intro.duration.toFixed(1)}s)`, ((f + 1) / introFrames) * introBase);
+        await _vnsSleep(FRAME_MS);
+      }
+    }
 
     for (let si = 0; si < cards.length; si++) {
       if (_vnsExportState.cancelled) break;
@@ -295,14 +312,24 @@ async function exportSimpleGif() {
   // 任務 3:卡死偵測 — 60 秒無進度自動取消(涵蓋渲染與 worker 編碼兩階段)
   _vnsExportStartWatchdog(60);
 
-  const FPS = 15;
+  // 任務 2-2:GIF 固定 24fps(較 15fps 流暢,且編碼量仍可控)
+  const FPS = 24;
   const FRAME_MS = 1000 / FPS;
-  const FADE_FRAMES = 5;
-  const TYPE_FRAMES_PER_CHAR = 1;
-  const HOLD_FRAMES = 8;
+  // 以毫秒時長換算幀數,讓淡入/停留時長與 MP4 一致(不再因 fps 改變而縮短)
+  const FADE_FRAMES = Math.max(2, Math.round(300 / FRAME_MS));
+  const HOLD_FRAMES = Math.max(2, Math.round(500 / FRAME_MS));
+  // 任務 1-4A:每字幀數由全域文字速度換算(預設 80ms/字 → 24fps 約 2 幀/字)
+  const _typeMsPerChar = (typeof getTextSpeedPerChar === "function")
+    ? getTextSpeedPerChar(state.dialogStyle && state.dialogStyle.textSpeed) : 66;
+  const TYPE_FRAMES_PER_CHAR = Math.max(1, Math.round(_typeMsPerChar / FRAME_MS));
+
+  // 片頭緩衝幀數(第一幕乾淨 CG)。計入總幀數,讓進度條/預估包含緩衝(任務 5)。
+  const _intro = state.outputSettings && state.outputSettings.intro;
+  const introFrames = (_intro && _intro.enabled && _intro.duration > 0)
+    ? Math.max(1, Math.round((_intro.duration * 1000) / FRAME_MS)) : 0;
 
   // 任務 4:精準逐幀進度 — 先把總幀數算出來,渲染時逐幀回報「第 X / Y 幀」+ 預估剩餘。
-  let framesTotal = 0;
+  let framesTotal = introFrames;
   for (const slide of cards) {
     if (isChoiceSlide(slide)) {
       framesTotal += _vnsChoiceFrameDescriptors(slide, FRAME_MS).length;
@@ -337,6 +364,15 @@ async function exportSimpleGif() {
   }
 
   try {
+    // 片頭緩衝:第一幕之前先錄一段乾淨 CG(無對話框/文字/特效)。
+    if (introFrames > 0 && cards.length) {
+      for (let f = 0; f < introFrames; f++) {
+        if (_vnsExportState.cancelled) break;
+        _vnsRenderIntroFrame(canvas, cards[0]);
+        addGifFrame();
+      }
+      await _vnsSleep(0);
+    }
     for (let si = 0; si < cards.length; si++) {
       if (_vnsExportState.cancelled) break;
       const slide = cards[si];

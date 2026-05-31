@@ -122,6 +122,10 @@ async function startSimplePlayback(mode) {
   _vnsSPClearTimers();
   pb.playing = true;
   pb.paused = false;
+  // 任務 1-4A / 1-5:一般打字機速度用全域文字速度,於「開始播放」時套用(拖滑桿不立即重播)
+  if (typeof getTextSpeedPerChar === "function") {
+    pb.typeSpeed = getTextSpeedPerChar(state.dialogStyle && state.dialogStyle.textSpeed);
+  }
   pb.mode = (mode === "continuous") ? "continuous" : "single";
   _vnsUpdatePlaybackBtn();
   _beginSlidePlayback(cur);

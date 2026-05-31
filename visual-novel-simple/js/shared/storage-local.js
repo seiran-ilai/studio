@@ -24,6 +24,7 @@ function saveToStorage() {
       cgOrder: state.cgOrder,
       ratio: state.ratio,
       dialogStyle: state.dialogStyle,
+      outputSettings: state.outputSettings,
       gameUI: state.gameUI,
       lightMode: state.lightMode,
       styleDefaults: state.styleDefaults,
@@ -92,8 +93,10 @@ function loadFromStorage() {
         shape: typeof payload.dialogStyle.shape === "string" ? payload.dialogStyle.shape : DEFAULT_DIALOG_STYLE.shape,
         color: typeof payload.dialogStyle.color === "string" ? payload.dialogStyle.color : DEFAULT_DIALOG_STYLE.color,
         opacity: typeof payload.dialogStyle.opacity === "number" ? payload.dialogStyle.opacity : DEFAULT_DIALOG_STYLE.opacity,
+        textSpeed: typeof payload.dialogStyle.textSpeed === "number" ? payload.dialogStyle.textSpeed : DEFAULT_DIALOG_STYLE.textSpeed,
       });
     }
+    state.outputSettings = migrateOutputSettings(payload.outputSettings);
     state.gameUI = migrateGameUI(payload.gameUI);
     state.lightMode = LIGHT_MODES.includes(payload.lightMode) ? payload.lightMode : DEFAULT_LIGHT_MODE;
     if (payload.styleDefaults && typeof payload.styleDefaults === "object") {

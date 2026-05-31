@@ -504,6 +504,12 @@ function syncStyleDefaultsUI() {
     if (se) se.value = v;
     if (le) le.textContent = v + " pt";
   }
+  // 全域文字速度滑桿
+  const spd = document.getElementById("textSpeedRange");
+  const spdLabel = document.getElementById("textSpeedLabel");
+  const spv = (state.dialogStyle && typeof state.dialogStyle.textSpeed === "number") ? state.dialogStyle.textSpeed : 50;
+  if (spd) spd.value = spv;
+  if (spdLabel) spdLabel.textContent = String(spv);
   updateDefaultsPreview();
 }
 

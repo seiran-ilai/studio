@@ -160,7 +160,8 @@ const SIZE_TAG_NAMES = ["大", "小"];
 
 const EMPHASIS_TAG_NAMES = ["粗", "斜"];
 
-const DEFAULT_DIALOG_STYLE = { shape: "classic", color: "#0d0716", opacity: 0.88 };
+// textSpeed:全域文字速度 0~100,50 為中等(預設,接近原打字機速度)。見 getTextSpeedPerChar。
+const DEFAULT_DIALOG_STYLE = { shape: "classic", color: "#0d0716", opacity: 0.88, textSpeed: 50 };
 
 const DIALOG_SHAPES = [
   { id: "classic", name: "經典金邊", desc: "直角金邊矩形" },

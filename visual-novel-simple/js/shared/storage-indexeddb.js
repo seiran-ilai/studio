@@ -388,6 +388,7 @@ function vnsCollectProjectData() {
     cgOrder: state.cgOrder,
     ratio: state.ratio,
     dialogStyle: state.dialogStyle,
+    outputSettings: state.outputSettings,
     gameUI: state.gameUI,
     lightMode: state.lightMode,
     loveInitial: state.loveInitial,

@@ -38,12 +38,22 @@ function randomGlitchChar() {
 function _isDecodeReplaceable(ch) {
   return /[一-鿿㐀-䶿぀-ヿa-zA-Z0-9]/.test(ch);
 }
+// 全域文字速度 0~100 → 每字毫秒數。0(最慢)=200ms,50(中等)=80ms,100(最快)=20ms。
+// 同時驅動一般打字機與 text_decode 的逐字浮現節奏(讀 state.dialogStyle.textSpeed)。
+function getTextSpeedPerChar(speedValue) {
+  const t = (speedValue == null ? 50 : Math.max(0, Math.min(100, speedValue))) / 100;
+  return Math.round(200 - t * 180);   // 200ms 線性遞減到 20ms
+}
+function _globalTextSpeedPerChar() {
+  const sp = (typeof state !== "undefined" && state.dialogStyle) ? state.dialogStyle.textSpeed : 50;
+  return getTextSpeedPerChar(sp);
+}
 function getTextDecodeParams(intensity) {
   const t = Math.max(0, Math.min(100, intensity == null ? 50 : intensity)) / 100;
   return {
-    typewriterStep: 100,                         // 每 100ms 浮現一個新字
+    typewriterStep: _globalTextSpeedPerChar(),   // 任務 1-4B:逐字浮現用全域文字速度
     perCharGlitchDuration: 200 + t * 400,        // 200~600ms 單字解碼動畫時長
-    glitchInterval: 60,                          // 60ms 換一次亂碼
+    glitchInterval: 60,                          // 60ms 換一次亂碼(DOM 預覽用)
     // 任務 2:整段一起閃回(訊號干擾感)
     waveCycle: 8000 - t * 5000,                  // 8s~3s 間隔
     waveDuration: 200 + t * 300,                 // 200~500ms 整段亂碼時長
@@ -177,7 +187,7 @@ function fxCanvasShake(slide, timeSec) {
   const e = fx.find(x => x.id === "shake");
   if (!e) return { x: 0, y: 0 };
   const amp = 1 + _fxIntensity(e) * 9;
-  return { x: Math.sin(timeSec * 53) * amp, y: Math.cos(timeSec * 71) * amp };
+  return { x: Math.sin(timeSec * 14) * amp, y: Math.cos(timeSec * 19) * amp };
 }
 
 function _parseColor(c) {
@@ -364,10 +374,13 @@ function runTextDecode(dialogEl, slide) {
 
 // ---------- 文字替換(Canvas 輸出) ----------
 
-// 確定性偽隨機(同 seed → 同字,保證 GIF 每幀可重現)
+// 確定性偽隨機(同 seed → 同字,保證每幀可重現)。
+// 任務 2-4:亂碼字符每 1/15 秒換一次,正好對齊 30fps 的每 2 幀 / 24fps 的每 ~1.6 幀,
+// 避免「兩幀同字、突然跳兩字」的不規則跳動,輸出觀感更流暢。
 function pseudoRandomChar(timeMs, index) {
-  const seed = Math.floor(timeMs / 80) * 7 + index * 31;
-  const hash = ((seed % 233280) + 233280) % 233280;
+  const slice = Math.floor(timeMs / 66.6667);   // 1000ms / 15 ≈ 66.67ms 一段
+  const seed = slice * 7 + index * 31;
+  const hash = (((seed * 9301 + 49297) % 233280) + 233280) % 233280;
   return TEXT_DECODE_CHARS[hash % TEXT_DECODE_CHARS.length];
 }
 function pseudoRandomBool(timeMs, index) {
@@ -429,6 +442,7 @@ export {
   EFFECT_DEFS,
   EFFECT_BY_ID,
   VALID_EFFECT_IDS,
+  getTextSpeedPerChar,
   getTextDecodeParams,
   hasTextDecode,
   textDecodeIntensity,

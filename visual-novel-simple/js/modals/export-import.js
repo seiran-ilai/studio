@@ -230,6 +230,7 @@ async function exportCurrentProject() {
     // 3. settings.json:樣式 + 字體 + custom variant(沿用 localStorage 的子集)
     const settings = {
       dialogStyle: state.dialogStyle,
+      outputSettings: state.outputSettings,
       styleDefaults: state.styleDefaults,
       fontSizes: state.fontSizes,
       style: state.style,
@@ -541,6 +542,7 @@ async function buildVnsBlobFromState() {
 
   zip.file("settings.json", JSON.stringify({
     dialogStyle: state.dialogStyle,
+    outputSettings: state.outputSettings,
     styleDefaults: state.styleDefaults,
     fontSizes: state.fontSizes,
     style: state.style,
@@ -721,6 +723,7 @@ async function loadVnsIntoCurrentProject(file, handle) {
     // 3. settings → state
     const settings = pkg.settings || {};
     if (settings.dialogStyle) state.dialogStyle = migrateDialogStyle(settings.dialogStyle);
+    if (settings.outputSettings) state.outputSettings = migrateOutputSettings(settings.outputSettings);
     if (settings.styleDefaults && typeof settings.styleDefaults === "object") {
       for (const k of ["speaker", "narration", "inner", "dialog"]) {
         const d = settings.styleDefaults[k];

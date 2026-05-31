@@ -204,6 +204,24 @@ function _vnsRenderSlideFrame(canvas, slide, opts) {
   if (typeof fxCanvasOverlay === "function") fxCanvasOverlay(ctx, w, h, slide, fxTime);
 }
 
+// 片頭緩衝幀:只畫第一幕的 CG(cover 滿版),無對話框、無文字、無特效。
+// 第一幕沒有 CG 時填主題舞台底色(乾淨空畫面),維持「片頭緩衝有作用」的一致性。
+function _vnsRenderIntroFrame(canvas, slide) {
+  const ctx = canvas.getContext("2d", { willReadFrequently: true });
+  const w = canvas.width, h = canvas.height;
+  const styles = getComputedStyle(document.documentElement);
+  const stageBg = styles.getPropertyValue("--style-stage-bg").trim() || "#000";
+  ctx.fillStyle = stageBg;
+  ctx.fillRect(0, 0, w, h);
+  const cgUrl = _resolveSlideCgUrl(slide);
+  const img = cgUrl ? _vnsCgImageCache.get(cgUrl) : null;
+  if (img) {
+    const scale = Math.max(w / img.width, h / img.height);
+    const sw = img.width * scale, sh = img.height * scale;
+    ctx.drawImage(img, (w - sw) / 2, (h - sh) / 2, sw, sh);
+  }
+}
+
 function _vnsRenderChoiceFrame(canvas, slide, opts) {
   opts = opts || {};
   const ctx = canvas.getContext("2d", { willReadFrequently: true });
@@ -471,6 +489,7 @@ export {
   _vnsEnsureSlideParsed,
   _vnsPreloadCgImage,
   _vnsRenderSlideFrame,
+  _vnsRenderIntroFrame,
   _vnsRenderChoiceFrame,
   _vnsChoiceFrameDescriptors,
   _vnsRenderSlideToCanvas,

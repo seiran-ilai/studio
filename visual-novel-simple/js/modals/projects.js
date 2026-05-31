@@ -125,6 +125,7 @@ function applyProjectDataToState(data, mode) {
   if (Array.isArray(data.cgOrder)) state.cgOrder = data.cgOrder;
   if (typeof data.ratio === "string") state.ratio = data.ratio;
   if (data.dialogStyle && typeof data.dialogStyle === "object") state.dialogStyle = data.dialogStyle;
+  if (data.outputSettings) state.outputSettings = migrateOutputSettings(data.outputSettings);
   if (data.gameUI && typeof data.gameUI === "object") state.gameUI = data.gameUI;
   if (typeof data.lightMode === "string") state.lightMode = data.lightMode;
   if (data.loveInitial && typeof data.loveInitial === "object") state.loveInitial = data.loveInitial;

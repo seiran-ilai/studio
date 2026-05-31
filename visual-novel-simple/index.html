@@ -366,6 +366,14 @@
           <h3>🌐 全域預設樣式</h3>
           <p class="defaults-hint">行內 tag 優先。</p>
 
+          <div class="default-row default-row--speed">
+            <label>文字速度</label>
+            <span class="speed-end">慢</span>
+            <input type="range" id="textSpeedRange" class="default-size-range" min="0" max="100" step="1" value="50">
+            <span class="speed-end">快</span>
+            <span class="default-size-label" id="textSpeedLabel">50</span>
+          </div>
+
           <div class="default-row">
             <label>角色名</label>
             <select id="defSpeakerFont">
@@ -546,6 +554,24 @@
           <button class="btn btn-ghost" id="storageRefresh" title="重新計算用量">↻</button>
         </div>
         <div class="storage-persist-note" id="storagePersistNote" hidden></div>
+      </div>
+
+      <!-- 📹 影片輸出 -->
+      <div class="settings-section settings-output">
+        <h3>📹 影片輸出</h3>
+        <label class="settings-toggle">
+          <input type="checkbox" id="introBufferEnabled">
+          <span>MP4 / GIF 輸出時加入片頭緩衝</span>
+        </label>
+        <div class="settings-sub" id="introBufferSettings">
+          <label class="settings-sub-row">
+            <span>片頭時長</span>
+            <input type="range" id="introBufferDuration" min="0.5" max="3.0" step="0.1" value="1.5">
+            <span id="introBufferDurationVal">1.5 秒</span>
+          </label>
+          <p class="settings-hint">💡 開頭顯示乾淨的 CG 畫面,方便上傳社群平台時抓取縮圖。</p>
+          <p class="settings-hint">💡 片頭緩衝只在 MP4 / GIF 輸出時生效,預覽不顯示。</p>
+        </div>
       </div>
 
       <div class="settings-author">

@@ -13,6 +13,9 @@ import {
 function migrateDialogStyle(s) {
   const merged = { ...DEFAULT_DIALOG_STYLE, ...(s || {}) };
   if (!DIALOG_SHAPE_IDS.has(merged.shape)) merged.shape = "classic";
+  // 全域文字速度:舊資料無此欄位則補預設 50,並夾在 0~100
+  const sp = Number(merged.textSpeed);
+  merged.textSpeed = Number.isFinite(sp) ? Math.max(0, Math.min(100, Math.round(sp))) : 50;
   return merged;
 }
 
@@ -70,6 +73,18 @@ function migrateCustomVariants(c) {
   return out;
 }
 
+// 影片輸出設定 — 片頭緩衝(MP4/GIF 開頭顯示乾淨 CG,方便社群平台抓縮圖)。
+// 舊資料無此欄位 → 補預設(啟用、1.5 秒)。duration 夾在 0.5~3.0。
+function migrateOutputSettings(o) {
+  const out = { intro: { enabled: true, duration: 1.5 } };
+  if (o && typeof o === "object" && o.intro && typeof o.intro === "object") {
+    if (typeof o.intro.enabled === "boolean") out.intro.enabled = o.intro.enabled;
+    const d = Number(o.intro.duration);
+    if (Number.isFinite(d)) out.intro.duration = Math.max(0.5, Math.min(3.0, d));
+  }
+  return out;
+}
+
 function migrateFontSizes(f) {
   // 四類獨立字級,範圍統一 12 ~ 32 pt
   const out = { dialog: 18, speaker: 16, narration: 16, inner: 15 };
@@ -113,6 +128,8 @@ const state = {
   isTyping: false,
   fullText: "",
   dialogStyle: { ...DEFAULT_DIALOG_STYLE },
+  // 影片輸出設定(片頭緩衝)。見 migrateOutputSettings。
+  outputSettings: { intro: { enabled: true, duration: 1.5 } },
   gameUI: JSON.parse(JSON.stringify(DEFAULT_GAME_UI)),
   // O5:全域預設樣式(沒寫樣式 tag 的行會自動套用)— 只剩字型,字級獨立到 fontSizes
   styleDefaults: {
@@ -172,6 +189,7 @@ export {
   migrateStyle,
   migrateCustomVariants,
   migrateFontSizes,
+  migrateOutputSettings,
   migrateGameUI,
   migrateCharacter,
   state,

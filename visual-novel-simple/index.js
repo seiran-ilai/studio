@@ -673,6 +673,21 @@ const STYLE_DEFAULT_FIELDS = [
     });
   }
 })();
+
+// 全域文字速度滑桿:即時更新數值與 state,不立即重播(下次播放/輸出才套用)。
+(function initTextSpeedSlider() {
+  const spd = document.getElementById("textSpeedRange");
+  const spdLabel = document.getElementById("textSpeedLabel");
+  if (!spd) return;
+  spd.addEventListener("input", () => {
+    const v = Math.max(0, Math.min(100, parseInt(spd.value, 10) || 0));
+    if (!state.dialogStyle) state.dialogStyle = {};
+    state.dialogStyle.textSpeed = v;
+    if (spdLabel) spdLabel.textContent = String(v);
+    saveToStorage();
+  });
+})();
+
 applyFontSizes();
 syncStyleDefaultsUI();
 
