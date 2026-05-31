@@ -67,8 +67,20 @@ body::after{content:"";position:fixed;inset:0;z-index:1;pointer-events:none;opac
 .section-label .count{font-family:var(--font-serif);font-style:italic;font-size:13px;color:var(--rose);letter-spacing:.1em;}
 
 /* ===== Tool cards = 書籍章節扉頁 ===== */
-.tools{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:22px;width:100%;max-width:1040px;margin-bottom:92px;}
-.tool-card{position:relative;display:flex;flex-direction:column;min-height:368px;padding:32px 30px 24px;
+.tools{display:block;width:100%;max-width:1000px;margin-bottom:92px;}
+/* 分類標題（與卡片內「第 X 章」標籤同風格：襯線斜體大寫 + 兩側細線） */
+.category-title{display:flex;align-items:center;justify-content:center;gap:18px;
+  margin:60px 0 36px;font-family:var(--font-serif);font-style:italic;font-weight:500;
+  font-size:15px;letter-spacing:.3em;text-transform:uppercase;color:var(--rose);
+  opacity:0;transform:translateY(18px);}
+.category-title:first-of-type{margin-top:6px;}
+.loaded .category-title{animation:rise .85s var(--ease) forwards;}
+.loaded .category-title:first-of-type{animation-delay:.36s;}
+.loaded .category-title:nth-of-type(2){animation-delay:.7s;}
+.category-line{flex:1;height:1px;background:var(--line-strong);opacity:.55;max-width:200px;}
+/* 卡片列：水平並列、整體置中 */
+.tool-row{display:flex;justify-content:center;align-items:stretch;gap:24px;flex-wrap:wrap;}
+.tool-card{position:relative;display:flex;flex-direction:column;width:300px;flex:0 0 300px;min-height:368px;padding:32px 30px 24px;
   text-decoration:none;color:var(--brown);background:var(--paper);
   backdrop-filter:blur(16px) saturate(1.2);-webkit-backdrop-filter:blur(16px) saturate(1.2);
   border:1px solid var(--line);border-radius:14px;
@@ -76,9 +88,18 @@ body::after{content:"";position:fixed;inset:0;z-index:1;pointer-events:none;opac
   overflow:hidden;opacity:0;transform:translateY(22px);
   transition:transform .35s var(--ease),border-color .35s var(--ease),background .35s var(--ease),box-shadow .35s var(--ease);}
 .loaded .tool-card{animation:rise .85s var(--ease) forwards;}
-.loaded .tool-card:nth-child(1){animation-delay:.42s;}
-.loaded .tool-card:nth-child(2){animation-delay:.54s;}
-.loaded .tool-card:nth-child(3){animation-delay:.66s;}
+.loaded .creative-plus .tool-card:nth-child(1){animation-delay:.46s;}
+.loaded .creative-plus .tool-card:nth-child(2){animation-delay:.56s;}
+.loaded .creative-plus .tool-card:nth-child(3){animation-delay:.66s;}
+.loaded .for-ffxiv .tool-card{animation-delay:.8s;}
+/* 撰寫中章節（不可點，半透明，無 hover 浮起） */
+.tool-card.is-soon{cursor:not-allowed;opacity:.6;}
+.tool-card.is-soon:hover{transform:none;background:var(--paper);border-color:var(--line);
+  box-shadow:0 1px 0 rgba(255,255,255,.65) inset,0 18px 44px -26px rgba(67,46,54,.55);}
+.tool-card.is-soon:hover::before{opacity:0;}
+.tool-card.is-soon:hover .ch-num{opacity:.07;transform:none;}
+.soon-badge{display:inline-flex;align-items:center;padding:3px 13px;border:1px solid var(--line-strong);
+  border-radius:999px;font-family:var(--font-serif);font-style:italic;font-size:12px;letter-spacing:.06em;color:var(--rose);}
 /* 啞光顆粒 */
 .tool-card::after{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;background-image:var(--grain);opacity:.05;mix-blend-mode:multiply;}
 /* 內框線（hover 浮現）*/

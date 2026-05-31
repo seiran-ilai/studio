@@ -59,6 +59,16 @@ const state = {
   _graded: null,                // 靜態圖已套色調的 offscreen 快取（影片不用）
   focusMode: 'auto',
 
+  // 各特效專屬進階設定（隨選到的特效動態切換 UI）
+  adv: {
+    film:  { letterbox: true, letterboxPct: 12, grain: true, scratches: false },
+    cyber: { scanlines: true, neon: 5, grid: false },
+    retro: { bandSplit: 5, pixelate: false, pixelSize: 3 },
+    err:   { flicker: 5, tear: 5, rgb: 5, banner: true },
+    cctv:  { timestamp: true, crosshair: true, scanDensity: 5 },
+    hack:  { rainSpeed: 5, rainDensity: 5, terminal: true, charset: 'mix' }
+  },
+
   // 多段文字
   txts: [newTxt()],
   selectedTxt: 0
@@ -82,6 +92,52 @@ const FONTS = {
   chenyu: { css: "'ChenYuluoyan', cursive", weight: '400' },
   naikai: { css: "'NaikaiFont', sans-serif", weight: '400' }
 };
+
+// 各特效進階控制項定義表（renderAdv 依此動態生成 UI）
+const ADV_CONFIG = {
+  film: [
+    { type: 'check',  key: 'letterbox',    label: '黑邊 letterbox' },
+    { type: 'slider', key: 'letterboxPct', label: '黑邊比例', min: 0, max: 25, step: 1 },
+    { type: 'check',  key: 'grain',        label: '顆粒 grain' },
+    { type: 'check',  key: 'scratches',    label: '刮痕 scratches' }
+  ],
+  cyber: [
+    { type: 'check',  key: 'scanlines', label: '掃描線' },
+    { type: 'slider', key: 'neon',      label: '霓虹強度', min: 0, max: 10, step: 1 },
+    { type: 'check',  key: 'grid',      label: '網格 grid overlay' }
+  ],
+  retro: [
+    { type: 'slider', key: 'bandSplit', label: '色帶分離量', min: 0, max: 10, step: 1 },
+    { type: 'check',  key: 'pixelate',  label: '像素化 / 點陣' },
+    { type: 'slider', key: 'pixelSize', label: '像素大小', min: 1, max: 8, step: 1 }
+  ],
+  err: [
+    { type: 'slider', key: 'flicker', label: '閃爍頻率', min: 0, max: 10, step: 1 },
+    { type: 'slider', key: 'tear',    label: '撕裂強度', min: 0, max: 10, step: 1 },
+    { type: 'slider', key: 'rgb',     label: 'RGB 位移量', min: 0, max: 10, step: 1 },
+    { type: 'check',  key: 'banner',  label: 'SYSTEM ERROR 橫條' }
+  ],
+  cctv: [
+    { type: 'check',  key: 'timestamp',   label: '時間戳記 (REC ●)' },
+    { type: 'check',  key: 'crosshair',   label: '十字準星 / 邊角框' },
+    { type: 'slider', key: 'scanDensity', label: '掃描線密度', min: 0, max: 10, step: 1 }
+  ],
+  hack: [
+    { type: 'slider', key: 'rainSpeed',   label: '雨速', min: 0, max: 10, step: 1 },
+    { type: 'slider', key: 'rainDensity', label: '雨密度', min: 0, max: 10, step: 1 },
+    { type: 'check',  key: 'terminal',    label: '終端列 (ROOT@TARGET)' },
+    { type: 'select', key: 'charset',     label: '字元集', options: [['kana', '日文片假名'], ['ascii', '英數符號'], ['mix', '混合']] }
+  ]
+};
+
+/** 把數值輸入框夾回 [min,max]，回寫並回傳結果 */
+function clampNum(el, min, max) {
+  let v = parseFloat(el.value);
+  if (isNaN(v)) v = min;
+  v = Math.max(min, Math.min(max, Math.round(v)));
+  el.value = v;
+  return v;
+}
 
 const $ = s => document.querySelector(s);
 const $$ = s => Array.from(document.querySelectorAll(s));
@@ -116,7 +172,7 @@ function setupMedia(naturalW, naturalH) {
   dz.classList.add('has');
   $('#btnPng').disabled = $('#btnGif').disabled = $('#btnMp4').disabled = false;
   $('#btnReplace').style.display = 'inline-block';
-  $('#btnPause').style.display = 'inline-block';
+  $('#btnPause').style.display = state.isVideo ? 'inline-block' : 'none';
   $('#metaSize').textContent = `${cv.width}×${cv.height}`;
 
   // 影片不需要「輸出長度」設定（直接用影片時長）
@@ -431,19 +487,75 @@ $$('[data-fx]').forEach(b => b.addEventListener('click', () => {
   b.classList.add('on');
   state.fx = b.dataset.fx;
   $('#metaFx').textContent = state.fx === 'err' ? '404' : state.fx.toUpperCase();
+  renderAdv(state.fx);
+  redrawNow();
 }));
 
-// 強度滑桿
-['NO','CO','DK','HU','SP'].forEach(k => {
-  $(`#s${k}`).addEventListener('input', e => {
-    state[k] = +e.target.value;
-    $(`#v${k}`).textContent = e.target.value;
+/** 依目前特效在 #advPanel 動態渲染專屬進階控制項 */
+function renderAdv(fx) {
+  const panel = $('#advPanel');
+  const cfg = ADV_CONFIG[fx] || [];
+  const a = state.adv[fx];
+  panel.innerHTML = '<h4>⚙ 進階設定</h4>';
+
+  cfg.forEach(ctl => {
+    const row = document.createElement('div');
+    row.className = 'adv-row';
+
+    if (ctl.type === 'check') {
+      row.innerHTML = `<label class="adv-check"><input type="checkbox"${a[ctl.key] ? ' checked' : ''}> ${ctl.label}</label>`;
+      row.querySelector('input').addEventListener('change', e => { a[ctl.key] = e.target.checked; redrawNow(); });
+
+    } else if (ctl.type === 'slider') {
+      row.innerHTML = `<div class="adv-slider">
+        <span class="adv-label">${ctl.label}</span>
+        <input type="range" min="${ctl.min}" max="${ctl.max}" step="${ctl.step}" value="${a[ctl.key]}">
+        <input type="number" class="num-val" min="${ctl.min}" max="${ctl.max}" step="${ctl.step}" value="${a[ctl.key]}">
+      </div>`;
+      const slider = row.querySelector('input[type=range]');
+      const num = row.querySelector('input[type=number]');
+      slider.addEventListener('input', () => { a[ctl.key] = +slider.value; num.value = slider.value; redrawNow(); });
+      num.addEventListener('change', () => { const v = clampNum(num, ctl.min, ctl.max); a[ctl.key] = v; slider.value = v; redrawNow(); });
+      num.addEventListener('keydown', e => { if (e.key === 'Enter') num.blur(); });
+
+    } else if (ctl.type === 'select') {
+      const opts = ctl.options.map(([v, l]) => `<option value="${v}"${a[ctl.key] === v ? ' selected' : ''}>${l}</option>`).join('');
+      row.innerHTML = `<div class="adv-slider"><span class="adv-label">${ctl.label}</span><select class="adv-select" style="grid-column:2/4;">${opts}</select></div>`;
+      row.querySelector('select').addEventListener('change', e => { a[ctl.key] = e.target.value; redrawNow(); });
+    }
+
+    panel.appendChild(row);
   });
+}
+
+// 強度滑桿（滑桿 ↔ 數字輸入框雙向綁定）
+['NO','CO','DK','HU','SP'].forEach(k => {
+  const slider = $(`#s${k}`);
+  const num = $(`#v${k}`);
+  slider.addEventListener('input', e => {
+    state[k] = +e.target.value;
+    num.value = e.target.value;
+    redrawNow();
+  });
+  num.addEventListener('change', () => {
+    const v = clampNum(num, 0, 10);
+    state[k] = v;
+    slider.value = v;
+    redrawNow();
+  });
+  num.addEventListener('keydown', e => { if (e.key === 'Enter') num.blur(); });
 });
 
-// 色調
-$('#sHUE').addEventListener('input', e => { state.HUE = +e.target.value; $('#vHUE').textContent = e.target.value + '°'; buildGraded(); });
-$('#sSAT').addEventListener('input', e => { state.SAT = +e.target.value; $('#vSAT').textContent = e.target.value + '%'; buildGraded(); });
+// 色調 / 飽和（滑桿 ↔ 數字輸入框雙向綁定）
+$('#sHUE').addEventListener('input', e => { state.HUE = +e.target.value; $('#vHUE').value = e.target.value; buildGraded(); redrawNow(); });
+$('#vHUE').addEventListener('change', () => { const v = clampNum($('#vHUE'), -180, 180); state.HUE = v; $('#sHUE').value = v; buildGraded(); redrawNow(); });
+$('#vHUE').addEventListener('keydown', e => { if (e.key === 'Enter') e.target.blur(); });
+$('#sSAT').addEventListener('input', e => { state.SAT = +e.target.value; $('#vSAT').value = e.target.value; buildGraded(); redrawNow(); });
+$('#vSAT').addEventListener('change', () => { const v = clampNum($('#vSAT'), 0, 200); state.SAT = v; $('#sSAT').value = v; buildGraded(); redrawNow(); });
+$('#vSAT').addEventListener('keydown', e => { if (e.key === 'Enter') e.target.blur(); });
+
+// 初始渲染進階面板
+renderAdv(state.fx);
 
 // 焦點
 $$('[data-focus]').forEach(b => b.addEventListener('click', () => {
@@ -684,6 +796,20 @@ function pixelMap(c, w, h, fn) {
   c.putImageData(id, 0, 0);
 }
 
+/** 點陣化：縮小再用最近鄰放大回去，blk = 區塊像素大小 */
+function pixelateCanvas(c, w, h, blk) {
+  const sw = Math.max(1, Math.round(w / blk));
+  const sh = Math.max(1, Math.round(h / blk));
+  const tmp = document.createElement('canvas');
+  tmp.width = sw; tmp.height = sh;
+  const tc = tmp.getContext('2d');
+  tc.imageSmoothingEnabled = false;
+  tc.drawImage(c.canvas, 0, 0, sw, sh);
+  c.imageSmoothingEnabled = false;
+  c.drawImage(tmp, 0, 0, sw, sh, 0, 0, w, h);
+  c.imageSmoothingEnabled = true;
+}
+
 function scanLines(c, w, h, step, alpha) {
   if (alpha <= 0) return;
   const sk = SK(w);
@@ -789,8 +915,9 @@ const FX = {
   film(c, w, h, t) {
     const sk = SK(w);
     const nS = state.NO/5, dkSc = state.DK/5, coSc = state.CO/5;
+    const a = state.adv.film;
 
-    if (nS > 0) {
+    if (nS > 0 && a.grain) {
       pixelMap(c, w, h, (d, i) => {
         const g = (Math.random() - .5) * 42 * nS;
         d[i] = cl(d[i] + g); d[i+1] = cl(d[i+1] + g); d[i+2] = cl(d[i+2] + g);
@@ -801,8 +928,8 @@ const FX = {
       c.fillRect(0, 0, w, h);
     }
     vignette(c, w, h, dkSc, 0.3, 0.9);
-    if (nS > 0) {
-      for (let k = 0; k < (0 | 2 * nS); k++) {
+    if (a.scratches) {
+      for (let k = 0; k < 2 + (0 | 2 * nS); k++) {
         if (Math.random() < .45) {
           c.strokeStyle = `rgba(255,255,220,${.3 + Math.random() * .5})`;
           c.lineWidth = (Math.random() < .5 ? .5 : 1) * sk;
@@ -815,16 +942,20 @@ const FX = {
       }
     }
     if (coSc > 0) rgbSplit(c, w, h, Math.round(2 * coSc));
-    // 黑邊
-    const bH = Math.round(h * .09);
-    c.fillStyle = '#000';
-    c.fillRect(0, 0, w, bH);
-    c.fillRect(0, h - bH, w, bH);
+    // 黑邊 letterbox（比例可調）
+    if (a.letterbox) {
+      const bH = Math.round(h * a.letterboxPct / 100);
+      c.fillStyle = '#000';
+      c.fillRect(0, 0, w, bH);
+      c.fillRect(0, h - bH, w, bH);
+    }
   },
 
   cyber(c, w, h, t) {
     const sk = SK(w);
-    const nS = state.NO/5, coSc = state.CO/5, dkSc = state.DK/5, huSc = state.HU/5;
+    const nS = state.NO/5, coSc = state.CO/5, dkSc = state.DK/5;
+    const a = state.adv.cyber;
+    const huSc = state.HU/5 * (a.neon / 5);   // 霓虹強度調節 HU 影響
     const zone = getZones();
 
     if (coSc > 0) rgbSplit(c, w, h, Math.round(5 * coSc));
@@ -841,7 +972,16 @@ const FX = {
         }
       }
     }
-    scanLines(c, w, h, 3, .14 * dkSc);
+    if (a.scanlines) scanLines(c, w, h, 3, .14 * dkSc);
+
+    // 網格 grid overlay
+    if (a.grid) {
+      c.strokeStyle = 'rgba(0,229,255,.15)';
+      c.lineWidth = Math.max(1, sk * 0.6);
+      const gs = 40 * sk;
+      for (let x = gs; x < w; x += gs) { c.beginPath(); c.moveTo(x, 0); c.lineTo(x, h); c.stroke(); }
+      for (let y = gs; y < h; y += gs) { c.beginPath(); c.moveTo(0, y); c.lineTo(w, y); c.stroke(); }
+    }
 
     if (huSc > 0) {
       c.strokeStyle = `rgba(0,229,255,${.7 * huSc})`;
@@ -873,6 +1013,10 @@ const FX = {
   retro(c, w, h, t) {
     const sk = SK(w);
     const nS = state.NO/5, coSc = state.CO/5, huSc = state.HU/5;
+    const a = state.adv.retro;
+
+    // 像素化 / 點陣（先處理，讓後續掃描線等疊在點陣之上）
+    if (a.pixelate) pixelateCanvas(c, w, h, Math.max(2, a.pixelSize * 3));
 
     if (coSc > 0) {
       pixelMap(c, w, h, (d, i) => {
@@ -890,7 +1034,8 @@ const FX = {
       }
     }
     scanLines(c, w, h, 2, .15);
-    if (coSc > 0) rgbSplit(c, w, h, Math.round(6 * coSc));
+    // 色帶分離量（取代原本綁 CO 的 rgbSplit）
+    if (a.bandSplit > 0) rgbSplit(c, w, h, Math.round(a.bandSplit * 1.2));
     if (coSc > 0) {
       c.fillStyle = `rgba(255,100,0,${.08 * coSc})`;
       c.fillRect(0, 0, w, h);
@@ -908,34 +1053,46 @@ const FX = {
 
   err(c, w, h, t) {
     const sk = SK(w);
-    const nS = state.NO/5, coSc = state.CO/5, huSc = state.HU/5, dkSc = state.DK/5;
+    const coSc = state.CO/5, huSc = state.HU/5, dkSc = state.DK/5;
+    const a = state.adv.err;
+    const fl = a.flicker / 5;                            // 閃爍倍率（0=靜止）
+    const blinkOn = fl > 0 ? ((0 | t * fl) % 6 < 3) : true;
 
-    if (coSc > 0) rgbSplit(c, w, h, Math.round(3 * coSc));
-    if (huSc > 0) {
-      c.strokeStyle = `rgba(255,20,50,${.9 + Math.sin(t * .5) * .1})`;
-      c.lineWidth = Math.max(3, 0 | 10 * huSc);
+    if (a.rgb > 0) rgbSplit(c, w, h, Math.round(a.rgb * 0.6));
+
+    // 紅色外框（屬 SYSTEM ERROR 橫條群組）
+    if (a.banner) {
+      const pulse = fl > 0 ? Math.sin(t * .5 * fl) * .1 : 0;
+      c.strokeStyle = `rgba(255,20,50,${.9 + pulse})`;
+      c.lineWidth = Math.max(3, 0 | 10 * Math.max(1, huSc));
       c.strokeRect(0, 0, w, h);
     }
-    if (nS > 0) {
-      displaceLines(c, w, h, 0 | 2 * nS, 30 * nS, 10, .6, `rgba(255,0,0,${.25 + Math.random() * .3})`);
+
+    // 撕裂
+    if (a.tear > 0) {
+      const ts = a.tear / 5;
+      displaceLines(c, w, h, 0 | 2 * ts, 30 * ts, 10, .6, `rgba(255,0,0,${.25 + Math.random() * .3})`);
     }
+
     // 404 浮水印
     const wmSize = h * .35;
     c.save();
-    c.globalAlpha = .15 + .08 * Math.abs(Math.sin(t * .3));
+    c.globalAlpha = .15 + .08 * (fl > 0 ? Math.abs(Math.sin(t * .3 * fl)) : 0);
     c.font = `bold ${0 | wmSize}px 'Bebas Neue', monospace`;
     c.fillStyle = '#ff2244';
     c.textAlign = 'center';
     c.textBaseline = 'middle';
     c.fillText('404', w/2, h/2);
     c.restore();
+
     // 警示橫幅
-    if (huSc > 0) {
-      const bh = (28 + huSc * 4) * sk;
-      c.fillStyle = (t % 6 < 3) ? 'rgba(255,20,50,.92)' : 'rgba(255,255,255,.92)';
+    if (a.banner) {
+      const hu = Math.max(1, huSc);
+      const bh = (28 + hu * 4) * sk;
+      c.fillStyle = blinkOn ? 'rgba(255,20,50,.92)' : 'rgba(255,255,255,.92)';
       c.fillRect(0, 0, w, bh);
-      c.fillStyle = (t % 6 < 3) ? '#fff' : '#ff2244';
-      c.font = `bold ${(10 + huSc * 4) * sk}px monospace`;
+      c.fillStyle = blinkOn ? '#fff' : '#ff2244';
+      c.font = `bold ${(10 + hu * 4) * sk}px monospace`;
       c.textAlign = 'center';
       c.textBaseline = 'middle';
       c.fillText('⚠ SYSTEM ERROR — 404 NOT FOUND ⚠', w/2, bh/2);
@@ -947,6 +1104,7 @@ const FX = {
   cctv(c, w, h, t) {
     const sk = SK(w);
     const nS = state.NO/5, coSc = state.CO/5, dkSc = state.DK/5, huSc = state.HU/5;
+    const a = state.adv.cctv;
     const zone = getZones();
 
     if (coSc > 0) {
@@ -958,7 +1116,7 @@ const FX = {
         d[i+2] = cl(d[i+2] * (1-m) + a * m * .7);
       });
     }
-    scanLines(c, w, h, 2, .18 * dkSc);
+    scanLines(c, w, h, Math.max(1, 10 - a.scanDensity), .18 * dkSc);
     if (nS > 0) {
       pixelMap(c, w, h, (d, i) => {
         if (Math.random() >= .3 * nS) return;
@@ -966,11 +1124,12 @@ const FX = {
         d[i] = cl(d[i] + n); d[i+1] = cl(d[i+1] + n); d[i+2] = cl(d[i+2] + n);
       });
     }
-    if (huSc > 0) {
+    if (a.timestamp) {
+      const hu = Math.max(1, huSc);
       const n = new Date();
       const ts = `${String(n.getHours()).padStart(2,'0')}:${String(n.getMinutes()).padStart(2,'0')}:${String((n.getSeconds()+t)%60).padStart(2,'0')}`;
       c.fillStyle = 'rgba(150,255,150,.9)';
-      c.font = `bold ${(11 + huSc * 4) * sk}px VT323, monospace`;
+      c.font = `bold ${(11 + hu * 4) * sk}px VT323, monospace`;
       if (zone.tl) {
         c.textAlign = 'left';
         c.fillText('CAM-01', 10*sk, 18*sk);
@@ -982,7 +1141,7 @@ const FX = {
           c.beginPath(); c.arc(w-48*sk, 14*sk, 5*sk, 0, Math.PI*2); c.fill();
         }
         c.fillStyle = 'rgba(255,50,50,.95)';
-        c.font = `bold ${(10 + huSc * 4) * sk}px monospace`;
+        c.font = `bold ${(10 + hu * 4) * sk}px monospace`;
         c.textAlign = 'right';
         c.fillText('● REC', w-10*sk, 18*sk);
       }
@@ -990,20 +1149,43 @@ const FX = {
 
       // 底部資訊列
       if (zone.bl || zone.br) {
-        const sbH = (16 + huSc * 8) * sk;
+        const sbH = (16 + hu * 8) * sk;
         c.fillStyle = 'rgba(0,20,0,.75)';
         c.fillRect(0, h-sbH, w, sbH);
         c.fillStyle = 'rgba(150,255,150,.85)';
-        c.font = `${(9 + huSc * 4) * sk}px VT323, monospace`;
+        c.font = `${(9 + hu * 4) * sk}px VT323, monospace`;
         c.fillText(`LOC: SECTOR 04-A | CH:01/16`, 10*sk, h - sbH/2 + 4*sk);
       }
     }
+
+    // 十字準星 / 邊角框
+    if (a.crosshair) {
+      c.strokeStyle = 'rgba(220,255,220,.4)';
+      c.lineWidth = Math.max(1, sk);
+      const cx = w/2, cy = h/2, s = 22 * sk;
+      c.beginPath();
+      c.moveTo(cx - s, cy); c.lineTo(cx + s, cy);
+      c.moveTo(cx, cy - s); c.lineTo(cx, cy + s);
+      c.stroke();
+      const m = 22 * sk, len = 34 * sk;
+      const drawCorner = (x, y, dx, dy) => {
+        c.beginPath();
+        c.moveTo(x + dx * len, y); c.lineTo(x, y); c.lineTo(x, y + dy * len);
+        c.stroke();
+      };
+      drawCorner(m, m, 1, 1);
+      drawCorner(w - m, m, -1, 1);
+      drawCorner(m, h - m, 1, -1);
+      drawCorner(w - m, h - m, -1, -1);
+    }
+
     vignette(c, w, h, dkSc, 0.3, 0.85);
   },
 
   hack(c, w, h, t) {
     const sk = SK(w);
     const coSc = state.CO / 5, dkSc = state.DK / 5, huSc = state.HU / 5;
+    const a = state.adv.hack;
     const zone = getZones();
 
     // 1) 背景壓暗（保留主體可讀，不要洗成全綠）
@@ -1015,20 +1197,26 @@ const FX = {
     // 2) Matrix 數位雨（直欄、向下流動）
     if (huSc > 0) {
       const rnd = (a, b) => { const s = Math.sin(a * 127.1 + b * 311.7) * 43758.5453; return s - Math.floor(s); };
-      const charset = 'ｱｲｳｴｵｶｷｸｹｺｻｼｽｾｿﾀﾁﾂﾃﾄﾅﾆﾇﾈ0123456789:."=*+-<>|';
+      const CHARSETS = {
+        kana: 'ｱｲｳｴｵｶｷｸｹｺｻｼｽｾｿﾀﾁﾂﾃﾄﾅﾆﾇﾈ',
+        ascii: '0123456789:."=*+-<>|ABCDEF',
+        mix: 'ｱｲｳｴｵｶｷｸｹｺｻｼｽｾｿﾀﾁﾂﾃﾄﾅﾆﾇﾈ0123456789:."=*+-<>|'
+      };
+      const charset = CHARSETS[a.charset] || CHARSETS.mix;
+      const spd = a.rainSpeed / 5;                   // 雨速倍率（0=靜止）
       const cell = (12 + huSc * 3) * sk;             // 字格大小
       const cols = Math.ceil(w / cell);
       const rows = Math.ceil(h / cell) + 1;
       const trail = 8 + (0 | huSc * 4);              // 拖尾長度
       const wrap = rows + trail;
-      const activeRatio = 0.35 + 0.12 * huSc;        // 有幾成欄位在下雨
+      const activeRatio = 0.1 + 0.08 * a.rainDensity; // 雨密度（有幾成欄位在下雨）
       c.font = `${cell * 0.95}px monospace`;
       c.textAlign = 'left';
       c.textBaseline = 'top';
 
       for (let col = 0; col < cols; col++) {
         if (rnd(col, 7) > activeRatio) continue;      // 部分欄位留白
-        const speed = 0.25 + rnd(col, 1) * 0.75;      // 掉落速度（行/幀）
+        const speed = (0.25 + rnd(col, 1) * 0.75) * spd; // 掉落速度（行/幀，受雨速調節）
         const phase = rnd(col, 2) * wrap;
         const head = (t * speed + phase) % wrap;
         const x = col * cell;
@@ -1062,17 +1250,19 @@ const FX = {
     }
 
     // 4) 終端列（PID 固定不再亂跳）
-    if (state._hackPid == null) state._hackPid = String(1000 + (0 | Math.random() * 8999));
-    const sbH = (16 + huSc * 8) * sk;
-    c.fillStyle = 'rgba(0,20,4,.9)';
-    c.fillRect(0, 0, w, sbH);
-    c.fillStyle = 'rgba(0,255,70,.95)';
-    c.font = `bold ${(9 + huSc * 3) * sk}px monospace`;
-    c.textAlign = 'left';
-    c.fillText('[ROOT@TARGET:~$ EXPLOIT_RUNNING]', 10 * sk, sbH / 2 + 4 * sk);
-    c.textAlign = 'right';
-    c.fillText(`PID:${state._hackPid}`, w - 10 * sk, sbH / 2 + 4 * sk);
-    c.textAlign = 'left';
+    if (a.terminal) {
+      if (state._hackPid == null) state._hackPid = String(1000 + (0 | Math.random() * 8999));
+      const sbH = (16 + huSc * 8) * sk;
+      c.fillStyle = 'rgba(0,20,4,.9)';
+      c.fillRect(0, 0, w, sbH);
+      c.fillStyle = 'rgba(0,255,70,.95)';
+      c.font = `bold ${(9 + huSc * 3) * sk}px monospace`;
+      c.textAlign = 'left';
+      c.fillText('[ROOT@TARGET:~$ EXPLOIT_RUNNING]', 10 * sk, sbH / 2 + 4 * sk);
+      c.textAlign = 'right';
+      c.fillText(`PID:${state._hackPid}`, w - 10 * sk, sbH / 2 + 4 * sk);
+      c.textAlign = 'left';
+    }
   }
 };
 

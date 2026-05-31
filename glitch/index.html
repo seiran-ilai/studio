@@ -71,6 +71,12 @@
           </div>
         </div>
 
+        <!-- 預覽下方常駐控制列 -->
+        <div id="previewBar" class="preview-bar">
+          <button id="btnReplace" class="pv-btn" style="display:none;">🔄 換媒體</button>
+          <button id="btnPause" class="pv-btn" style="display:none;">⏸ 暫停</button>
+        </div>
+
         <!-- 影片時間軸（只在加載影片時顯示） -->
         <div id="trimBar" class="trim-bar" style="display:none;">
           <div class="trim-labels">
@@ -132,12 +138,15 @@
 
           <!-- 特效強度 -->
           <table class="fxc-table">
-            <tr><td class="label">噪音</td><td><input type="range" id="sNO" min="0" max="10" value="5"></td><td><span id="vNO">5</span></td></tr>
-            <tr><td class="label">色差</td><td><input type="range" id="sCO" min="0" max="10" value="5"></td><td><span id="vCO">5</span></td></tr>
-            <tr><td class="label">暗角</td><td><input type="range" id="sDK" min="0" max="10" value="5"></td><td><span id="vDK">5</span></td></tr>
-            <tr><td class="label">強調</td><td><input type="range" id="sHU" min="0" max="10" value="5"></td><td><span id="vHU">5</span></td></tr>
-            <tr><td class="label">速率</td><td><input type="range" id="sSP" min="0" max="10" value="5"></td><td><span id="vSP">5</span></td></tr>
+            <tr><td class="label">噪音</td><td><input type="range" id="sNO" min="0" max="10" value="5"></td><td><input type="number" class="num-val" id="vNO" min="0" max="10" step="1" value="5"></td></tr>
+            <tr><td class="label">色差</td><td><input type="range" id="sCO" min="0" max="10" value="5"></td><td><input type="number" class="num-val" id="vCO" min="0" max="10" step="1" value="5"></td></tr>
+            <tr><td class="label">暗角</td><td><input type="range" id="sDK" min="0" max="10" value="5"></td><td><input type="number" class="num-val" id="vDK" min="0" max="10" step="1" value="5"></td></tr>
+            <tr><td class="label">強調</td><td><input type="range" id="sHU" min="0" max="10" value="5"></td><td><input type="number" class="num-val" id="vHU" min="0" max="10" step="1" value="5"></td></tr>
+            <tr><td class="label">速率</td><td><input type="range" id="sSP" min="0" max="10" value="5"></td><td><input type="number" class="num-val" id="vSP" min="0" max="10" step="1" value="5"></td></tr>
           </table>
+
+          <!-- ⚙ 各特效進階設定（動態切換） -->
+          <div id="advPanel" class="adv-panel"></div>
 
           <!-- 色調調整 -->
           <div class="section">
@@ -145,10 +154,10 @@
             <div style="display:grid; grid-template-columns:1fr 3fr 1fr; gap:8px; align-items:center; font-size:12px;">
               <span>色相</span>
               <input type="range" id="sHUE" min="-180" max="180" value="0" style="width:100%;">
-              <span id="vHUE">0°</span>
+              <span class="num-unit"><input type="number" class="num-val" id="vHUE" min="-180" max="180" step="1" value="0"><i>°</i></span>
               <span>飽和</span>
               <input type="range" id="sSAT" min="0" max="200" value="100" style="width:100%;">
-              <span id="vSAT">100%</span>
+              <span class="num-unit"><input type="number" class="num-val" id="vSAT" min="0" max="200" step="1" value="100"><i>%</i></span>
             </div>
           </div>
 
@@ -314,11 +323,7 @@
 
         <!-- ─ Tab 3：輸出 ─ -->
         <div class="panel" data-panel="out">
-          <div class="section">
-            <input type="file" id="fi" accept="image/*,video/*" style="display:none;">
-            <button id="btnReplace" style="display:none; width:100%; padding:8px; background:var(--b); color:var(--t); border:1px solid var(--b); cursor:pointer; margin-bottom:12px; border-radius:3px;">🔄 換媒體</button>
-            <button id="btnPause" style="display:none; width:100%; padding:8px; background:var(--b); color:var(--t); border:1px solid var(--b); cursor:pointer; margin-bottom:12px; border-radius:3px;">⏸ 暫停</button>
-          </div>
+          <input type="file" id="fi" accept="image/*,video/*" style="display:none;">
 
           <div class="section">
             <h4>輸出解析度</h4>
@@ -417,15 +422,20 @@
 
       <h2 class="about-title">其他工具</h2>
       <div class="about-tools">
-        <a class="about-tool" href="../visual-novel/" aria-label="開啟 Visual Novel Studio - 視覺小說與影片製作工具">
-          <span class="about-tool-icon" aria-hidden="true">📖</span>
-          <span class="about-tool-name">Visual Novel Studio</span>
-          <span class="about-tool-arrow" aria-hidden="true">→</span>
-        </a>
         <div class="about-tool about-tool-current" aria-current="page">
           <span class="about-tool-icon" aria-hidden="true">⚡</span>
           <span class="about-tool-name">Glitch Studio</span>
           <span class="about-tool-badge">使用中</span>
+        </div>
+        <a class="about-tool" href="../visual-novel-simple/" aria-label="開啟 Visual Novel Studio · Simple - 視覺小說快速截圖工具">
+          <span class="about-tool-icon" aria-hidden="true">📖</span>
+          <span class="about-tool-name">Visual Novel Studio · Simple</span>
+          <span class="about-tool-arrow" aria-hidden="true">→</span>
+        </a>
+        <div class="about-tool" aria-disabled="true" style="opacity:.5;cursor:not-allowed;" aria-label="Visual Novel Studio · Detail(撰寫中)">
+          <span class="about-tool-icon" aria-hidden="true">📖</span>
+          <span class="about-tool-name">Visual Novel Studio · Detail</span>
+          <span class="about-tool-badge">Now Writing</span>
         </div>
         <a class="about-tool" href="../macro/" aria-label="開啟 RP Macro Studio - FFXIV 角色扮演巨集工具">
           <span class="about-tool-icon" aria-hidden="true">⌨</span>

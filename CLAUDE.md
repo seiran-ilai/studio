@@ -10,12 +10,13 @@
 - `{tool}/index.js` — 邏輯
 
 目前的工具:
-- `visual-novel/` — Visual Novel Studio:視覺小說劇本編輯 + 預覽 + 截圖 + 錄影
+- `visual-novel-simple/` — Visual Novel Studio · Simple:視覺小說快速截圖工具
+- `visual-novel-detail/` — Visual Novel Studio · Detail:視覺小說劇本編輯 + 預覽 + 截圖 + 錄影
 - `glitch/` — Glitch Studio:圖片/影片故障特效
 - `macro/` — RP Macro Studio:FF14 角扮巨集編輯器
 
-`studio/index.html` 是總入口頁,展示三張工具卡片。
-`studio/{otome-studio,glitch_studio,RP_marco}.html` 是舊路徑的 meta-refresh redirect,
+`studio/index.html` 是總入口頁,展示工具卡片。
+`studio/{glitch_studio,RP_marco}.html` 是舊路徑的 meta-refresh redirect,
 讓舊收藏的連結還能跳轉到新位置。
 
 ## 共通技術棧
