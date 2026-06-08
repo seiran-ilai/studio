@@ -765,6 +765,35 @@ function initSimpleEditorBindings() {
 
   // 版面:四欄拖曳分隔條 + 特效面板收起/展開 + 載入記憶欄寬
   initLayoutControls();
+
+  // 預覽框大小變化時,動態更新預覽字體縮放比例
+  (function initPreviewFontScale() {
+    const stage = document.getElementById("simplePreviewStage");
+    if (!stage || typeof ResizeObserver === "undefined") return;
+
+    function applyPreviewFontScale() {
+      const h = stage.clientHeight;
+      if (!h) return;
+      // 字級隨預覽框高度縮放,並與 canvas 輸出保持一致比例。
+      // canvas 輸出用固定設計基準 refH = outputH × 352/1080(landscape 352 / portrait 626),
+      // 預覽端用同一個 refH:scale = clientHeight / refH(設計大小時 = 1,拖大面板字變大)。
+      const outputH = (state.ratio === "9:16") ? 1920 : 1080;
+      const refH = outputH * 352 / 1080;   // landscape ≈ 352,portrait ≈ 626
+      const scale = h / refH;
+      const fs = state.fontSizes || { dialog: 18, speaker: 16, narration: 16, inner: 15 };
+      const root = document.documentElement;
+      root.style.setProperty("--preview-dialog-font-size",    Math.max(6, Math.round(fs.dialog    * scale)) + "px");
+      root.style.setProperty("--preview-speaker-font-size",   Math.max(6, Math.round(fs.speaker   * scale)) + "px");
+      root.style.setProperty("--preview-narration-font-size", Math.max(6, Math.round(fs.narration * scale)) + "px");
+      root.style.setProperty("--preview-inner-font-size",     Math.max(6, Math.round(fs.inner     * scale)) + "px");
+    }
+
+    const ro = new ResizeObserver(applyPreviewFontScale);
+    ro.observe(stage);
+    // applyFontSizes 調滑桿後會 dispatch 合成 "resize" 事件(ResizeObserver 不會接合成事件,需另掛)
+    stage.addEventListener("resize", applyPreviewFontScale);
+    applyPreviewFontScale(); // 初始執行一次
+  })();
 }
 
 export {

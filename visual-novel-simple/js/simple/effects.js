@@ -457,4 +457,5 @@ export {
   fxCanvasShake,
   fxCanvasBloodColor,
   fxCanvasOverlay,
+  _fxIntensity,
 };

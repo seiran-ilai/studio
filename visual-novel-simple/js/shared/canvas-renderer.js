@@ -38,6 +38,16 @@ function _vnsDrawWrappedText(ctx, text, x, y, maxWidth, lineHeight) {
   return curY;
 }
 
+// 字級縮放基準(設計尺度):state.fontSizes 的 px 值是針對「設計預覽框高度」設計的,輸出時等比放大。
+// 採固定設計基準(不隨編輯面板大小變動),輸出結果才不會因面板被拖大/縮小而改變:
+//   landscape 輸出 h=1080 → ref=352(zoom≈3.07);portrait 輸出 h=1920 → ref≈626(同 zoom)。
+// 由 output.js / 截圖前依「輸出高度」算出 ref = outputH × 352/1080 存入(非量測即時面板高度)。
+let _vnsPreviewRefH = 352;
+
+function _vnsSetPreviewRefH(v) {
+  _vnsPreviewRefH = (typeof v === "number" && v > 0) ? v : 352;
+}
+
 const _vnsCgImageCache = new Map();
 
 // 輸出時,非「當前編輯中」的幕可能還沒從 dialogText 解析出 parsedLines
@@ -134,10 +144,25 @@ function _vnsRenderSlideFrame(canvas, slide, opts) {
     const txtColor = _resolveColor(styles.getPropertyValue("--style-dialog-text-color").trim(), "#f3e9d8");
     const spkColor = _resolveColor(styles.getPropertyValue("--style-speaker-color").trim(), "#e6c989");
 
+    // 任務 4:字級與預覽一致 — state.fontSizes 的 px 值是針對預覽框高度設計的,輸出 canvas
+    // 高 h,等比例縮放 = fontSizes × (h / 預覽框高度)。基準高度於輸出前量測一次存入
+    // _vnsPreviewRefH(避免每幀讀 DOM,且 overlay 開啟後 clientHeight 可能回傳 0);
+    // opts.previewRefH 可覆寫。先算好字級,boxH 才能依行數與字級動態調整。
+    const _previewRefH = (opts && opts.previewRefH) || _vnsPreviewRefH || 352;
+    const _fscale = h / _previewRefH;
+    const _fs = state.fontSizes || { dialog: 18, speaker: 16, narration: 16, inner: 15 };
+    const _typeKey = (line.type === "narration") ? "narration" : (line.type === "inner") ? "inner" : "dialog";
+    const fontSize = Math.max(8, Math.round((_fs[_typeKey] || 16) * _fscale));
+
     const padLR = w * 0.04;
     const padBottom = h * 0.04;
     const boxW = w - padLR * 2;
-    const boxH = h * 0.22;
+    // 依 content 實際行數動態調整對話框高度:1~2 行固定 h*0.22,3 行以上才加高,最多 h*0.55。
+    const lineCount = (line.content || "").split("\n").length;
+    const baseBoxH = h * 0.22;
+    // 每多一行加高,但最多到 h * 0.55 避免蓋掉整個畫面
+    const extraH = lineCount > 2 ? (lineCount - 2) * fontSize * 1.7 * 1.3 : 0;
+    const boxH = Math.min(h * 0.55, baseBoxH + extraH);
     const boxX = padLR;
     const boxY = h - padBottom - boxH;
 
@@ -156,13 +181,6 @@ function _vnsRenderSlideFrame(canvas, slide, opts) {
     const innerPadX = boxW * 0.04;
     const innerPadY = boxH * 0.16;
     let textY = boxY + innerPadY;
-
-    // 任務 4:字級與預覽一致 — 預覽以 px 套 state.fontSizes 於高度 stageH 的舞台;
-    // 輸出 canvas 高 h,等比例縮放 = fontSizes × (h / stageH),確保視覺大小一致。
-    const _stageEl = (typeof document !== "undefined") && document.getElementById("simplePreviewStage");
-    const _stageH = (_stageEl && _stageEl.clientHeight) || 0;
-    const _fscale = _stageH > 0 ? (h / _stageH) : (h / 540);
-    const _fs = state.fontSizes || { dialog: 18, speaker: 16, narration: 16, inner: 15 };
 
     // 任務:文字替換(text_decode)— 逐字解碼;decodeIdx 跨「角色名→內文」連續
     const decodeOn = (typeof hasTextDecode === "function") && hasTextDecode(slide);
@@ -195,20 +213,71 @@ function _vnsRenderSlideFrame(canvas, slide, opts) {
     const wrapped = (line.type === "inner") ? `(${visible})` : visible;
     const prog = fullContent.length ? Math.min(1, visible.length / fullContent.length) : 1;
     // 任務 2:套用使用者選的全域字型(state.styleDefaults[type].font → FONT_BY_ID.stack)
+    // _typeKey / fontSize 已在上方(boxH 計算前)算好
     const _sd = state.styleDefaults || {};
-    const _typeKey = (line.type === "narration") ? "narration" : (line.type === "inner") ? "inner" : "dialog";
-    // 任務 4:字級用 state.fontSizes[type] 等比例縮放到 canvas
-    const fontSize = Math.max(8, Math.round((_fs[_typeKey] || 16) * _fscale));
     const _fid = _sd[_typeKey] && _sd[_typeKey].font;
     const _f = (_fid && typeof FONT_BY_ID !== "undefined") ? FONT_BY_ID[_fid] : null;
-    const _stack = (_f && _f.stack) || "'Noto Serif TC', 'PingFang TC', sans-serif";
+    // fallback 用黑體(Noto Sans TC)而非明體:字型沒載入時至少 fallback 到黑體,不會變明體
+    const _stack = (_f && _f.stack) || "'Noto Sans TC', 'PingFang TC', sans-serif";
     const _wt = (_f && _f.weight) ? _f.weight + " " : "";
     ctx.font = `${_wt}${fontSize}px ${_stack}`;
-    let baseTextColor = (line.type === "narration") ? "#bdb3a8" : txtColor;
+    // GenYoGothic 等 @font-face 字體若實際未載入(check=false),改用黑體 fallback,避免落到明體
+    if (_stack.includes("GenYoGothic") && typeof document !== "undefined"
+        && document.fonts && document.fonts.check && !document.fonts.check(ctx.font)) {
+      ctx.font = `${_wt}${fontSize}px "Noto Sans TC", sans-serif`;
+    }
+    let baseTextColor = txtColor;
     const _bloodActive = Array.isArray(slide.effects) && slide.effects.some(e => e.id === "blood_text");
     if (typeof fxCanvasBloodColor === "function") baseTextColor = fxCanvasBloodColor(slide, baseTextColor, prog);
     ctx.textBaseline = "top";
-    if (decodeOn && typeof fxDrawDecodeWrapped === "function") {
+    // glitch_text:色差位移(chromatic aberration)— 模擬 CSS fx-glitch 三態 keyframe:
+    // 0~33% 原位無色差、33~66% 往左偏移(紅右青左)、66~100% 往右偏移(青右紅左)。
+    // 用 fxTime 對 speed 取模定位週期相位;與 decode 互斥。
+    const glitchEffect = slide.effects && slide.effects.find(e => e.id === "glitch_text");
+    if (glitchEffect && !decodeOn) {
+      const t = _fxIntensity(glitchEffect);  // 0~1
+      const amp = (1 + t * 5) * (w / 1920); // 強度影響偏移量,並依 canvas 寬度縮放
+      // CSS --fx-glitch-speed:intensity=0 時 0.26s,intensity=1 時 0.08s
+      const speed = 0.26 - t * 0.18;
+      const phase = (fxTime % speed) / speed; // 0~1 在一個週期內的位置
+
+      if (phase < 0.33) {
+        // 0%~33%:原位,無色差
+        ctx.fillStyle = baseTextColor;
+        _vnsDrawWrappedText(ctx, wrapped, boxX + innerPadX, textY, boxW - innerPadX * 2, fontSize * 1.7);
+      } else if (phase < 0.66) {
+        // 33%~66%:往左偏移,紅色在右、青色在左
+        // 偏移層的 maxWidth 加上 |amp|*2,避免單字/短句在偏移後被 wrap 截斷而消失
+        const _glMaxW = boxW - innerPadX * 2 + Math.abs(amp) * 2;
+        ctx.save();
+        ctx.globalAlpha = 0.75;
+        ctx.fillStyle = "rgba(255, 0, 46, 0.9)";
+        _vnsDrawWrappedText(ctx, wrapped, boxX + innerPadX + amp, textY, _glMaxW, fontSize * 1.7);
+        ctx.restore();
+        ctx.save();
+        ctx.globalAlpha = 0.75;
+        ctx.fillStyle = "rgba(0, 200, 255, 0.9)";
+        _vnsDrawWrappedText(ctx, wrapped, boxX + innerPadX - amp, textY, _glMaxW, fontSize * 1.7);
+        ctx.restore();
+        ctx.fillStyle = baseTextColor;
+        _vnsDrawWrappedText(ctx, wrapped, boxX + innerPadX, textY, boxW - innerPadX * 2, fontSize * 1.7);
+      } else {
+        // 66%~100%:往右偏移,青色在右、紅色在左(方向相反)
+        const _glMaxW = boxW - innerPadX * 2 + Math.abs(amp) * 2;
+        ctx.save();
+        ctx.globalAlpha = 0.75;
+        ctx.fillStyle = "rgba(0, 200, 255, 0.9)";
+        _vnsDrawWrappedText(ctx, wrapped, boxX + innerPadX + amp, textY, _glMaxW, fontSize * 1.7);
+        ctx.restore();
+        ctx.save();
+        ctx.globalAlpha = 0.75;
+        ctx.fillStyle = "rgba(255, 0, 46, 0.9)";
+        _vnsDrawWrappedText(ctx, wrapped, boxX + innerPadX - amp, textY, _glMaxW, fontSize * 1.7);
+        ctx.restore();
+        ctx.fillStyle = baseTextColor;
+        _vnsDrawWrappedText(ctx, wrapped, boxX + innerPadX, textY, boxW - innerPadX * 2, fontSize * 1.7);
+      }
+    } else if (decodeOn && typeof fxDrawDecodeWrapped === "function") {
       // 整段都用 decode 色(含定型字);血字滲透並用時改用 blood 漸變色 override
       const _decodeColor = _bloodActive ? baseTextColor : DECODE_ACCENT;
       fxDrawDecodeWrapped(ctx, wrapped, boxX + innerPadX, textY, boxW - innerPadX * 2, fontSize * 1.7, decodeTime, decodeParams, decodeIdx, _decodeColor, _decodeColor);
@@ -347,6 +416,8 @@ function _vnsChoiceFrameDescriptors(slide, frameMs) {
 
 async function _vnsRenderSlideToCanvas(canvas, slide, lineIdx) {
   await _vnsPreloadCgImage(slide);
+  // 截圖路徑:字級縮放基準用「輸出高度」推算的固定設計基準(不隨編輯面板大小變動)
+  _vnsSetPreviewRefH(canvas.height * 352 / 1080);
   _vnsRenderSlideFrame(canvas, slide, { lineIdx: lineIdx, boxOpacity: 1 });
 }
 
@@ -509,6 +580,7 @@ function _vnsCountTotalLines(cards) {
 export {
   _vnsLoadImage,
   _vnsDrawWrappedText,
+  _vnsSetPreviewRefH,
   _vnsEnsureSlideParsed,
   _vnsPreloadCgImage,
   _vnsRenderSlideFrame,

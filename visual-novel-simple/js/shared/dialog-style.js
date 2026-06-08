@@ -489,6 +489,9 @@ function applyFontSizes() {
   root.style.setProperty("--speaker-font-size", fs.speaker + "px");
   root.style.setProperty("--narration-font-size", fs.narration + "px");
   root.style.setProperty("--inner-font-size", fs.inner + "px");
+  // 通知預覽框重新計算字體縮放(editor-simple 的 ResizeObserver IIFE 有掛 "resize" listener)
+  const _stage = document.getElementById("simplePreviewStage");
+  if (_stage) _stage.dispatchEvent(new Event("resize"));
 }
 
 function syncStyleDefaultsUI() {

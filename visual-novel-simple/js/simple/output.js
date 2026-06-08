@@ -20,10 +20,28 @@ async function _vnsPreloadStyleFonts() {
     if (f && f.stack) stacks.add(f.stack);
   });
   const jobs = [];
+  // 明確指定多個字重觸發載入:@font-face 字體(如 GenYoGothic)沒被觸發就不進 fonts 佇列,
+  // document.fonts.ready 也不會等它。逐字重 + 測試字串強制觸發。
+  const weights = [400, 500, 700, 900];
   stacks.forEach(stack => {
-    try { jobs.push(document.fonts.load(`24px ${stack}`, "中文字ABC123")); } catch (e) {}
+    // document.fonts.load 只接受單一字體名稱,不接受整個 fallback stack(整串傳會靜默失敗)。
+    // 拆出每個字體名稱(去引號/空白,過濾 generic family),逐一觸發載入。
+    const genericFamilies = new Set(["serif", "sans-serif", "monospace", "cursive", "fantasy", "system-ui"]);
+    const fontNames = stack
+      .split(",")
+      .map(s => s.trim().replace(/^["']|["']$/g, "").trim())
+      .filter(s => s && !genericFamilies.has(s));
+    for (const name of fontNames) {
+      for (const w of weights) {
+        try { jobs.push(document.fonts.load(`${w} 24px "${name}"`, "永字八法AaBb123")); } catch (e) {}
+      }
+    }
   });
   try { await Promise.all(jobs); } catch (e) {}
+  // 確保字型真的可用(load 回傳 Promise 但不保證立即可畫)
+  try { await document.fonts.ready; } catch (e) {}
+  // 額外等待 100ms,讓字體渲染引擎完成準備
+  await new Promise(r => setTimeout(r, 100));
 }
 
 async function exportSimpleScreenshot() {
@@ -99,6 +117,9 @@ async function exportSimpleMp4() {
   // 確保每一幕都已從 dialogText 解析出 parsedLines(非當前幕可能尚未懶算),否則對話框/文字會漏畫
   for (const slide of cards) _vnsEnsureSlideParsed(slide);
   await _vnsPreloadStyleFonts();   // 任務 2:確保字型載入後再錄製
+  // 字級縮放基準:用輸出高度推算的固定設計基準(ref = outputH × 352/1080),
+  // 不隨編輯面板大小變動,輸出結果才穩定。
+  _vnsSetPreviewRefH(h * 352 / 1080);
 
   const stream = canvas.captureStream(30);
   const recorder = new MediaRecorder(stream, { mimeType: mime, videoBitsPerSecond: 8_000_000 });
@@ -203,6 +224,10 @@ async function exportSimpleMp4() {
         }
         continue;
       }
+      // 每幕最後一行用 slide.holdDuration(使用者設定的停留秒數),中間行用 HOLD_MS
+      const slideHoldMs = typeof slide.holdDuration === "number"
+        ? slide.holdDuration * 1000
+        : HOLD_MS;
       for (let li = 0; li < lines.length; li++) {
         if (_vnsExportState.cancelled) break;
         const line = lines[li];
@@ -220,8 +245,17 @@ async function exportSimpleMp4() {
           _vnsRenderSlideFrame(canvas, slide, { lineIdx: li, partialText: "", boxOpacity: 1 });
         }
         // typewriter
+        // 停留期間逐幀重畫(而非單次 sleep),時間相關特效(glitch/晃動/雜訊)才會在停留時持續動。
+        // 最後一行用 slide.holdDuration,中間行用 HOLD_MS
+        const isLastLine = (li === lines.length - 1);
+        const thisHoldMs = isLastLine ? slideHoldMs : HOLD_MS;
+        const holdFrames = Math.max(1, Math.round(thisHoldMs / FRAME_MS));
         if (full.length === 0) {
-          await _vnsSleep(HOLD_MS);
+          for (let f = 0; f < holdFrames; f++) {
+            if (_vnsExportState.cancelled) break;
+            _vnsRenderSlideFrame(canvas, slide, { lineIdx: li, partialText: "", boxOpacity: 1 });
+            await _vnsSleep(FRAME_MS);
+          }
         } else {
           for (let i = 1; i <= full.length; i++) {
             if (_vnsExportState.cancelled) break;
@@ -230,8 +264,12 @@ async function exportSimpleMp4() {
               (doneLines + i / full.length) / totalLines);
             await _vnsSleep(TYPE_MS);
           }
-          // beat 間 / 收尾:維持整句顯示(對話框不淡出,box 保持實心)
-          await _vnsSleep(HOLD_MS);
+          // beat 間 / 收尾:維持整句顯示(對話框不淡出,box 保持實心),逐幀重畫讓特效持續動
+          for (let f = 0; f < holdFrames; f++) {
+            if (_vnsExportState.cancelled) break;
+            _vnsRenderSlideFrame(canvas, slide, { lineIdx: li, partialText: full, boxOpacity: 1 });
+            await _vnsSleep(FRAME_MS);
+          }
         }
         doneLines++;
       }
@@ -297,6 +335,9 @@ async function exportSimpleGif() {
   // 確保每一幕都已從 dialogText 解析出 parsedLines(非當前幕可能尚未懶算),否則對話框/文字會漏畫
   for (const slide of cards) _vnsEnsureSlideParsed(slide);
   await _vnsPreloadStyleFonts();   // 任務 2:確保字型載入後再錄製
+  // 字級縮放基準:用輸出高度推算的固定設計基準(ref = outputH × 352/1080),
+  // 不隨編輯面板大小變動,輸出結果才穩定。
+  _vnsSetPreviewRefH(h * 352 / 1080);
 
   _vnsExportState.running = true;
   _vnsExportState.cancelled = false;
@@ -337,9 +378,13 @@ async function exportSimpleGif() {
     }
     const lns = (slide.parsedLines && slide.parsedLines.length)
       ? slide.parsedLines : [{ content: "" }];
-    for (const line of lns) {
-      const len = _stripStyleTags(line.content || "").length;
-      framesTotal += FADE_FRAMES * 2 + (len === 0 ? HOLD_FRAMES : len * TYPE_FRAMES_PER_CHAR + HOLD_FRAMES);
+    // 最後一行的停留用 slide.holdDuration,其他行用 HOLD_FRAMES(與實際渲染一致,進度才準)
+    const slideHoldMs = typeof slide.holdDuration === "number" ? slide.holdDuration * 1000 : 500;
+    const slideHoldFrames = Math.max(2, Math.round(slideHoldMs / FRAME_MS));
+    for (let li = 0; li < lns.length; li++) {
+      const len = _stripStyleTags(lns[li].content || "").length;
+      const holdF = (li === lns.length - 1) ? slideHoldFrames : HOLD_FRAMES;
+      framesTotal += FADE_FRAMES * 2 + (len === 0 ? holdF : len * TYPE_FRAMES_PER_CHAR + holdF);
     }
   }
   framesTotal = Math.max(1, framesTotal);
@@ -424,10 +469,14 @@ async function exportSimpleGif() {
         await _vnsSleep(0);
         continue;
       }
+      // 每幕最後一行用 slide.holdDuration(使用者設定),中間行用 HOLD_FRAMES(500ms)
+      const slideHoldMs = typeof slide.holdDuration === "number" ? slide.holdDuration * 1000 : 500;
+      const SLIDE_HOLD_FRAMES = Math.max(2, Math.round(slideHoldMs / FRAME_MS));
       for (let li = 0; li < lines.length; li++) {
         if (_vnsExportState.cancelled) break;
         const line = lines[li];
         const full = _stripStyleTags(line.content || "");
+        const isLastLine = (li === lines.length - 1);
         // 只有「幕的第一句」淡入;後續 beat 對話框維持實心,直接換內容(不閃爍)
         if (li === 0) {
           for (let f = 0; f < FADE_FRAMES; f++) {
@@ -439,7 +488,8 @@ async function exportSimpleGif() {
           addGifFrame();
         }
         if (full.length === 0) {
-          for (let f = 0; f < HOLD_FRAMES; f++) {
+          const emptyHoldFrames = isLastLine ? SLIDE_HOLD_FRAMES : HOLD_FRAMES;
+          for (let f = 0; f < emptyHoldFrames; f++) {
             _vnsRenderSlideFrame(canvas, slide, { lineIdx: li, partialText: "", boxOpacity: 1 });
             addGifFrame();
           }
@@ -450,8 +500,9 @@ async function exportSimpleGif() {
               addGifFrame();
             }
           }
-          // beat 間 / 收尾:維持整句顯示(對話框不淡出)
-          for (let f = 0; f < HOLD_FRAMES; f++) {
+          // beat 間 / 收尾:維持整句顯示(對話框不淡出);最後一行用 slide.holdDuration
+          const endHoldFrames = isLastLine ? SLIDE_HOLD_FRAMES : HOLD_FRAMES;
+          for (let f = 0; f < endHoldFrames; f++) {
             _vnsRenderSlideFrame(canvas, slide, { lineIdx: li, partialText: full, boxOpacity: 1 });
             addGifFrame();
           }

@@ -4496,6 +4496,12 @@ body.simple-resizing { cursor: col-resize; user-select: none; }
 .simple-preview-narration { color: var(--text-muted); opacity: 0.85; }
 .simple-preview-inner { font-style: italic; color: var(--text-muted); }
 
+/* 預覽字級由 ResizeObserver 透過 CSS variable 管理,隨預覽框大小縮放(與輸出比例一致) */
+.simple-preview-dialog .simple-preview-content    { font-size: var(--preview-dialog-font-size, 16px); }
+.simple-preview-dialog .simple-preview-narration  { font-size: var(--preview-narration-font-size, 14px); }
+.simple-preview-dialog .simple-preview-inner      { font-size: var(--preview-inner-font-size, 13px); }
+.simple-preview-dialog .simple-preview-speaker    { font-size: var(--preview-speaker-font-size, 14px); }
+
 /* ===== 選項幕功能:選項在預覽框的視覺(套用當前對話框樣式配色) ===== */
 .simple-preview-choices {
   position: absolute;

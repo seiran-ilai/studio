@@ -23,7 +23,7 @@ function _applySimplePreviewFonts(dialogEl) {
   const apply = (sel, px, fontId) => {
     const el = dialogEl.querySelector(sel);
     if (!el) return;
-    if (px != null) el.style.fontSize = px + "px";
+    // font-size 由 ResizeObserver 透過 --preview-*-font-size CSS variable 管理,這裡不設
     if (fontId !== undefined) {
       el.style.fontFamily = stackOf(fontId);
       el.style.fontWeight = weightOf(fontId);
@@ -35,6 +35,11 @@ function _applySimplePreviewFonts(dialogEl) {
   apply(".simple-preview-inner", fs.inner, sd.inner && sd.inner.font);
 }
 
+// escape HTML 後把 \n 轉成 <br>(合併多行 content 在 DOM 預覽才會換行)
+function _escWithBr(s) {
+  return _shEsc(s).replace(/\n/g, "<br>");
+}
+
 function _renderPreviewLine(dialogEl, line, partial, faded) {
   if (!dialogEl || !line) return;
   dialogEl.hidden = false;
@@ -42,11 +47,11 @@ function _renderPreviewLine(dialogEl, line, partial, faded) {
   const showText = partial != null ? partial : line.content;
   const clean = _stripStyleTags(showText);
   if (line.type === "narration") {
-    dialogEl.innerHTML = `<div class="simple-preview-narration">${_shEsc(clean)}</div>`;
+    dialogEl.innerHTML = `<div class="simple-preview-narration">${_escWithBr(clean)}</div>`;
   } else if (line.type === "inner") {
-    dialogEl.innerHTML = `${_renderSpeakerHtml(line.speaker)}<div class="simple-preview-inner">(${_shEsc(clean)})</div>`;
+    dialogEl.innerHTML = `${_renderSpeakerHtml(line.speaker)}<div class="simple-preview-inner">(${_escWithBr(clean)})</div>`;
   } else {
-    dialogEl.innerHTML = `${_renderSpeakerHtml(line.speaker)}<div class="simple-preview-content">${_shEsc(clean)}</div>`;
+    dialogEl.innerHTML = `${_renderSpeakerHtml(line.speaker)}<div class="simple-preview-content">${_escWithBr(clean)}</div>`;
   }
   _applySimplePreviewFonts(dialogEl);
 }
