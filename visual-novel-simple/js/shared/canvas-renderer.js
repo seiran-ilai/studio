@@ -65,6 +65,23 @@ async function _vnsPreloadCgImage(slide) {
   } catch (e) { return null; }
 }
 
+// 解析 CSS 變數值至實際色碼:某些情況 getPropertyValue 會回傳未展開的
+// "var(--text-primary)" 字串,Canvas fillStyle 無法使用。用隱藏元素讓瀏覽器
+// 展開所有 var() 引用,再讀回 rgb()/rgba() 真實色碼。
+function _resolveColor(cssValue, fallback) {
+  // 已經是直接色碼(hex 或 rgb)就直接回傳
+  if (!cssValue || (!cssValue.includes("var(") && !cssValue.includes("rgba"))) {
+    return cssValue || fallback;
+  }
+  const el = document.createElement("div");
+  el.style.display = "none";
+  el.style.color = cssValue;
+  document.body.appendChild(el);
+  const resolved = getComputedStyle(el).color;
+  document.body.removeChild(el);
+  return resolved || fallback;
+}
+
 function _vnsRenderSlideFrame(canvas, slide, opts) {
   opts = opts || {};
   // 選項幕功能:選項幕走專用渲染(單格用途如截圖 → 全選項顯示,不高亮、不淡化)
@@ -111,11 +128,11 @@ function _vnsRenderSlideFrame(canvas, slide, opts) {
     ctx.save();
     ctx.globalAlpha = boxOpacity;
 
-    const dlgBg = styles.getPropertyValue("--style-dialog-bg").trim() || "rgba(13,7,22,0.88)";
-    const dlgBorder = styles.getPropertyValue("--style-dialog-border").trim() || "#c4a265";
+    const dlgBg = _resolveColor(styles.getPropertyValue("--style-dialog-bg").trim(), "rgba(13,7,22,0.88)");
+    const dlgBorder = _resolveColor(styles.getPropertyValue("--style-dialog-border").trim(), "#c4a265");
     const dlgBorderW = parseFloat(styles.getPropertyValue("--style-dialog-border-width")) || 1;
-    const txtColor = styles.getPropertyValue("--style-dialog-text-color").trim() || "#f3e9d8";
-    const spkColor = styles.getPropertyValue("--style-speaker-color").trim() || "#e6c989";
+    const txtColor = _resolveColor(styles.getPropertyValue("--style-dialog-text-color").trim(), "#f3e9d8");
+    const spkColor = _resolveColor(styles.getPropertyValue("--style-speaker-color").trim(), "#e6c989");
 
     const padLR = w * 0.04;
     const padBottom = h * 0.04;
@@ -129,6 +146,12 @@ function _vnsRenderSlideFrame(canvas, slide, opts) {
     ctx.strokeStyle = dlgBorder;
     ctx.lineWidth = Math.max(1, dlgBorderW * (w / 680));
     ctx.strokeRect(boxX, boxY, boxW, boxH);
+
+    // 文字另開一層並強制 globalAlpha = 1:淡入只作用於對話框背景/邊框,
+    // 文字不跟著變透明(否則輸出影片淡入期間文字會明顯變淡)。
+    ctx.restore();
+    ctx.save();
+    ctx.globalAlpha = 1;
 
     const innerPadX = boxW * 0.04;
     const innerPadY = boxH * 0.16;
@@ -245,11 +268,11 @@ function _vnsRenderChoiceFrame(canvas, slide, opts) {
   if (!choices.length || groupAlpha <= 0) return;
   const slideOffset = (opts.slideOffset || 0) * h;
 
-  const dlgBg = styles.getPropertyValue("--style-dialog-bg").trim() || "rgba(13,7,22,0.88)";
-  const dlgBorder = styles.getPropertyValue("--style-dialog-border").trim() || "#c4a265";
+  const dlgBg = _resolveColor(styles.getPropertyValue("--style-dialog-bg").trim(), "rgba(13,7,22,0.88)");
+  const dlgBorder = _resolveColor(styles.getPropertyValue("--style-dialog-border").trim(), "#c4a265");
   const dlgBorderW = parseFloat(styles.getPropertyValue("--style-dialog-border-width")) || 2;
-  const txtColor = styles.getPropertyValue("--style-dialog-text-color").trim() || "#f3e9d8";
-  const accent = styles.getPropertyValue("--style-speaker-color").trim() || "#e6c989";
+  const txtColor = _resolveColor(styles.getPropertyValue("--style-dialog-text-color").trim(), "#f3e9d8");
+  const accent = _resolveColor(styles.getPropertyValue("--style-speaker-color").trim(), "#e6c989");
 
   const portrait = h > w;
   const boxW = w * (portrait ? 0.78 : 0.5);
