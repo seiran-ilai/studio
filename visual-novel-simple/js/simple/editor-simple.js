@@ -133,7 +133,7 @@ function clearCgFromCurrentSlide() {
 // 任務 4:沒幕時禁用輸出按鈕(截圖 / GIF / MP4)
 function updateExportButtonsAvailability() {
   const hasSlides = Array.isArray(state.simpleCards) && state.simpleCards.length > 0;
-  ["barScreenshotBtn", "barGifBtn", "barMp4Btn"].forEach(id => {
+  ["barScreenshotBtn", "barMp4Btn"].forEach(id => {
     const btn = document.getElementById(id);
     if (!btn) return;
     btn.disabled = !hasSlides;
@@ -758,8 +758,6 @@ function initSimpleEditorBindings() {
   // 底部工具列輸出按鈕
   const barSs = document.getElementById("barScreenshotBtn");
   if (barSs) barSs.addEventListener("click", exportSimpleScreenshot);
-  const barGif = document.getElementById("barGifBtn");
-  if (barGif) barGif.addEventListener("click", exportSimpleGif);
   const barMp4 = document.getElementById("barMp4Btn");
   if (barMp4) barMp4.addEventListener("click", exportSimpleMp4);
 

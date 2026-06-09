@@ -1071,9 +1071,6 @@ const _cgUrlPending = new Set();
 
 
 
-// GIF:用 gif.js(CDN)逐 frame 編碼
-
-
 document.addEventListener("keydown", (e) => {
   if (state.mode !== "simple") return;
   // 是否在輸入元素內(textarea / input / contenteditable):大部分快捷鍵讓給原生編輯

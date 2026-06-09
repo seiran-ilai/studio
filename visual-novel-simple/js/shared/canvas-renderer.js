@@ -436,7 +436,6 @@ async function _vnsRenderSlideToCanvas(canvas, slide, lineIdx) {
 const _vnsExportState = {
   running: false,
   cancelled: false,
-  gif: null,        // 當前 GIF 實例(供 abort / terminate worker)
   recorder: null,   // 當前 MediaRecorder(供 stop)
   progress: 0,      // 最近一次進度百分比(卡死偵測 watchdog 用)
   watchdog: null,   // setInterval id
@@ -449,14 +448,6 @@ function _vnsSleep(ms) { return new Promise(r => setTimeout(r, ms)); }
 function _vnsExportCancel(showMsg) {
   _vnsExportState.cancelled = true;
   _vnsExportStopWatchdog();
-  // 強制終止 GIF worker(gif.abort 會 terminate active workers;順手 terminate idle workers)
-  if (_vnsExportState.gif) {
-    const g = _vnsExportState.gif;
-    try { g.abort && g.abort(); } catch (e) {}
-    try { (g.freeWorkers || []).forEach(w => w && w.terminate()); } catch (e) {}
-    try { (g.activeWorkers || []).forEach(w => w && w.terminate()); } catch (e) {}
-    _vnsExportState.gif = null;
-  }
   // 停止 MediaRecorder
   if (_vnsExportState.recorder) {
     try { if (_vnsExportState.recorder.state !== "inactive") _vnsExportState.recorder.stop(); } catch (e) {}
