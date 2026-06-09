@@ -191,6 +191,12 @@ async function exportSimpleMp4() {
       // 選項幕功能:錄完整選擇動畫(淡入 → 停留 → 正解高亮 + 其他淡化 → 切下一幕)
       if (isChoiceSlide(slide)) {
         mp4Prog(`錄影 ${si + 1} / ${cards.length} · 選項幕`, doneLines / totalLines);
+        // 選項出現前先停幾幀(只有 CG、無選項),讓 MediaRecorder 緩衝,淡入動畫才不會被跳過
+        for (let f = 0; f < 3; f++) {
+          if (_vnsExportState.cancelled) break;
+          _vnsRenderChoiceFrame(canvas, slide, { boxOpacity: 0 });
+          await _vnsSleep(FRAME_MS);
+        }
         const descs = _vnsChoiceFrameDescriptors(slide, FRAME_MS);
         for (const d of descs) {
           if (_vnsExportState.cancelled) break;
@@ -235,10 +241,22 @@ async function exportSimpleMp4() {
         mp4Prog(`錄影 ${si + 1} / ${cards.length} · 第 ${li + 1} 段 / ${lines.length}`, doneLines / totalLines);
         // 只有「幕的第一句」淡入對話框;後續 beat 對話框維持實心,直接換內容(不閃爍)
         if (li === 0) {
+          // 預熱幀:確保 MediaRecorder 緩衝清空,淡入從頭錄製(不被起始延遲吃掉)
+          for (let f = 0; f < 5; f++) {
+            if (_vnsExportState.cancelled) break;
+            _vnsRenderSlideFrame(canvas, slide, { lineIdx: li, partialText: "", boxOpacity: 0 });
+            await _vnsSleep(FRAME_MS);
+          }
           const fadeFrames = Math.max(2, Math.round(FADE_MS / FRAME_MS));
           for (let f = 0; f < fadeFrames; f++) {
             if (_vnsExportState.cancelled) break;
             _vnsRenderSlideFrame(canvas, slide, { lineIdx: li, partialText: "", boxOpacity: f / (fadeFrames - 1) });
+            await _vnsSleep(FRAME_MS);
+          }
+          // 淡入結束後,先停幾幀確保對話框完全顯示(避免 MediaRecorder 緩衝延遲跳過空白幀)
+          for (let f = 0; f < 3; f++) {
+            if (_vnsExportState.cancelled) break;
+            _vnsRenderSlideFrame(canvas, slide, { lineIdx: li, partialText: "", boxOpacity: 1 });
             await _vnsSleep(FRAME_MS);
           }
         } else {
@@ -373,11 +391,12 @@ async function exportSimpleGif() {
   let framesTotal = introFrames;
   for (const slide of cards) {
     if (isChoiceSlide(slide)) {
-      framesTotal += _vnsChoiceFrameDescriptors(slide, FRAME_MS).length;
+      framesTotal += 3 + _vnsChoiceFrameDescriptors(slide, FRAME_MS).length;   // +3 緩衝幀
       continue;
     }
     const lns = (slide.parsedLines && slide.parsedLines.length)
       ? slide.parsedLines : [{ content: "" }];
+    framesTotal += 3;   // 第一行淡入後的 +3 緩衝幀
     // 最後一行的停留用 slide.holdDuration,其他行用 HOLD_FRAMES(與實際渲染一致,進度才準)
     const slideHoldMs = typeof slide.holdDuration === "number" ? slide.holdDuration * 1000 : 500;
     const slideHoldFrames = Math.max(2, Math.round(slideHoldMs / FRAME_MS));
@@ -437,6 +456,12 @@ async function exportSimpleGif() {
       }
       // 選項幕功能:GIF 錄完整選擇動畫
       if (isChoiceSlide(slide)) {
+        // 與 MP4 對齊:選項出現前先停幾幀(只有 CG、無選項)
+        for (let f = 0; f < 3; f++) {
+          if (_vnsExportState.cancelled) break;
+          _vnsRenderChoiceFrame(canvas, slide, { boxOpacity: 0 });
+          addGifFrame();
+        }
         const descs = _vnsChoiceFrameDescriptors(slide, FRAME_MS);
         for (const d of descs) {
           if (_vnsExportState.cancelled) break;
@@ -481,6 +506,11 @@ async function exportSimpleGif() {
         if (li === 0) {
           for (let f = 0; f < FADE_FRAMES; f++) {
             _vnsRenderSlideFrame(canvas, slide, { lineIdx: li, partialText: "", boxOpacity: f / (FADE_FRAMES - 1) });
+            addGifFrame();
+          }
+          // 與 MP4 對齊:淡入後停幾幀確保對話框完全顯示
+          for (let f = 0; f < 3; f++) {
+            _vnsRenderSlideFrame(canvas, slide, { lineIdx: li, partialText: "", boxOpacity: 1 });
             addGifFrame();
           }
         } else {

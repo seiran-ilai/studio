@@ -86,8 +86,8 @@ function migrateOutputSettings(o) {
 }
 
 function migrateFontSizes(f) {
-  // 四類獨立字級,範圍統一 12 ~ 32 pt
-  const out = { dialog: 18, speaker: 16, narration: 16, inner: 15 };
+  // 各類獨立字級,範圍統一 12 ~ 32 pt
+  const out = { dialog: 18, speaker: 16, narration: 16, inner: 15, choice: 16 };
   if (f && typeof f === "object") {
     const clamp = (v) => Math.max(12, Math.min(32, Math.round(v)));
     for (const k of Object.keys(out)) {
@@ -133,13 +133,14 @@ const state = {
   gameUI: JSON.parse(JSON.stringify(DEFAULT_GAME_UI)),
   // O5:全域預設樣式(沒寫樣式 tag 的行會自動套用)— 只剩字型,字級獨立到 fontSizes
   styleDefaults: {
-    speaker:   { font: "" },
-    narration: { font: "" },
+    speaker:   { font: "serif" },
+    narration: { font: "serif" },
     inner:     { font: "luoyan" },
-    dialog:    { font: "" },
+    dialog:    { font: "serif" },
+    choice:    { font: "serif" },
   },
-  // 四類獨立字級,單位 pt,範圍 12 ~ 32
-  fontSizes: { dialog: 18, speaker: 16, narration: 16, inner: 15 },
+  // 各類獨立字級,單位 pt,範圍 12 ~ 32
+  fontSizes: { dialog: 18, speaker: 16, narration: 16, inner: 15, choice: 16 },
   // Batch 2:風格組合(整套配色)
   style: { preset: "coffeeShop", variant: "latte", animationsEnabled: true, firstStyleSelected: false },
   // 6 個風格各一份自訂配色;空物件表示尚未初始化(第一次點該風格的「自訂」會以當下變體為起點建立)

@@ -100,12 +100,12 @@ function loadFromStorage() {
     state.gameUI = migrateGameUI(payload.gameUI);
     state.lightMode = LIGHT_MODES.includes(payload.lightMode) ? payload.lightMode : DEFAULT_LIGHT_MODE;
     if (payload.styleDefaults && typeof payload.styleDefaults === "object") {
-      for (const k of ["speaker", "narration", "inner", "dialog"]) {
+      for (const k of ["speaker", "narration", "inner", "dialog", "choice"]) {
         const d = payload.styleDefaults[k];
         if (d && typeof d === "object") {
           // 舊版有 size: "large"/"small",新版字級獨立到 fontSizes,size 丟棄
           state.styleDefaults[k] = {
-            font: typeof d.font === "string" ? d.font : "",
+            font: (typeof d.font === "string" && d.font !== "") ? d.font : "serif",
           };
         }
       }

@@ -76,6 +76,10 @@
     </div>
     <!-- 細節版尚未完成,暫時隱藏「簡易／細節」切換入口。程式碼保留,未來把這個 toggle 加回即可重新開放。 -->
     <div class="topbar-actions">
+      <button class="btn" id="btnSyntaxQuick">
+        <span class="btn-emoji">📖</span>
+        <span class="btn-text">語法速查</span>
+      </button>
       <!-- 工具設定:樣式(高頻)→ 設定 -->
       <button class="btn" id="btnStyle"><span class="btn-emoji">🎨</span><span class="btn-text">樣式</span></button>
       <button class="btn" id="btnSettings"><span class="btn-emoji">⚙</span><span class="btn-text">設定</span></button>
@@ -377,14 +381,13 @@
           <div class="default-row">
             <label>角色名</label>
             <select id="defSpeakerFont">
-              <option value="">Cormorant Garamond（預設）</option>
-              <option value="luoyan">辰宇落雁</option>
-              <option value="serif">明體</option>
-              <option value="sans">黑體</option>
-              <option value="round">粉圓</option>
-              <option value="iansui">芫荽</option>
-              <option value="marker">麥克黑</option>
-              <option value="pixel">點陣</option>
+              <option value="luoyan">辰宇落雁體</option>
+              <option value="serif" selected>思源宋體</option>
+              <option value="sans">思源黑體</option>
+              <option value="round">粉圓體</option>
+              <option value="iansui">芫荽體</option>
+              <option value="marker">麥克黑體</option>
+              <option value="pixel">點陣體</option>
             </select>
             <input type="range" id="fontSizeSpeaker" class="default-size-range" min="12" max="32" step="1" value="16">
             <span class="default-size-label" id="fontSizeSpeakerLabel">16 pt</span>
@@ -393,14 +396,13 @@
           <div class="default-row">
             <label>旁白</label>
             <select id="defNarrationFont">
-              <option value="">Noto Serif TC（預設）</option>
-              <option value="luoyan">辰宇落雁</option>
-              <option value="serif">明體</option>
-              <option value="sans">黑體</option>
-              <option value="round">粉圓</option>
-              <option value="iansui">芫荽</option>
-              <option value="marker">麥克黑</option>
-              <option value="pixel">點陣</option>
+              <option value="luoyan">辰宇落雁體</option>
+              <option value="serif" selected>思源宋體</option>
+              <option value="sans">思源黑體</option>
+              <option value="round">粉圓體</option>
+              <option value="iansui">芫荽體</option>
+              <option value="marker">麥克黑體</option>
+              <option value="pixel">點陣體</option>
             </select>
             <input type="range" id="fontSizeNarration" class="default-size-range" min="12" max="32" step="1" value="16">
             <span class="default-size-label" id="fontSizeNarrationLabel">16 pt</span>
@@ -409,14 +411,13 @@
           <div class="default-row">
             <label>內心話</label>
             <select id="defInnerFont">
-              <option value="">Noto Serif TC（預設）</option>
-              <option value="luoyan">辰宇落雁</option>
-              <option value="serif">明體</option>
-              <option value="sans">黑體</option>
-              <option value="round">粉圓</option>
-              <option value="iansui">芫荽</option>
-              <option value="marker">麥克黑</option>
-              <option value="pixel">點陣</option>
+              <option value="luoyan">辰宇落雁體</option>
+              <option value="serif" selected>思源宋體</option>
+              <option value="sans">思源黑體</option>
+              <option value="round">粉圓體</option>
+              <option value="iansui">芫荽體</option>
+              <option value="marker">麥克黑體</option>
+              <option value="pixel">點陣體</option>
             </select>
             <input type="range" id="fontSizeInner" class="default-size-range" min="12" max="32" step="1" value="15">
             <span class="default-size-label" id="fontSizeInnerLabel">15 pt</span>
@@ -425,17 +426,31 @@
           <div class="default-row">
             <label>對話</label>
             <select id="defDialogFont">
-              <option value="">Noto Serif TC（預設）</option>
-              <option value="luoyan">辰宇落雁</option>
-              <option value="serif">明體</option>
-              <option value="sans">黑體</option>
-              <option value="round">粉圓</option>
-              <option value="iansui">芫荽</option>
-              <option value="marker">麥克黑</option>
-              <option value="pixel">點陣</option>
+              <option value="luoyan">辰宇落雁體</option>
+              <option value="serif" selected>思源宋體</option>
+              <option value="sans">思源黑體</option>
+              <option value="round">粉圓體</option>
+              <option value="iansui">芫荽體</option>
+              <option value="marker">麥克黑體</option>
+              <option value="pixel">點陣體</option>
             </select>
             <input type="range" id="fontSizeDialog" class="default-size-range" min="12" max="32" step="1" value="18">
             <span class="default-size-label" id="fontSizeDialogLabel">18 pt</span>
+          </div>
+
+          <div class="default-row">
+            <label>選項</label>
+            <select id="defChoiceFont">
+              <option value="serif" selected>思源宋體</option>
+              <option value="luoyan">辰宇落雁體</option>
+              <option value="sans">思源黑體</option>
+              <option value="round">粉圓體</option>
+              <option value="iansui">芫荽體</option>
+              <option value="marker">麥克黑體</option>
+              <option value="pixel">點陣體</option>
+            </select>
+            <input type="range" id="fontSizeChoice" class="default-size-range" min="12" max="32" step="1" value="16">
+            <span class="default-size-label" id="fontSizeChoiceLabel">16 pt</span>
           </div>
 
         </div>
@@ -666,6 +681,32 @@
 
 <!-- toast -->
 <div class="toast-container" id="toastContainer"></div>
+
+<div class="syntax-quick-popover" id="syntaxQuickPopover" hidden>
+  <div class="syntax-quick-title">語法速查</div>
+  <div class="syntax-quick-list">
+    <div class="syntax-quick-item">
+      <span class="syntax-quick-key">換行</span>
+      <span class="syntax-quick-desc">同個對話框內換行顯示</span>
+    </div>
+    <div class="syntax-quick-item">
+      <span class="syntax-quick-key">空行</span>
+      <span class="syntax-quick-desc">同一幕內切換到下一個對話框</span>
+    </div>
+    <div class="syntax-quick-item">
+      <span class="syntax-quick-key">沒有人名</span>
+      <span class="syntax-quick-desc">旁白格式（無角色名）</span>
+    </div>
+    <div class="syntax-quick-item">
+      <span class="syntax-quick-key">人名:台詞</span>
+      <span class="syntax-quick-desc">帶角色名的對話</span>
+    </div>
+    <div class="syntax-quick-item">
+      <span class="syntax-quick-key">(文字)</span>
+      <span class="syntax-quick-desc">內心話格式</span>
+    </div>
+  </div>
+</div>
 
 <script type="module" src="js/main.js"></script>
 <script defer src="index.js"></script>

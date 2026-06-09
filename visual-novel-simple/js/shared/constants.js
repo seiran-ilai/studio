@@ -68,57 +68,50 @@ const SAMPLE_BACKGROUNDS = {
 
 const FONT_PRESETS = [
   {
-    id: "default",
-    name: "標準",
-    stack: null,  // null = 使用 textarea 預設(var(--font-body))
-    weight: null,
-    preview: "預設字體,適合一般對話。",
-  },
-  {
     id: "luoyan",
-    name: "辰宇落雁",
+    name: "辰宇落雁體",
     stack: '"ChenYuluoyan", "Klee One", cursive',
     weight: null,
     preview: "夕陽透過窗戶灑進來。",
   },
   {
     id: "serif",
-    name: "明體",
+    name: "思源宋體",
     stack: '"Noto Serif TC", "Noto Serif JP", serif',
     weight: null,
     preview: "夕陽透過窗戶灑進來。",
   },
   {
     id: "sans",
-    name: "黑體",
+    name: "思源黑體",
     stack: '"GenYoGothic", "Noto Sans TC", "Noto Sans JP", sans-serif',
     weight: null,
     preview: "夕陽透過窗戶灑進來。",
   },
   {
     id: "round",
-    name: "粉圓",
+    name: "粉圓體",
     stack: '"jf-openhuninn-2.1", "Zen Maru Gothic", sans-serif',
     weight: null,
     preview: "夕陽透過窗戶灑進來。",
   },
   {
     id: "iansui",
-    name: "芫荽",
+    name: "芫荽體",
     stack: '"Iansui", "Klee One", serif',
     weight: null,
     preview: "夕陽透過窗戶灑進來。",
   },
   {
     id: "marker",
-    name: "麥克黑",
+    name: "麥克黑體",
     stack: '"Noto Sans TC", "Noto Sans JP", sans-serif',
     weight: 900,  // ★ 用 Noto Sans TC 900 字重替代
     preview: "夕陽透過窗戶灑進來。",
   },
   {
     id: "pixel",
-    name: "點陣",
+    name: "點陣體",
     stack: '"DotGothic16", monospace',
     weight: null,
     preview: "夕陽透過窗戶灑進來。",

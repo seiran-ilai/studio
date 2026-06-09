@@ -44,7 +44,7 @@ function _parseSimpleParagraph(text) {
       && !speaker.includes(" ")
       && !/\d[\/\-]\d/.test(speaker)   // 日期格式
       && !/^\d+$/.test(speaker)         // 純數字
-      && !/^[\d\s\W]+$/.test(speaker);  // 全是非文字
+      && /[一-鿿㐀-䶿぀-ヿ가-힯a-zA-Z]/.test(speaker);  // 須含至少一個中/日/韓/英文字
     if (looksLikeName) {
       // rest 整段被括號包住 → 帶 speaker 的 inner
       const innerWithSpeaker = rest.match(/^[（(]([\s\S]*?)[）)]$/);

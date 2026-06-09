@@ -49,7 +49,7 @@ function _renderPreviewLine(dialogEl, line, partial, faded) {
   if (line.type === "narration") {
     dialogEl.innerHTML = `<div class="simple-preview-narration">${_escWithBr(clean)}</div>`;
   } else if (line.type === "inner") {
-    dialogEl.innerHTML = `${_renderSpeakerHtml(line.speaker)}<div class="simple-preview-inner">(${_escWithBr(clean)})</div>`;
+    dialogEl.innerHTML = `${_renderSpeakerHtml(line.speaker)}<div class="simple-preview-inner">${_escWithBr(clean)}</div>`;
   } else {
     dialogEl.innerHTML = `${_renderSpeakerHtml(line.speaker)}<div class="simple-preview-content">${_escWithBr(clean)}</div>`;
   }

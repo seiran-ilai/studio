@@ -600,6 +600,19 @@ let _vnsAutoSaveStopped = false;
 const styleModalEl = document.getElementById("styleModal");
 
 
+// 語法速查 popover:點按鈕開關,點別處關閉
+const btnSyntaxQuick = document.getElementById("btnSyntaxQuick");
+const syntaxQuickPopover = document.getElementById("syntaxQuickPopover");
+if (btnSyntaxQuick && syntaxQuickPopover) {
+  btnSyntaxQuick.addEventListener("click", (e) => {
+    e.stopPropagation();
+    syntaxQuickPopover.hidden = !syntaxQuickPopover.hidden;
+  });
+  document.addEventListener("click", () => {
+    syntaxQuickPopover.hidden = true;
+  });
+}
+
 document.getElementById("btnStyle").addEventListener("click", openStyleModal);
 document.getElementById("styleModalClose").addEventListener("click", closeStyleModal);
 document.getElementById("styleModalDone").addEventListener("click", closeStyleModal);
@@ -634,6 +647,7 @@ const STYLE_DEFAULT_FIELDS = [
   { key: "narration", font: "defNarrationFont", size: "fontSizeNarration", label: "fontSizeNarrationLabel" },
   { key: "inner",     font: "defInnerFont",     size: "fontSizeInner",     label: "fontSizeInnerLabel" },
   { key: "dialog",    font: "defDialogFont",    size: "fontSizeDialog",    label: "fontSizeDialogLabel" },
+  { key: "choice",    font: "defChoiceFont",    size: "fontSizeChoice",    label: "fontSizeChoiceLabel" },
 ];
 
 

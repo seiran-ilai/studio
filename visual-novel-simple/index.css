@@ -47,7 +47,7 @@
   --accent: #86c79a;
   --warning: #e0a86a;
 
-  --font-display: "Cormorant Garamond", "Noto Serif TC", "PingFang TC", "Microsoft JhengHei", serif;
+  --font-display: "Noto Serif TC", "PingFang TC", serif;
   --font-body: "PingFang TC", "Microsoft JhengHei", "Noto Sans TC", system-ui, sans-serif;
   --font-mono: "JetBrains Mono", "SF Mono", Menlo, monospace;
 
@@ -3426,37 +3426,105 @@ body::after {
   margin-bottom: 16px;
 }
 .inline-modal-choice {
-  background: rgba(13, 7, 22, 0.5);
-  border: 1px solid var(--border-soft);
+  background: rgba(60, 40, 20, 0.75);
+  border: 1px solid rgba(196, 162, 101, 0.4);
   border-radius: 4px;
   padding: 12px 14px;
   text-align: left;
   cursor: pointer;
-  color: var(--text-primary);
+  color: #f3e9d8;
   font-family: var(--font-body);
   font-size: 13px;
   line-height: 1.5;
   transition: all 0.15s ease;
 }
 .inline-modal-choice:hover {
-  border-color: var(--gold);
-  background: rgba(196, 162, 101, 0.08);
-  color: var(--gold-bright);
+  background: #f3e9d8;
+  border-color: rgba(60, 40, 20, 0.6);
+  color: #3a2010;
 }
 .inline-modal-choice strong {
   display: block;
   font-family: var(--font-display);
   font-size: 14px;
-  color: var(--gold-bright);
+  color: #e6c989;
   margin-bottom: 2px;
   letter-spacing: 0.02em;
 }
-.inline-modal-choice.danger:hover {
-  border-color: var(--danger);
-  background: rgba(212, 113, 134, 0.1);
-  color: var(--danger);
+.inline-modal-choice:hover strong {
+  color: #3a2010;
 }
-.inline-modal-choice.danger strong { color: var(--danger); }
+.inline-modal-choice.danger {
+  background: rgba(60, 40, 20, 0.75);
+  border-color: rgba(196, 162, 101, 0.4);
+  color: #f3e9d8;
+}
+.inline-modal-choice.danger strong {
+  color: #e6c989;
+}
+.inline-modal-choice.danger:hover {
+  background: #f3e9d8;
+  border-color: rgba(60, 40, 20, 0.6);
+  color: #3a2010;
+}
+.inline-modal-choice.danger:hover strong {
+  color: #3a2010;
+}
+
+/* ========== 語法速查 popover ========== */
+.syntax-quick-popover {
+  position: fixed;
+  top: 64px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--bg-panel);
+  border: 1px solid var(--border-strong);
+  border-radius: 8px;
+  padding: 14px 18px;
+  min-width: 320px;
+  z-index: var(--z-dropdown);
+  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.4);
+}
+.syntax-quick-popover[hidden] { display: none; }
+
+.syntax-quick-title {
+  font-family: var(--font-display);
+  font-style: italic;
+  font-size: 15px;
+  color: var(--gold-bright);
+  margin-bottom: 12px;
+  letter-spacing: 0.05em;
+}
+
+.syntax-quick-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.syntax-quick-item {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  font-size: 13px;
+}
+
+.syntax-quick-key {
+  font-family: var(--font-mono);
+  background: rgba(196, 162, 101, 0.12);
+  color: var(--gold-bright);
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  flex-shrink: 0;
+  min-width: 80px;
+  text-align: center;
+}
+
+.syntax-quick-desc {
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
 
 /* ========== Script Editor Autocomplete Popup ========== */
 .se-ac-popup {
@@ -4595,27 +4663,34 @@ body.simple-resizing { cursor: col-resize; user-select: none; }
 }
 .simple-ratio-toggle {
   display: inline-flex;
-  background: rgba(23, 13, 36, 0.6);
-  border: 1px solid var(--border-soft);
+  background: #3a2010;
   border-radius: 999px;
-  padding: 3px;
+  padding: 4px;
+  gap: 2px;
+  border: none;
 }
 .simple-ratio-toggle button {
   background: transparent;
   border: none;
-  color: var(--text-muted);
-  padding: 5px 14px;
-  font-size: 11px;
+  color: #f3e9d8;
+  padding: 6px 20px;
+  font-size: 12px;
   border-radius: 999px;
   cursor: pointer;
-  font-family: var(--font-mono);
-  letter-spacing: 0.05em;
-  transition: all 0.2s;
+  font-family: var(--font-body);
+  transition: all 0.15s;
+}
+.simple-ratio-toggle button:hover {
+  color: #fff;
 }
 .simple-ratio-toggle button.active {
-  background: linear-gradient(135deg, var(--gold), var(--gold-bright));
-  color: var(--bg-deep);
-  font-weight: 600;
+  background: #f3e9d8;
+  color: #3a2010;
+  font-weight: 500;
+}
+.simple-ratio-toggle button.active:hover {
+  background: #fff;
+  color: #3a2010;
 }
 
 

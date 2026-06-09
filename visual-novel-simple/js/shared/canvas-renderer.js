@@ -157,12 +157,11 @@ function _vnsRenderSlideFrame(canvas, slide, opts) {
     const padLR = w * 0.04;
     const padBottom = h * 0.04;
     const boxW = w - padLR * 2;
-    // 依 content 實際行數動態調整對話框高度:1~2 行固定 h*0.22,3 行以上才加高,最多 h*0.55。
+    // 依 content 實際行數動態調整對話框高度:1 行 h*0.22,每多一行加高,最多 h*0.60。
     const lineCount = (line.content || "").split("\n").length;
     const baseBoxH = h * 0.22;
-    // 每多一行加高,但最多到 h * 0.55 避免蓋掉整個畫面
-    const extraH = lineCount > 2 ? (lineCount - 2) * fontSize * 1.7 * 1.3 : 0;
-    const boxH = Math.min(h * 0.55, baseBoxH + extraH);
+    const extraH = lineCount > 1 ? (lineCount - 1) * fontSize * 1.9 : 0;
+    const boxH = Math.min(h * 0.60, baseBoxH + extraH);
     const boxX = padLR;
     const boxY = h - padBottom - boxH;
 
@@ -192,15 +191,23 @@ function _vnsRenderSlideFrame(canvas, slide, opts) {
     // 未選色票時用主題 --gold-bright(與 DOM 預設一致,避免兩主題下預覽/輸出不同色)
     const DECODE_ACCENT = (_decE && _decE.color) || (styles.getPropertyValue("--gold-bright").trim() || "#e6c989");
 
+    const fullContent = _stripStyleTags(line.content);
+    const visible = opts.partialText != null ? opts.partialText : fullContent;
+    const wrapped = visible;
+    const prog = fullContent.length ? Math.min(1, visible.length / fullContent.length) : 1;
+
+    // 淡入期間(boxOpacity < 1)且文字尚空 → 不畫 speaker/文字,避免「()」空括弧與台詞瞬間全現
+    if (visible || boxOpacity >= 1) {
     if (line.speaker && line.type !== "narration") {
       const spkSize = Math.max(8, Math.round((_fs.speaker || 16) * _fscale));
-      const sfId = state.styleDefaults && state.styleDefaults.speaker && state.styleDefaults.speaker.font;
-      const sf = (sfId && typeof FONT_BY_ID !== "undefined") ? FONT_BY_ID[sfId] : null;
-      if (sf && sf.stack) {
-        ctx.font = `${sf.weight ? sf.weight : 500} ${spkSize}px ${sf.stack}`;
-      } else {
-        ctx.font = `italic 500 ${spkSize}px 'Cormorant Garamond', 'Noto Serif TC', serif`;
-      }
+      // speaker 字體與 dialog/narration/inner 同樣讀 state.styleDefaults;空字串查不到 → 用預設斜體
+      const _spkSd = state.styleDefaults || {};
+      const _spkFid = _spkSd.speaker && _spkSd.speaker.font;
+      const _spkF = (_spkFid && typeof FONT_BY_ID !== "undefined") ? FONT_BY_ID[_spkFid] : null;
+      const _spkStack = (_spkF && _spkF.stack) || '"Noto Serif TC", "PingFang TC", serif';
+      const _spkWt = (_spkF && _spkF.weight) ? String(_spkF.weight) + " " : "500 ";
+      const _spkStyle = _spkF ? "" : "italic ";  // 預設才加斜體
+      ctx.font = `${_spkStyle}${_spkWt}${spkSize}px ${_spkStack}`;
       ctx.textBaseline = "top";
       // 角色名永遠正常顯示(不套用文字替換)
       ctx.fillStyle = spkColor;
@@ -208,10 +215,6 @@ function _vnsRenderSlideFrame(canvas, slide, opts) {
       textY += spkSize * 1.5;
     }
 
-    const fullContent = _stripStyleTags(line.content);
-    const visible = opts.partialText != null ? opts.partialText : fullContent;
-    const wrapped = (line.type === "inner") ? `(${visible})` : visible;
-    const prog = fullContent.length ? Math.min(1, visible.length / fullContent.length) : 1;
     // 任務 2:套用使用者選的全域字型(state.styleDefaults[type].font → FONT_BY_ID.stack)
     // _typeKey / fontSize 已在上方(boxH 計算前)算好
     const _sd = state.styleDefaults || {};
@@ -285,6 +288,7 @@ function _vnsRenderSlideFrame(canvas, slide, opts) {
       ctx.fillStyle = baseTextColor;
       _vnsDrawWrappedText(ctx, wrapped, boxX + innerPadX, textY, boxW - innerPadX * 2, fontSize * 1.7);
     }
+    }  // end if (visible || boxOpacity >= 1)
 
     ctx.restore();
   }
@@ -351,8 +355,16 @@ function _vnsRenderChoiceFrame(canvas, slide, opts) {
   const totalH = n * boxH + (n - 1) * gap;
   const startY = h * 0.93 - totalH + slideOffset;
   const boxX = (w - boxW) / 2;
-  const fontSize = Math.round(h * 0.026);
   const radius = Math.min(boxH * 0.4, h * 0.012);
+  // 選項文字字體:讀使用者設定 state.styleDefaults.choice + state.fontSizes.choice(預設思源宋體)
+  const _choiceFid = state.styleDefaults && state.styleDefaults.choice && state.styleDefaults.choice.font;
+  const _choiceF = (_choiceFid && typeof FONT_BY_ID !== "undefined") ? FONT_BY_ID[_choiceFid] : null;
+  const _choiceStack = (_choiceF && _choiceF.stack) || "'Noto Serif TC', 'PingFang TC', serif";
+  const _choiceWt = (_choiceF && _choiceF.weight) ? String(_choiceF.weight) + " " : "";
+  const choiceFontSize = Math.max(8, Math.round(
+    ((state.fontSizes && state.fontSizes.choice) || 16) * (h / (_vnsPreviewRefH || 352))
+  ));
+  const _choiceFont = `${_choiceWt}${choiceFontSize}px ${_choiceStack}`;
 
   ctx.save();
   ctx.globalAlpha = groupAlpha;
@@ -374,7 +386,7 @@ function _vnsRenderChoiceFrame(canvas, slide, opts) {
     ctx.shadowBlur = 0;
     const text = (ch.text && ch.text.trim()) ? ch.text : "(空白)";
     ctx.fillStyle = txtColor;
-    ctx.font = `${fontSize}px 'Noto Serif TC', 'PingFang TC', sans-serif`;
+    ctx.font = _choiceFont;
     ctx.textBaseline = "middle";
     ctx.textAlign = "center";
     ctx.fillText(text, w / 2, y + boxH / 2, boxW * 0.9);

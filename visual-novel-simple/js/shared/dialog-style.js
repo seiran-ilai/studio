@@ -483,12 +483,13 @@ function buildCanvasFont(d, basePx, fallbackStack) {
 }
 
 function applyFontSizes() {
-  const fs = state.fontSizes || { dialog: 18, speaker: 16, narration: 16, inner: 15 };
+  const fs = state.fontSizes || { dialog: 18, speaker: 16, narration: 16, inner: 15, choice: 16 };
   const root = document.documentElement;
   root.style.setProperty("--dialog-font-size", fs.dialog + "px");
   root.style.setProperty("--speaker-font-size", fs.speaker + "px");
   root.style.setProperty("--narration-font-size", fs.narration + "px");
   root.style.setProperty("--inner-font-size", fs.inner + "px");
+  root.style.setProperty("--choice-font-size", (fs.choice || 16) + "px");
   // 通知預覽框重新計算字體縮放(editor-simple 的 ResizeObserver IIFE 有掛 "resize" listener)
   const _stage = document.getElementById("simplePreviewStage");
   if (_stage) _stage.dispatchEvent(new Event("resize"));
