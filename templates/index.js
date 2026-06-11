@@ -34,7 +34,6 @@ const state = {
   songLen: 225,         // 秒
   showControls: true,
   showTime: true,
-  showVolume: true,
   animateBar: true,
   ink: "auto",          // "auto" | "light" | "dark"
   inkAuto: "light",     // auto 模式的判定結果
@@ -272,20 +271,17 @@ function cardLayout(w, h) {
     m.timeSize = cw * 0.028;
     m.playR = cw * 0.052;          // 圓形播放鍵半徑
     m.iconS = cw * 0.042;          // 其他控制圖示尺寸
-    m.volSize = cw * 0.026;        // 音量列高度基準
     m.gapCover = cw * 0.05;
     m.gapSub = cw * 0.02;
     m.gapBar = cw * 0.06;
     m.gapTime = cw * 0.02;
     m.gapCtrl = cw * 0.052;
-    m.gapVol = cw * 0.058;
     ch = pad
        + (hasCover ? m.cover + m.gapCover : 0)
        + m.titleSize + m.gapSub + m.subSize
        + m.gapBar + m.barH
        + (state.showTime ? m.gapTime + m.timeSize : 0)
        + (state.showControls ? m.gapCtrl + m.playR * 2 : 0)
-       + (state.showVolume ? m.gapVol + m.volSize : 0)
        + pad * 1.1;
   } else {
     m.art = cw * 0.18 * (state.coverSize / 100);
@@ -625,44 +621,37 @@ function drawIconHeart(c, x, y, s, color) {
   c.restore();
 }
 
-function drawIconPlus(c, x, y, s, color) {
+// 隨機播放:兩條交叉曲線 + 右端箭頭
+function drawIconShuffle(c, x, y, s, color) {
+  c.save();
   c.strokeStyle = color;
-  c.lineWidth = Math.max(1, s * 0.09);
-  c.lineCap = "round";
-  c.beginPath();
-  c.arc(x, y, s * 0.55, 0, Math.PI * 2);
-  c.stroke();
-  c.beginPath();
-  c.moveTo(x - s * 0.26, y);
-  c.lineTo(x + s * 0.26, y);
-  c.moveTo(x, y - s * 0.26);
-  c.lineTo(x, y + s * 0.26);
-  c.stroke();
-}
-
-// 喇叭圖示;loud = true 時加上音波弧線
-function drawIconSpeaker(c, x, y, s, color, loud) {
   c.fillStyle = color;
+  c.lineWidth = Math.max(1, s * 0.1);
+  c.lineCap = "round";
+  c.lineJoin = "round";
+  const L = s * 0.55;
+  const hh = s * 0.34;
+  // 左下 → 右上
   c.beginPath();
-  c.moveTo(x - s * 0.5, y - s * 0.22);
-  c.lineTo(x - s * 0.2, y - s * 0.22);
-  c.lineTo(x + s * 0.12, y - s * 0.5);
-  c.lineTo(x + s * 0.12, y + s * 0.5);
-  c.lineTo(x - s * 0.2, y + s * 0.22);
-  c.lineTo(x - s * 0.5, y + s * 0.22);
-  c.closePath();
-  c.fill();
-  if (loud) {
-    c.strokeStyle = color;
-    c.lineWidth = Math.max(1, s * 0.11);
-    c.lineCap = "round";
+  c.moveTo(x - L, y + hh);
+  c.bezierCurveTo(x - L * 0.3, y + hh, x + L * 0.3, y - hh, x + L, y - hh);
+  c.stroke();
+  // 左上 → 右下
+  c.beginPath();
+  c.moveTo(x - L, y - hh);
+  c.bezierCurveTo(x - L * 0.3, y - hh, x + L * 0.3, y + hh, x + L, y + hh);
+  c.stroke();
+  // 箭頭
+  const ah = s * 0.2;
+  for (const dir of [-1, 1]) {
     c.beginPath();
-    c.arc(x + s * 0.18, y, s * 0.36, -Math.PI / 3, Math.PI / 3);
-    c.stroke();
-    c.beginPath();
-    c.arc(x + s * 0.18, y, s * 0.62, -Math.PI / 3, Math.PI / 3);
-    c.stroke();
+    c.moveTo(x + L + ah, y + hh * dir);
+    c.lineTo(x + L - ah * 0.35, y + hh * dir - ah * 0.85);
+    c.lineTo(x + L - ah * 0.35, y + hh * dir + ah * 0.85);
+    c.closePath();
+    c.fill();
   }
+  c.restore();
 }
 
 function drawContent(c, w, h, L, t) {
@@ -713,31 +702,12 @@ function drawContent(c, w, h, L, t) {
       y += m.gapCtrl;
       const cyy = y + m.playR;
       const sp = cw * 0.155;
-      drawIconHeart(c, mid - sp * 2, cyy, m.iconS, ink.main);
+      drawIconShuffle(c, mid - sp * 2, cyy, m.iconS, ink.main);
       drawIconPrev(c, mid - sp, cyy, m.iconS, ink.main);
       drawIconPlayCircle(c, mid, cyy, m.playR, ink.main, inverse, state.animateBar);
       drawIconNext(c, mid + sp, cyy, m.iconS, ink.main);
-      drawIconPlus(c, mid + sp * 2, cyy, m.iconS, ink.main);
+      drawIconHeart(c, mid + sp * 2, cyy, m.iconS, ink.main);
       y += m.playR * 2;
-    }
-
-    if (state.showVolume) {
-      y += m.gapVol;
-      const vy = y + m.volSize / 2;
-      const trackW = cw * 0.52;
-      const vx = mid - trackW / 2;
-      const vh = Math.max(2, m.volSize * 0.18);
-      drawIconSpeaker(c, vx - m.volSize * 1.6, vy, m.volSize, ink.main, false);
-      roundRectPath(c, vx, vy - vh / 2, trackW, vh, vh / 2);
-      c.fillStyle = ink.track;
-      c.fill();
-      roundRectPath(c, vx, vy - vh / 2, trackW * 0.62, vh, vh / 2);
-      c.fillStyle = ink.main;
-      c.fill();
-      c.beginPath();
-      c.arc(vx + trackW * 0.62, vy, m.volSize * 0.26, 0, Math.PI * 2);
-      c.fill();
-      drawIconSpeaker(c, vx + trackW + m.volSize * 1.6, vy, m.volSize, ink.main, true);
     }
   } else {
     // 橫式:封面(可選)在左,文字在右,進度與控制鍵在下
@@ -780,11 +750,11 @@ function drawContent(c, w, h, L, t) {
       y += m.gapCtrl;
       const cyy = y + m.playR;
       const sp = cw * 0.085;
-      drawIconHeart(c, mid - sp * 2, cyy, m.iconS, ink.main);
+      drawIconShuffle(c, mid - sp * 2, cyy, m.iconS, ink.main);
       drawIconPrev(c, mid - sp, cyy, m.iconS, ink.main);
       drawIconPlayCircle(c, mid, cyy, m.playR, ink.main, inverse, state.animateBar);
       drawIconNext(c, mid + sp, cyy, m.iconS, ink.main);
-      drawIconPlus(c, mid + sp * 2, cyy, m.iconS, ink.main);
+      drawIconHeart(c, mid + sp * 2, cyy, m.iconS, ink.main);
     }
   }
 }
@@ -1182,7 +1152,6 @@ bindRange("#outDur", "#durVal", v => { state.dur = v; }, v => v + "s");
 // Checkbox
 $("#showControls").addEventListener("change", e => { state.showControls = e.target.checked; });
 $("#showTime").addEventListener("change", e => { state.showTime = e.target.checked; });
-$("#showVolume").addEventListener("change", e => { state.showVolume = e.target.checked; });
 $("#animateBar").addEventListener("change", e => { state.animateBar = e.target.checked; resetClock(); });
 
 // 文字顏色
