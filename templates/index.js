@@ -22,6 +22,10 @@ const state = {
   // 封面
   cover: null,          // HTMLImageElement(另外上傳時)
   coverMode: "none",    // "none" | "media" | "upload"
+  coverSize: 100,       // 封面框大小 60-150 (%)
+  coverZoom: 100,       // 框內圖片縮放 100-250 (%)
+  coverX: 50,           // 框內圖片水平位置 (%)
+  coverY: 50,           // 框內圖片垂直位置 (%)
 
   // 歌曲
   title: "Midnight Drive",
@@ -261,7 +265,7 @@ function cardLayout(w, h) {
   let ch;
   const m = {};
   if (vertical) {
-    m.cover = cw * 0.34;
+    m.cover = cw * 0.34 * (state.coverSize / 100);
     m.titleSize = cw * 0.058;
     m.subSize = cw * 0.036;
     m.barH = Math.max(3, cw * 0.0075);
@@ -284,7 +288,7 @@ function cardLayout(w, h) {
        + (state.showVolume ? m.gapVol + m.volSize : 0)
        + pad * 1.1;
   } else {
-    m.art = cw * 0.18;
+    m.art = cw * 0.18 * (state.coverSize / 100);
     m.titleSize = cw * 0.044;
     m.subSize = cw * 0.030;
     m.barH = Math.max(3, cw * 0.007);
@@ -515,8 +519,13 @@ function drawCover(c, x, y, size, r) {
   if (src) {
     const sw = state.isVideo && src === state.media ? src.videoWidth : src.naturalWidth || src.videoWidth;
     const sh = state.isVideo && src === state.media ? src.videoHeight : src.naturalHeight || src.videoHeight;
-    const sc = Math.max(size / sw, size / sh);
-    c.drawImage(src, x + (size - sw * sc) / 2, y + (size - sh * sc) / 2, sw * sc, sh * sc);
+    const sc = Math.max(size / sw, size / sh) * (state.coverZoom / 100);
+    const dw = sw * sc;
+    const dh = sh * sc;
+    c.drawImage(src,
+      x + (size - dw) * (state.coverX / 100),
+      y + (size - dh) * (state.coverY / 100),
+      dw, dh);
   } else {
     c.fillStyle = "#2a3148";
     c.fillRect(x, y, size, size);
@@ -532,6 +541,16 @@ function drawCover(c, x, y, size, r) {
   c.strokeStyle = "rgba(255,255,255,0.14)";
   c.lineWidth = Math.max(1, size * 0.004);
   c.stroke();
+}
+
+// 封面在畫布上的矩形(拖曳判定用);沒顯示封面回傳 null
+function coverRect(L) {
+  if (state.coverMode === "none") return null;
+  if (L.vertical) {
+    const size = L.m.cover;
+    return { x: L.cx + L.cw / 2 - size / 2, y: L.cy + L.pad, size };
+  }
+  return { x: L.cx + L.pad, y: L.cy + L.pad, size: L.m.art };
 }
 
 function truncateText(c, text, maxW) {
@@ -917,6 +936,17 @@ function computeInk() {
    ───────────────────────────── */
 let dragging = false;
 let dragOff = { x: 0, y: 0 };
+const coverDrag = { active: false, lastX: 0, lastY: 0 };
+
+// 封面圖片在框內的溢出量(≤0,為 0 表示該方向無法平移)
+function coverOverflow(size) {
+  const src = (state.coverMode === "upload" && state.cover) ? state.cover : state.media;
+  if (!src) return { ox: 0, oy: 0 };
+  const sw = src.videoWidth || src.naturalWidth;
+  const sh = src.videoHeight || src.naturalHeight;
+  const sc = Math.max(size / sw, size / sh) * (state.coverZoom / 100);
+  return { ox: size - sw * sc, oy: size - sh * sc };
+}
 
 // object-fit: contain 的座標換算(畫布 bitmap 在元素內置中縮放)
 function canvasPoint(e) {
@@ -931,6 +961,14 @@ cv.addEventListener("mousedown", e => {
   if (!state.media) return;
   const { x: px, y: py } = canvasPoint(e);
   const L = cardLayout(cv.width, cv.height);
+  // 封面內:平移封面圖片;封面外但在卡片內:移動卡片
+  const cr = coverRect(L);
+  if (cr && px >= cr.x && px <= cr.x + cr.size && py >= cr.y && py <= cr.y + cr.size) {
+    coverDrag.active = true;
+    coverDrag.lastX = px;
+    coverDrag.lastY = py;
+    return;
+  }
   if (px >= L.cx && px <= L.cx + L.cw && py >= L.cy && py <= L.cy + L.ch) {
     dragging = true;
     dragOff.x = px - L.cx;
@@ -944,6 +982,27 @@ const dragGuide = { v: null, h: null };
 const SNAP_STOPS = [5, 50, 95];   // 對齊九宮格使用相同的停靠點
 
 window.addEventListener("mousemove", e => {
+  if (coverDrag.active) {
+    const { x: px, y: py } = canvasPoint(e);
+    const L = cardLayout(cv.width, cv.height);
+    const cr = coverRect(L);
+    if (cr) {
+      const { ox, oy } = coverOverflow(cr.size);
+      if (ox < 0) {
+        state.coverX = Math.min(100, Math.max(0, state.coverX + ((px - coverDrag.lastX) * 100) / ox));
+        $("#coverX").value = state.coverX;
+        $("#coverXVal").textContent = Math.round(state.coverX) + "%";
+      }
+      if (oy < 0) {
+        state.coverY = Math.min(100, Math.max(0, state.coverY + ((py - coverDrag.lastY) * 100) / oy));
+        $("#coverY").value = state.coverY;
+        $("#coverYVal").textContent = Math.round(state.coverY) + "%";
+      }
+    }
+    coverDrag.lastX = px;
+    coverDrag.lastY = py;
+    return;
+  }
   if (!dragging) return;
   const { x: px, y: py } = canvasPoint(e);
   const L = cardLayout(cv.width, cv.height);
@@ -980,6 +1039,7 @@ window.addEventListener("mousemove", e => {
   }
 });
 window.addEventListener("mouseup", () => {
+  coverDrag.active = false;
   if (dragging) {
     dragging = false;
     dragGuide.v = null;
@@ -1006,6 +1066,7 @@ $("#songArtist").addEventListener("input", e => { state.artist = e.target.value 
 // 封面來源
 function syncCoverButtons() {
   $$("[data-cover]").forEach(b => b.classList.toggle("on", b.dataset.cover === state.coverMode));
+  $("#coverAdjust").style.display = state.coverMode === "none" ? "none" : "";
 }
 $$("[data-cover]").forEach(btn => {
   btn.addEventListener("click", () => {
@@ -1085,6 +1146,11 @@ $$("[data-fill]").forEach(btn => {
     requestInk();
   });
 });
+bindRange("#coverSize", "#coverSizeVal", v => { state.coverSize = v; }, v => v + "%");
+bindRange("#coverZoom", "#coverZoomVal", v => { state.coverZoom = v; }, v => v + "%");
+bindRange("#coverX", "#coverXVal", v => { state.coverX = v; }, v => v + "%");
+bindRange("#coverY", "#coverYVal", v => { state.coverY = v; }, v => v + "%");
+
 $("#fillC1").addEventListener("input", e => { state.fillC1 = e.target.value; requestInk(); });
 $("#fillC2").addEventListener("input", e => { state.fillC2 = e.target.value; requestInk(); });
 bindRange("#fillAngle", "#fillAngleVal", v => { state.fillAngle = v; }, v => v + "°");

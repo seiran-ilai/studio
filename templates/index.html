@@ -130,6 +130,25 @@
               <button class="seg-btn" data-cover="upload" id="coverUploadBtn" type="button">另外上傳</button>
             </div>
             <input type="file" id="coverFi" accept="image/*" hidden>
+            <div id="coverAdjust" style="display:none; margin-top:12px;">
+              <label class="slider-row">
+                <span class="field-label">封面大小 <b id="coverSizeVal">100%</b></span>
+                <input type="range" id="coverSize" min="60" max="200" value="100">
+              </label>
+              <label class="slider-row">
+                <span class="field-label">圖片縮放 <b id="coverZoomVal">100%</b></span>
+                <input type="range" id="coverZoom" min="100" max="250" value="100">
+              </label>
+              <label class="slider-row">
+                <span class="field-label">圖片水平 <b id="coverXVal">50%</b></span>
+                <input type="range" id="coverX" min="0" max="100" value="50">
+              </label>
+              <label class="slider-row">
+                <span class="field-label">圖片垂直 <b id="coverYVal">50%</b></span>
+                <input type="range" id="coverY" min="0" max="100" value="50">
+              </label>
+              <p class="hint">也可以直接在預覽的封面上拖曳,移動圖片顯示範圍。</p>
+            </div>
           </div>
 
           <div class="group">
