@@ -475,6 +475,31 @@ input[type="range"]::-webkit-slider-thumb:hover { transform: scale(1.15); }
 
 .intro-row .seg-btn { flex: 1 1 30%; }
 
+/* 對齊九宮格 */
+.align-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 44px);
+  gap: 6px;
+}
+.align-btn {
+  width: 44px;
+  height: 38px;
+  display: grid;
+  place-items: center;
+  font-size: 16px;
+  background: var(--bg-2);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  color: var(--t-mid);
+  transition: all 0.15s;
+}
+.align-btn:hover {
+  border-color: var(--accent-deep);
+  color: var(--t);
+  background: var(--accent-glow);
+}
+.align-btn:active { transform: scale(0.94); }
+
 /* 玻璃材質選擇 */
 .glass-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
 .glass-btn {

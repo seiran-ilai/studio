@@ -822,8 +822,57 @@ function drawFrame(c, w, h, t, still) {
   c.restore();
 }
 
+/* ─────────────────────────────
+   卡片位置緩動(拖曳/對齊/滑桿共用,提供滑順手感)
+   ───────────────────────────── */
+const cardTarget = { x: state.cardX, y: state.cardY };
+
+function easeCardPos() {
+  const dx = cardTarget.x - state.cardX;
+  const dy = cardTarget.y - state.cardY;
+  if (Math.abs(dx) < 0.05 && Math.abs(dy) < 0.05) {
+    if (dx || dy) { state.cardX = cardTarget.x; state.cardY = cardTarget.y; syncPosUI(); }
+    return;
+  }
+  state.cardX += dx * 0.3;
+  state.cardY += dy * 0.3;
+  syncPosUI();
+}
+
+function syncPosUI() {
+  $("#cardX").value = state.cardX;
+  $("#cardY").value = state.cardY;
+  $("#posXVal").textContent = Math.round(state.cardX) + "%";
+  $("#posYVal").textContent = Math.round(state.cardY) + "%";
+}
+
+// 拖曳吸附輔助線(只畫在預覽,不會進輸出)
+function drawGuides() {
+  if (!dragging) return;
+  const w = cv.width, h = cv.height;
+  ctx.save();
+  ctx.strokeStyle = "rgba(143,180,255,0.85)";
+  ctx.lineWidth = Math.max(1.5, w / 720);
+  ctx.setLineDash([w * 0.014, w * 0.009]);
+  if (dragGuide.v !== null) {
+    ctx.beginPath();
+    ctx.moveTo(dragGuide.v, 0);
+    ctx.lineTo(dragGuide.v, h);
+    ctx.stroke();
+  }
+  if (dragGuide.h !== null) {
+    ctx.beginPath();
+    ctx.moveTo(0, dragGuide.h);
+    ctx.lineTo(w, dragGuide.h);
+    ctx.stroke();
+  }
+  ctx.restore();
+}
+
 function loop() {
+  easeCardPos();
   drawFrame(ctx, cv.width, cv.height, clock());
+  drawGuides();
   state.raf = requestAnimationFrame(loop);
 }
 
@@ -886,23 +935,57 @@ cv.addEventListener("mousedown", e => {
     dragging = true;
     dragOff.x = px - L.cx;
     dragOff.y = py - L.cy;
+    // 接手前先把殘留的緩動目標歸位,避免跳動
+    cardTarget.x = state.cardX;
+    cardTarget.y = state.cardY;
   }
 });
+const dragGuide = { v: null, h: null };
+const SNAP_STOPS = [5, 50, 95];   // 對齊九宮格使用相同的停靠點
+
 window.addEventListener("mousemove", e => {
   if (!dragging) return;
   const { x: px, y: py } = canvasPoint(e);
   const L = cardLayout(cv.width, cv.height);
   const freeW = cv.width - L.cw;
   const freeH = cv.height - L.ch;
-  state.cardX = freeW > 0 ? Math.min(100, Math.max(0, ((px - dragOff.x) / freeW) * 100)) : 50;
-  state.cardY = freeH > 0 ? Math.min(100, Math.max(0, ((py - dragOff.y) / freeH) * 100)) : 50;
-  $("#cardX").value = state.cardX;
-  $("#cardY").value = state.cardY;
-  $("#posXVal").textContent = Math.round(state.cardX) + "%";
-  $("#posYVal").textContent = Math.round(state.cardY) + "%";
+  const SNAP = Math.min(cv.width, cv.height) * 0.016;
+
+  let desX = px - dragOff.x;
+  let desY = py - dragOff.y;
+  dragGuide.v = null;
+  dragGuide.h = null;
+
+  if (freeW > 0) {
+    for (const pct of SNAP_STOPS) {
+      const pos = (freeW * pct) / 100;
+      if (Math.abs(desX - pos) < SNAP) {
+        desX = pos;
+        dragGuide.v = pct === 50 ? cv.width / 2 : (pct < 50 ? pos : pos + L.cw);
+        break;
+      }
+    }
+    cardTarget.x = Math.min(100, Math.max(0, (desX / freeW) * 100));
+  }
+  if (freeH > 0) {
+    for (const pct of SNAP_STOPS) {
+      const pos = (freeH * pct) / 100;
+      if (Math.abs(desY - pos) < SNAP) {
+        desY = pos;
+        dragGuide.h = pct === 50 ? cv.height / 2 : (pct < 50 ? pos : pos + L.ch);
+        break;
+      }
+    }
+    cardTarget.y = Math.min(100, Math.max(0, (desY / freeH) * 100));
+  }
 });
 window.addEventListener("mouseup", () => {
-  if (dragging) { dragging = false; requestInk(); }
+  if (dragging) {
+    dragging = false;
+    dragGuide.v = null;
+    dragGuide.h = null;
+    requestInk();
+  }
 });
 
 /* ─────────────────────────────
@@ -1012,8 +1095,18 @@ bindRange("#glassRadius", "#radiusVal", v => { state.radius = v; });
 bindRange("#glassTint", "#tintVal", v => { state.tint = v; }, v => v === 0 ? "中性" : (v > 0 ? "亮 " + v : "暗 " + (-v)));
 bindRange("#bgBlur", "#bgBlurVal", v => { state.bgBlur = v; });
 bindRange("#bgDim", "#bgDimVal", v => { state.bgDim = v; }, v => v + "%");
-bindRange("#cardX", "#posXVal", v => { state.cardX = v; }, v => v + "%");
-bindRange("#cardY", "#posYVal", v => { state.cardY = v; }, v => v + "%");
+bindRange("#cardX", "#posXVal", v => { state.cardX = v; cardTarget.x = v; }, v => v + "%");
+bindRange("#cardY", "#posYVal", v => { state.cardY = v; cardTarget.y = v; }, v => v + "%");
+
+// 對齊九宮格
+$$(".align-btn").forEach(btn => {
+  btn.addEventListener("click", () => {
+    const [ax, ay] = btn.dataset.align.split(",").map(Number);
+    cardTarget.x = ax;
+    cardTarget.y = ay;
+    requestInk();
+  });
+});
 bindRange("#cardScale", "#scaleVal", v => { state.cardScale = v; }, v => v + "%");
 bindRange("#mediaZoom", "#mediaZoomVal", v => { state.mediaZoom = v; }, v => v + "%");
 bindRange("#mediaX", "#mediaXVal", v => { state.mediaX = v; }, v => v + "%");
