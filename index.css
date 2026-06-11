@@ -88,6 +88,7 @@ body::after{content:"";position:fixed;inset:0;z-index:1;pointer-events:none;opac
 .loaded .creative-plus .tool-card:nth-child(1){animation-delay:.18s;}
 .loaded .creative-plus .tool-card:nth-child(2){animation-delay:.24s;}
 .loaded .creative-plus .tool-card:nth-child(3){animation-delay:.30s;}
+.loaded .creative-plus .tool-card:nth-child(4){animation-delay:.36s;}
 .loaded .for-ffxiv .tool-card{animation-delay:.40s;}
 /* 撰寫中章節（不可點，半透明，無 hover 浮起） */
 .tool-card.is-soon{cursor:not-allowed;opacity:.6;}
