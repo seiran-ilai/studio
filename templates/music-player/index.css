@@ -1,0 +1,34 @@
+/* ═══════════════════════════════════════════
+   Template Studio — 模板:Music Player 專屬樣式
+   只放這個模板獨有的東西(rail 縮圖、開場動畫排版)。
+   共用控制元件樣式在 ../index.css。
+   ═══════════════════════════════════════════ */
+
+/* rail 縮圖:迷你播放器示意 */
+.thumb-art {
+  left: 10%; top: 18%;
+  width: 26%; aspect-ratio: 1;
+  border-radius: 3px;
+  background: linear-gradient(135deg, #8fb4ff, #5d86d8);
+  opacity: 0.9;
+}
+.thumb-line { height: 3px; border-radius: 2px; background: rgba(232, 234, 242, 0.8); left: 44%; }
+.thumb-line.w1 { top: 28%; width: 36%; }
+.thumb-line.w2 { top: 44%; width: 24%; opacity: 0.5; }
+.thumb-bar {
+  left: 10%; bottom: 16%;
+  width: 80%; height: 3px;
+  border-radius: 2px;
+  background: rgba(232, 234, 242, 0.25);
+}
+.thumb-bar::after {
+  content: "";
+  position: absolute;
+  left: 0; top: 0;
+  width: 38%; height: 100%;
+  border-radius: 2px;
+  background: var(--accent);
+}
+
+/* 開場動畫:五顆按鈕換行排列 */
+.intro-row .seg-btn { flex: 1 1 30%; }

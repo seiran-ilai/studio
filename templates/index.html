@@ -13,7 +13,10 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&family=Noto+Serif+TC:wght@500;700&family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;1,9..144,400&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <!-- 共用殼樣式 -->
   <link rel="stylesheet" href="index.css">
+  <!-- 各模板專屬樣式(新增模板時在此加一行) -->
+  <link rel="stylesheet" href="music-player/index.css">
 </head>
 <body>
 
@@ -43,33 +46,18 @@
         <span class="logo-sub">上傳素材 · 套用模板 · 輸出社群尺寸</span>
       </div>
       <div class="header-right">
-        <span class="tpl-badge" id="tplBadge">Music Player</span>
+        <span class="tpl-badge" id="tplBadge"></span>
       </div>
     </header>
 
     <div class="lay">
 
-      <!-- ═ 左:模板選單 ═ -->
-      <aside class="tpl-rail" aria-label="模板列表">
+      <!-- ═ 左:模板選單(引擎依註冊的模板動態建立)═ -->
+      <aside class="tpl-rail" id="tplRail" aria-label="模板列表">
         <div class="rail-label">模板</div>
-        <button class="tpl-item on" data-tpl="music" type="button">
-          <span class="tpl-thumb" aria-hidden="true">
-            <i class="thumb-art"></i>
-            <i class="thumb-line w1"></i>
-            <i class="thumb-line w2"></i>
-            <i class="thumb-bar"></i>
-          </span>
-          <span class="tpl-name">Music Player</span>
-          <span class="tpl-desc">音樂播放器卡片</span>
-        </button>
-        <div class="tpl-item is-soon" aria-disabled="true">
-          <span class="tpl-thumb tpl-thumb--soon" aria-hidden="true">?</span>
-          <span class="tpl-name">Coming Soon</span>
-          <span class="tpl-desc">更多模板製作中</span>
-        </div>
       </aside>
 
-      <!-- ═ 中:預覽 ═ -->
+      <!-- ═ 中:預覽(共用)═ -->
       <main class="stage">
         <div class="stage-meta">
           <span id="metaMedia">尚未載入素材</span>
@@ -99,281 +87,18 @@
         <input type="file" id="fi" accept="image/*,video/mp4,video/webm,video/quicktime" hidden>
       </main>
 
-      <!-- ═ 右:控制面板 ═ -->
+      <!-- ═ 右:控制面板(tabs / panels 由引擎與模板動態建立)═ -->
       <div class="side">
-        <div class="tabs" role="tablist">
-          <button class="tab on" data-tab="player" type="button">播放器</button>
-          <button class="tab" data-tab="glass" type="button">質感</button>
-          <button class="tab" data-tab="layout" type="button">版面</button>
-          <button class="tab" data-tab="out" type="button">輸出</button>
-        </div>
-
-        <!-- ─ Tab:播放器 ─ -->
-        <section class="panel on" data-panel="player">
-          <div class="group">
-            <div class="group-title">歌曲資訊</div>
-            <label class="field">
-              <span class="field-label">歌名</span>
-              <input type="text" id="songTitle" value="Midnight Drive" maxlength="40" spellcheck="false">
-            </label>
-            <label class="field">
-              <span class="field-label">演出者</span>
-              <input type="text" id="songArtist" value="ilai" maxlength="40" spellcheck="false">
-            </label>
-          </div>
-
-          <div class="group">
-            <div class="group-title">封面</div>
-            <div class="row">
-              <button class="seg-btn on" data-cover="none" type="button">不顯示</button>
-              <button class="seg-btn" data-cover="media" type="button">使用素材</button>
-              <button class="seg-btn" data-cover="upload" id="coverUploadBtn" type="button">另外上傳</button>
-            </div>
-            <input type="file" id="coverFi" accept="image/*" hidden>
-            <div id="coverAdjust" style="display:none; margin-top:12px;">
-              <label class="slider-row">
-                <span class="field-label">封面大小 <b id="coverSizeVal">100%</b></span>
-                <input type="range" id="coverSize" min="60" max="200" value="100">
-              </label>
-              <label class="slider-row">
-                <span class="field-label">圖片縮放 <b id="coverZoomVal">100%</b></span>
-                <input type="range" id="coverZoom" min="100" max="250" value="100">
-              </label>
-              <label class="slider-row">
-                <span class="field-label">圖片水平 <b id="coverXVal">50%</b></span>
-                <input type="range" id="coverX" min="0" max="100" value="50">
-              </label>
-              <label class="slider-row">
-                <span class="field-label">圖片垂直 <b id="coverYVal">50%</b></span>
-                <input type="range" id="coverY" min="0" max="100" value="50">
-              </label>
-              <p class="hint">也可以直接在預覽的封面上拖曳,移動圖片顯示範圍。</p>
-            </div>
-          </div>
-
-          <div class="group">
-            <div class="group-title">播放狀態</div>
-            <label class="slider-row">
-              <span class="field-label">播放進度 <b id="progressVal">35%</b></span>
-              <input type="range" id="playProgress" min="0" max="100" value="35">
-            </label>
-            <label class="field">
-              <span class="field-label">歌曲長度 <b id="songLenVal">3:45</b></span>
-              <input type="text" id="songLenText" value="3:45" spellcheck="false" placeholder="3:45 或 225(秒)">
-            </label>
-            <div class="row toggles">
-              <label class="check"><input type="checkbox" id="showControls" checked><span>控制鍵</span></label>
-              <label class="check"><input type="checkbox" id="showTime" checked><span>時間</span></label>
-              <label class="check"><input type="checkbox" id="animateBar" checked><span>進度動畫</span></label>
-            </div>
-          </div>
-
-          <div class="group">
-            <div class="group-title">開場動畫</div>
-            <div class="row intro-row">
-              <button class="seg-btn" data-intro="none" type="button">無</button>
-              <button class="seg-btn" data-intro="fade" type="button">淡入</button>
-              <button class="seg-btn on" data-intro="slideDown" type="button">上方滑入</button>
-              <button class="seg-btn" data-intro="slideUp" type="button">下方滑入</button>
-              <button class="seg-btn" data-intro="zoom" type="button">縮放浮現</button>
-            </div>
-            <label class="slider-row" style="margin-top:10px;">
-              <span class="field-label">動畫時長 <b id="introDurVal">0.9s</b></span>
-              <input type="range" id="introDur" min="0.3" max="2" step="0.1" value="0.9">
-            </label>
-            <button class="seg-btn" id="introReplay" type="button" style="width:100%;">↻ 重播開場動畫</button>
-          </div>
-
-          <div class="group">
-            <div class="group-title">文字顏色</div>
-            <div class="row">
-              <button class="seg-btn on" data-ink="auto" type="button">自動</button>
-              <button class="seg-btn" data-ink="light" type="button">亮色</button>
-              <button class="seg-btn" data-ink="dark" type="button">暗色</button>
-            </div>
-          </div>
-        </section>
-
-        <!-- ─ Tab:質感 ─ -->
-        <section class="panel" data-panel="glass">
-          <div class="group">
-            <div class="group-title">玻璃材質</div>
-            <div class="glass-grid">
-              <button class="glass-btn on" data-glass="frost" type="button">
-                <span class="gb-name">霧面</span><span class="gb-en">Frosted</span>
-              </button>
-              <button class="glass-btn" data-glass="mirror" type="button">
-                <span class="gb-name">鏡面</span><span class="gb-en">Mirror</span>
-              </button>
-              <button class="glass-btn" data-glass="liquid" type="button">
-                <span class="gb-name">液態玻璃</span><span class="gb-en">Liquid</span>
-              </button>
-            </div>
-          </div>
-
-          <div class="group">
-            <div class="group-title">卡片色系</div>
-            <div class="row">
-              <button class="seg-btn on" data-fill="auto" type="button">中性玻璃</button>
-              <button class="seg-btn" data-fill="solid" type="button">純色</button>
-              <button class="seg-btn" data-fill="gradient" type="button">漸層</button>
-            </div>
-            <div id="fillRows" style="display:none; margin-top:10px;">
-              <label class="color-field"><span>顏色 1</span><input type="color" id="fillC1" value="#33394f"></label>
-              <label class="color-field" id="fillC2Row" style="display:none;"><span>顏色 2</span><input type="color" id="fillC2" value="#8fb4ff"></label>
-              <label class="slider-row" id="fillAngleRow" style="display:none; margin-top:8px;">
-                <span class="field-label">漸層角度 <b id="fillAngleVal">135°</b></span>
-                <input type="range" id="fillAngle" min="0" max="360" step="15" value="135">
-              </label>
-            </div>
-            <p class="hint">色彩濃度由下方「不透明度」控制;調低可保留玻璃透視感。</p>
-          </div>
-
-          <div class="group">
-            <div class="group-title">微調</div>
-            <label class="slider-row">
-              <span class="field-label">模糊強度 <b id="blurVal">24</b></span>
-              <input type="range" id="glassBlur" min="0" max="60" value="24">
-            </label>
-            <label class="slider-row">
-              <span class="field-label">不透明度 <b id="opacityVal">35%</b></span>
-              <input type="range" id="glassOpacity" min="0" max="100" value="35">
-            </label>
-            <label class="slider-row">
-              <span class="field-label">高光強度 <b id="shineVal">50%</b></span>
-              <input type="range" id="glassShine" min="0" max="100" value="50">
-            </label>
-            <label class="slider-row">
-              <span class="field-label">圓角 <b id="radiusVal">28</b></span>
-              <input type="range" id="glassRadius" min="0" max="60" value="28">
-            </label>
-            <label class="slider-row">
-              <span class="field-label">玻璃色調 <b id="tintVal">中性</b></span>
-              <input type="range" id="glassTint" min="-100" max="100" value="0">
-            </label>
-          </div>
-
-          <div class="group">
-            <div class="group-title">背景</div>
-            <label class="slider-row">
-              <span class="field-label">背景模糊 <b id="bgBlurVal">0</b></span>
-              <input type="range" id="bgBlur" min="0" max="40" value="0">
-            </label>
-            <label class="slider-row">
-              <span class="field-label">背景壓暗 <b id="bgDimVal">15%</b></span>
-              <input type="range" id="bgDim" min="0" max="70" value="15">
-            </label>
-          </div>
-        </section>
-
-        <!-- ─ Tab:版面 ─ -->
-        <section class="panel" data-panel="layout">
-          <div class="group">
-            <div class="group-title">卡片樣式</div>
-            <div class="row">
-              <button class="seg-btn on" data-card="vertical" type="button">直式(大封面)</button>
-              <button class="seg-btn" data-card="horizontal" type="button">橫式(小封面)</button>
-            </div>
-          </div>
-          <div class="group">
-            <div class="group-title">對齊</div>
-            <div class="align-grid">
-              <button class="align-btn" data-align="5,5" type="button" aria-label="左上對齊">&#8598;</button>
-              <button class="align-btn" data-align="50,5" type="button" aria-label="上方對齊">&#8593;</button>
-              <button class="align-btn" data-align="95,5" type="button" aria-label="右上對齊">&#8599;</button>
-              <button class="align-btn" data-align="5,50" type="button" aria-label="置左對齊">&#8592;</button>
-              <button class="align-btn" data-align="50,50" type="button" aria-label="置中">&#9678;</button>
-              <button class="align-btn" data-align="95,50" type="button" aria-label="置右對齊">&#8594;</button>
-              <button class="align-btn" data-align="5,95" type="button" aria-label="左下對齊">&#8601;</button>
-              <button class="align-btn" data-align="50,95" type="button" aria-label="下方對齊">&#8595;</button>
-              <button class="align-btn" data-align="95,95" type="button" aria-label="右下對齊">&#8600;</button>
-            </div>
-            <p class="hint">拖曳卡片時靠近中線或邊距會自動吸附。</p>
-          </div>
-          <div class="group">
-            <div class="group-title">位置與大小</div>
-            <label class="slider-row">
-              <span class="field-label">水平位置 <b id="posXVal">50%</b></span>
-              <input type="range" id="cardX" min="0" max="100" value="50">
-            </label>
-            <label class="slider-row">
-              <span class="field-label">垂直位置 <b id="posYVal">42%</b></span>
-              <input type="range" id="cardY" min="0" max="100" value="42">
-            </label>
-            <label class="slider-row">
-              <span class="field-label">卡片大小 <b id="scaleVal">100%</b></span>
-              <input type="range" id="cardScale" min="50" max="150" value="100">
-            </label>
-            <p class="hint">也可以直接在預覽畫面上拖曳卡片調整位置。</p>
-          </div>
-          <div class="group">
-            <div class="group-title">素材填滿</div>
-            <label class="slider-row">
-              <span class="field-label">素材縮放 <b id="mediaZoomVal">100%</b></span>
-              <input type="range" id="mediaZoom" min="100" max="200" value="100">
-            </label>
-            <label class="slider-row">
-              <span class="field-label">素材水平 <b id="mediaXVal">50%</b></span>
-              <input type="range" id="mediaX" min="0" max="100" value="50">
-            </label>
-            <label class="slider-row">
-              <span class="field-label">素材垂直 <b id="mediaYVal">50%</b></span>
-              <input type="range" id="mediaY" min="0" max="100" value="50">
-            </label>
-          </div>
-        </section>
-
-        <!-- ─ Tab:輸出 ─ -->
-        <section class="panel" data-panel="out">
-          <div class="group">
-            <div class="group-title">輸出尺寸</div>
-            <div class="size-grid" id="sizeGrid">
-              <button class="size-btn" data-w="1080" data-h="1080" type="button">
-                <span class="sz-ratio r11" aria-hidden="true"></span>
-                <span class="sz-name">1:1 方形</span><span class="sz-px">1080×1080・IG 貼文</span>
-              </button>
-              <button class="size-btn on" data-w="1080" data-h="1350" type="button">
-                <span class="sz-ratio r45" aria-hidden="true"></span>
-                <span class="sz-name">4:5 直式</span><span class="sz-px">1080×1350・IG / Threads</span>
-              </button>
-              <button class="size-btn" data-w="1080" data-h="1920" type="button">
-                <span class="sz-ratio r916" aria-hidden="true"></span>
-                <span class="sz-name">9:16 全直式</span><span class="sz-px">1080×1920・Reels / 限動</span>
-              </button>
-              <button class="size-btn" data-w="1920" data-h="1080" type="button">
-                <span class="sz-ratio r169" aria-hidden="true"></span>
-                <span class="sz-name">16:9 橫式</span><span class="sz-px">1920×1080・YouTube / X</span>
-              </button>
-              <button class="size-btn" data-w="1080" data-h="1440" type="button">
-                <span class="sz-ratio r34" aria-hidden="true"></span>
-                <span class="sz-name">3:4 直式</span><span class="sz-px">1080×1440・通用</span>
-              </button>
-            </div>
-          </div>
-
-          <div class="group" id="durGroup">
-            <div class="group-title">影片長度</div>
-            <label class="slider-row">
-              <span class="field-label">輸出秒數 <b id="durVal">8s</b></span>
-              <input type="range" id="outDur" min="3" max="20" value="8">
-            </label>
-            <p class="hint" id="durHint">上傳影片時,輸出長度會跟隨影片本身。</p>
-          </div>
-
-          <div class="group">
-            <div class="group-title">匯出</div>
-            <div class="export-row">
-              <button class="export-btn" id="btnPng" type="button">🖼 輸出圖片<span class="eb-sub">PNG</span></button>
-              <button class="export-btn export-btn--video" id="btnVideo" type="button">🎬 輸出影片<span class="eb-sub" id="videoFmt">MP4</span></button>
-            </div>
-            <p class="hint" id="videoNote"></p>
-          </div>
-        </section>
+        <div class="tabs" id="tabs" role="tablist"></div>
+        <div class="panels" id="panels"></div>
       </div>
 
     </div>
   </div>
 
+  <!-- 共用引擎 -->
   <script src="index.js"></script>
+  <!-- 模板(新增模板時在此加一行,模板會自行向 Engine 註冊)-->
+  <script src="music-player/index.js"></script>
 </body>
 </html>
