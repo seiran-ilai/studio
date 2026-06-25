@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=1280">
+<title>Chat · 聊天對話模板</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link id="uiFont" href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="index.css">
+</head>
+<body>
+
+<header class="top">
+  <h1>Chat Studio <span>聊天對話模板 · 預覽即輸出</span></h1>
+  <div class="seg" id="modeSeg">
+    <button data-v="solo">一對一</button>
+    <button data-v="group" class="on">群組</button>
+  </div>
+  <div class="spacer"></div>
+  <span class="lbl">介面</span>
+  <div class="seg" id="uiSeg">
+    <button data-v="std" class="on">標準</button>
+    <button data-v="lg">大</button>
+    <button data-v="xl">最大</button>
+  </div>
+  <span class="lbl">尺寸</span>
+  <div class="seg" id="ratioSeg">
+    <button data-v="9:16" class="on">9:16</button>
+    <button data-v="4:5">4:5</button>
+    <button data-v="1:1">1:1</button>
+  </div>
+</header>
+
+<main>
+  <!-- COL 1: 主題、外觀設定 -->
+  <section class="side left" id="colLeft">
+    <div class="side-head">
+      <span class="title">主題、外觀設定</span>
+      <span class="vtitle">主題、外觀設定</span>
+      <button class="collapse" data-arrow>◀</button>
+    </div>
+    <div class="side-body">
+      <div class="field">
+        <label>對話字體（所有人共用）</label>
+        <select id="fontSel"></select>
+        <p class="hint" id="fontNote"></p>
+      </div>
+      <div class="field">
+        <label>聊天室名稱</label>
+        <input type="text" id="roomName" value="深夜の作戰會議">
+      </div>
+      <div class="field">
+        <label>顯示「我」的</label>
+        <div class="checks">
+          <label class="chk"><input type="checkbox" id="meAvatar" checked><span>頭像</span></label>
+          <label class="chk"><input type="checkbox" id="meName" checked><span>暱稱</span></label>
+        </div>
+      </div>
+      <div class="tabs" id="apTabs">
+        <button class="tab on" data-tab="bg">背景</button>
+        <button class="tab" data-tab="palette">主題配色</button>
+        <button class="tab" data-tab="bubble">對話框預設</button>
+      </div>
+      <div class="tabpane" data-pane="bg">
+        <div class="field">
+          <div class="seg" id="bgSeg" style="width:100%">
+            <button data-v="color" class="on" style="flex:1">純色</button>
+            <button data-v="grad" style="flex:1">漸層</button>
+            <button data-v="img" style="flex:1">圖片</button>
+          </div>
+        </div>
+        <div class="field row" id="bgColors">
+          <input type="color" id="bgC1" value="#e8edf3">
+          <input type="color" id="bgC2" value="#c2cede" class="hidden">
+          <span class="rng hidden" id="bgAngleWrap" style="flex:1"><input type="range" id="bgAngle" min="0" max="360" value="135"><b id="bgAngleV">135°</b></span>
+          <input type="file" id="bgImgFile" accept="image/*" class="hidden">
+        </div>
+        <div id="bgEditRow" class="field hidden"><button class="btn full sm" id="bgEditBtn">⚙ 編輯背景圖（縮放 / 裁切 / 比例預覽）</button></div>
+      </div>
+      <div class="tabpane hidden" data-pane="palette">
+        <div class="swrow">
+          <label style="display:block;color:var(--ink2);margin-bottom:7px;font-size:11.5px">快速套色</label>
+          <div class="swatches" id="swatches"></div>
+        </div>
+        <div class="two">
+          <div class="field"><label>標題列底色</label><div class="ci"><input type="color" data-st="headerBg"></div></div>
+          <div class="field"><label>標題文字</label><div class="ci"><input type="color" data-st="headerInk"></div></div>
+        </div>
+        <div class="field"><label>暱稱 / 成員文字</label><div class="ci"><input type="color" data-st="nameInk"></div></div>
+        <div class="two">
+          <div class="field"><label>系統訊息底</label><div class="ci"><input type="color" data-st="sysBg"><span class="rng" style="flex:1"><input type="range" data-st="sysAlpha" min="0" max="1" step="0.01"><b id="sysAlphaV">28%</b></span></div></div>
+          <div class="field"><label>系統文字</label><div class="ci"><input type="color" data-st="sysInk"></div></div>
+        </div>
+        <div class="field"><label>時間戳文字</label><div class="ci"><input type="color" data-st="timeInk"></div></div>
+        <div class="two">
+          <div class="field"><label>已讀文字</label><input type="text" data-st="readLabel" value="已讀"></div>
+          <div class="field"><label>已讀顏色</label><div class="ci"><input type="color" data-st="readInk"></div></div>
+        </div>
+      </div>
+      <div class="tabpane hidden" data-pane="bubble">
+        <p class="hint" style="margin-top:0">預設值；可在「角色」分頁為每個角色個別覆寫。</p>
+        <div class="two">
+          <div class="field"><label>我方泡泡</label><div class="ci"><input type="color" data-st="meBg"></div></div>
+          <div class="field"><label>我方文字</label><div class="ci"><input type="color" data-st="meInk"></div></div>
+        </div>
+        <div class="two">
+          <div class="field"><label>對方泡泡</label><div class="ci"><input type="color" data-st="otherBg"></div></div>
+          <div class="field"><label>對方文字</label><div class="ci"><input type="color" data-st="otherInk"></div></div>
+        </div>
+        <div class="field"><label>泡泡圓角</label><div class="rng"><input type="range" data-st="radius" min="0" max="1" step="0.01"><b id="radiusV">55%</b></div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CENTER -->
+  <section class="center">
+    <div class="stage"><canvas id="cv"></canvas></div>
+    <div class="ctlbar">
+      <button class="btn" id="playBtn">▶ 預覽動畫</button>
+      <span class="badge" id="dur">—</span>
+      <span class="badge" id="fmtBadge">MP4</span>
+    </div>
+  </section>
+
+  <!-- COL 3: 角色、台詞輸入 -->
+  <section class="side chars" id="colChars">
+    <div class="side-head">
+      <button class="collapse" data-arrow>▶</button>
+      <span class="title">角色、台詞輸入</span>
+      <span class="vtitle">角色、台詞輸入</span>
+    </div>
+    <div class="side-body">
+      <div class="tabs" id="clTabs">
+        <button class="tab on" data-cl="chars">角色</button>
+        <button class="tab" data-cl="lines">台詞輸入</button>
+      </div>
+
+      <div class="pane" data-clpane="chars">
+        <div id="charList"></div>
+        <button class="btn full sm" id="addChar">＋ 新增角色</button>
+        <p class="hint">點頭像可上傳圖片。標記「★ 我」靠右，其餘靠左。開「對話框色」可個別覆寫泡泡與文字顏色。</p>
+      </div>
+
+      <div class="pane hidden" data-clpane="lines">
+        <div class="cheat">行內語法：<code>**粗**</code> <code>*斜*</code> <code>~~刪~~</code> <code>__底線__</code> <code>++放大++</code> <code>--縮小--</code></div>
+        <div class="tabs" id="inTabs">
+          <button class="tab on" data-in="quick">直接輸入</button>
+          <button class="tab" data-in="text">純文本</button>
+        </div>
+        <div class="pane" data-inpane="quick">
+          <div class="quick" id="quickChips"></div>
+          <div class="field"><input type="text" id="quickInput" placeholder="角色名: 台詞　（Enter 新增）" autocomplete="off"></div>
+          <button class="btn pri full sm" id="quickAdd">＋ 加入對話</button>
+          <p class="hint">輸入 <b>名稱: 台詞</b> 直接生成；未建立名稱自動成為新角色。名稱加 <b>（我）</b> 會設為「我」。<b>系統: 文字</b> 為置中訊息。</p>
+        </div>
+        <div class="pane hidden" data-inpane="text">
+          <textarea id="bulkText" rows="10" placeholder="典獄長: 今天有六名犯人&#10;獄卒: 但我們只有五名獄卒&#10;犯人（我）: 該不會……？&#10;典獄長: 我會親自監督。"></textarea>
+          <div class="row" style="margin-top:8px"><button class="btn pri sm" id="applyBulk" style="flex:1">套用為對話</button><button class="btn sm" id="loadBulk" style="flex:1">↻ 從列表載入</button></div>
+          <p class="hint">「套用」會覆蓋目前對話列表。名稱加 <b>（我）</b> 會設為「我」。</p>
+        </div>
+        <hr>
+        <div class="field row"><label style="flex:1;margin:0;font-weight:700;color:var(--ink)">對話列表</label><span class="badge" id="msgCount"></span></div>
+        <div id="msgList"></div>
+        <button class="btn full sm ghost" id="clearMsgs" style="margin-top:6px;color:var(--ink3)">清空對話</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- COL 4: 動畫、時間、匯出 -->
+  <section class="side export" id="colExport">
+    <div class="side-head">
+      <button class="collapse" data-arrow>▶</button>
+      <span class="title">動畫、時間、匯出</span>
+      <span class="vtitle">動畫、時間、匯出</span>
+    </div>
+    <div class="side-body">
+      <div class="field">
+        <label>逐則彈出間隔</label>
+        <div class="rng"><input type="range" id="interval" min="0.2" max="2" step="0.1" value="0.8"><b id="intervalV">0.8s</b></div>
+      </div>
+      <div class="field">
+        <label>結尾停留</label>
+        <div class="rng"><input type="range" id="tail" min="0.4" max="3" step="0.1" value="1.2"><b id="tailV">1.2s</b></div>
+      </div>
+      <div class="field row"><label style="margin:0;flex:1">顯示時間戳</label><button class="pill" id="timeToggle">關</button></div>
+      <div class="field hidden" id="startTimeRow"><label>聊天開始時間</label><input type="time" id="startTime" value="21:30"></div>
+      <div class="field row"><label style="margin:0;flex:1">已讀標記</label><button class="pill on" id="readToggle">開</button></div>
+      <div class="field row hidden" id="readCountRow"><label style="margin:0;flex:1">已讀人數（群組）</label><input type="number" id="readCount" min="1" max="99" value="2" style="width:64px;flex:none"></div>
+      <hr>
+      <button class="btn ok full" id="pngBtn" style="margin-bottom:8px">🖼 輸出圖片 PNG</button>
+      <button class="btn pri full" id="mp4Btn">🎬 輸出影片 MP4</button>
+      <p class="hint" id="exportHint" style="margin-top:8px"></p>
+    </div>
+  </section>
+</main>
+
+<div id="bgModal" class="modal hidden">
+  <div class="modal-card" style="width:auto; min-width:340px">
+    <div class="modal-title">編輯背景圖</div>
+    <div class="seg" id="bgRatioSeg" style="margin-bottom:12px; width:100%">
+      <button data-v="9:16" style="flex:1">9:16</button>
+      <button data-v="4:5" style="flex:1">4:5</button>
+      <button data-v="1:1" style="flex:1">1:1</button>
+    </div>
+    <div class="crop-wrap" style="min-height:300px; align-items:center"><canvas id="bgCv"></canvas></div>
+    <div class="field"><label>縮放</label><div class="rng"><input type="range" id="bgZoom" min="1" max="3" step="0.01" value="1"><b id="bgZoomV">100%</b></div></div>
+    <div class="row"><button class="btn sm" id="bgCropReset">重設</button><span class="hint" style="flex:1;margin:0">點預覽範圍可上傳 / 更換圖片，拖曳調整位置</span></div>
+    <div class="modal-actions"><button class="btn" id="bgCropCancel">取消</button><button class="btn pri" id="bgCropOk">套用</button></div>
+  </div>
+</div>
+
+<div id="cropModal" class="modal hidden">
+  <div class="modal-card">
+    <div class="modal-title">編輯頭像</div>
+    <div class="crop-wrap"><canvas id="cropCv"></canvas></div>
+    <div class="field"><label>縮放</label><div class="rng"><input type="range" id="cropZoom" min="1" max="4" step="0.01" value="1"><b id="cropZoomV">100%</b></div></div>
+    <div class="row"><button class="btn sm" id="cropReset">重設</button><span class="hint" style="flex:1;margin:0">拖曳圖片移動，圓框內為頭像範圍</span></div>
+    <div class="modal-actions"><button class="btn" id="cropCancel">取消</button><button class="btn pri" id="cropOk">套用</button></div>
+  </div>
+</div>
+
+<script src="index.js"></script>
+</body>
+</html>
