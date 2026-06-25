@@ -61,7 +61,7 @@ const state = {
 
   // 各特效專屬進階設定（隨選到的特效動態切換 UI）
   adv: {
-    film:  { letterbox: true, letterboxPct: 12, grain: true, scratches: false },
+    film:  { letterbox: true, letterboxPct: 12, grain: true, scratches: false, scanlines: true },
     cyber: { scanlines: true, neon: 5, grid: false },
     retro: { bandSplit: 5, pixelate: false, pixelSize: 3 },
     err:   { flicker: 5, tear: 5, rgb: 5, banner: true },
@@ -99,7 +99,8 @@ const ADV_CONFIG = {
     { type: 'check',  key: 'letterbox',    label: '黑邊 letterbox' },
     { type: 'slider', key: 'letterboxPct', label: '黑邊比例', min: 0, max: 25, step: 1 },
     { type: 'check',  key: 'grain',        label: '顆粒 grain' },
-    { type: 'check',  key: 'scratches',    label: '刮痕 scratches' }
+    { type: 'check',  key: 'scratches',    label: '刮痕 scratches' },
+    { type: 'check',  key: 'scanlines',    label: '掃描線 scanlines' }
   ],
   cyber: [
     { type: 'check',  key: 'scanlines', label: '掃描線' },
@@ -488,8 +489,18 @@ $$('[data-fx]').forEach(b => b.addEventListener('click', () => {
   state.fx = b.dataset.fx;
   $('#metaFx').textContent = state.fx === 'err' ? '404' : state.fx.toUpperCase();
   renderAdv(state.fx);
+  updateSliderLock();
   redrawNow();
 }));
+
+/** 某些特效不會用到特定強度滑桿，灰掉避免使用者誤調 */
+function updateSliderLock() {
+  // cyber 的「暗角」只影響掃描線，但掃描線已改固定濃度，故此滑桿在 cyber 下無作用
+  const lockDK = state.fx === 'cyber';
+  $('#rowDK').classList.toggle('row-locked', lockDK);
+  $('#sDK').disabled = lockDK;
+  $('#vDK').disabled = lockDK;
+}
 
 /** 依目前特效在 #advPanel 動態渲染專屬進階控制項 */
 function renderAdv(fx) {
@@ -556,6 +567,7 @@ $('#vSAT').addEventListener('keydown', e => { if (e.key === 'Enter') e.target.bl
 
 // 初始渲染進階面板
 renderAdv(state.fx);
+updateSliderLock();
 
 // 焦點
 $$('[data-focus]').forEach(b => b.addEventListener('click', () => {
@@ -942,6 +954,8 @@ const FX = {
       }
     }
     if (coSc > 0) rgbSplit(c, w, h, Math.round(2 * coSc));
+    // 掃描線（與預覽的 CRT 質感一致，烘進 canvas 才會被輸出）
+    if (a.scanlines) scanLines(c, w, h, 3, .12 + .04 * dkSc);
     // 黑邊 letterbox（比例可調）
     if (a.letterbox) {
       const bH = Math.round(h * a.letterboxPct / 100);
@@ -972,7 +986,7 @@ const FX = {
         }
       }
     }
-    if (a.scanlines) scanLines(c, w, h, 3, .14 * dkSc);
+    if (a.scanlines) scanLines(c, w, h, 3, .14);   // 固定濃度，不受「暗角」滑桿影響
 
     // 網格 grid overlay
     if (a.grid) {

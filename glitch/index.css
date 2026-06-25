@@ -366,6 +366,10 @@ body::before {
 .fxc-table input[type=range] {
   width: 100%;
 }
+.fxc-table tr.row-locked {
+  opacity: .35;
+  pointer-events: none;
+}
 
 /* ═══ 可編輯數值輸入框（取代純顯示 span） ═══ */
 .num-val {
