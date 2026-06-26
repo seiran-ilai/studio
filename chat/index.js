@@ -474,6 +474,10 @@ function syncToggleRows(){
   $('#inputSpeedRow').classList.toggle('hidden',!S.showInput);
   $('#startTimeRow').classList.toggle('hidden',!S.showTime);
   $('#readCountRow').classList.toggle('hidden',!(S.mode==='group'&&S.showRead));
+  // 1對1 模式不顯示暱稱,鎖定該勾選框
+  const nameOff=S.mode!=='group', meName=$('#meName');
+  meName.disabled=nameOff;
+  meName.closest('.chk').classList.toggle('disabled',nameOff);
 }
 $('#inputToggle').onclick=e=>{ S.showInput=!S.showInput; e.target.classList.toggle('on',S.showInput); e.target.textContent=S.showInput?'開':'關'; syncToggleRows(); updateDur(); render(1); };
 $('#typeSpeed').oninput=e=>{ S.typeSpeed=+e.target.value; $('#typeSpeedV').textContent=(+e.target.value).toFixed(1)+'x'; updateDur(); render(1); };

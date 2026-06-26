@@ -5758,7 +5758,6 @@ body::after {
 /* ============================================================
    Mobile block — 工具僅支援桌面 (≥1024px),小螢幕全屏覆蓋
    ============================================================ */
-#mobile-block,
 #vns-idb-block {
   display: none;
   position: fixed;
@@ -5775,15 +5774,12 @@ body::after {
   font-family: var(--font-body);
   cursor: pointer;
 }
-#mobile-block.show,
 #vns-idb-block.show { display: flex; }
-#mobile-block .block-icon,
 #vns-idb-block .block-icon {
   font-size: 56px;
   margin-bottom: 22px;
   line-height: 1;
 }
-#mobile-block h1,
 #vns-idb-block h1 {
   font-family: var(--font-display);
   font-style: italic;
@@ -5793,20 +5789,53 @@ body::after {
   letter-spacing: 0.04em;
   font-weight: 500;
 }
-#mobile-block p,
 #vns-idb-block p {
   color: var(--text-muted);
   font-size: 14px;
   line-height: 1.9;
   margin: 0;
 }
-#mobile-block .block-hint,
 #vns-idb-block .block-hint {
   color: var(--text-faint);
   font-size: 12px;
   margin-top: 24px;
   letter-spacing: 0.05em;
 }
+
+/* 手機提示:非阻擋式,建議改用電腦瀏覽器 */
+#desktop-hint {
+  display: none;
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 99999;
+  box-sizing: border-box;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  background: rgba(18, 20, 28, 0.96);
+  color: #e7ecf3;
+  font-size: 14px;
+  line-height: 1.5;
+  font-family: inherit;
+  box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.45);
+}
+#desktop-hint.show { display: flex; }
+#desktop-hint span { flex: 1; }
+#desktop-hint button {
+  flex: none;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  cursor: pointer;
+  background: rgba(255, 255, 255, 0.14);
+  border: none;
+  color: #e7ecf3;
+  font-size: 15px;
+  line-height: 1;
+}
+#desktop-hint button:hover { background: rgba(255, 255, 255, 0.24); }
 /* IDB block 不需要點擊互動,游標保持預設 */
 #vns-idb-block { cursor: default; }
 

@@ -3,18 +3,18 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=1280">
-<meta name="description" content="Visual Novel Studio — 純前端的視覺小說劇本編輯、預覽、截圖與錄影工具。">
-<meta property="og:title" content="Visual Novel Studio">
+<meta name="description" content="Visual Novel Simple — 純前端的視覺小說劇本編輯、預覽、截圖與錄影工具。">
+<meta property="og:title" content="Visual Novel Simple">
 <meta property="og:description" content="純前端的視覺小說劇本編輯、預覽、截圖與錄影工具。">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:title" content="Visual Novel Studio">
+<meta name="twitter:title" content="Visual Novel Simple">
 <meta name="twitter:description" content="純前端的視覺小說劇本編輯、預覽、截圖與錄影工具。">
 <title>Visual Novel · Simple</title>
 <!-- Google Fonts: 中文 / 日文 混排 -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&family=Noto+Serif+TC:wght@400;500;700&family=Noto+Sans+JP:wght@400;500;700;900&family=Noto+Serif+JP:wght@400;500;700&family=Klee+One:wght@400;600&family=Zen+Maru+Gothic:wght@400;500;700&family=DotGothic16&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&family=Noto+Serif+TC:wght@400;500;700&family=Noto+Sans+JP:wght@400;500;700;900&family=Noto+Serif+JP:wght@400;500;700&family=Klee+One:wght@400;600&family=Zen+Maru+Gothic:wght@400;500;700&family=DotGothic16&family=Fraunces:opsz,wght@9..144,400;9..144,500&display=swap" rel="stylesheet">
 
 <!-- Justfont 粉圓體(免費繁中) -->
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/justfont/open-huninn-font@2.1/font.css">
@@ -29,19 +29,17 @@
 </head>
 <body>
 
-<!-- Mobile block:點任意處跳回入口 -->
-<a id="mobile-block" href="../" role="alertdialog" aria-labelledby="mobile-block-title">
-  <div class="block-icon" aria-hidden="true">🖥️</div>
-  <h1 id="mobile-block-title">本工具只支援電腦版</h1>
-  <p>請使用桌面瀏覽器開啟以獲得完整體驗。</p>
-  <p class="block-hint">點擊任意處回到入口頁</p>
-</a>
+<!-- 手機提示:建議使用電腦瀏覽器(非阻擋) -->
+<div id="desktop-hint" role="note">
+  <span>💻 建議使用電腦瀏覽器開啟以獲得最佳體驗</span>
+  <button type="button" id="desktop-hint-close" aria-label="關閉提示">✕</button>
+</div>
 
 <!-- IndexedDB 不可用警告(隱私模式 / 舊瀏覽器 / 使用者停用) -->
 <div id="vns-idb-block" role="alertdialog" aria-labelledby="vns-idb-block-title">
   <div class="block-icon" aria-hidden="true">⚠️</div>
   <h1 id="vns-idb-block-title">此瀏覽器不支援 IndexedDB</h1>
-  <p>Visual Novel Studio 需要 IndexedDB 來儲存 CG 與幕資料。</p>
+  <p>Visual Novel Simple 需要 IndexedDB 來儲存 CG 與幕資料。</p>
   <p class="block-hint">
     可能原因:使用無痕 / 隱私模式、瀏覽器版本過舊。<br>
     建議使用一般瀏覽模式的 Chrome、Firefox 或 Edge 最新版本。
@@ -49,10 +47,10 @@
 </div>
 <script>
   (function () {
-    var el = document.getElementById("mobile-block");
-    function check() { el.classList.toggle("show", window.innerWidth < 1024); }
-    check();
-    window.addEventListener("resize", check);
+    var el = document.getElementById("desktop-hint");
+    var mobile = (window.matchMedia && matchMedia("(pointer: coarse)").matches) || /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
+    if (mobile) el.classList.add("show");
+    document.getElementById("desktop-hint-close").addEventListener("click", function () { el.classList.remove("show"); });
   })();
 </script>
 
@@ -61,8 +59,10 @@
   <!-- Top Bar -->
   <header class="topbar">
     <div class="topbar-left">
+      <a class="back" href="../" aria-label="回到 Studio 入口">←</a>
       <div class="brand">
-        <div class="brand-mark">Visual Novel Studio</div>
+        <div class="brand-mark">Visual Novel</div>
+        <div class="brand-sub">Simple · 快速截圖</div>
       </div>
       <!-- 任務 5:六種狀態指示(就緒時隱藏,由 setEditorStatus 控制) -->
       <span class="editor-status" id="editorStatus" hidden>
@@ -73,13 +73,19 @@
     </div>
     <!-- 細節版尚未完成,暫時隱藏「簡易／細節」切換入口。程式碼保留,未來把這個 toggle 加回即可重新開放。 -->
     <div class="topbar-actions">
-      <button class="btn" id="btnSyntaxQuick">
+      <div class="ui-scale" id="uiScale" role="group" aria-label="介面大小">
+        <button class="us-btn on" type="button" data-ui="std">標準</button>
+        <button class="us-btn" type="button" data-ui="lg">大</button>
+        <button class="us-btn" type="button" data-ui="xl">最大</button>
+      </div>
+      <span class="topbar-divider"></span>
+      <button class="btn btn-icon" id="btnSyntaxQuick" title="語法速查" aria-label="語法速查">
         <span class="btn-emoji">📖</span>
         <span class="btn-text">語法速查</span>
       </button>
-      <!-- 工具設定:樣式(高頻)→ 設定 -->
+      <!-- 工具設定:樣式(高頻,保留文字)→ 設定(icon)-->
       <button class="btn" id="btnStyle"><span class="btn-emoji">🎨</span><span class="btn-text">樣式</span></button>
-      <button class="btn" id="btnSettings"><span class="btn-emoji">⚙</span><span class="btn-text">設定</span></button>
+      <button class="btn btn-icon" id="btnSettings" title="設定" aria-label="設定"><span class="btn-emoji">⚙</span><span class="btn-text">設定</span></button>
 
       <!-- 更多功能選單(重設 / 最近開啟。任務 1:專案匯入匯出已移除,改用 💾 儲存 / 📂 開啟) -->
       <div class="topbar-more">
@@ -114,6 +120,7 @@
           <div class="simple-pane-content">
             <div class="simple-pane-header">
               <span class="simple-pane-title">幕 <span class="simple-sidebar-count" id="simpleSidebarCount">0</span></span>
+              <button class="pane-collapse-btn" id="slidesCollapseBtn" type="button" aria-label="收起幕列表" title="收起">←</button>
             </div>
             <div class="simple-slide-list" id="simpleSlideList"><!-- JS 動態填入 --></div>
             <div class="simple-add-slide-wrap">
@@ -135,6 +142,13 @@
                 </button>
               </div>
             </div>
+          </div>
+          <!-- 收起窄條(直書) -->
+          <div class="pane-collapsed-bar" id="slidesCollapsedBar" hidden>
+            <button class="pane-expand-btn" type="button" aria-label="展開幕列表">
+              <span class="bar-icon" aria-hidden="true">🎬</span>
+              <span class="bar-text">幕</span>
+            </button>
           </div>
         </aside>
 
@@ -306,7 +320,7 @@
 
   <!-- Footer:作者資訊(低調列) -->
   <footer class="app-footer">
-    <span class="app-footer-title">Visual Novel Studio</span>
+    <span class="app-footer-title">Visual Novel Simple</span>
     <span class="app-footer-sep" aria-hidden="true">·</span>
     <span class="app-footer-author">Made by ilai</span>
     <span class="app-footer-sep" aria-hidden="true">·</span>
@@ -353,8 +367,6 @@
      <div class="style-modal-grid">
       <!-- LEFT:可滾的設定區 -->
       <div class="style-modal-settings">
-
-      <div class="style-modal-hint">💡 想切換整個工具的明暗主題?請到右上角「⚙ 設定」</div>
 
       <!-- 對話框配色(Latte / Espresso / 自訂) -->
       <div class="style-section">
@@ -480,7 +492,7 @@
   </div>
 </div>
 
-<!-- ========== Settings Modal (系統設定:介面主題等) ========== -->
+<!-- ========== Settings Modal (系統設定) ========== -->
 <!-- ========== CG Library Modal (🖼 CG 庫) ========== -->
 <div class="modal-backdrop" id="cgLibraryModal">
   <div class="modal" role="dialog" aria-modal="true" style="max-width: 760px;">
@@ -536,22 +548,6 @@
       <button class="modal-close" id="settingsModalClose" aria-label="關閉">×</button>
     </div>
     <div class="modal-body">
-      <div class="style-section">
-        <div class="style-label">介面主題</div>
-        <div class="theme-switcher">
-          <button class="theme-btn active" data-theme="violet">紫月</button>
-          <button class="theme-btn" data-theme="daylight">白晝</button>
-        </div>
-        <div class="settings-theme-desc">
-          <div><strong>紫月：</strong>深紫底 + 金邊,沉浸感強,適合夜間創作</div>
-          <div><strong>白晝：</strong>米白底 + 香檳金,清爽,適合白天/截圖貼文用</div>
-        </div>
-        <div class="settings-theme-note">
-          切換主題會影響整個工具的背景、按鈕、modal 配色,<br>
-          不影響劇本內的對話框樣式(那個在「🎨 樣式」設定)
-        </div>
-      </div>
-
       <!-- 💾 儲存空間 -->
       <div class="settings-storage" id="settingsStorage">
         <div class="settings-storage-label">💾 儲存空間</div>
@@ -706,5 +702,25 @@
 
 <script type="module" src="js/main.js"></script>
 <script defer src="index.js"></script>
+<!-- 介面縮放(標準 / 大 / 最大),記憶於 localStorage -->
+<script>
+  (function () {
+    var KEY = "vns-ui-scale";
+    var bar = document.getElementById("uiScale");
+    if (!bar) return;
+    var btns = bar.querySelectorAll(".us-btn");
+    apply(localStorage.getItem(KEY) || "std");
+    btns.forEach(function (b) {
+      b.addEventListener("click", function () {
+        apply(b.dataset.ui);
+        localStorage.setItem(KEY, b.dataset.ui);
+      });
+    });
+    function apply(v) {
+      document.body.dataset.ui = v;
+      btns.forEach(function (x) { x.classList.toggle("on", x.dataset.ui === v); });
+    }
+  })();
+</script>
 </body>
 </html>

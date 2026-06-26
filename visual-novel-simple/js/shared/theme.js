@@ -1,14 +1,3 @@
-// shared/theme.js — 由 index.js 搬出,內容未改動
-
-function applyTheme(t) {
-  const theme = (t === "daylight") ? t : "violet";
-  document.documentElement.setAttribute("data-theme", theme);
-  try { localStorage.setItem(THEME_KEY, theme); } catch (e) {}
-  document.querySelectorAll(".theme-btn").forEach(b => {
-    b.classList.toggle("active", b.dataset.theme === theme);
-  });
-}
-
-export {
-  applyTheme,
-};
+// shared/theme.js — 介面主題切換已移除(統一為淺色霧面薰衣草單一主題)。
+// 檔案保留為空模組以維持資料夾結構;不再被 main.js 匯入。
+export {};

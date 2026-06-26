@@ -28,7 +28,6 @@ import * as SimpleOutput from "./simple/output.js";
 import * as Toast from "./shared/toast.js";
 import * as ModalHelpers from "./shared/modal-helpers.js";
 import * as Utils from "./shared/utils.js";
-import * as Theme from "./shared/theme.js";
 import * as ProjectsModal from "./modals/projects.js";
 import * as SettingsModal from "./modals/settings.js";
 import * as DialogStyle from "./shared/dialog-style.js";
@@ -39,4 +38,4 @@ import * as Effects from "./simple/effects.js";
 import * as GameUI from "./shared/game-ui.js";
 import * as StatusBar from "./shared/status-bar.js";
 
-Object.assign(window, Constants, Regex, State, Elements, StorageLocal, StorageIndexedDB, Parser, CanvasRenderer, CgLibraryModal, ExportImport, StateSimple, ParserSimple, SlideList, ChoiceScene, EditorSimple, PreviewSimple, SimpleOutput, Toast, ModalHelpers, Utils, Theme, ProjectsModal, SettingsModal, DialogStyle, FontSystem, SimpleMode, SimpleCards, Effects, GameUI, StatusBar);
+Object.assign(window, Constants, Regex, State, Elements, StorageLocal, StorageIndexedDB, Parser, CanvasRenderer, CgLibraryModal, ExportImport, StateSimple, ParserSimple, SlideList, ChoiceScene, EditorSimple, PreviewSimple, SimpleOutput, Toast, ModalHelpers, Utils, ProjectsModal, SettingsModal, DialogStyle, FontSystem, SimpleMode, SimpleCards, Effects, GameUI, StatusBar);

@@ -735,20 +735,7 @@ syncStyleDefaultsUI();
   }
 })();
 
-// ----- Interface theme (G2) -----
-const THEME_KEY = "otome-theme";
-
-// 任務 4:全新使用者預設白晝;已用過的(有既有存檔或曾設定過主題)維持紫月。
-let _initialTheme = localStorage.getItem(THEME_KEY);
-if (!_initialTheme) {
-  _initialTheme = localStorage.getItem(STORAGE_KEY) ? "violet" : "daylight";
-}
-applyTheme(_initialTheme);
-document.querySelectorAll(".theme-btn").forEach(b => {
-  b.addEventListener("click", () => applyTheme(b.dataset.theme));
-});
-
-// ----- Settings modal (系統設定:介面主題等) -----
+// ----- Settings modal (系統設定) -----
 const settingsModalEl = document.getElementById("settingsModal");
 
 

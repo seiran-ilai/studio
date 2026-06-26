@@ -29,25 +29,32 @@
 
 /* ========== Design Tokens ========== */
 :root {
-  --bg-deep: #0d0716;
-  --bg-panel: #170d24;
-  --bg-elev: #1f1430;
-  --border-soft: rgba(196, 162, 101, 0.18);
-  --border-strong: rgba(196, 162, 101, 0.4);
-  --gold: #c4a265;
-  --gold-bright: #e6c989;
-  --rose: #d4869a;
-  --plum: #6b3d6f;
-  --violet: #8b5fb8;
-  --text-primary: #f3e9d8;
-  --text-secondary: #c4b3d4;
-  --text-muted: #9a8aa8;
-  --text-faint: #5d4d70;
-  --danger: #d47186;
-  --accent: #86c79a;
-  --warning: #e0a86a;
+  /* ── 系列共用:淺色霧面(識別色 = 薰衣草)。外殼用,預覽舞台仍維持深色內容 ── */
+  --bg-deep: #eceaf3;                   /* app 最底(冷薰衣草白)*/
+  --bg-panel: #f5f3fb;                  /* 面板(淺)*/
+  --bg-elev: #ebe7f6;                   /* 抬升面 */
+  --surface-frost: rgba(255, 255, 255, 0.62); /* 霧面玻璃 */
+  --border-soft: rgba(95, 75, 130, 0.18);
+  --border-strong: rgba(95, 75, 130, 0.4);
+  --gold: #7c5fae;                      /* 主強調(薰衣草,深;沿用 gold 變數名)*/
+  --gold-bright: #9a7bcf;               /* 亮薰衣草 */
+  --rose: #b07aa0;                      /* 藕紫 */
+  --plum: #8a6fb0;
+  --violet: #7c5fae;
+  --text-primary: #2c2440;
+  --text-secondary: #4a4060;
+  --text-muted: #6b6385;
+  --text-faint: #9a93ad;
+  --danger: #c1556b;
+  --accent: #3f8a6a;                    /* 「已儲存」等狀態用綠 */
+  --warning: #b5701f;
 
-  --font-display: "Noto Serif TC", "PingFang TC", serif;
+  --blur: 16px;
+  --shadow-soft: 0 10px 34px rgba(60, 50, 90, 0.14);
+  --shadow-card: 0 2px 12px rgba(60, 50, 90, 0.08);
+  --grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+
+  --font-display: "Fraunces", "Noto Serif TC", "PingFang TC", serif;
   --font-body: "PingFang TC", "Microsoft JhengHei", "Noto Sans TC", system-ui, sans-serif;
   --font-mono: "JetBrains Mono", "SF Mono", Menlo, monospace;
 
@@ -57,30 +64,8 @@
   --dialog-bg-alpha: 0.88;
 }
 
-/* ----- Interface themes (G2) ----- */
-/* violet = default (uses :root above as-is) */
-:root[data-theme="daylight"] {
-  /* 背景:米白 + 香檳 */
-  --bg-deep: #faf4e8;
-  --bg-panel: #f0e6d2;
-  --bg-elev: #e7d8b8;
-  /* 文字:深棕灰、中棕、暖棕,皆與米白底維持 4.5:1 以上 */
-  --text-primary: #2a1f15;
-  --text-secondary: #4a3a2a;
-  --text-muted: #5d4a35;
-  --text-faint: #7a6650;
-  --accent: #3f8a5a;
-  --warning: #b5701f;
-  /* 邊框:加深飽和度,在米白底上才看得到 */
-  --border-soft: rgba(168, 110, 50, 0.3);
-  --border-strong: rgba(139, 107, 61, 0.6);
-  /* 金色系:強調色用深玫瑰金 */
-  --gold: #a8845a;
-  --gold-bright: #8b6b3d;
-  --rose: #b87a5a;
-  /* danger 改深紅(米白底上純紅太刺) */
-  --danger: #a83838;
-}
+/* ----- Interface theme:統一淺色霧面薰衣草(沿用上方 :root 單一來源)----- */
+/* 原 daylight 暖香檳主題已併入預設並改為冷薰衣草;下方表面覆寫段同步改色。 */
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -111,16 +96,17 @@ body::before {
   z-index: 0;
 }
 
-/* grain */
+/* grain — 消光顆粒 */
 body::after {
   content: "";
   position: fixed;
   inset: 0;
-  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2'/><feColorMatrix values='0 0 0 0 0.95  0 0 0 0 0.91  0 0 0 0 0.85  0 0 0 0.06 0'/></filter><rect width='200' height='200' filter='url(%23n)'/></svg>");
+  background-image: var(--grain);
+  background-size: 180px;
   pointer-events: none;
   z-index: 1;
-  opacity: 0.4;
-  mix-blend-mode: overlay;
+  opacity: 0.04;
+  mix-blend-mode: multiply;
 }
 
 /* ========== Layout ========== */
@@ -149,9 +135,9 @@ body::after {
   justify-content: space-between;
   padding: 14px 24px;
   border-bottom: 1px solid var(--border-soft);
-  background: linear-gradient(180deg, rgba(23, 13, 36, 0.9), rgba(13, 7, 22, 0.7));
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.74), rgba(255, 255, 255, 0.56));
+  backdrop-filter: blur(20px) saturate(1.4);
+  -webkit-backdrop-filter: blur(20px) saturate(1.4);
   position: relative;
   /* backdrop-filter 會建立 stacking context;需高於 .main 才能讓「⋯」選單蓋住預覽 */
   z-index: var(--z-toolbar);
@@ -172,7 +158,7 @@ body::after {
   border: 1px solid var(--border-soft);
   border-radius: 8px;
   padding: 6px;
-  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.5);
+  box-shadow: var(--shadow-soft);
   min-width: 200px;
   z-index: var(--z-dropdown);
   display: flex;
@@ -206,28 +192,72 @@ body::after {
 
 .brand {
   display: flex;
-  align-items: baseline;
-  gap: 12px;
+  flex-direction: column;
+  gap: 1px;
 }
+
+/* 統一標題:返回鈕 */
+.back {
+  flex: none;
+  width: 30px; height: 30px;
+  display: grid; place-items: center;
+  border: 1px solid var(--border-soft);
+  border-radius: 50%;
+  color: var(--text-muted);
+  text-decoration: none;
+  font-size: 17px;
+  transition: color .2s, border-color .2s;
+}
+.back:hover { color: var(--text-primary); border-color: var(--gold); }
 
 .brand-mark {
   font-family: var(--font-display);
-  font-size: 24px;
-  font-style: italic;
+  font-size: 21px;
   font-weight: 500;
-  background: linear-gradient(135deg, var(--gold-bright), var(--rose));
+  background: linear-gradient(135deg, var(--gold), var(--rose));
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
   letter-spacing: 0.02em;
+  line-height: 1.1;
 }
 
 .brand-sub {
-  font-size: 11px;
+  font-size: 10.5px;
   color: var(--text-faint);
-  letter-spacing: 0.3em;
+  letter-spacing: 0.16em;
   text-transform: uppercase;
 }
+
+/* 介面縮放 seg(右上資訊列) */
+.ui-scale {
+  display: inline-flex;
+  background: var(--surface-frost);
+  border: 1px solid var(--border-soft);
+  border-radius: 999px;
+  overflow: hidden;
+}
+.ui-scale .us-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  padding: 6px 13px;
+  font-family: var(--font-body);
+  font-size: 12px;
+  cursor: pointer;
+  transition: color .15s, background .15s;
+}
+.ui-scale .us-btn:hover { color: var(--text-primary); }
+.ui-scale .us-btn.on { background: var(--gold); color: #fff; }
+
+/* 介面縮放:跟其他頁一致 — 放大控制 / 編輯區,預覽維持原生尺寸
+   (zoom 整個 .main 後,把預覽欄反向 zoom 回 1.0)*/
+body[data-ui="lg"] .main { zoom: 1.15; }
+body[data-ui="xl"] .main { zoom: 1.3; }
+body[data-ui="lg"] .simple-pane-preview,
+body[data-ui="lg"] .pane-preview { zoom: 0.87; }
+body[data-ui="xl"] .simple-pane-preview,
+body[data-ui="xl"] .pane-preview { zoom: 0.769; }
 
 .topbar-actions {
   display: flex;
@@ -320,14 +350,19 @@ body::after {
 
 .btn-primary {
   background: linear-gradient(135deg, var(--gold), var(--gold-bright));
-  color: var(--bg-deep);
+  color: #fff;
   border-color: transparent;
   font-weight: 600;
 }
 .btn-primary:hover {
   background: linear-gradient(135deg, var(--gold-bright), var(--rose));
-  color: var(--bg-deep);
+  color: #fff;
 }
+
+/* topbar 減負:次要動作(語法速查 / 設定)收成 icon-only,保留 tooltip */
+.btn.btn-icon { padding: 8px 11px; }
+.btn.btn-icon .btn-text { display: none; }
+.btn.btn-icon .btn-emoji { font-size: 15px; }
 
 .btn-ghost {
   border: none;
@@ -2374,26 +2409,7 @@ body::after {
   margin-bottom: 10px;
   letter-spacing: 0.05em;
 }
-.theme-switcher { display: flex; gap: 8px; flex-wrap: wrap; }
-.theme-btn {
-  background: var(--bg-elev);
-  border: 1px solid var(--border-soft);
-  color: var(--text-muted);
-  padding: 6px 14px;
-  border-radius: 999px;
-  cursor: pointer;
-  font-size: 12px;
-  font-family: var(--font-body);
-  transition: all 0.2s;
-}
-.theme-btn:hover { border-color: var(--border-strong); color: var(--text-primary); }
-.theme-btn.active {
-  background: var(--gold);
-  color: var(--bg-deep);
-  border-color: var(--gold);
-}
-
-/* 樣式 modal 頂端提示(主題在 ⚙ 設定) */
+/* 樣式 modal 頂端提示 */
 .style-modal-hint {
   font-size: 11px;
   color: var(--text-faint);
@@ -2535,10 +2551,10 @@ body::after {
 }
 
 /* 白晝主題下預覽舞台底色 */
-:root[data-theme="daylight"] .style-modal-preview {
+:root .style-modal-preview {
   background: rgba(240, 230, 210, 0.4);
 }
-:root[data-theme="daylight"] .style-modal-preview-stage {
+:root .style-modal-preview-stage {
   background: linear-gradient(180deg, #2a1f15, #0d0716);
 }
 
@@ -4103,28 +4119,21 @@ body::after {
 .simple-layout {
   display: grid;
   grid-template-columns:
-    var(--pane-slides-width, 200px)
-    var(--splitter-width, 5px)
+    var(--col-slides, var(--pane-slides-width, 200px))
+    var(--col-sp1, var(--splitter-width, 5px))
     var(--pane-dialog-width, 320px)
     var(--splitter-width, 5px)
     minmax(0, 1fr)
-    var(--splitter-width, 5px)
-    var(--pane-effects-width, 270px);
+    var(--col-sp3, var(--splitter-width, 5px))
+    var(--col-effects, var(--pane-effects-width, 270px));
   grid-template-rows: minmax(0, 1fr);
   grid-row: 1;
   min-height: 0;
   overflow: hidden;
 }
-.simple-layout[data-effects-collapsed="true"] {
-  grid-template-columns:
-    var(--pane-slides-width, 200px)
-    var(--splitter-width, 5px)
-    var(--pane-dialog-width, 320px)
-    var(--splitter-width, 5px)
-    minmax(0, 1fr)
-    0
-    40px;
-}
+/* 左右欄各自獨立收合(可同時)*/
+.simple-layout[data-slides-collapsed="true"] { --col-slides: 40px; --col-sp1: 0; }
+.simple-layout[data-effects-collapsed="true"] { --col-effects: 40px; --col-sp3: 0; }
 /* hidden 屬性一律隱藏(蓋過自訂 display:flex/grid,避免「明明 hidden 卻顯示」) */
 .pane-simple [hidden] { display: none !important; }
 
@@ -4132,9 +4141,27 @@ body::after {
   overflow: hidden;
   min-width: 0;
   display: flex;
-  background: rgba(13, 7, 22, 0.18);
+  background: rgba(255, 255, 255, 0.32);
 }
-.simple-pane-slides { background: rgba(13, 7, 22, 0.3); }
+.simple-pane-slides { background: rgba(124, 95, 174, 0.05); }
+
+/* 幕列表空狀態引導 */
+.simple-slide-empty {
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 13px;
+  line-height: 1.7;
+  padding: 28px 12px;
+  border: 1px dashed var(--border-soft);
+  border-radius: 10px;
+  background: rgba(124, 95, 174, 0.04);
+}
+.simple-slide-empty span {
+  display: block;
+  margin-top: 4px;
+  font-size: 11.5px;
+  color: var(--text-faint);
+}
 .simple-pane-content {
   flex: 1;
   height: 100%;
@@ -4174,7 +4201,8 @@ body::after {
 }
 .simple-splitter:hover,
 .simple-splitter.dragging { background: var(--gold-bright); }
-.simple-layout[data-effects-collapsed="true"] .simple-splitter[data-splitter="3"] {
+.simple-layout[data-effects-collapsed="true"] .simple-splitter[data-splitter="3"],
+.simple-layout[data-slides-collapsed="true"] .simple-splitter[data-splitter="1"] {
   pointer-events: none;
   background: transparent;
 }
@@ -4200,12 +4228,13 @@ body.simple-resizing { cursor: col-resize; user-select: none; }
 
 /* 預覽欄 */
 /* 任務 5:預覽欄內容垂直置中(上下留白均等) */
-.simple-pane-preview .simple-pane-content { align-items: center; justify-content: center; }
-.simple-pane-preview .simple-preview { width: 100%; }
+.simple-pane-preview .simple-pane-content { align-items: center; justify-content: center; overflow: hidden; }
+.simple-pane-preview .simple-preview { flex: 1 1 auto; min-height: 0; width: 100%; align-items: center; }
 
 /* 特效欄 + 收起窄條 */
 .simple-pane-effects { position: relative; }
-.simple-layout[data-effects-collapsed="true"] .simple-pane-effects .simple-pane-content { display: none; }
+.simple-layout[data-effects-collapsed="true"] .simple-pane-effects .simple-pane-content,
+.simple-layout[data-slides-collapsed="true"] .simple-pane-slides .simple-pane-content { display: none; }
 .pane-collapse-btn {
   border: 1px solid var(--border-soft);
   background: transparent;
@@ -4224,9 +4253,10 @@ body.simple-resizing { cursor: col-resize; user-select: none; }
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(13, 7, 22, 0.4);
+  background: rgba(124, 95, 174, 0.06);
   border-left: 1px solid var(--border-soft);
 }
+.simple-pane-slides .pane-collapsed-bar { border-left: none; border-right: 1px solid var(--border-soft); }
 /* hidden 屬性必須蓋過上面的 display:flex(展開時不顯示窄條) */
 .pane-collapsed-bar[hidden] { display: none; }
 .pane-expand-btn {
@@ -4252,20 +4282,41 @@ body.simple-resizing { cursor: col-resize; user-select: none; }
   gap: 14px;
   padding: 8px 18px;
   border-top: 1px solid var(--border-soft);
-  background: rgba(13, 7, 22, 0.45);
+  background: rgba(255, 255, 255, 0.55);
+  backdrop-filter: blur(var(--blur)) saturate(1.4);
+  -webkit-backdrop-filter: blur(var(--blur)) saturate(1.4);
 }
 .bottom-bar-group { display: flex; align-items: center; gap: 10px; }
 .bottom-bar-divider { flex: 1; }
 .orient-toggle { display: flex; align-items: center; gap: 8px; }
 .orient-toggle .simple-row-label { margin: 0; }
 .simple-bottom-bar .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+/* CG 操作鈕:ghost 在淺底太淡 → 給明確的表面與邊框,移除為危險色 */
+.simple-bottom-bar .btn-ghost {
+  color: var(--text-secondary);
+  background: rgba(124, 95, 174, 0.07);
+  border: 1px solid var(--border-soft);
+  padding: 6px 12px;
+}
+.simple-bottom-bar .btn-ghost:hover {
+  color: var(--gold);
+  border-color: var(--gold);
+  background: rgba(124, 95, 174, 0.12);
+  transform: none;
+}
+.simple-bottom-bar #simpleCgClearBtn { color: var(--danger); }
+.simple-bottom-bar #simpleCgClearBtn:hover {
+  color: #fff;
+  background: var(--danger);
+  border-color: var(--danger);
+}
 
 /* ===== 左側:幕列表 ===== */
 .simple-sidebar {
   display: flex;
   flex-direction: column;
   border-right: 1px solid var(--border-soft);
-  background: rgba(13, 7, 22, 0.3);
+  background: rgba(124, 95, 174, 0.05);
   min-height: 0;
 }
 .simple-sidebar-header {
@@ -4482,10 +4533,23 @@ body.simple-resizing { cursor: col-resize; user-select: none; }
   /* 任務 7-2:預覽框是視覺主角 — 加強邊框對比 */
   box-shadow: 0 0 0 1px var(--border-strong), 0 24px 70px -22px rgba(0, 0, 0, 0.75);
 }
-.simple-preview-stage[data-ratio="16:9"] { aspect-ratio: 16 / 9; }
+/* CG 未設定(上傳入口狀態)時不套款式暖色舞台底,改用主題的 elevated 底,
+   讓空欄位在紫月/白晝兩主題下都協調 */
+.simple-preview-stage:has(.simple-preview-empty:not([hidden])) {
+  background: var(--bg-elev);
+}
+/* 兩種比例都不可超出可用高度:max-height 觸發時 aspect-ratio 會回算寬度,自動縮放置中 */
+.simple-preview-stage[data-ratio="16:9"] {
+  aspect-ratio: 16 / 9;
+  max-height: 100%;
+}
+/* 直式以高度為基準,寬度由比例回算,確保高的畫面也塞得進欄位 */
 .simple-preview-stage[data-ratio="9:16"] {
   aspect-ratio: 9 / 16;
-  max-width: 360px;
+  width: auto;
+  height: 100%;
+  max-height: 100%;
+  max-width: min(360px, 100%);
 }
 .simple-preview-empty {
   position: absolute;
@@ -4663,16 +4727,16 @@ body.simple-resizing { cursor: col-resize; user-select: none; }
 }
 .simple-ratio-toggle {
   display: inline-flex;
-  background: #3a2010;
+  background: var(--bg-elev);
   border-radius: 999px;
   padding: 4px;
   gap: 2px;
-  border: none;
+  border: 1px solid var(--border-soft);
 }
 .simple-ratio-toggle button {
   background: transparent;
   border: none;
-  color: #f3e9d8;
+  color: var(--text-muted);
   padding: 6px 20px;
   font-size: 12px;
   border-radius: 999px;
@@ -4681,16 +4745,16 @@ body.simple-resizing { cursor: col-resize; user-select: none; }
   transition: all 0.15s;
 }
 .simple-ratio-toggle button:hover {
-  color: #fff;
+  color: var(--text-primary);
 }
 .simple-ratio-toggle button.active {
-  background: #f3e9d8;
-  color: #3a2010;
+  background: var(--gold);
+  color: var(--bg-deep);
   font-weight: 500;
 }
 .simple-ratio-toggle button.active:hover {
-  background: #fff;
-  color: #3a2010;
+  background: var(--gold-bright);
+  color: var(--bg-deep);
 }
 
 
@@ -5876,156 +5940,151 @@ body.simple-resizing { cursor: col-resize; user-select: none; }
    那是劇本作品的視覺,由 [data-style-active] 變數另外管。
    ============================================================ */
 
-/* atmospheric body bg:把紫月的紫光換成淡香檳光 */
-:root[data-theme="daylight"] body::before {
+/* atmospheric body bg:冷薰衣草微光 */
+:root body::before {
   background:
-    radial-gradient(ellipse 80% 50% at 10% 0%, rgba(196, 162, 101, 0.18), transparent 60%),
-    radial-gradient(ellipse 60% 40% at 90% 100%, rgba(184, 122, 90, 0.10), transparent 60%),
-    radial-gradient(ellipse 100% 80% at 50% 50%, rgba(255, 240, 210, 0.35), transparent 70%);
+    radial-gradient(ellipse 80% 50% at 10% 0%, rgba(124, 95, 174, 0.12), transparent 60%),
+    radial-gradient(ellipse 60% 40% at 90% 100%, rgba(176, 122, 160, 0.09), transparent 60%),
+    radial-gradient(ellipse 100% 80% at 50% 50%, rgba(255, 255, 255, 0.30), transparent 70%);
 }
-:root[data-theme="daylight"] body::after {
-  opacity: 0.12;
+:root body::after {
+  opacity: 0.045;
   mix-blend-mode: multiply;
 }
 
-/* === topbar / status bar / panes 表面 === */
-:root[data-theme="daylight"] .topbar {
-  background: linear-gradient(180deg, rgba(255, 250, 240, 0.92), rgba(245, 237, 224, 0.85));
+/* === topbar / status bar / panes 表面(霧面)=== */
+:root .topbar {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.74), rgba(255, 255, 255, 0.56));
 }
-:root[data-theme="daylight"] .status-bar {
-  background: rgba(255, 250, 240, 0.7);
+:root .status-bar {
+  background: rgba(255, 255, 255, 0.68);
 }
-:root[data-theme="daylight"] .status-bar strong {
-  color: #8b6b3d;
+:root .status-bar strong {
+  color: var(--gold);
 }
-:root[data-theme="daylight"] .app-footer {
-  background: rgba(255, 250, 240, 0.6);
+:root .app-footer {
+  background: rgba(255, 255, 255, 0.58);
 }
-:root[data-theme="daylight"] .pane-script {
-  background: linear-gradient(180deg, rgba(240, 230, 210, 0.4), transparent);
+:root .pane-script {
+  background: linear-gradient(180deg, rgba(124, 95, 174, 0.05), transparent);
 }
-:root[data-theme="daylight"] .pane-simple {
-  background: linear-gradient(180deg, rgba(240, 230, 210, 0.4), transparent);
+:root .pane-simple {
+  background: linear-gradient(180deg, rgba(124, 95, 174, 0.05), transparent);
 }
-:root[data-theme="daylight"] .script-toolbar {
-  background: rgba(245, 237, 224, 0.55);
+:root .script-toolbar {
+  background: rgba(255, 255, 255, 0.55);
 }
 
 /* === pill 切換器(模式 / 比例)的底色 === */
-:root[data-theme="daylight"] .topbar-mode-toggle,
-:root[data-theme="daylight"] .ratio-toggle {
-  background: rgba(240, 230, 210, 0.7);
-  border-color: rgba(168, 110, 50, 0.3);
+:root .topbar-mode-toggle,
+:root .ratio-toggle {
+  background: rgba(255, 255, 255, 0.7);
+  border-color: var(--border-soft);
 }
 
 /* === 預覽播放控制列 === */
-:root[data-theme="daylight"] .preview-playback {
-  background: rgba(245, 237, 224, 0.6);
-  border-color: rgba(168, 110, 50, 0.3);
+:root .preview-playback {
+  background: rgba(255, 255, 255, 0.62);
+  border-color: var(--border-soft);
 }
-:root[data-theme="daylight"] .playback-speed {
-  background: rgba(255, 250, 240, 0.8);
+:root .playback-speed {
+  background: rgba(255, 255, 255, 0.82);
   color: var(--text-primary);
-  border-color: rgba(168, 110, 50, 0.3);
+  border-color: var(--border-soft);
 }
-:root[data-theme="daylight"] .playback-progress {
-  background: rgba(139, 107, 61, 0.22);
+:root .playback-progress {
+  background: rgba(95, 75, 130, 0.20);
 }
-:root[data-theme="daylight"] .playback-progress::-webkit-slider-thumb {
-  border-color: #fdf6e8;
-  box-shadow: 0 0 0 1px rgba(139, 107, 61, 0.55);
+:root .playback-progress::-webkit-slider-thumb {
+  border-color: #fff;
+  box-shadow: 0 0 0 1px rgba(95, 75, 130, 0.5);
 }
-:root[data-theme="daylight"] .playback-progress::-moz-range-thumb {
-  border-color: #fdf6e8;
+:root .playback-progress::-moz-range-thumb {
+  border-color: #fff;
 }
 
-/* === 金色按鈕(有金色 gradient 底)的文字色:白晝下 bg-deep 是米白,
-       原本 color: var(--bg-deep) 變成米白文字 → 看不見,改深棕 === */
-:root[data-theme="daylight"] .btn-primary,
-:root[data-theme="daylight"] .btn-primary:hover,
-:root[data-theme="daylight"] .ratio-toggle button.active,
-:root[data-theme="daylight"] .mode-btn.active,
-:root[data-theme="daylight"] .playback-play,
-:root[data-theme="daylight"] .playback-play:hover {
-  color: #2a1f15;
+/* === 金色(薰衣草)漸層按鈕的文字色 → 白字 === */
+:root .btn-primary,
+:root .btn-primary:hover,
+:root .ratio-toggle button.active,
+:root .mode-btn.active,
+:root .playback-play,
+:root .playback-play:hover {
+  color: #fff;
 }
 
 /* === modal 系列 === */
-:root[data-theme="daylight"] .modal-backdrop {
-  background: rgba(60, 40, 20, 0.32);
+:root .modal-backdrop {
+  background: rgba(44, 36, 64, 0.32);
 }
-:root[data-theme="daylight"] .modal {
-  box-shadow:
-    0 0 0 1px rgba(168, 110, 50, 0.18),
-    0 30px 80px -20px rgba(60, 40, 20, 0.35),
-    0 0 60px -30px rgba(196, 162, 101, 0.3);
+:root .modal {
+  box-shadow: var(--shadow-soft);
 }
-:root[data-theme="daylight"] .modal-footer {
-  background: rgba(240, 230, 210, 0.55);
+:root .modal-footer {
+  background: rgba(255, 255, 255, 0.55);
 }
-:root[data-theme="daylight"] .topbar-menu {
-  box-shadow: 0 12px 36px rgba(60, 40, 20, 0.22);
+:root .topbar-menu {
+  box-shadow: var(--shadow-soft);
 }
 
-/* === 輸入框(textarea / input / select)在 modal 內常用透明深色, 白晝下要換 === */
-:root[data-theme="daylight"] input[type="text"],
-:root[data-theme="daylight"] input[type="number"],
-:root[data-theme="daylight"] input[type="color"],
-:root[data-theme="daylight"] select,
-:root[data-theme="daylight"] textarea:not(.script-area) {
-  background: rgba(255, 250, 240, 0.85);
+/* === 輸入框(textarea / input / select):霧面白 === */
+:root input[type="text"],
+:root input[type="number"],
+:root input[type="color"],
+:root select,
+:root textarea:not(.script-area) {
+  background: rgba(255, 255, 255, 0.85);
   color: var(--text-primary);
-  border-color: rgba(168, 110, 50, 0.35);
+  border-color: var(--border-soft);
 }
 
 /* === scrollbar === */
-:root[data-theme="daylight"] ::-webkit-scrollbar-thumb {
-  background: rgba(139, 107, 61, 0.35);
+:root ::-webkit-scrollbar-thumb {
+  background: rgba(95, 75, 130, 0.30);
 }
-:root[data-theme="daylight"] ::-webkit-scrollbar-thumb:hover {
-  background: rgba(139, 107, 61, 0.55);
+:root ::-webkit-scrollbar-thumb:hover {
+  background: rgba(95, 75, 130, 0.5);
 }
 
-/* === 語法 highlight 配色:紫色 tag 在米白底會褪色,換深紫 === */
-:root[data-theme="daylight"] .sh-style-tag { color: #6a3d96; }
-:root[data-theme="daylight"] .sh-choice-marker { color: #6a3d96; }
+/* === 語法 highlight:紫色 tag 在淺底用深紫 === */
+:root .sh-style-tag { color: #6a3d96; }
+:root .sh-choice-marker { color: #6a3d96; }
 
-/* === storage 點點:在米白底上發光要更實一點 === */
-:root[data-theme="daylight"] .storage-dot {
-  background: #8b6b3d;
-  box-shadow: 0 0 6px rgba(139, 107, 61, 0.45);
+/* === storage 點點 === */
+:root .storage-dot {
+  background: var(--gold);
+  box-shadow: 0 0 6px rgba(124, 95, 174, 0.45);
 }
 
 /* === ratio-toggle / mode-btn 未選中的文字也要可讀 === */
-:root[data-theme="daylight"] .ratio-toggle button:not(.active),
-:root[data-theme="daylight"] .mode-btn:not(.active) {
+:root .ratio-toggle button:not(.active),
+:root .mode-btn:not(.active) {
   color: var(--text-muted);
 }
-:root[data-theme="daylight"] .ratio-toggle button:not(.active):hover,
-:root[data-theme="daylight"] .mode-btn:hover {
+:root .ratio-toggle button:not(.active):hover,
+:root .mode-btn:hover {
   color: var(--text-primary);
 }
 
 /* === 預覽舞台「裡面」.stage 永遠是 #000 黑底,所以裡面的 UI 元素
        (counter、hint、選項覆蓋)的文字色必須維持淺色,
        不能跟 daylight 的 --text-* 一起變深 === */
-:root[data-theme="daylight"] .choice-item {
+:root .choice-item {
   color: #f3e9d8;
 }
-:root[data-theme="daylight"] .preview-counter {
+:root .preview-counter {
   color: rgba(243, 233, 216, 0.7);
 }
-:root[data-theme="daylight"] .preview-counter:hover {
+:root .preview-counter:hover {
   color: #e6c989;
 }
-:root[data-theme="daylight"] .stage-hint {
+:root .stage-hint {
   color: #e6c989;
 }
 
 /* ============================================================
    Mobile block — 工具僅支援桌面 (≥1024px),小螢幕全屏覆蓋
    ============================================================ */
-#mobile-block,
 #vns-idb-block {
   display: none;
   position: fixed;
@@ -6042,15 +6101,12 @@ body.simple-resizing { cursor: col-resize; user-select: none; }
   font-family: var(--font-body);
   cursor: pointer;
 }
-#mobile-block.show,
 #vns-idb-block.show { display: flex; }
-#mobile-block .block-icon,
 #vns-idb-block .block-icon {
   font-size: 56px;
   margin-bottom: 22px;
   line-height: 1;
 }
-#mobile-block h1,
 #vns-idb-block h1 {
   font-family: var(--font-display);
   font-style: italic;
@@ -6060,20 +6116,56 @@ body.simple-resizing { cursor: col-resize; user-select: none; }
   letter-spacing: 0.04em;
   font-weight: 500;
 }
-#mobile-block p,
 #vns-idb-block p {
   color: var(--text-muted);
   font-size: 14px;
   line-height: 1.9;
   margin: 0;
 }
-#mobile-block .block-hint,
 #vns-idb-block .block-hint {
   color: var(--text-faint);
   font-size: 12px;
   margin-top: 24px;
   letter-spacing: 0.05em;
 }
+
+/* 手機提示:非阻擋式,建議改用電腦瀏覽器 */
+#desktop-hint {
+  display: none;
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 99999;
+  box-sizing: border-box;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  background: rgba(255, 255, 255, 0.88);
+  backdrop-filter: blur(var(--blur));
+  -webkit-backdrop-filter: blur(var(--blur));
+  color: var(--text-primary);
+  font-size: 14px;
+  line-height: 1.5;
+  font-family: inherit;
+  border-top: 1px solid var(--border-soft);
+  box-shadow: 0 -6px 24px rgba(60, 50, 90, 0.16);
+}
+#desktop-hint.show { display: flex; }
+#desktop-hint span { flex: 1; }
+#desktop-hint button {
+  flex: none;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  cursor: pointer;
+  background: rgba(124, 95, 174, 0.14);
+  border: none;
+  color: var(--text-muted);
+  font-size: 15px;
+  line-height: 1;
+}
+#desktop-hint button:hover { background: var(--gold); color: #fff; }
 /* IDB block 不需要點擊互動,游標保持預設 */
 #vns-idb-block { cursor: default; }
 

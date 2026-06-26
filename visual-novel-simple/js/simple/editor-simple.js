@@ -447,6 +447,7 @@ const VNS_LAYOUT_KEYS = {
   dialog: "vns_pane_dialog_width",
   effects: "vns_pane_effects_width",
   collapsed: "vns_effects_collapsed",
+  slidesCollapsed: "vns_slides_collapsed",
 };
 function _layoutEl() { return document.getElementById("simpleLayout"); }
 
@@ -463,6 +464,7 @@ function saveLayoutWidths() {
       localStorage.setItem(VNS_LAYOUT_KEYS.effects, String(px("--pane-effects-width") || 270));
     }
     localStorage.setItem(VNS_LAYOUT_KEYS.collapsed, layout.getAttribute("data-effects-collapsed") === "true" ? "1" : "0");
+    localStorage.setItem(VNS_LAYOUT_KEYS.slidesCollapsed, layout.getAttribute("data-slides-collapsed") === "true" ? "1" : "0");
   } catch (e) {}
 }
 
@@ -480,6 +482,9 @@ function loadLayoutWidths() {
   if (dialog && +dialog > 20) layout.style.setProperty("--pane-dialog-width", dialog + "px");
   if (effects && +effects > 20) layout.style.setProperty("--pane-effects-width", effects + "px");
   if (collapsed) collapseEffectsPane(true);
+  let slidesCollapsed;
+  try { slidesCollapsed = localStorage.getItem(VNS_LAYOUT_KEYS.slidesCollapsed) === "1"; } catch (e) {}
+  if (slidesCollapsed) collapseSlidesPane(true);
 }
 
 function collapseEffectsPane(skipSave) {
@@ -500,6 +505,27 @@ function expandEffectsPane() {
   let saved;
   try { saved = localStorage.getItem(VNS_LAYOUT_KEYS.effects); } catch (e) {}
   layout.style.setProperty("--pane-effects-width", (saved && +saved > 20) ? saved + "px" : "270px");
+  saveLayoutWidths();
+}
+
+function collapseSlidesPane(skipSave) {
+  const layout = _layoutEl();
+  if (!layout) return;
+  layout.setAttribute("data-slides-collapsed", "true");
+  const bar = document.getElementById("slidesCollapsedBar");
+  if (bar) bar.hidden = false;
+  if (!skipSave) saveLayoutWidths();
+}
+
+function expandSlidesPane() {
+  const layout = _layoutEl();
+  if (!layout) return;
+  layout.removeAttribute("data-slides-collapsed");
+  const bar = document.getElementById("slidesCollapsedBar");
+  if (bar) bar.hidden = true;
+  let saved;
+  try { saved = localStorage.getItem(VNS_LAYOUT_KEYS.slides); } catch (e) {}
+  layout.style.setProperty("--pane-slides-width", (saved && +saved > 20) ? saved + "px" : "200px");
   saveLayoutWidths();
 }
 
@@ -533,7 +559,9 @@ function _startSplitterDrag(e, splitter) {
   function onMove(ev) {
     const dx = ev.clientX - startX;
     if (idx === 1) {
-      layout.style.setProperty("--pane-slides-width", Math.max(0, startSlides + dx) + "px");
+      const w = Math.max(0, startSlides + dx);
+      layout.style.setProperty("--pane-slides-width", w + "px");
+      if (w < 20) { endDrag(); collapseSlidesPane(); }   // 拖到很窄 → 自動收起
     } else if (idx === 2) {
       layout.style.setProperty("--pane-dialog-width", Math.max(0, startDialog + dx) + "px");
     } else if (idx === 3) {
@@ -554,6 +582,10 @@ function initLayoutControls() {
   if (collapseBtn) collapseBtn.addEventListener("click", () => collapseEffectsPane());
   const bar = document.getElementById("effectsCollapsedBar");
   if (bar) bar.addEventListener("click", expandEffectsPane);
+  const slidesBtn = document.getElementById("slidesCollapseBtn");
+  if (slidesBtn) slidesBtn.addEventListener("click", () => collapseSlidesPane());
+  const slidesBar = document.getElementById("slidesCollapsedBar");
+  if (slidesBar) slidesBar.addEventListener("click", expandSlidesPane);
 }
 
 // 簡易版編輯區事件綁定(由 index.js 的 IIFE 改為 init 函式,掛載後由 index.js 呼叫)

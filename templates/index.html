@@ -3,11 +3,11 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=1280">
-  <meta name="description" content="Template Studio — 上傳圖片或影片,套用音樂播放器等模板,輸出社群尺寸圖片與影片。">
-  <meta property="og:title" content="Template Studio">
+  <meta name="description" content="Template — 上傳圖片或影片,套用音樂播放器等模板,輸出社群尺寸圖片與影片。">
+  <meta property="og:title" content="Template">
   <meta property="og:description" content="上傳圖片或影片,套用模板快速創作社群素材。">
   <meta name="twitter:card" content="summary">
-  <meta name="twitter:title" content="Template Studio">
+  <meta name="twitter:title" content="Template">
   <meta name="twitter:description" content="上傳圖片或影片,套用模板快速創作社群素材。">
   <title>Template</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -20,19 +20,17 @@
 </head>
 <body>
 
-  <!-- Mobile block:點任意處跳回入口 -->
-  <a id="mobile-block" href="../" role="alertdialog" aria-labelledby="mobile-block-title">
-    <div class="block-icon" aria-hidden="true">🖥️</div>
-    <h1 id="mobile-block-title">本工具只支援電腦版</h1>
-    <p>請使用桌面瀏覽器開啟以獲得完整體驗。</p>
-    <p class="block-hint">點擊任意處回到入口頁</p>
-  </a>
+  <!-- 手機提示:建議使用電腦瀏覽器(非阻擋) -->
+  <div id="desktop-hint" role="note">
+    <span>💻 建議使用電腦瀏覽器開啟以獲得最佳體驗</span>
+    <button type="button" id="desktop-hint-close" aria-label="關閉提示">✕</button>
+  </div>
   <script>
     (function () {
-      var el = document.getElementById("mobile-block");
-      function check() { el.classList.toggle("show", window.innerWidth < 1024); }
-      check();
-      window.addEventListener("resize", check);
+      var el = document.getElementById("desktop-hint");
+      var mobile = (window.matchMedia && matchMedia("(pointer: coarse)").matches) || /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
+      if (mobile) el.classList.add("show");
+      document.getElementById("desktop-hint-close").addEventListener("click", function () { el.classList.remove("show"); });
     })();
   </script>
 
@@ -42,11 +40,16 @@
     <header class="header">
       <a class="back" href="../" aria-label="回到入口頁">&larr;</a>
       <div class="logo">
-        <span class="logo-main">Template Studio</span>
+        <span class="logo-main">Template</span>
         <span class="logo-sub">上傳素材 · 套用模板 · 輸出社群尺寸</span>
       </div>
       <div class="header-right">
         <span class="tpl-badge" id="tplBadge"></span>
+        <div class="ui-scale" id="uiScale" role="group" aria-label="介面大小">
+          <button class="us-btn on" type="button" data-ui="std">標準</button>
+          <button class="us-btn" type="button" data-ui="lg">大</button>
+          <button class="us-btn" type="button" data-ui="xl">最大</button>
+        </div>
       </div>
     </header>
 
@@ -94,11 +97,47 @@
       </div>
 
     </div>
+
+    <!-- ═ Footer ═ -->
+    <footer class="site-footer">
+      <span class="footer-tool-name">Template</span>
+      <span class="footer-divider" aria-hidden="true">·</span>
+      <span class="footer-author">Made by ilai</span>
+      <span class="footer-divider" aria-hidden="true">·</span>
+      <a href="https://www.threads.com/@ilai_sei" target="_blank" rel="noopener noreferrer" aria-label="作者的 Threads 帳號 ilai_sei(個人/工具,新分頁開啟)">@ilai_sei</a>
+      <span class="footer-divider" aria-hidden="true">·</span>
+      <a href="https://www.threads.com/@ilainosu.ffxiv" target="_blank" rel="noopener noreferrer" aria-label="作者的 FFXIV 創作 Threads 帳號 ilainosu.ffxiv(新分頁開啟)">@ilainosu.ffxiv</a>
+      <span class="footer-divider" aria-hidden="true">·</span>
+      <a href="https://www.plurk.com/ilai_sei" target="_blank" rel="noopener noreferrer" aria-label="作者的 Plurk 帳號 @ilai_sei(新分頁開啟)">Plurk</a>
+      <span class="footer-divider" aria-hidden="true">·</span>
+      <a href="../" aria-label="回到 ilai's Studios 入口">All Studios</a>
+    </footer>
   </div>
 
   <!-- 共用引擎 -->
   <script src="index.js"></script>
   <!-- 模板(新增模板時在此加一行,模板會自行向 Engine 註冊)-->
   <script src="music-player/index.js"></script>
+  <!-- 介面縮放(標準 / 大 / 最大),記憶於 localStorage -->
+  <script>
+    (function () {
+      var KEY = "tpl-ui-scale";
+      var bar = document.getElementById("uiScale");
+      if (!bar) return;
+      var btns = bar.querySelectorAll(".us-btn");
+      var saved = localStorage.getItem(KEY) || "std";
+      apply(saved);
+      btns.forEach(function (b) {
+        b.addEventListener("click", function () {
+          apply(b.dataset.ui);
+          localStorage.setItem(KEY, b.dataset.ui);
+        });
+      });
+      function apply(v) {
+        document.body.dataset.ui = v;
+        btns.forEach(function (x) { x.classList.toggle("on", x.dataset.ui === v); });
+      }
+    })();
+  </script>
 </body>
 </html>

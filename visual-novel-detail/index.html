@@ -3,11 +3,11 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=1280">
-<meta name="description" content="Visual Novel Studio — 純前端的視覺小說劇本編輯、預覽、截圖與錄影工具。">
-<meta property="og:title" content="Visual Novel Studio">
+<meta name="description" content="Visual Novel Detail — 純前端的視覺小說劇本編輯、預覽、截圖與錄影工具。">
+<meta property="og:title" content="Visual Novel Detail">
 <meta property="og:description" content="純前端的視覺小說劇本編輯、預覽、截圖與錄影工具。">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:title" content="Visual Novel Studio">
+<meta name="twitter:title" content="Visual Novel Detail">
 <meta name="twitter:description" content="純前端的視覺小說劇本編輯、預覽、截圖與錄影工具。">
 <title>Visual Novel · Detail</title>
 <!-- Google Fonts: 中文 / 日文 混排 -->
@@ -32,19 +32,17 @@
 </head>
 <body>
 
-<!-- Mobile block:點任意處跳回入口 -->
-<a id="mobile-block" href="../" role="alertdialog" aria-labelledby="mobile-block-title">
-  <div class="block-icon" aria-hidden="true">🖥️</div>
-  <h1 id="mobile-block-title">本工具只支援電腦版</h1>
-  <p>請使用桌面瀏覽器開啟以獲得完整體驗。</p>
-  <p class="block-hint">點擊任意處回到入口頁</p>
-</a>
+<!-- 手機提示:建議使用電腦瀏覽器(非阻擋) -->
+<div id="desktop-hint" role="note">
+  <span>💻 建議使用電腦瀏覽器開啟以獲得最佳體驗</span>
+  <button type="button" id="desktop-hint-close" aria-label="關閉提示">✕</button>
+</div>
 
 <!-- IndexedDB 不可用警告(隱私模式 / 舊瀏覽器 / 使用者停用) -->
 <div id="vns-idb-block" role="alertdialog" aria-labelledby="vns-idb-block-title">
   <div class="block-icon" aria-hidden="true">⚠️</div>
   <h1 id="vns-idb-block-title">此瀏覽器不支援 IndexedDB</h1>
-  <p>Visual Novel Studio 需要 IndexedDB 來儲存 CG 與幕資料。</p>
+  <p>Visual Novel Detail 需要 IndexedDB 來儲存 CG 與幕資料。</p>
   <p class="block-hint">
     可能原因:使用無痕 / 隱私模式、瀏覽器版本過舊。<br>
     建議使用一般瀏覽模式的 Chrome、Firefox 或 Edge 最新版本。
@@ -52,10 +50,10 @@
 </div>
 <script>
   (function () {
-    var el = document.getElementById("mobile-block");
-    function check() { el.classList.toggle("show", window.innerWidth < 1024); }
-    check();
-    window.addEventListener("resize", check);
+    var el = document.getElementById("desktop-hint");
+    var mobile = (window.matchMedia && matchMedia("(pointer: coarse)").matches) || /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
+    if (mobile) el.classList.add("show");
+    document.getElementById("desktop-hint-close").addEventListener("click", function () { el.classList.remove("show"); });
   })();
 </script>
 
@@ -65,7 +63,7 @@
   <header class="topbar">
     <div class="topbar-left">
       <div class="brand">
-        <div class="brand-mark">Visual Novel Studio</div>
+        <div class="brand-mark">Visual Novel Detail</div>
       </div>
       <!-- 任務 5:六種狀態指示(就緒時隱藏,由 setEditorStatus 控制) -->
       <span class="editor-status" id="editorStatus" hidden>
@@ -359,7 +357,7 @@
 
   <!-- Footer:作者資訊(低調列) -->
   <footer class="app-footer">
-    <span class="app-footer-title">Visual Novel Studio</span>
+    <span class="app-footer-title">Visual Novel Detail</span>
     <span class="app-footer-sep" aria-hidden="true">·</span>
     <span class="app-footer-author">Made by ilai</span>
     <span class="app-footer-sep" aria-hidden="true">·</span>

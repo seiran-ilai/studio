@@ -1117,12 +1117,26 @@ const MINI_TOOLS = [
     ]
   },
   {
+    id: 'hudlayout',
+    name: '切換介面',
+    desc: '切換 HUD 介面配置，只能選 1～4 號。',
+    template: '/hudlayout {0}',
+    fields: [
+      { key: 'layout', label: '介面編號', required: true, type: 'buttons', options: [
+        { value: '1', label: '1 號' },
+        { value: '2', label: '2 號' },
+        { value: '3', label: '3 號' },
+        { value: '4', label: '4 號' }
+      ] }
+    ]
+  },
+  {
     id: 'roleplaying',
     name: '角色扮演中',
     desc: '切換角色扮演狀態（顯示在角色名稱下方）。留空則依當前狀態切換。',
     template: '/roleplaying{0}',
     fields: [
-      { key: 'mode', label: '模式', required: false, type: 'select', options: [
+      { key: 'mode', label: '模式', required: false, type: 'buttons', options: [
         { value: '', label: '切換（依當前狀態）' },
         { value: 'on', label: '開啟 (on)' },
         { value: 'off', label: '關閉 (off)' }
@@ -1135,7 +1149,7 @@ const MINI_TOOLS = [
     desc: '切換「希望組隊」狀態。留空則依當前狀態切換。',
     template: '/lookingforparty{0}',
     fields: [
-      { key: 'mode', label: '模式', required: false, type: 'select', options: [
+      { key: 'mode', label: '模式', required: false, type: 'buttons', options: [
         { value: '', label: '切換（依當前狀態）' },
         { value: 'on', label: '開啟 (on)' },
         { value: 'off', label: '關閉 (off)' }
@@ -1148,7 +1162,7 @@ const MINI_TOOLS = [
     desc: '切換「接受鑲嵌魔晶石請求」狀態。留空則依當前狀態切換。',
     template: '/lookingformeld{0}',
     fields: [
-      { key: 'mode', label: '模式', required: false, type: 'select', options: [
+      { key: 'mode', label: '模式', required: false, type: 'buttons', options: [
         { value: '', label: '切換（依當前狀態）' },
         { value: 'on', label: '開啟 (on)' },
         { value: 'off', label: '關閉 (off)' }
@@ -1273,7 +1287,25 @@ function openMiniTool(id) {
     wrap.appendChild(lbl);
 
     let inp;
-    if (f.type === 'select') {
+    if (f.type === 'buttons') {
+      // 用按鈕群組取代下拉，value 存在容器 div 的 .value 上
+      inp = document.createElement('div');
+      inp.className = 'mini-tool-btngroup';
+      inp.value = f.options[0] ? f.options[0].value : '';
+      f.options.forEach((opt) => {
+        const ob = document.createElement('button');
+        ob.type = 'button';
+        ob.className = 'mini-tool-opt' + (opt.value === inp.value ? ' active' : '');
+        ob.textContent = opt.label;
+        ob.dataset.value = opt.value;
+        ob.onclick = () => {
+          inp.value = opt.value;
+          inp.querySelectorAll('.mini-tool-opt').forEach((b) => b.classList.toggle('active', b === ob));
+          updatePreview();
+        };
+        inp.appendChild(ob);
+      });
+    } else if (f.type === 'select') {
       inp = document.createElement('select');
       f.options.forEach((opt) => {
         const o = document.createElement('option');
@@ -1311,6 +1343,9 @@ function openMiniTool(id) {
   // 自動聚焦第一個欄位
   const firstInp = fieldsRow.querySelector('input, select');
   if (firstInp) firstInp.focus();
+
+  // 初始即顯示一次預覽（讓有預設選取的按鈕工具直接出現輸出）
+  updatePreview();
 
   function updatePreview() {
     const result = buildMiniToolOutput(tool, inputs);

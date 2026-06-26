@@ -93,11 +93,6 @@ function setupIntroBufferSettings() {
 function openSettingsModal() {
   if (!settingsModalEl) return;
   settingsModalEl.classList.add("show");
-  // 同步當前主題到按鈕 active 狀態
-  const cur = document.documentElement.getAttribute("data-theme") || "violet";
-  settingsModalEl.querySelectorAll(".theme-btn").forEach(b => {
-    b.classList.toggle("active", b.dataset.theme === cur);
-  });
   // 開啟時更新儲存空間用量 + 同步影片輸出設定
   renderStorageSection();
   setupIntroBufferSettings();
