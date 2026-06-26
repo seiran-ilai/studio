@@ -11,8 +11,23 @@
 </head>
 <body>
 
+<!-- Mobile block:視窗過小時蓋全畫面,點任意處回入口 -->
+<a id="mobile-block" href="../" role="alertdialog" aria-labelledby="mobile-block-title">
+  <div class="block-icon" aria-hidden="true">🖥️</div>
+  <h1 id="mobile-block-title">本工具只支援電腦版</h1>
+  <p>請使用桌面瀏覽器開啟以獲得完整體驗。</p>
+  <p class="block-hint">點擊任意處回到入口頁</p>
+</a>
+<script>
+  (function(){
+    var el=document.getElementById("mobile-block");
+    function check(){ el.classList.toggle("show", window.innerWidth<1024); }
+    check(); window.addEventListener("resize", check);
+  })();
+</script>
+
 <header class="top">
-  <h1>Chat Studio <span>聊天對話模板 · 預覽即輸出</span></h1>
+  <h1>Chat <span>聊天對話模板 · 預覽即輸出</span></h1>
   <div class="seg" id="modeSeg">
     <button data-v="solo">一對一</button>
     <button data-v="group" class="on">群組</button>
@@ -148,21 +163,34 @@
           <button class="tab on" data-in="quick">直接輸入</button>
           <button class="tab" data-in="text">純文本</button>
         </div>
-        <div class="pane" data-inpane="quick">
-          <div class="quick" id="quickChips"></div>
-          <div class="field"><input type="text" id="quickInput" placeholder="角色名: 台詞　（Enter 新增）" autocomplete="off"></div>
-          <button class="btn pri full sm" id="quickAdd">＋ 加入對話</button>
-          <p class="hint">輸入 <b>名稱: 台詞</b> 直接生成；未建立名稱自動成為新角色。名稱加 <b>（我）</b> 會設為「我」。<b>系統: 文字</b> 為置中訊息。</p>
+
+        <div id="listSection">
+          <div class="field row"><label style="flex:1;margin:0;font-weight:700;color:var(--ink)">對話列表</label><span class="badge" id="msgCount"></span></div>
+          <div id="msgList"></div>
         </div>
+
+        <!-- 純文本：整段編輯 -->
         <div class="pane hidden" data-inpane="text">
+          <hr>
           <textarea id="bulkText" rows="10" placeholder="典獄長: 今天有六名犯人&#10;獄卒: 但我們只有五名獄卒&#10;犯人（我）: 該不會……？&#10;典獄長: 我會親自監督。"></textarea>
           <div class="row" style="margin-top:8px"><button class="btn pri sm" id="applyBulk" style="flex:1">套用為對話</button><button class="btn sm" id="loadBulk" style="flex:1">↻ 從列表載入</button></div>
-          <p class="hint">「套用」會覆蓋目前對話列表。名稱加 <b>（我）</b> 會設為「我」。</p>
+          <p class="hint">「套用」會覆蓋目前對話列表。名稱加 <b>（我）</b> 會設為「我」。圖片訊息顯示為 <b>[網址]</b> 或 <b>[本機上傳]</b> + 說明;網址圖會自動重新載入,本機上傳圖無法從文字復原。</p>
         </div>
-        <hr>
-        <div class="field row"><label style="flex:1;margin:0;font-weight:700;color:var(--ink)">對話列表</label><span class="badge" id="msgCount"></span></div>
-        <div id="msgList"></div>
-        <button class="btn full sm ghost" id="clearMsgs" style="margin-top:6px;color:var(--ink3)">清空對話</button>
+
+        <!-- 直接輸入 composer：固定在訊息列表下方 -->
+        <div class="pane" data-inpane="quick">
+          <div class="composer">
+            <div class="comp-label">說話者</div>
+            <div class="quick" id="quickChips"></div>
+            <div class="comp-row">
+              <input type="text" id="quickInput" placeholder="輸入台詞　（Enter 送出）" autocomplete="off">
+              <button class="btn sm" id="attachImg" title="附加圖片">🖼</button>
+            </div>
+            <div id="attachPreview" class="attach-preview hidden"></div>
+            <button class="btn pri full sm" id="quickAdd" style="margin-top:8px">＋ 加入對話</button>
+            <p class="hint">先選說話者，再輸入台詞或附加圖片，按 <b>送出</b>。選「系統」可加置中訊息。新增角色請到「角色」分頁。</p>
+          </div>
+        </div>
       </div>
     </div>
   </section>
@@ -183,6 +211,8 @@
         <label>結尾停留</label>
         <div class="rng"><input type="range" id="tail" min="0.4" max="3" step="0.1" value="1.2"><b id="tailV">1.2s</b></div>
       </div>
+      <div class="field row"><label style="margin:0;flex:1">模擬輸入框（我方打字動畫）</label><button class="pill on" id="inputToggle">開</button></div>
+      <div class="field" id="inputSpeedRow"><label>打字速度</label><div class="rng"><input type="range" id="typeSpeed" min="0.3" max="1" step="0.1" value="1"><b id="typeSpeedV">1.0x</b></div></div>
       <div class="field row"><label style="margin:0;flex:1">顯示時間戳</label><button class="pill" id="timeToggle">關</button></div>
       <div class="field hidden" id="startTimeRow"><label>聊天開始時間</label><input type="time" id="startTime" value="21:30"></div>
       <div class="field row"><label style="margin:0;flex:1">已讀標記</label><button class="pill on" id="readToggle">開</button></div>
@@ -217,6 +247,30 @@
     <div class="field"><label>縮放</label><div class="rng"><input type="range" id="cropZoom" min="1" max="4" step="0.01" value="1"><b id="cropZoomV">100%</b></div></div>
     <div class="row"><button class="btn sm" id="cropReset">重設</button><span class="hint" style="flex:1;margin:0">拖曳圖片移動，圓框內為頭像範圍</span></div>
     <div class="modal-actions"><button class="btn" id="cropCancel">取消</button><button class="btn pri" id="cropOk">套用</button></div>
+  </div>
+</div>
+
+<div id="imgModal" class="modal hidden">
+  <div class="modal-card" style="width:auto; min-width:360px">
+    <div class="modal-title">編輯訊息圖片</div>
+    <div class="field row" style="margin-bottom:10px">
+      <input type="text" id="imgUrl" placeholder="貼上圖片網址 https://…" autocomplete="off" style="flex:1;width:auto;min-width:0">
+      <button class="btn sm" id="imgUrlLoad" style="flex:none">載入</button>
+      <button class="btn sm" id="imgUpload" style="flex:none">上傳</button>
+      <input type="file" id="imgFile" accept="image/*" class="hidden">
+    </div>
+    <div class="seg" id="imgRatioSeg" style="margin-bottom:12px; width:100%">
+      <button data-v="orig" class="on" style="flex:1">原圖</button>
+      <button data-v="free" style="flex:1">自由</button>
+      <button data-v="1:1" style="flex:1">1:1</button>
+      <button data-v="4:3" style="flex:1">4:3</button>
+      <button data-v="3:4" style="flex:1">3:4</button>
+      <button data-v="16:9" style="flex:1">16:9</button>
+    </div>
+    <div class="crop-wrap" style="min-height:300px; align-items:center"><canvas id="imgCv"></canvas></div>
+    <div class="field" id="imgZoomField"><label>縮放</label><div class="rng"><input type="range" id="imgZoom" min="1" max="3" step="0.01" value="1"><b id="imgZoomV">100%</b></div></div>
+    <div class="row"><button class="btn sm" id="imgCropReset">重設</button><span class="hint" id="imgCropHint" style="flex:1;margin:0">點預覽範圍可上傳 / 更換圖片,拖曳調整位置</span></div>
+    <div class="modal-actions"><button class="btn" id="imgCropCancel">取消</button><button class="btn pri" id="imgCropOk">套用</button></div>
   </div>
 </div>
 

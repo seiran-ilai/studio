@@ -22,7 +22,7 @@ const S={
     meBg:'#3aa0ff', meInk:'#ffffff', otherBg:'#ffffff', otherInk:'#1c1c1e', radius:0.55,
   },
   chars:[], msgs:[],
-  interval:0.8, tail:1.2, showTime:false, startTime:'21:30', showRead:true, readCount:2, showMeAvatar:true, showMeName:true, fps:30,
+  interval:0.8, tail:1.2, showTime:false, startTime:'21:30', showRead:true, readCount:2, showMeAvatar:true, showMeName:true, showInput:true, typeSpeed:1, fps:30,
 };
 
 function pad2(n){ return String(n).padStart(2,'0'); }
@@ -163,12 +163,22 @@ function layout(W,H){
     if(m.cid==='__sys'){ blocks.push({type:'sys',m,y,h:fs*1.7}); y+=fs*1.7+gapNew*0.7; prev=null; return; }
     const c=charById(m.cid); if(!c) return;
     const isMe=!!c.me, same=prev&&prev.cid===m.cid&&prev.type!=='sys';
-    const rich=measureRich(m.text, maxBubble-padX*2, fs);
-    const bw=Math.min(maxBubble, rich.w+padX*2), bh=rich.h+padY*2;
+    let rich=null, bw, bh, isImg=false, img=null, imgW=0, imgH=0, capRich=null;
+    if(m.img){
+      isImg=true; img=m.img;
+      imgW=Math.min(maxBubble, W*0.62); imgH=imgW*(img.height/img.width);
+      const maxIH=H*0.5; if(imgH>maxIH){ imgH=maxIH; imgW=imgH*(img.width/img.height); }
+      bw=imgW;
+      if(m.text&&m.text.trim()){ capRich=measureRich(m.text, bw-padX*2, fs); bh=imgH+capRich.h+padY*1.6; }
+      else bh=imgH;
+    } else {
+      rich=measureRich(m.text, maxBubble-padX*2, fs);
+      bw=Math.min(maxBubble, rich.w+padX*2); bh=rich.h+padY*2;
+    }
     const showName=(S.mode==='group')&&!same&&(isMe?S.showMeName:true), showAva=!same&&(isMe?S.showMeAvatar:true), reserveAva=isMe?S.showMeAvatar:true;
     if(i>0) y+=same?gapRun:gapNew;
     if(showName) y+=nameFs*1.5;
-    blocks.push({type:'msg',m,c,isMe,rich,bw,bh,y,showName,showAva,reserveAva,fs,nameFs,timeFs,avA,padX,padY,PAD,idx:i,last:i===S.msgs.length-1});
+    blocks.push({type:'msg',m,c,isMe,rich,bw,bh,y,showName,showAva,reserveAva,fs,nameFs,timeFs,avA,padX,padY,PAD,idx:i,last:i===S.msgs.length-1,isImg,img,imgW,imgH,capRich});
     y+=bh; prev={cid:m.cid,type:'msg'};
   });
   return {blocks,headerH,contentBottom:y+PAD,PAD};
@@ -180,6 +190,10 @@ function drawAvatar(c,x,y,d){
   if(c.img){ const s=Math.max(d/c.img.width,d/c.img.height),iw=c.img.width*s,ih=c.img.height*s; ctx.drawImage(c.img,x+(d-iw)/2,y+(d-ih)/2,iw,ih); }
   else{ ctx.fillStyle=c.color; ctx.fillRect(x,y,d,d); ctx.fillStyle='#fff'; ctx.font=`700 ${d*0.46}px ${S.style.font}`; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText((c.name||'?').slice(0,1),x+d/2,y+d/2+d*0.02); }
   ctx.restore();
+}
+function drawImageCoverRect(img,x,y,w,h){
+  const s=Math.max(w/img.width,h/img.height), iw=img.width*s, ih=img.height*s;
+  ctx.drawImage(img,x+(w-iw)/2,y+(h-ih)/2,iw,ih);
 }
 function drawRich(rich, x0, y0, ink){
   let yc=y0;
@@ -196,6 +210,45 @@ function drawRich(rich, x0, y0, ink){
   }
 }
 
+// ---- 動畫排程：輪到「我」的純文字訊息時,先打字再送出 ----
+const POP=0.45, ANIM=0.42, TYPE_MIN=0.5, TYPE_MAX=2.4, TYPE_PER=0.075;
+function isMeMsg(m){ const c=charById(m.cid); return !!(c&&c.me); }
+function typeDurOf(m){ const sp=S.typeSpeed||1; return Math.min(TYPE_MAX, Math.max(TYPE_MIN, (m.text||'').length*TYPE_PER))/sp; }
+function buildSchedule(){
+  const ev=[]; let t=0;
+  S.msgs.forEach((m,i)=>{
+    const typing=S.showInput && isMeMsg(m) && m.cid!=='__sys' && !m.img && m.text && m.text.trim();
+    if(typing){ const d=typeDurOf(m); ev[i]={typeStart:t, typeEnd:t+d, appear:t+d}; t+=d+S.interval; }
+    else { ev[i]={typeStart:null, typeEnd:null, appear:t}; t+=S.interval; }
+  });
+  const last=ev.length?ev[ev.length-1].appear:0;
+  return {ev, total:Math.max(0.001, last+POP+S.tail)};
+}
+function inputBarH(H){ return S.showInput?Math.round(H*0.078):0; }
+function drawInputBar(W,H,ih,text,typing,tNow){
+  const st=S.style, y0=H-ih;
+  ctx.fillStyle=st.headerBg; ctx.fillRect(0,y0,W,ih);
+  ctx.strokeStyle='rgba(0,0,0,.08)'; ctx.lineWidth=1; ctx.beginPath(); ctx.moveTo(0,y0); ctx.lineTo(W,y0); ctx.stroke();
+  const pad=W*0.045, sendD=ih*0.5, sendX=W-pad-sendD, sendY=y0+(ih-sendD)/2;
+  const fieldX=pad, fieldH=ih*0.56, fieldY=y0+(ih-fieldH)/2, fieldW=sendX-pad*0.6-fieldX;
+  ctx.fillStyle='rgba(127,127,127,.16)'; rr(fieldX,fieldY,fieldW,fieldH,fieldH/2); ctx.fill();
+  const fs=Math.round(W*0.03), tcy=fieldY+fieldH/2, tx=fieldX+fs*0.7;
+  ctx.font=`400 ${fs}px ${st.font}`; ctx.textBaseline='middle'; ctx.textAlign='left';
+  ctx.save(); rr(fieldX,fieldY,fieldW,fieldH,fieldH/2); ctx.clip();
+  if(text){
+    const tw=ctx.measureText(text).width, maxTW=fieldW-fs*1.6; let dx=tx; if(tw>maxTW) dx=tx-(tw-maxTW);
+    ctx.fillStyle=st.headerInk; ctx.fillText(text,dx,tcy);
+    if(typing && Math.floor(tNow*2)%2===0){ ctx.fillStyle=st.headerInk; const cx=Math.min(dx+tw+2,fieldX+fieldW-fs*0.5); ctx.fillRect(cx,tcy-fs*0.55,Math.max(1.5,W*0.003),fs*1.12); }
+  } else {
+    ctx.fillStyle=hexToRgba(st.headerInk,0.38); ctx.fillText('輸入訊息…',tx,tcy);
+  }
+  ctx.restore();
+  const active=!!text, cx=sendX+sendD/2, cy=sendY+sendD/2, a=sendD*0.22;
+  ctx.fillStyle=active?st.meBg:'rgba(127,127,127,.32)'; ctx.beginPath(); ctx.arc(cx,cy,sendD/2,0,Math.PI*2); ctx.fill();
+  ctx.strokeStyle=active?st.meInk:'rgba(255,255,255,.65)'; ctx.lineWidth=sendD*0.1; ctx.lineCap='round'; ctx.lineJoin='round';
+  ctx.beginPath(); ctx.moveTo(cx,cy+a); ctx.lineTo(cx,cy-a); ctx.moveTo(cx-a*0.7,cy-a*0.15); ctx.lineTo(cx,cy-a); ctx.lineTo(cx+a*0.7,cy-a*0.15); ctx.stroke();
+}
+
 function render(progress=1){
   if(!cv.width) setSize();
   const W=cv.width,H=cv.height,st=S.style;
@@ -205,18 +258,18 @@ function render(progress=1){
   else{ ctx.fillStyle=S.room.c1; ctx.fillRect(0,0,W,H); }
 
   const L=layout(W,H), n=S.msgs.length;
-  const total=n>0?(n-1)*S.interval+0.45+S.tail:1, tNow=progress*total, ANIM=0.42, appearOf=i=>i*S.interval;
-  let visCount=0; for(let i=0;i<n;i++){ if(tNow>=appearOf(i)-0.001) visCount=i+1; }
+  const {ev,total}=buildSchedule(), tNow=progress*total;
+  let visCount=0; for(let i=0;i<n;i++){ if(ev[i]&&tNow>=ev[i].appear-0.001) visCount=i+1; }
   if(progress>=1) visCount=n;
-  const headerH=L.headerH; let scroll=0;
-  if(L.contentBottom>H){ const ref=L.blocks.slice(0,visCount).pop(); const tb=ref?ref.y+(ref.h||ref.bh||0)+L.PAD:H; scroll=Math.max(0,tb-H); scroll=Math.min(scroll,L.contentBottom-H); }
+  const headerH=L.headerH, ih=inputBarH(H), viewBottom=H-ih; let scroll=0;
+  if(L.contentBottom>viewBottom){ const ref=L.blocks.slice(0,visCount).pop(); const tb=ref?ref.y+(ref.h||ref.bh||0)+L.PAD:viewBottom; scroll=Math.max(0,tb-viewBottom); scroll=Math.min(scroll,L.contentBottom-viewBottom); }
 
-  ctx.save(); ctx.beginPath(); ctx.rect(0,headerH,W,H-headerH); ctx.clip();
+  ctx.save(); ctx.beginPath(); ctx.rect(0,headerH,W,viewBottom-headerH); ctx.clip();
   for(let i=0;i<visCount;i++){
     const b=L.blocks[i]; if(!b) continue;
-    let k=(tNow-appearOf(i))/ANIM; k=Math.max(0,Math.min(1,k)); const ease=1-Math.pow(1-k,3);
+    let k=(tNow-(ev[i]?ev[i].appear:0))/ANIM; k=Math.max(0,Math.min(1,k)); const ease=1-Math.pow(1-k,3);
     const yy=b.y-scroll+(1-ease)*W*0.05;
-    if(yy>H+60||(yy+(b.h||b.bh||0))<headerH-60) continue;
+    if(yy>viewBottom+60||(yy+(b.h||b.bh||0))<headerH-60) continue;
     ctx.globalAlpha=ease;
     if(b.type==='sys'){
       ctx.font=`500 ${Math.round(W*0.026)}px ${st.font}`;
@@ -234,8 +287,17 @@ function render(progress=1){
       if(isMe){ ctx.textAlign='right'; ctx.fillText(c.name,bx+bw-padX*0.3,yy-nameFs*0.5); }
       else{ ctx.textAlign='left'; ctx.fillText(c.name,bx+padX*0.3,yy-nameFs*0.5); } }
     if(showAva) drawAvatar(c,avX,yy,avA);
-    ctx.fillStyle=col.bg; const maxR=Math.min(bh*0.5,W*0.06); rr(bx,yy,bw,bh,maxR*st.radius); ctx.fill();
-    drawRich(rich, bx+padX, yy+padY, col.ink);
+    const maxR=Math.min(bh*0.5,W*0.06);
+    if(b.isImg){
+      ctx.save(); rr(bx,yy,bw,bh,maxR*st.radius); ctx.clip();
+      ctx.fillStyle=col.bg; ctx.fillRect(bx,yy,bw,bh);
+      drawImageCoverRect(b.img,bx,yy,b.imgW,b.imgH);
+      ctx.restore();
+      if(b.capRich) drawRich(b.capRich, bx+padX, yy+b.imgH+padY*0.6, col.ink);
+    } else {
+      ctx.fillStyle=col.bg; rr(bx,yy,bw,bh,maxR*st.radius); ctx.fill();
+      drawRich(rich, bx+padX, yy+padY, col.ink);
+    }
     ctx.font=`400 ${timeFs}px ${st.font}`; const metaY=yy+bh-timeFs*0.2;
     if(S.showTime){ ctx.fillStyle=st.timeInk; ctx.textAlign=isMe?'right':'left'; const tx=isMe?bx-W*0.012:bx+bw+W*0.012; ctx.fillText(msgTime(b.idx),tx,metaY-timeFs*0.2); }
     if(isMe&&S.showRead){ ctx.fillStyle=st.readInk; ctx.textAlign='right'; const rl=S.mode==='group'?st.readLabel+' '+S.readCount:st.readLabel; ctx.fillText(rl,bx-W*0.012,metaY-timeFs*1.4); }
@@ -252,13 +314,22 @@ function render(progress=1){
   if(S.mode==='group'){ ctx.font=`700 ${Math.round(W*0.036)}px ${st.font}`; ctx.fillText(S.room.name,tx,headerH*0.44);
     ctx.fillStyle=st.nameInk; ctx.font=`400 ${Math.round(W*0.024)}px ${st.font}`; ctx.fillText('成員 '+S.chars.length+' 人',tx,headerH*0.7); }
   else{ ctx.font=`700 ${Math.round(W*0.036)}px ${st.font}`; ctx.fillText(S.room.name,tx,headerH*0.5); }
+
+  // 模擬輸入框（含打字機動畫）
+  if(ih>0){
+    let typeText='', typing=false;
+    for(let i=0;i<n;i++){ const e=ev[i]; if(e&&e.typeStart!=null&&tNow>=e.typeStart&&tNow<e.appear){
+      const m=S.msgs[i], p=(tNow-e.typeStart)/Math.max(0.001,e.typeEnd-e.typeStart);
+      typeText=(m.text||'').slice(0,Math.max(0,Math.floor(p*(m.text||'').length))); typing=true; break; } }
+    drawInputBar(W,H,ih,typeText,typing,tNow);
+  }
 }
 
 let exporting=false;
 
 // ---- animation/export ----
 let playing=false;
-function animDuration(){ const n=S.msgs.length; return n>0?(n-1)*S.interval+0.45+S.tail:1; }
+function animDuration(){ return buildSchedule().total; }
 function runAnim(onFrame){ return new Promise(res=>{ playing=true; const dur=animDuration(),t0=performance.now();
   (function step(now){ const p=Math.min(1,(now-t0)/(dur*1000)); render(p); onFrame&&onFrame(p); if(p<1&&playing)requestAnimationFrame(step); else{playing=false;res();} })(performance.now()); }); }
 function fname(e){ return 'chat_'+Date.now()+'.'+e; }
@@ -304,6 +375,7 @@ $('#clTabs').onclick=e=>{ const b=e.target.closest('.tab'); if(!b)return;
 $('#inTabs').onclick=e=>{ const b=e.target.closest('.tab'); if(!b)return;
   document.querySelectorAll('#inTabs .tab').forEach(t=>t.classList.toggle('on',t===b));
   document.querySelectorAll('[data-inpane]').forEach(p=>p.classList.toggle('hidden',p.dataset.inpane!==b.dataset.in));
+  $('#listSection').classList.toggle('hidden',b.dataset.in==='text'); // 純文本只顯示輸入框
   if(b.dataset.in==='text') $('#bulkText').value=serializeMsgs(); };
 
 // font select
@@ -399,9 +471,12 @@ function syncStyleInputs(){ document.querySelectorAll('[data-st]').forEach(el=>e
 $('#interval').oninput=e=>{ S.interval=+e.target.value; $('#intervalV').textContent=e.target.value+'s'; updateDur(); };
 $('#tail').oninput=e=>{ S.tail=+e.target.value; $('#tailV').textContent=e.target.value+'s'; updateDur(); };
 function syncToggleRows(){
+  $('#inputSpeedRow').classList.toggle('hidden',!S.showInput);
   $('#startTimeRow').classList.toggle('hidden',!S.showTime);
   $('#readCountRow').classList.toggle('hidden',!(S.mode==='group'&&S.showRead));
 }
+$('#inputToggle').onclick=e=>{ S.showInput=!S.showInput; e.target.classList.toggle('on',S.showInput); e.target.textContent=S.showInput?'開':'關'; syncToggleRows(); updateDur(); render(1); };
+$('#typeSpeed').oninput=e=>{ S.typeSpeed=+e.target.value; $('#typeSpeedV').textContent=(+e.target.value).toFixed(1)+'x'; updateDur(); render(1); };
 $('#timeToggle').onclick=e=>{ S.showTime=!S.showTime; e.target.classList.toggle('on',S.showTime); e.target.textContent=S.showTime?'開':'關'; syncToggleRows(); render(1); };
 $('#readToggle').onclick=e=>{ S.showRead=!S.showRead; e.target.classList.toggle('on',S.showRead); e.target.textContent=S.showRead?'開':'關'; syncToggleRows(); render(1); };
 $('#startTime').oninput=e=>{ S.startTime=e.target.value||'21:30'; render(1); };
@@ -409,7 +484,8 @@ $('#readCount').oninput=e=>{ S.readCount=Math.max(1,Math.min(99,+e.target.value|
 $('#playBtn').onclick=()=>{ if(!playing) runAnim(); };
 $('#pngBtn').onclick=exportPNG; $('#mp4Btn').onclick=exportMP4;
 $('#addChar').onclick=()=>{ S.chars.push(makeChar('角色'+(S.chars.length+1))); renderChars(); renderQuick(); render(1); };
-$('#clearMsgs').onclick=()=>{ S.msgs=[]; renderMsgs(); render(1); };
+$('#attachImg').onclick=()=>{ if(composeCid==='__sys'){ alert('系統訊息不支援圖片。'); return; }
+  openImgEditor(pendingImg,(im,meta)=>{ pendingImg=im; pendingMeta=meta; renderAttachPreview(); }, pendingMeta); };
 $('#quickInput').addEventListener('keydown',e=>{ if(e.key==='Enter'){ e.preventDefault(); quickAdd(); }});
 $('#quickAdd').onclick=quickAdd;
 $('#applyBulk').onclick=()=>{ parseBulk($('#bulkText').value); renderChars(); renderQuick(); renderMsgs(); render(1); };
@@ -436,6 +512,25 @@ function loadImg(file,cb){
   };
   r.readAsDataURL(file);
 }
+// 把已載入的 Image 經 canvas 重畫成同源 data-uri,順便縮到 MAX：
+// 確保跨域(網址)圖不會污染輸出 canvas,輸出 PNG / MP4 才不會失敗
+function normalizeImg(im,cb,onFail){
+  try{
+    const MAX=2000, long=Math.max(im.width,im.height), k=long>MAX?MAX/long:1;
+    const oc=document.createElement('canvas');
+    oc.width=Math.round(im.width*k); oc.height=Math.round(im.height*k);
+    oc.getContext('2d').drawImage(im,0,0,oc.width,oc.height);
+    const data=oc.toDataURL('image/png'); // 跨域污染時這裡會丟例外
+    const out=new Image(); out.onload=()=>cb(out); out.onerror=()=>onFail&&onFail(); out.src=data;
+  }catch(err){ onFail&&onFail(err); }
+}
+function loadImgFromUrl(url,cb){
+  url=(url||'').trim(); if(!url) return;
+  const im=new Image(); im.crossOrigin='anonymous';
+  im.onerror=()=>alert('無法載入這個網址的圖片(可能是連結失效或不允許跨網站讀取),請改用上傳。');
+  im.onload=()=>normalizeImg(im,cb,()=>alert('這個網址的圖片不允許跨網站使用,無法用於輸出,請改用上傳。'));
+  im.src=url;
+}
 function splitLine(line){ const m=line.match(/^\s*([^:：]+?)\s*[:：]\s*(.*)$/); return m?{name:m[1].trim(),text:m[2]}:null; }
 function findOrCreateChar(name){
   if(name==='系統'||name.toLowerCase()==='system')return '__sys';
@@ -446,14 +541,47 @@ function findOrCreateChar(name){
   if(me){ S.chars.forEach(x=>x.me=false); c.me=true; }
   return c.id;
 }
-function quickAdd(){ const v=$('#quickInput').value.trim(); if(!v)return; const p=splitLine(v);
-  if(p){ S.msgs.push({id:nid(),cid:findOrCreateChar(p.name),text:p.text,time:'',read:false}); }
-  else{ const me=meChar(); const cid=me?me.id:(S.chars[0]&&S.chars[0].id); if(cid)S.msgs.push({id:nid(),cid,text:v,time:'',read:false}); }
-  refreshRead(); $('#quickInput').value=''; renderChars(); renderQuick(); renderMsgs(); render(1); $('#quickInput').focus(); }
-function parseBulk(txt){ const out=[]; txt.split('\n').forEach(line=>{ if(line.trim()==='')return; const p=splitLine(line);
-  if(p){ out.push({id:nid(),cid:findOrCreateChar(p.name),text:p.text,time:'',read:false}); } else if(out.length){ out[out.length-1].text+='\n'+line; } });
-  S.msgs=out; refreshRead(); }
-function serializeMsgs(){ return S.msgs.map(m=>{ const name=m.cid==='__sys'?'系統':(charById(m.cid)?.name||'?'); return name+': '+m.text.replace(/\n/g,'\\n'); }).join('\n'); }
+function quickAdd(){
+  const text=$('#quickInput').value.trim();
+  if(!text&&!pendingImg) return;
+  validComposeCid();
+  if(composeCid==='__sys'){ if(!text) return; S.msgs.push({id:nid(),cid:'__sys',text,time:'',read:false}); }
+  else{
+    if(!composeCid){ alert('請先到「角色」分頁新增角色。'); return; }
+    S.msgs.push({id:nid(),cid:composeCid,text,img:pendingImg||null,
+      imgType:pendingImg?(pendingMeta&&pendingMeta.type||'local'):null,
+      imgUrl:pendingImg?(pendingMeta&&pendingMeta.url||null):null,
+      imgTok:pendingImg?nid():null, time:'',read:false});
+  }
+  pendingImg=null; pendingMeta=null; renderAttachPreview();
+  refreshRead(); $('#quickInput').value=''; renderQuick(); renderMsgs(); render(1); scheduleSave();
+  const ml=$('#msgList'); ml.scrollTop=ml.scrollHeight; $('#quickInput').focus();
+}
+function parseBulk(txt){
+  // 套用前先用舊列表建立圖片索引,讓本機/網址圖能依 token 或網址復原
+  const byTok={}, byUrl={};
+  S.msgs.forEach(m=>{ if(m.img&&m.imgTok) byTok[m.imgTok]=m.img; if(m.img&&m.imgType==='url'&&m.imgUrl) byUrl[m.imgUrl]=m.img; });
+  const out=[], reload=[];
+  txt.split('\n').forEach(line=>{ if(line.trim()==='')return; const p=splitLine(line);
+    if(p){ const cid=findOrCreateChar(p.name);
+      const tm=cid!=='__sys'&&p.text.match(/^\s*\[([^\]]*)\]\s*([\s\S]*)$/);
+      if(tm){ const inside=tm[1].trim(), cap=tm[2];
+        const lm=inside.match(/^本機上傳(?:#(\S+))?$/);
+        if(lm){ const tok=lm[1], img=tok?byTok[tok]:null;
+          if(img) out.push({id:nid(),cid,text:cap,img,imgType:'local',imgUrl:null,imgTok:tok,time:'',read:false});
+          else out.push({id:nid(),cid,text:cap,time:'',read:false}); } // 無對應 token,本機圖已無法復原
+        else if(/^https?:\/\//i.test(inside)){ const img=byUrl[inside]||null;
+          const msg={id:nid(),cid,text:cap,img,imgType:'url',imgUrl:inside,imgTok:nid(),time:'',read:false};
+          out.push(msg); if(!img) reload.push(msg); }
+        else out.push({id:nid(),cid,text:p.text,time:'',read:false}); // 非圖片標記,當一般文字
+      } else out.push({id:nid(),cid,text:p.text,time:'',read:false});
+    } else if(out.length){ out[out.length-1].text+='\n'+line; } });
+  S.msgs=out; refreshRead();
+  reload.forEach(m=>loadImgFromUrl(m.imgUrl,im=>{ m.img=im; renderMsgs(); render(1); }));
+}
+function serializeMsgs(){ return S.msgs.map(m=>{ const name=m.cid==='__sys'?'系統':(charById(m.cid)?.name||'?'); const cap=(m.text||'').replace(/\n/g,'\\n');
+  if(m.img){ const tag=m.imgType==='url'?(m.imgUrl||'圖片網址'):'本機上傳'+(m.imgTok?'#'+m.imgTok:''); return name+': ['+tag+']'+(cap?' '+cap:''); }
+  return name+': '+cap; }).join('\n'); }
 function refreshRead(){ let last=-1; S.msgs.forEach((m,i)=>{ const c=charById(m.cid); if(c&&c.me)last=i; }); S.msgs.forEach((m,i)=>m.read=(i===last)); }
 
 function escapeAttr(s){ return String(s).replace(/"/g,'&quot;'); }
@@ -492,28 +620,91 @@ function renderChars(){
   box.querySelectorAll('[data-bubink]').forEach(i=>i.oninput=e=>{ charById(i.dataset.bubink).bubInk=e.target.value; render(1); });
 }
 
+// ---- composer：選說話者 → 台詞 / 附圖 → 送出 ----
+let composeCid=null, pendingImg=null, pendingMeta=null;
+function validComposeCid(){
+  if(composeCid==='__sys') return;
+  if(composeCid && charById(composeCid)) return;
+  const me=meChar(); composeCid=me?me.id:(S.chars[0]?S.chars[0].id:null);
+}
 function renderQuick(){
+  validComposeCid();
   const box=$('#quickChips'); box.innerHTML='';
-  S.chars.forEach(c=>{ const b=document.createElement('button'); b.className='pill'; b.textContent=(c.me?'★ ':'')+c.name+' ＋'; b.onclick=()=>{ const inp=$('#quickInput'); inp.value=c.name+': '; inp.focus(); }; box.appendChild(b); });
-  const sys=document.createElement('button'); sys.className='pill'; sys.textContent='系統 ＋'; sys.onclick=()=>{ const inp=$('#quickInput'); inp.value='系統: '; inp.focus(); }; box.appendChild(sys);
+  S.chars.forEach(c=>{
+    const b=document.createElement('button'); b.className='pill'+(composeCid===c.id?' on':'');
+    b.textContent=(c.me?'★ ':'')+c.name;
+    b.onclick=()=>{ composeCid=c.id; renderQuick(); $('#quickInput').focus(); };
+    box.appendChild(b);
+  });
+  const sys=document.createElement('button'); sys.className='pill'+(composeCid==='__sys'?' on':'');
+  sys.textContent='系統';
+  sys.onclick=()=>{ composeCid='__sys'; renderQuick(); $('#quickInput').focus(); };
+  box.appendChild(sys);
+  syncAttachState();
+}
+function syncAttachState(){
+  const isSys=composeCid==='__sys', btn=$('#attachImg');
+  btn.disabled=isSys; btn.style.opacity=isSys?0.4:1; btn.style.cursor=isSys?'not-allowed':'pointer';
+  if(isSys&&pendingImg){ pendingImg=null; pendingMeta=null; renderAttachPreview(); }
+}
+function renderAttachPreview(){
+  const box=$('#attachPreview');
+  if(!pendingImg){ box.classList.add('hidden'); box.innerHTML=''; $('#attachImg').classList.remove('on'); return; }
+  const srcLabel=pendingMeta&&pendingMeta.type==='url'?'網址圖片':'本機上傳';
+  box.classList.remove('hidden');
+  box.innerHTML=`<img id="apThumb" src="${pendingImg.src}" title="點擊重新裁切"><span class="ap-meta">${srcLabel}・台詞當作圖片說明(可留空)</span><button class="ap-rm" id="apRm" title="移除">✕</button>`;
+  $('#apThumb').onclick=()=>openImgEditor(pendingImg,(im,meta)=>{ pendingImg=im; pendingMeta=meta; renderAttachPreview(); }, pendingMeta);
+  $('#apRm').onclick=()=>{ pendingImg=null; pendingMeta=null; renderAttachPreview(); };
+  $('#attachImg').classList.add('on');
 }
 
 function renderMsgs(){
   const box=$('#msgList'); box.innerHTML=''; $('#msgCount').textContent='共 '+S.msgs.length+' 句';
   S.msgs.forEach(m=>{
     const name=m.cid==='__sys'?'系統':(charById(m.cid)?.name||'?');
-    const el=document.createElement('div'); el.className='msg';
-    el.innerHTML=`<div class="who">${escapeHtml(name)}</div>
-      <textarea data-text="${m.id}" rows="1">${escapeHtml(m.text)}</textarea>
-      <div class="side2"><button class="mv" data-up="${m.id}">▲</button><button class="mv" data-down="${m.id}">▼</button><button class="mv" data-rm="${m.id}" style="color:var(--danger)">✕</button></div>`;
+    const isSys=m.cid==='__sys';
+    const imgCell=isSys?'':`<div class="imgcell">${m.img
+      ?`<img class="thumb" src="${m.img.src}" data-imgedit="${m.id}" title="點擊重新裁切"><button class="mv" data-imgdel="${m.id}" style="font-size:10px;color:var(--ink3)">移除圖</button>`
+      :`<button class="addimg" data-imgedit="${m.id}">🖼 圖片</button>`}</div>`;
+    const el=document.createElement('div'); el.className='msg'; el.draggable=true; el.dataset.id=m.id;
+    el.innerHTML=`<span class="drag" title="拖曳排序">⠿</span>
+      <div class="who">${escapeHtml(name)}</div>
+      <textarea data-text="${m.id}" rows="1" placeholder="${m.img?'圖片說明(可留空)':''}">${escapeHtml(m.text)}</textarea>
+      ${imgCell}
+      <div class="side2"><button class="mv" data-rm="${m.id}" style="color:var(--danger)">✕</button></div>`;
+    // 編輯欄位時暫時關閉拖曳,避免選字觸發拖曳
+    el.querySelectorAll('textarea,input,button,.thumb,.addimg').forEach(x=>{
+      x.addEventListener('pointerdown',()=>{ el.draggable=false; });
+      x.addEventListener('pointerup',()=>{ el.draggable=true; });
+    });
+    el.addEventListener('dragstart',()=>{ el.classList.add('dragging'); });
+    el.addEventListener('dragend',()=>{ el.classList.remove('dragging'); commitMsgOrder(); });
     box.appendChild(el);
   });
+  box.ondragover=e=>{ e.preventDefault(); const dragging=box.querySelector('.dragging'); if(!dragging) return;
+    const after=dragAfter(box,e.clientY); if(after==null) box.appendChild(dragging); else box.insertBefore(dragging,after); };
+  box.ondrop=e=>e.preventDefault();
   box.querySelectorAll('[data-text]').forEach(t=>{ autoGrow(t); t.oninput=e=>{ S.msgs.find(m=>m.id===t.dataset.text).text=e.target.value; autoGrow(t); render(1); }; });
-  box.querySelectorAll('[data-up]').forEach(b=>b.onclick=()=>move(b.dataset.up,-1));
-  box.querySelectorAll('[data-down]').forEach(b=>b.onclick=()=>move(b.dataset.down,1));
+  box.querySelectorAll('[data-imgedit]').forEach(b=>b.onclick=()=>{ const m=S.msgs.find(x=>x.id===b.dataset.imgedit);
+    openImgEditor(m.img,(im,meta)=>{ m.img=im; m.imgType=meta&&meta.type||'local'; m.imgUrl=meta&&meta.url||null; m.imgTok=m.imgTok||nid(); renderMsgs(); render(1); }, {type:m.imgType,url:m.imgUrl}); });
+  box.querySelectorAll('[data-imgdel]').forEach(b=>b.onclick=()=>{ const m=S.msgs.find(x=>x.id===b.dataset.imgdel); m.img=null; m.imgType=null; m.imgUrl=null; renderMsgs(); render(1); });
   box.querySelectorAll('[data-rm]').forEach(b=>b.onclick=()=>{ S.msgs=S.msgs.filter(m=>m.id!==b.dataset.rm); refreshRead(); renderMsgs(); render(1); });
+  updateDur();
 }
-function move(id,dir){ const i=S.msgs.findIndex(m=>m.id===id),j=i+dir; if(j<0||j>=S.msgs.length)return; [S.msgs[i],S.msgs[j]]=[S.msgs[j],S.msgs[i]]; refreshRead(); renderMsgs(); render(1); }
+// 拖曳排序：找出游標下方最近的列(插入點)
+function dragAfter(box,y){
+  const els=[...box.querySelectorAll('.msg:not(.dragging)')];
+  let closest={offset:-Infinity,el:null};
+  for(const el of els){ const r=el.getBoundingClientRect(), offset=y-r.top-r.height/2;
+    if(offset<0&&offset>closest.offset) closest={offset,el}; }
+  return closest.el;
+}
+// 依目前 DOM 順序重排 S.msgs
+function commitMsgOrder(){
+  const ids=[...$('#msgList').querySelectorAll('.msg')].map(el=>el.dataset.id);
+  S.msgs.sort((a,b)=>ids.indexOf(a.id)-ids.indexOf(b.id));
+  refreshRead(); renderMsgs(); render(1); scheduleSave();
+}
 function autoGrow(t){ t.style.height='auto'; t.style.height=Math.min(t.scrollHeight,120)+'px'; }
 function updateDur(){ $('#dur').textContent='時長 '+animDuration().toFixed(1)+'s'; }
 
@@ -550,10 +741,193 @@ $('#cropOk').onclick=()=>{ if(!cropState)return; const out=document.createElemen
   const im=new Image(); im.onload=()=>{ fin(im); }; im.src=out.toDataURL('image/png');
   $('#cropModal').classList.add('hidden'); cropState=null; };
 
+// ---- 訊息圖片裁切 modal(上傳 / 貼網址 + 固定比例 / 自由裁切) ----
+const imgCv=document.getElementById('imgCv'), imgMCtx=imgCv.getContext('2d');
+const IMGM=560; let imgState=null, imgDrag=null;
+const FREE_DEFAULT={x:0.08,y:0.08,w:0.84,h:0.84};
+// 依比例算 frame 尺寸;'orig' 用圖片原始長寬比
+function imgFrame(ratio,img){
+  let rw,rh;
+  if(ratio==='orig'||ratio==='free'){ if(!img) return [IMGM,IMGM]; rw=img.width; rh=img.height; }
+  else{ [rw,rh]=ratio.split(':').map(Number); }
+  let w,h; if(rw>=rh){ w=IMGM; h=IMGM*rh/rw; } else { h=IMGM; w=IMGM*rw/rh; }
+  return [Math.round(w),Math.round(h)];
+}
+// 自由裁切：畫布貼合整張圖,長邊 600
+function imgFreeSize(img){ const L=600, s=L/Math.max(img.width,img.height); return [Math.round(img.width*s),Math.round(img.height*s)]; }
+function isFree(){ return imgState.ratio==='free'; }
+function syncImgModalUI(){
+  const free=isFree();
+  $('#imgZoomField').classList.toggle('hidden',free);
+  $('#imgCropHint').textContent= imgState.img
+    ? (free?'拖曳四角調整裁切範圍,框內為輸出區域':'點預覽範圍可上傳 / 更換圖片,拖曳調整位置')
+    : '點預覽範圍可上傳,或於上方貼網址';
+}
+function drawFreeCrop(){
+  const img=imgState.img, [W,H]=imgFreeSize(img); imgCv.width=W; imgCv.height=H;
+  const disp=300, sc=disp/Math.max(W,H); imgCv.style.width=(W*sc)+'px'; imgCv.style.height=(H*sc)+'px';
+  imgMCtx.clearRect(0,0,W,H); imgMCtx.drawImage(img,0,0,W,H);
+  const r=imgState.crop, rx=r.x*W, ry=r.y*H, rw=r.w*W, rh=r.h*H;
+  imgMCtx.save(); imgMCtx.fillStyle='rgba(0,0,0,.5)'; imgMCtx.beginPath(); imgMCtx.rect(0,0,W,H); imgMCtx.rect(rx,ry,rw,rh); imgMCtx.fill('evenodd'); imgMCtx.restore();
+  imgMCtx.strokeStyle='rgba(255,255,255,.95)'; imgMCtx.lineWidth=2; imgMCtx.strokeRect(rx,ry,rw,rh);
+  const hs=10; imgMCtx.fillStyle='#fff';
+  [[rx,ry],[rx+rw,ry],[rx,ry+rh],[rx+rw,ry+rh]].forEach(([hx,hy])=>imgMCtx.fillRect(hx-hs/2,hy-hs/2,hs,hs));
+}
+function drawImgModal(){
+  syncImgModalUI();
+  if(isFree()&&imgState.img){ drawFreeCrop(); return; }
+  const fr=isFree()?'orig':imgState.ratio;
+  const [W,H]=imgFrame(fr,imgState.img); imgCv.width=W; imgCv.height=H;
+  const disp=300, sc=disp/Math.max(W,H); imgCv.style.width=(W*sc)+'px'; imgCv.style.height=(H*sc)+'px';
+  if(imgState.img){
+    drawBgCover(imgMCtx,W,H,imgState.img,imgState.zoom,imgState.fx,imgState.fy);
+  } else {
+    imgMCtx.fillStyle='#0a0c10'; imgMCtx.fillRect(0,0,W,H);
+    imgMCtx.fillStyle='#5f6878'; imgMCtx.textAlign='center'; imgMCtx.textBaseline='middle';
+    imgMCtx.font='600 16px "Noto Sans TC",sans-serif'; imgMCtx.fillText('點此上傳,或於上方貼網址', W/2, H/2);
+  }
+  imgMCtx.strokeStyle='rgba(255,255,255,.85)'; imgMCtx.lineWidth=2; imgMCtx.strokeRect(1,1,W-2,H-2);
+}
+function openImgEditor(srcImg,onApply,initMeta){
+  imgState={img:srcImg||null, zoom:1, fx:0.5, fy:0.5, ratio:'orig', crop:{...FREE_DEFAULT}, onApply,
+    srcType:initMeta&&initMeta.type||null, srcUrl:initMeta&&initMeta.url||null};
+  segPick($('#imgRatioSeg'),'orig'); $('#imgUrl').value='';
+  $('#imgZoom').value=1; $('#imgZoomV').textContent='100%';
+  $('#imgModal').classList.remove('hidden'); drawImgModal();
+}
+function setImgEditorImage(im){
+  imgState.img=im; imgState.zoom=1; imgState.fx=0.5; imgState.fy=0.5; imgState.crop={...FREE_DEFAULT};
+  $('#imgZoom').value=1; $('#imgZoomV').textContent='100%'; drawImgModal();
+}
+$('#imgUpload').onclick=()=>$('#imgFile').click();
+$('#imgFile').onchange=e=>{ if(!imgState)return; loadImg(e.target.files[0],im=>{ imgState.srcType='local'; imgState.srcUrl=null; setImgEditorImage(im); }); e.target.value=''; };
+$('#imgUrlLoad').onclick=()=>{ if(!imgState)return; const u=$('#imgUrl').value.trim(); loadImgFromUrl(u,im=>{ imgState.srcType='url'; imgState.srcUrl=u; setImgEditorImage(im); }); };
+$('#imgUrl').addEventListener('keydown',e=>{ if(e.key==='Enter'){ e.preventDefault(); $('#imgUrlLoad').click(); }});
+$('#imgRatioSeg').onclick=e=>{ const b=e.target.closest('button'); if(!b||!imgState)return; segPick($('#imgRatioSeg'),b.dataset.v); imgState.ratio=b.dataset.v; if(b.dataset.v==='free') imgState.crop={...FREE_DEFAULT}; drawImgModal(); };
+$('#imgZoom').oninput=e=>{ if(!imgState)return; imgState.zoom=+e.target.value; $('#imgZoomV').textContent=Math.round(e.target.value*100)+'%'; drawImgModal(); };
+$('#imgCropReset').onclick=()=>{ if(!imgState)return; if(isFree()){ imgState.crop={...FREE_DEFAULT}; } else { imgState.zoom=1; imgState.fx=0.5; imgState.fy=0.5; $('#imgZoom').value=1; $('#imgZoomV').textContent='100%'; } drawImgModal(); };
+// 自由裁切：抓四角或框內移動
+function imgPt(e){ const r=imgCv.getBoundingClientRect(); return [(e.clientX-r.left)*(imgCv.width/r.width), (e.clientY-r.top)*(imgCv.height/r.height)]; }
+function freeHit(px,py){
+  const W=imgCv.width,H=imgCv.height,r=imgState.crop, rx=r.x*W,ry=r.y*H,rw=r.w*W,rh=r.h*H,hs=16;
+  const cs={nw:[rx,ry],ne:[rx+rw,ry],sw:[rx,ry+rh],se:[rx+rw,ry+rh]};
+  for(const k in cs){ if(Math.abs(px-cs[k][0])<hs&&Math.abs(py-cs[k][1])<hs) return k; }
+  if(px>rx&&px<rx+rw&&py>ry&&py<ry+rh) return 'move';
+  return null;
+}
+function freeUpdate(px,py){
+  const W=imgCv.width,H=imgCv.height,nx=Math.min(1,Math.max(0,px/W)),ny=Math.min(1,Math.max(0,py/H)),r=imgState.crop,MIN=0.05,t=imgDrag.target;
+  if(t==='move'){ r.x=Math.min(1-r.w,Math.max(0,nx-imgDrag.ox)); r.y=Math.min(1-r.h,Math.max(0,ny-imgDrag.oy)); }
+  else{ let x1=r.x,y1=r.y,x2=r.x+r.w,y2=r.y+r.h;
+    if(t.includes('w')) x1=Math.min(x2-MIN,nx); if(t.includes('e')) x2=Math.max(x1+MIN,nx);
+    if(t.includes('n')) y1=Math.min(y2-MIN,ny); if(t.includes('s')) y2=Math.max(y1+MIN,ny);
+    r.x=x1; r.y=y1; r.w=x2-x1; r.h=y2-y1; }
+  drawFreeCrop();
+}
+imgCv.addEventListener('pointerdown',e=>{ if(!imgState)return; try{imgCv.setPointerCapture(e.pointerId);}catch(_){}
+  if(isFree()&&imgState.img){ const [px,py]=imgPt(e); const t=freeHit(px,py); const r=imgState.crop;
+    imgDrag={free:true,target:t,ox:px/imgCv.width-r.x,oy:py/imgCv.height-r.y}; return; }
+  imgDrag={x:e.clientX,y:e.clientY,sx:e.clientX,sy:e.clientY,moved:false}; });
+imgCv.addEventListener('pointermove',e=>{ if(!imgDrag||!imgState)return;
+  if(imgDrag.free){ if(imgDrag.target){ const [px,py]=imgPt(e); freeUpdate(px,py); } return; }
+  if(Math.abs(e.clientX-imgDrag.sx)>4||Math.abs(e.clientY-imgDrag.sy)>4) imgDrag.moved=true;
+  if(!imgState.img)return;
+  const r=imgCv.getBoundingClientRect(); const [W,H]=imgFrame(imgState.ratio,imgState.img);
+  const dx=(e.clientX-imgDrag.x)*(W/r.width), dy=(e.clientY-imgDrag.y)*(H/r.height); imgDrag.x=e.clientX; imgDrag.y=e.clientY;
+  const im=imgState.img, s=Math.max(W/im.width,H/im.height)*imgState.zoom, dw=im.width*s, dh=im.height*s;
+  imgState.fx=Math.min(1,Math.max(0,imgState.fx - dx/dw)); imgState.fy=Math.min(1,Math.max(0,imgState.fy - dy/dh)); drawImgModal(); });
+imgCv.addEventListener('pointerup',e=>{ if(imgDrag&&!imgDrag.free&&!imgDrag.moved&&imgState&&!imgState.img) $('#imgFile').click(); });
+window.addEventListener('pointerup',()=>{ imgDrag=null; });
+$('#imgCropCancel').onclick=()=>{ $('#imgModal').classList.add('hidden'); imgState=null; };
+$('#imgCropOk').onclick=()=>{ if(!imgState)return; if(!imgState.img){ alert('請先上傳或載入一張圖片。'); return; }
+  const oc=document.createElement('canvas'); const im=imgState.img;
+  if(isFree()){
+    const r=imgState.crop, sx=r.x*im.width, sy=r.y*im.height, sw=r.w*im.width, sh=r.h*im.height;
+    const k=Math.min(1,1000/Math.max(sw,sh)); oc.width=Math.round(sw*k); oc.height=Math.round(sh*k);
+    oc.getContext('2d').drawImage(im, sx,sy,sw,sh, 0,0,oc.width,oc.height);
+  } else {
+    const [fw,fh]=imgFrame(imgState.ratio,im), k=1000/Math.max(fw,fh);
+    oc.width=Math.round(fw*k); oc.height=Math.round(fh*k);
+    drawBgCover(oc.getContext('2d'),oc.width,oc.height,im,imgState.zoom,imgState.fx,imgState.fy);
+  }
+  const apply=imgState.onApply, meta={type:imgState.srcType,url:imgState.srcUrl};
+  const out=new Image(); out.onload=()=>apply(out,meta); out.src=oc.toDataURL('image/png');
+  $('#imgModal').classList.add('hidden'); imgState=null; };
+
+// ---- 自動儲存（localStorage）----
+const LS_KEY='chat-studio-v1';
+function imgSrc(im){ return im&&im.src?im.src:null; }
+function srcToImg(src){ return new Promise(res=>{ if(!src){res(null);return;} const im=new Image(); im.onload=()=>res(im); im.onerror=()=>res(null); im.src=src; }); }
+function saveState(){
+  try{
+    const data={ v:1, uid,
+      mode:S.mode, ratio:S.ratio, fontKey:S.fontKey,
+      room:{...S.room, img:imgSrc(S.room.img)},
+      style:{...S.style},
+      chars:S.chars.map(c=>({...c, img:imgSrc(c.img)})),
+      msgs:S.msgs.map(m=>({...m, img:imgSrc(m.img)})),
+      interval:S.interval, tail:S.tail, showTime:S.showTime, startTime:S.startTime,
+      showRead:S.showRead, readCount:S.readCount, showMeAvatar:S.showMeAvatar, showMeName:S.showMeName, showInput:S.showInput, typeSpeed:S.typeSpeed };
+    localStorage.setItem(LS_KEY, JSON.stringify(data));
+  }catch(e){ /* 容量超出等錯誤：自動儲存為盡力而為,忽略 */ }
+}
+let saveTimer=null;
+function scheduleSave(){ clearTimeout(saveTimer); saveTimer=setTimeout(saveState,600); }
+function loadJSON(){ try{ const d=JSON.parse(localStorage.getItem(LS_KEY)); return (d&&d.v===1)?d:null; }catch(e){ return null; } }
+async function applyState(data){
+  uid=data.uid||uid;
+  S.mode=data.mode||S.mode; S.ratio=data.ratio||S.ratio;
+  if(data.fontKey&&FONTS[data.fontKey]) S.fontKey=data.fontKey;
+  Object.assign(S.style, data.style||{});
+  Object.assign(S.room, data.room||{}); S.room.img=null;
+  ['interval','tail','showTime','startTime','showRead','readCount','showMeAvatar','showMeName','showInput','typeSpeed'].forEach(k=>{ if(data[k]!==undefined) S[k]=data[k]; });
+  S.chars=(data.chars||[]).map(c=>({...c, img:null}));
+  S.msgs=(data.msgs||[]).map(m=>({...m, img:null}));
+  const tasks=[];
+  if(data.room&&data.room.img) tasks.push(srcToImg(data.room.img).then(im=>S.room.img=im));
+  (data.chars||[]).forEach((c,i)=>{ if(c.img) tasks.push(srcToImg(c.img).then(im=>{ if(S.chars[i]) S.chars[i].img=im; })); });
+  (data.msgs||[]).forEach((m,i)=>{ if(m.img) tasks.push(srcToImg(m.img).then(im=>{ if(S.msgs[i]) S.msgs[i].img=im; })); });
+  await Promise.all(tasks);
+  // 補齊舊資料缺少的圖片來源/識別碼,確保純文本來回不丟圖
+  S.msgs.forEach(m=>{ if(m.img){ if(!m.imgType) m.imgType=m.imgUrl?'url':'local'; if(!m.imgTok) m.imgTok=nid(); } });
+}
+function syncUIFromState(){
+  segPick($('#modeSeg'),S.mode); segPick($('#ratioSeg'),S.ratio);
+  $('#fontSel').value=S.fontKey;
+  $('#roomName').value=S.room.name;
+  $('#meAvatar').checked=S.showMeAvatar; $('#meName').checked=S.showMeName;
+  segPick($('#bgSeg'),S.room.bg);
+  $('#bgC2').classList.toggle('hidden',S.room.bg!=='grad');
+  $('#bgAngleWrap').classList.toggle('hidden',S.room.bg!=='grad');
+  $('#bgC1').classList.toggle('hidden',S.room.bg==='img');
+  $('#bgEditRow').classList.toggle('hidden',S.room.bg!=='img');
+  $('#bgC1').value=S.room.c1; $('#bgC2').value=S.room.c2;
+  $('#bgAngle').value=S.room.angle; $('#bgAngleV').textContent=S.room.angle+'°';
+  $('#interval').value=S.interval; $('#intervalV').textContent=S.interval+'s';
+  $('#tail').value=S.tail; $('#tailV').textContent=S.tail+'s';
+  $('#inputToggle').classList.toggle('on',S.showInput); $('#inputToggle').textContent=S.showInput?'開':'關';
+  $('#typeSpeed').value=S.typeSpeed; $('#typeSpeedV').textContent=(+S.typeSpeed).toFixed(1)+'x';
+  $('#timeToggle').classList.toggle('on',S.showTime); $('#timeToggle').textContent=S.showTime?'開':'關';
+  $('#readToggle').classList.toggle('on',S.showRead); $('#readToggle').textContent=S.showRead?'開':'關';
+  $('#startTime').value=S.startTime; $('#readCount').value=S.readCount;
+  if(S.room.bg!=='color'||S.room.img) bgTouched=true;
+  syncStyleInputs(); syncToggleRows();
+}
+
 // init
-seed(); setSize(); buildFontSel(); buildSwatches(); syncStyleInputs();
-$('#roomName').value=S.room.name; refreshRead();
-renderChars(); renderQuick(); renderMsgs(); updateDur(); syncToggleRows();
-$('#fmtBadge').textContent=(window.MediaRecorder&&['video/mp4;codecs=avc1.42E01E','video/mp4'].some(f=>MediaRecorder.isTypeSupported(f)))?'MP4':'WebM';
-document.body.dataset.ui='std';
-selectFont('noto-sans');
+(async function init(){
+  setSize(); buildFontSel(); buildSwatches();
+  const data=loadJSON();
+  if(data) await applyState(data); else seed();
+  setSize(); syncStyleInputs(); syncUIFromState(); refreshRead();
+  renderChars(); renderQuick(); renderMsgs(); updateDur();
+  $('#fmtBadge').textContent=(window.MediaRecorder&&['video/mp4;codecs=avc1.42E01E','video/mp4'].some(f=>MediaRecorder.isTypeSupported(f)))?'MP4':'WebM';
+  document.body.dataset.ui='std';
+  await selectFont(S.fontKey);
+  render(1);
+  // 全域監聽：任何輸入 / 變更 / 點擊後延遲存檔;離開前再存一次
+  document.addEventListener('input',scheduleSave,true);
+  document.addEventListener('change',scheduleSave,true);
+  document.addEventListener('click',scheduleSave,true);
+  window.addEventListener('beforeunload',saveState);
+})();
