@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=1280">
+<title>Receipt</title>
+<meta name="description" content="收據 / 標籤模板編輯器,即時預覽,輸出圖片 PNG 與列印動畫 MP4。">
+<meta property="og:title" content="Receipt">
+<meta property="og:description" content="編輯收據與標籤,預覽即輸出。">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Receipt">
+<meta name="twitter:description" content="編輯收據與標籤,預覽即輸出。">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&family=DotGothic16&family=Roboto+Mono:wght@400;500;700&family=Noto+Serif+TC:wght@400;700&family=Fraunces:opsz,wght@9..144,400;9..144,500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="index.css">
+</head>
+<body>
+
+<!-- 手機提示:建議使用電腦瀏覽器(非阻擋) -->
+<div id="desktop-hint" role="note">
+  <span><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="6" width="16" height="10" rx="1"/><path d="M2 19h20"/></svg>建議使用電腦瀏覽器開啟以獲得最佳體驗</span>
+  <button type="button" id="desktop-hint-close" aria-label="關閉提示">✕</button>
+</div>
+<script>
+  (function(){
+    var el=document.getElementById("desktop-hint");
+    var mobile=(window.matchMedia&&matchMedia("(pointer: coarse)").matches)||/Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
+    if(mobile) el.classList.add("show");
+    document.getElementById("desktop-hint-close").addEventListener("click",function(){ el.classList.remove("show"); });
+  })();
+</script>
+
+<header class="top">
+  <a class="back" href="../" aria-label="回到 Studio 入口">←</a>
+  <div class="logo">
+    <span class="logo-main">Receipt</span>
+    <span class="logo-sub">收據 / 標籤模板 · 預覽即輸出</span>
+  </div>
+  <div class="seg" id="viewSeg">
+    <button data-v="edit" class="on">設計編輯</button>
+    <button data-v="pos">收銀</button>
+  </div>
+  <span class="lbl">預設模板</span>
+  <div class="seg" id="designSeg">
+    <button data-v="tailor" class="on">西裝店</button>
+    <button data-v="cafe">咖啡廳</button>
+    <button data-v="bar">酒吧</button>
+  </div>
+  <button class="btn sm" id="applyTpl">套用</button>
+  <div class="spacer"></div>
+  <div class="header-right">
+    <button class="btn sm" id="dataBtn" title="匯出 / 載入資料"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v10"/><path d="M8 11l4 4 4-4"/><path d="M5 19h14"/></svg>資料</button>
+    <span class="save-status" id="saveStatus" title="自動儲存狀態">✓ 已儲存</span>
+    <span class="lbl">介面</span>
+    <div class="seg" id="uiSeg">
+      <button data-v="std" class="on">標準</button><button data-v="lg">大</button><button data-v="xl">最大</button>
+    </div>
+  </div>
+</header>
+
+<main>
+  <!-- LEFT -->
+  <section class="side left" id="colLeft">
+    <div class="side-head"><span class="title">金額・樣式</span><span class="vtitle">金額・樣式</span><button class="collapse" data-arrow>◀</button></div>
+    <div class="side-body">
+      <div class="panel" data-c="0"><div class="ph">金額與付款 <span class="chev">▾</span></div><div class="pb">
+        <div class="two">
+          <div class="field"><label>幣別符號</label><input type="text" id="f_sym" value="NT$"></div>
+          <div class="field"><label>小數位數</label><select id="f_dec"><option value="0">0</option><option value="2">2</option></select></div>
+        </div>
+        <div class="two">
+          <div class="field"><label>稅率 %</label><input type="number" id="f_tax" value="5" min="0" step="0.1"></div>
+          <div class="field"><label>服務費 %</label><input type="number" id="f_svc" value="0" min="0" step="0.1"></div>
+        </div>
+        <label class="ck" style="margin-bottom:9px"><input type="checkbox" id="f_incl" checked> 金額已含稅（顯示為內含）</label>
+        <div class="two">
+          <div class="field"><label>折扣方式</label><select id="f_dtype"><option value="amount">金額</option><option value="pct">百分比</option></select></div>
+          <div class="field"><label>折扣值</label><input type="number" id="f_dval" value="0" min="0" step="1"></div>
+        </div>
+        <div class="field"><label>付款方式</label><input type="text" id="p_method" value="信用卡 VISA ****1234"></div>
+        <div class="field"><label>實收金額（留空＝不顯示找零）</label><input type="number" id="p_paid" placeholder="例如 1000"></div>
+        <p class="hint">這些設定會套用到「金額小計」區塊。</p>
+      </div></div>
+
+      <div class="panel" data-c="1"><div class="ph">文字樣式 <span class="chev">▾</span></div><div class="pb">
+        <div class="field"><label>整體字級</label><div class="rng"><input type="range" id="t_scale" min="0.8" max="1.3" step="0.01" value="1"><b id="t_scaleV">100%</b></div></div>
+        <div class="field"><label>行距</label><div class="rng"><input type="range" id="t_line" min="0.85" max="1.6" step="0.01" value="1"><b id="t_lineV">1.00</b></div></div>
+        <p class="hint">各文字區塊的大小／對齊／粗細,在該區塊內各自設定。</p>
+      </div></div>
+
+      <div class="panel" data-c="1"><div class="ph">外觀樣式 <span class="chev">▾</span></div><div class="pb">
+        <div class="field"><label>字體</label><select id="s_font"></select></div>
+        <div class="field"><label>紙張寬度</label><div class="rng"><input type="range" id="s_pw" min="520" max="900" step="10" value="720"><b id="s_pwV">720</b></div></div>
+        <div class="two">
+          <div class="field"><label>紙張色</label><div class="row"><input type="color" id="s_paper" value="#ffffff"></div></div>
+          <div class="field"><label>文字色</label><div class="row"><input type="color" id="s_ink" value="#111111"></div></div>
+        </div>
+        <div class="field"><label>圓角</label><div class="rng"><input type="range" id="s_radius" min="0" max="60" value="0"><b id="s_radiusV">0</b></div></div>
+        <label class="ck"><input type="checkbox" id="s_zig" checked> 鋸齒撕邊（熱感紙風）</label>
+        <p class="hint" style="margin-top:6px">圓角在「鋸齒撕邊」關閉時才會生效。</p>
+        <hr>
+        <div class="field"><label>紙張效果</label>
+          <div class="seg" id="bgEffectSeg" style="width:100%">
+            <button data-v="none" class="on" style="flex:1">無</button>
+            <button data-v="frost" style="flex:1">霧面</button>
+            <button data-v="liquid" style="flex:1">液態玻璃</button>
+          </div>
+        </div>
+        <div class="field"><label>紙張不透明度</label><div class="rng"><input type="range" id="bgPaperAlpha" min="20" max="100" value="100"><b id="bgPaperAlphaV">100%</b></div></div>
+        <p class="hint">100% 完全不透明;調低才會透出底圖。霧面 / 液態玻璃會讓收據像玻璃(搭配背景圖「底圖」最明顯)。</p>
+        <hr>
+        <div class="field"><label>紙張紋理</label>
+          <div class="texpick" id="texPick">
+            <button type="button" class="texpick-arw" data-tex="-1" aria-label="上一個">‹</button>
+            <select id="s_texture"></select>
+            <button type="button" class="texpick-arw" data-tex="1" aria-label="下一個">›</button>
+          </div>
+        </div>
+        <div id="texAdjust" class="hidden">
+          <div class="field"><label>強度</label><div class="rng"><input type="range" id="s_texStrength" min="0" max="100" value="100"><b id="s_texStrengthV">100%</b></div></div>
+          <div class="field"><label>色相（0＝黑白）</label><div class="rng"><input type="range" id="s_texHue" min="0" max="360" value="0"><b id="s_texHueV">黑白</b></div></div>
+          <div class="field"><label>明度</label><div class="rng"><input type="range" id="s_texBright" min="50" max="150" value="100"><b id="s_texBrightV">100%</b></div></div>
+          <div class="field"><label>對比</label><div class="rng"><input type="range" id="s_texContrast" min="50" max="260" value="140"><b id="s_texContrastV">140%</b></div></div>
+        </div>
+        <p class="hint">紋理以「相乘」融合進紙張(非直接貼圖),預設黑白,可調色相上色。</p>
+      </div></div>
+
+      <div class="panel" data-c="1"><div class="ph">背景圖片 <span class="chev">▾</span></div><div class="pb">
+        <div class="row" style="margin-bottom:9px">
+          <button class="btn sm" id="bgUpload" style="flex:1">上傳圖片</button>
+          <button class="btn sm" id="bgRemove" style="flex:none">移除</button>
+        </div>
+        <div class="field"><label>套用方式</label>
+          <div class="seg" id="bgModeSeg" style="width:100%">
+            <button data-v="none" class="on" style="flex:1">無</button>
+            <button data-v="water" style="flex:1">浮水印</button>
+            <button data-v="back" style="flex:1">底圖</button>
+          </div>
+        </div>
+        <div class="field hidden" id="bgSizeRow"><label>浮水印大小</label><div class="rng"><input type="range" id="bgSize" min="10" max="100" value="40"><b id="bgSizeV">40%</b></div></div>
+        <div class="field hidden" id="bgOpacityRow"><label>浮水印濃度</label><div class="rng"><input type="range" id="bgOpacity" min="3" max="60" value="15"><b id="bgOpacityV">15%</b></div></div>
+        <div class="field hidden" id="bgMarginRow"><label>背景外擴（四邊,px）</label><div class="rng"><input type="range" id="bgMargin" min="0" max="400" step="10" value="80"><b id="bgMarginV">80</b></div></div>
+        <p class="hint">浮水印:圖片可調大小、自動重複鋪滿收據、文字下方。底圖:收據疊在整張圖上(輸出尺寸會放大)。紙張效果(霧面/液態玻璃)在「外觀樣式」設定。</p>
+      </div></div>
+
+      <div class="panel" data-c="0"><div class="ph">匯出 <span class="chev">▾</span></div><div class="pb">
+        <button class="btn ok full" id="pngBtn" style="margin-bottom:8px"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="5" width="16" height="14" rx="2"/><circle cx="9" cy="10" r="1.5"/><path d="M5 16l4-3.5 3.5 3 3-2.5L19 16"/></svg>輸出圖片 PNG</button>
+        <button class="btn pri full" id="mp4Btn"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M8 5v14M16 5v14M3 10h5M3 14h5M16 10h5M16 14h5"/></svg><span id="mp4Label">輸出列印動畫 MP4</span></button>
+        <p class="hint" id="exportHint"></p>
+        <p class="hint">模板 / 商品 / 收銀的匯出與載入,請用右上角「資料」。</p>
+      </div></div>
+    </div>
+  </section>
+
+  <!-- CENTER -->
+  <section class="center">
+    <div class="stage"><canvas id="cv"></canvas></div>
+    <div class="size-note" id="sizeNote">—</div>
+    <div class="ctlbar">
+      <button class="btn" id="playBtn">▶ 預覽列印</button>
+      <div class="seg" id="zoomSeg">
+        <button data-z="out" title="縮小">－</button>
+        <button data-z="fit" title="符合視窗">符合</button>
+        <button data-z="in" title="放大">＋</button>
+      </div>
+      <span class="badge" id="zoomVal">100%</span>
+    </div>
+  </section>
+
+  <!-- BLOCKS (independent, resizable) -->
+  <section class="side blocks" id="colBlocks">
+    <div class="resizer" id="blkResizer" title="拖曳調整寬度"></div>
+    <div class="side-head"><span class="title">版面區塊 <span class="sub" id="blockCount"></span></span><span class="vtitle">版面區塊</span><button class="collapse" data-arrow>▶</button></div>
+    <div class="side-body">
+      <div class="seg" id="blkModeSeg" style="width:100%;margin-bottom:10px">
+        <button data-v="blocks" class="on" style="flex:1">區塊</button>
+        <button data-v="text" style="flex:1">純文字</button>
+      </div>
+      <div id="blockEditWrap">
+        <p class="hint" style="margin-top:0">拖曳 <b>⋮⋮</b> 排序、✕ 刪除、點標題收合。順序＝收據顯示順序。</p>
+        <div id="blockList"></div>
+        <div class="addwrap">
+          <button class="btn full pri" id="addBlockBtn">＋ 新增區塊</button>
+          <div class="addmenu hidden" id="addMenu"></div>
+        </div>
+      </div>
+      <div id="blockSourceWrap" class="hidden">
+        <textarea id="blockSource" spellcheck="false" placeholder="用純文字撰寫整張收據…"></textarea>
+        <div class="cheat">
+          <b>標題</b>　# 大標　## 小字　### 備註　（#&lt; 靠左　#&gt; 靠右）<br>
+          <b>段落</b>　直接打字（置中）　&lt; 靠左句子　&gt; 靠右句子<br>
+          <b>行內</b>　**粗** ~~刪~~ __底線__ *斜* ++放大++ --縮小--<br>
+          <b>分隔</b>　-（實線）　--（雙線）　---（虛線）　空行＝間距<br>
+          <b>區塊</b>　[品項]　[金額]　[條碼]　[QR:網址|說明]　[圖片]　[間距:小/中/大]<br>
+          <b>欄位</b>　[欄位] … 每行「標題: 內容」… [/欄位]
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- RIGHT -->
+  <section class="side right" id="colRight">
+    <div class="side-head"><button class="collapse" data-arrow>▶</button><span class="title">品項</span><span class="vtitle">品項</span></div>
+    <div class="side-body">
+      <div class="panel" data-c="0"><div class="ph">品項 <span class="sub" id="itemCount"></span><span class="chev">▾</span></div><div class="pb">
+        <div id="itemList"></div>
+        <button class="btn full sm" id="addItem">＋ 新增品項</button>
+        <p class="hint">每項:品名 / 數量 / 單價,「說明」可留空。可加「內容物 / 子項目」做細項或加價。</p>
+      </div></div>
+    </div>
+  </section>
+</main>
+
+<!-- 收銀(POS)畫面 -->
+<section class="pos hidden" id="posView">
+  <div class="pos-main">
+    <div class="pos-head">
+      <span class="pos-title">商品</span>
+      <span class="save-status" id="posSaveStatus"></span>
+      <button class="btn sm" id="posManageBtn">＋ 管理</button>
+    </div>
+    <div class="pos-cats" id="posCats"></div>
+    <div class="pos-grid" id="posGrid"></div>
+  </div>
+  <aside class="pos-cart">
+    <div class="pos-head"><span class="pos-title">購物車</span><button class="btn sm ghost" id="posClear">清空</button></div>
+    <div class="pos-fields" id="posFields"></div>
+    <div class="pos-cart-list" id="posCartList"></div>
+    <div class="pos-cart-foot">
+      <div class="pos-total"><span>合計</span><b id="posTotal">—</b></div>
+      <div class="pos-tip"><span>小費</span><input type="number" id="posTip" min="0" step="1" placeholder="0"></div>
+      <button class="btn pri full" id="posRecord">紀錄本筆交易</button>
+    </div>
+  </aside>
+  <aside class="pos-preview">
+    <div class="pos-head"><span class="pos-title">預覽</span></div>
+    <div class="pos-preview-wrap"><img id="posPreviewImg" alt="收據預覽" title="點一下複製圖片"></div>
+    <div class="pos-cart-foot">
+      <p class="hint" id="posCopyHint">點預覽圖片即可複製到剪貼簿</p>
+      <div class="row"><button class="btn ok full" id="posExportPng">輸出 PNG</button><button class="btn full" id="posLedgerBtn">今日收銀</button></div>
+    </div>
+  </aside>
+</section>
+
+<footer class="site-footer">
+  <span class="footer-tool-name">Receipt</span>
+  <span class="footer-divider" aria-hidden="true">·</span>
+  <span class="footer-author">Made by ilai</span>
+  <span class="footer-divider" aria-hidden="true">·</span>
+  <a href="https://www.threads.com/@ilai_sei" target="_blank" rel="noopener noreferrer" aria-label="作者的 Threads 帳號 ilai_sei(個人/工具,新分頁開啟)">@ilai_sei</a>
+  <span class="footer-divider" aria-hidden="true">·</span>
+  <a href="https://www.threads.com/@ilainosu.ffxiv" target="_blank" rel="noopener noreferrer" aria-label="作者的 FFXIV 創作 Threads 帳號 ilainosu.ffxiv(新分頁開啟)">@ilainosu.ffxiv</a>
+  <span class="footer-divider" aria-hidden="true">·</span>
+  <a href="https://www.plurk.com/ilai_sei" target="_blank" rel="noopener noreferrer" aria-label="作者的 Plurk 帳號 @ilai_sei(新分頁開啟)">Plurk</a>
+  <span class="footer-divider" aria-hidden="true">·</span>
+  <a href="../" aria-label="回到 ilai's Studios 入口">All Studios</a>
+</footer>
+
+<div id="logoModal" class="modal hidden">
+  <div class="modal-card">
+    <div class="modal-title">編輯 LOGO（裁切 / 縮放）</div>
+    <div class="seg" id="logoAspect" style="margin-bottom:12px; width:100%">
+      <button data-v="3:1" style="flex:1">寬 3:1</button>
+      <button data-v="2:1" class="on" style="flex:1">橫 2:1</button>
+      <button data-v="1:1" style="flex:1">方 1:1</button>
+    </div>
+    <div class="crop-wrap"><canvas id="logoCv"></canvas></div>
+    <div class="field"><label>縮放</label><div class="rng"><input type="range" id="logoZoom" min="1" max="4" step="0.01" value="1"><b id="logoZoomV">100%</b></div></div>
+    <div class="row"><button class="btn sm" id="logoCropReset">重設</button><span class="hint" style="flex:1;margin:0">拖曳圖片移動,框內即為 LOGO 範圍</span></div>
+    <div class="modal-actions"><button class="btn" id="logoCancel">取消</button><button class="btn pri" id="logoOk">套用</button></div>
+  </div>
+</div>
+
+<div id="ledgerTableModal" class="modal hidden">
+  <div class="modal-card" style="width:540px">
+    <div id="ledgerTableBox" class="stat-wrap"></div>
+    <div class="modal-actions" style="justify-content:space-between"><span class="hint" style="margin:0">可直接截圖此表格</span><button class="btn pri" id="ledgerTableClose">關閉</button></div>
+  </div>
+</div>
+
+<div id="ledgerTxtModal" class="modal hidden">
+  <div class="modal-card" style="width:420px">
+    <div class="modal-title">今日收銀 · 純文字</div>
+    <pre id="ledgerTxtPre" class="stat-pre"></pre>
+    <div class="modal-actions"><button class="btn" id="ledgerTxtCopy">複製</button><button class="btn pri" id="ledgerTxtClose">關閉</button></div>
+  </div>
+</div>
+
+<div id="dataModal" class="modal hidden">
+  <div class="modal-card" style="width:390px">
+    <div class="modal-title">匯出 / 載入資料</div>
+    <p class="hint" style="margin-top:0">勾選要匯出的資料,存成一個 .json 檔;或用「載入檔案」還原(檔案內有哪些就還原哪些)。</p>
+    <label class="ck" style="margin-bottom:9px"><input type="checkbox" id="exTpl" checked> 模板(版面 / 樣式 / 圖片)</label>
+    <label class="ck" style="margin-bottom:9px"><input type="checkbox" id="exProd" checked> 商品表(商品 / 分類 / 子項目 / 抽成)</label>
+    <label class="ck" style="margin-bottom:9px"><input type="checkbox" id="exTx" checked> 今日收銀(交易紀錄)</label>
+    <div class="modal-actions" style="justify-content:space-between">
+      <button class="btn" id="dataImport"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h5l2 2h9v9a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7z"/></svg>載入檔案</button>
+      <input type="file" id="dataFile" accept="application/json,.json" hidden>
+      <div style="display:flex; gap:8px"><button class="btn" id="dataClose">取消</button><button class="btn pri" id="dataExportBtn">匯出所選</button></div>
+    </div>
+  </div>
+</div>
+
+<div id="posToast" class="pos-toast"></div>
+
+<div id="posLedger" class="modal hidden">
+  <div class="modal-card" style="width:580px">
+    <div class="modal-title">今日收銀</div>
+    <div class="ledger-stats" id="ledgerStats"></div>
+    <div class="ledger-ctrl">
+      <label>分組 <select id="ledgerGroup"></select></label>
+      <label>排序 <select id="ledgerSort"></select></label>
+      <button class="btn sm" id="ledgerDir">倒序(新→舊)</button>
+    </div>
+    <div class="ledger-list" id="ledgerList"></div>
+    <div class="modal-actions" style="justify-content:space-between">
+      <div style="display:flex; gap:6px; flex-wrap:wrap">
+        <button class="btn sm" id="ledgerTableBtn">表格</button>
+        <button class="btn sm" id="ledgerTxt">純文字</button>
+        <button class="btn sm" id="ledgerClear">清空今日</button>
+      </div>
+      <button class="btn pri" id="ledgerClose">完成</button>
+    </div>
+  </div>
+</div>
+
+<div id="posOpt" class="modal hidden">
+  <div class="modal-card" style="width:340px">
+    <div class="modal-title" id="posOptTitle">選擇子項目</div>
+    <div id="posOptList"></div>
+    <div class="modal-actions"><button class="btn" id="posOptCancel">取消</button></div>
+  </div>
+</div>
+
+<div id="posMng" class="modal hidden">
+  <div class="modal-card" style="width:500px">
+    <div class="modal-title">管理</div>
+    <div class="seg" id="posMngTabs" style="width:100%;margin-bottom:12px">
+      <button data-v="prod" class="on" style="flex:1">商品</button>
+      <button data-v="cat" style="flex:1">類別編輯</button>
+    </div>
+    <div id="posTabProd">
+      <div id="posCatList"></div>
+      <div class="row" style="margin-top:12px">
+        <input type="text" id="posNewName" placeholder="商品名稱" style="flex:1">
+        <select id="posNewCat" style="width:92px"></select>
+        <input type="number" id="posNewPrice" placeholder="價格" style="width:70px">
+        <button class="btn pri sm" id="posAdd">新增</button>
+      </div>
+      <p class="hint">點「子」可設定該商品專屬子項目;分類在「類別編輯」管理。</p>
+    </div>
+    <div id="posTabCat" class="hidden">
+      <div class="row" style="margin-bottom:10px">
+        <input type="text" id="posNewCatName" placeholder="新分類名稱" style="flex:1">
+        <button class="btn pri sm" id="posAddCat">新增分類</button>
+      </div>
+      <div id="posSubList"></div>
+      <p class="hint">分類的共用子項目會自動加到該分類所有商品。刪除分類會把該分類商品改為未分類。</p>
+    </div>
+    <div class="modal-actions"><button class="btn pri" id="posMngClose">完成</button></div>
+  </div>
+</div>
+
+<!-- 液態玻璃折射濾鏡(canvas ctx.filter 會引用它,真實位移、可烘進 PNG)-->
+<svg width="0" height="0" aria-hidden="true" style="position:absolute">
+  <filter id="rcLiquid" x="-20%" y="-20%" width="140%" height="140%" color-interpolation-filters="sRGB">
+    <feTurbulence type="fractalNoise" baseFrequency="0.008 0.012" numOctaves="2" seed="11" result="n"/>
+    <feGaussianBlur in="SourceGraphic" stdDeviation="2" result="b"/>
+    <feDisplacementMap in="b" in2="n" scale="30" xChannelSelector="R" yChannelSelector="G"/>
+    <feColorMatrix type="saturate" values="1.5"/>
+  </filter>
+</svg>
+
+<script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js"></script>
+<script src="index.js"></script>
+</body>
+</html>

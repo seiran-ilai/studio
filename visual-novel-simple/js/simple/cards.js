@@ -90,7 +90,7 @@ function renderSimpleCard(card, idx) {
   const delBtn = document.createElement("button");
   delBtn.className = "icon-btn icon-btn-danger";
   delBtn.title = "刪除";
-  delBtn.textContent = "🗑";
+  delBtn.innerHTML = "<svg class=\"ic\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.7\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M5 7h14M10 7V5h4v2M6 7l1 12a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1l1-12M10 11v6M14 11v6\"/></svg>";
   delBtn.addEventListener("click", async () => {
     const ok = await inlineConfirm({
       title: "刪除這張卡?",

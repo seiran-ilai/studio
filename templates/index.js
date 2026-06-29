@@ -882,8 +882,8 @@ window.Engine = (function () {
       <div class="group">
         <div class="group-title">匯出</div>
         <div class="export-row">
-          <button class="export-btn" id="btnPng" type="button">🖼 輸出圖片<span class="eb-sub">PNG</span></button>
-          <button class="export-btn export-btn--video" id="btnVideo" type="button">🎬 輸出影片<span class="eb-sub" id="videoFmt">MP4</span></button>
+          <button class="export-btn" id="btnPng" type="button"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="5" width="16" height="14" rx="2"/><circle cx="9" cy="10" r="1.5"/><path d="M5 16l4-3.5 3.5 3 3-2.5L19 16"/></svg>輸出圖片<span class="eb-sub">PNG</span></button>
+          <button class="export-btn export-btn--video" id="btnVideo" type="button"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M8 5v14M16 5v14M3 10h5M3 14h5M16 10h5M16 14h5"/></svg>輸出影片<span class="eb-sub" id="videoFmt">MP4</span></button>
         </div>
         <p class="hint" id="videoNote"></p>
       </div>`;

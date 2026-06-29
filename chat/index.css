@@ -21,6 +21,7 @@
   --bg:var(--bg-base); --panel:var(--surface); --panel2:var(--surface-2);
 }
 *{box-sizing:border-box}
+.ic{width:1.05em;height:1.05em;vertical-align:-2px;flex:none;margin-right:6px}
 html,body{margin:0;height:100%}
 body{font-family:"Noto Sans TC",system-ui,sans-serif; color:var(--ink); font-size:13px;
   display:flex; flex-direction:column; height:100vh; overflow:hidden;

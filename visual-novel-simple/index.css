@@ -364,6 +364,8 @@ body[data-ui="xl"] .pane-preview { zoom: 0.769; }
 .btn.btn-icon .btn-text { display: none; }
 .btn.btn-icon .btn-emoji { font-size: 15px; }
 
+.ic{width:1.05em;height:1.05em;vertical-align:-2px;flex:none;margin-right:6px}
+
 .btn-ghost {
   border: none;
   color: var(--text-muted);

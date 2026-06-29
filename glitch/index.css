@@ -35,6 +35,8 @@
 
 * { margin: 0; padding: 0; box-sizing: border-box; }
 
+.ic { width: 1.05em; height: 1.05em; vertical-align: -2px; flex: none; margin-right: 6px; }
+
 html, body {
   height: 100%;
   color: var(--t);

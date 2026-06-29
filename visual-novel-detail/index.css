@@ -282,6 +282,14 @@ body::after {
   50% { transform: scale(1.15); }
 }
 
+/* 行內 line-style SVG 圖示(UI affordance,取代部分 emoji) */
+.ic { width: 1.05em; height: 1.05em; vertical-align: -2px; flex: none; margin-right: 6px; }
+/* flex 容器內由 gap 控制間距,移除 .ic 自帶 margin 避免雙重間距 */
+.btn .ic,
+.btn-emoji .ic,
+.simple-add-menu-icon .ic { margin-right: 0; }
+/* modal-title 用 background-clip:text + color:transparent,SVG 需顯式上色 */
+.modal-title .ic { color: var(--gold-bright); vertical-align: -3px; }
 
 .btn {
   font-family: var(--font-body);

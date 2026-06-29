@@ -1544,6 +1544,9 @@
     letter-spacing: 0.08em;
   }
 
+  /* 線條圖示(inline SVG)共用樣式 */
+  .ic { width: 1.05em; height: 1.05em; vertical-align: -2px; flex: none; margin-right: 6px; }
+
   /* 手機提示:非阻擋式,建議改用電腦瀏覽器 */
   #desktop-hint {
     display: none;

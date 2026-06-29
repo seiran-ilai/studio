@@ -13,7 +13,7 @@
 
 <!-- 手機提示:建議使用電腦瀏覽器(非阻擋) -->
 <div id="desktop-hint" role="note">
-  <span>💻 建議使用電腦瀏覽器開啟以獲得最佳體驗</span>
+  <span><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="6" width="16" height="10" rx="1"/><path d="M2 19h20"/></svg>建議使用電腦瀏覽器開啟以獲得最佳體驗</span>
   <button type="button" id="desktop-hint-close" aria-label="關閉提示">✕</button>
 </div>
 <script>
@@ -96,7 +96,7 @@
           <span class="rng hidden" id="bgAngleWrap" style="flex:1"><input type="range" id="bgAngle" min="0" max="360" value="135"><b id="bgAngleV">135°</b></span>
           <input type="file" id="bgImgFile" accept="image/*" class="hidden">
         </div>
-        <div id="bgEditRow" class="field hidden"><button class="btn full sm" id="bgEditBtn">⚙ 編輯背景圖（縮放 / 裁切 / 比例預覽）</button></div>
+        <div id="bgEditRow" class="field hidden"><button class="btn full sm" id="bgEditBtn"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3.2"/><path d="M12 3.5v3M12 17.5v3M3.5 12h3M17.5 12h3M6 6l2 2M16 16l2 2M18 6l-2 2M8 16l-2 2"/></svg>編輯背景圖（縮放 / 裁切 / 比例預覽）</button></div>
       </div>
       <div class="tabpane hidden" data-pane="palette">
         <div class="swrow">
@@ -189,7 +189,7 @@
             <div class="quick" id="quickChips"></div>
             <div class="comp-row">
               <input type="text" id="quickInput" placeholder="輸入台詞　（Enter 送出）" autocomplete="off">
-              <button class="btn sm" id="attachImg" title="附加圖片">🖼</button>
+              <button class="btn sm" id="attachImg" title="附加圖片"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="margin-right:0"><rect x="4" y="5" width="16" height="14" rx="2"/><circle cx="9" cy="10" r="1.5"/><path d="M5 16l4-3.5 3.5 3 3-2.5L19 16"/></svg></button>
             </div>
             <div id="attachPreview" class="attach-preview hidden"></div>
             <button class="btn pri full sm" id="quickAdd" style="margin-top:8px">＋ 加入對話</button>
@@ -223,8 +223,8 @@
       <div class="field row"><label style="margin:0;flex:1">已讀標記</label><button class="pill on" id="readToggle">開</button></div>
       <div class="field row hidden" id="readCountRow"><label style="margin:0;flex:1">已讀人數（群組）</label><input type="number" id="readCount" min="1" max="99" value="2" style="width:64px;flex:none"></div>
       <hr>
-      <button class="btn ok full" id="pngBtn" style="margin-bottom:8px">🖼 輸出圖片 PNG</button>
-      <button class="btn pri full" id="mp4Btn">🎬 輸出影片 MP4</button>
+      <button class="btn ok full" id="pngBtn" style="margin-bottom:8px"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="5" width="16" height="14" rx="2"/><circle cx="9" cy="10" r="1.5"/><path d="M5 16l4-3.5 3.5 3 3-2.5L19 16"/></svg>輸出圖片 PNG</button>
+      <button class="btn pri full" id="mp4Btn"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M8 5v14M16 5v14M3 10h5M3 14h5M16 10h5M16 14h5"/></svg><span id="mp4BtnLabel">輸出影片 MP4</span></button>
       <p class="hint" id="exportHint" style="margin-top:8px"></p>
     </div>
   </section>

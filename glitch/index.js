@@ -507,7 +507,7 @@ function renderAdv(fx) {
   const panel = $('#advPanel');
   const cfg = ADV_CONFIG[fx] || [];
   const a = state.adv[fx];
-  panel.innerHTML = '<h4>⚙ 進階設定</h4>';
+  panel.innerHTML = '<h4><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3.2"/><path d="M12 3.5v3M12 17.5v3M3.5 12h3M17.5 12h3M6 6l2 2M16 16l2 2M18 6l-2 2M8 16l-2 2"/></svg>進階設定</h4>';
 
   cfg.forEach(ctl => {
     const row = document.createElement('div');
@@ -1913,8 +1913,8 @@ $('#btnMp4').addEventListener('click', async () => {
 (function reflectVideoFormat() {
   const mp4ok = typeof MediaRecorder !== 'undefined' && MediaRecorder.isTypeSupported('video/mp4');
   if (!mp4ok) {
-    const btn = $('#btnMp4');
-    if (btn) btn.textContent = '🎥 WebM';
+    const label = $('#btnMp4Label');
+    if (label) label.textContent = 'WebM';
     const note = $('#mp4Note');
     if (note) note.textContent = '此瀏覽器將輸出 WebM 格式（非 MP4）';
   }

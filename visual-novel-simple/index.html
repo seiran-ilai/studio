@@ -31,7 +31,7 @@
 
 <!-- 手機提示:建議使用電腦瀏覽器(非阻擋) -->
 <div id="desktop-hint" role="note">
-  <span>💻 建議使用電腦瀏覽器開啟以獲得最佳體驗</span>
+  <span><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="6" width="16" height="10" rx="1"/><path d="M2 19h20"/></svg>建議使用電腦瀏覽器開啟以獲得最佳體驗</span>
   <button type="button" id="desktop-hint-close" aria-label="關閉提示">✕</button>
 </div>
 
@@ -80,12 +80,12 @@
       </div>
       <span class="topbar-divider"></span>
       <button class="btn btn-icon" id="btnSyntaxQuick" title="語法速查" aria-label="語法速查">
-        <span class="btn-emoji">📖</span>
+        <span class="btn-emoji"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 6.5C12 5 10.5 4 8 4S4 4.5 4 5.5v13C4 17.5 5.5 17 8 17s4 1 4 2"/><path d="M12 6.5C12 5 13.5 4 16 4s4 .5 4 1.5v13C20 17.5 18.5 17 16 17s-4 1-4 2"/></svg></span>
         <span class="btn-text">語法速查</span>
       </button>
       <!-- 工具設定:樣式(高頻,保留文字)→ 設定(icon)-->
-      <button class="btn" id="btnStyle"><span class="btn-emoji">🎨</span><span class="btn-text">樣式</span></button>
-      <button class="btn btn-icon" id="btnSettings" title="設定" aria-label="設定"><span class="btn-emoji">⚙</span><span class="btn-text">設定</span></button>
+      <button class="btn" id="btnStyle"><span class="btn-emoji"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a9 9 0 1 0 0 18c1.1 0 1.5-.8 1.5-1.5 0-.5-.3-.9-.3-1.4 0-.6.5-1.1 1.1-1.1H16a5 5 0 0 0 5-5c0-4.4-4-9-9-9z"/><circle cx="7.5" cy="11" r="1"/><circle cx="11" cy="7.5" r="1"/><circle cx="15.5" cy="8.5" r="1"/></svg></span><span class="btn-text">樣式</span></button>
+      <button class="btn btn-icon" id="btnSettings" title="設定" aria-label="設定"><span class="btn-emoji"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3.2"/><path d="M12 3.5v3M12 17.5v3M3.5 12h3M17.5 12h3M6 6l2 2M16 16l2 2M18 6l-2 2M8 16l-2 2"/></svg></span><span class="btn-text">設定</span></button>
 
       <!-- 更多功能選單(重設 / 最近開啟。任務 1:專案匯入匯出已移除,改用 💾 儲存 / 📂 開啟) -->
       <div class="topbar-more">
@@ -102,8 +102,8 @@
 
       <!-- 檔案操作:垂直分隔線後 開啟 / 儲存(儲存固定在最右側,任務 1)-->
       <span class="topbar-divider topbar-divider-files"></span>
-      <button class="btn" id="btnOpenFile"><span class="btn-emoji">📂</span><span class="btn-text">開啟</span></button>
-      <button class="btn btn-primary" id="btnSaveFile"><span class="btn-emoji">💾</span><span class="btn-text">儲存</span></button>
+      <button class="btn" id="btnOpenFile"><span class="btn-emoji"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h5l2 2h9v9a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7z"/></svg></span><span class="btn-text">開啟</span></button>
+      <button class="btn btn-primary" id="btnSaveFile"><span class="btn-emoji"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4h10l4 4v12H5z"/><path d="M8 4v5h7"/><rect x="8" y="13" width="8" height="6"/></svg></span><span class="btn-text">儲存</span></button>
     </div>
   </header>
 
@@ -127,14 +127,14 @@
               <button class="simple-add-slide-btn" id="simpleAddSlideBtn" type="button" aria-haspopup="true" aria-expanded="false">＋ 新增 ▾</button>
               <div class="simple-add-slide-menu" id="simpleAddSlideMenu" hidden>
                 <button class="simple-add-slide-menu-item" data-add-type="dialog" type="button">
-                  <span class="simple-add-menu-icon" aria-hidden="true">💬</span>
+                  <span class="simple-add-menu-icon" aria-hidden="true"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M5 5h14a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H9l-4 3.5V6a1 1 0 0 1 1-1z"/></svg></span>
                   <span class="simple-add-menu-text">
                     <span class="simple-add-menu-title">一般幕</span>
                     <span class="simple-add-menu-desc">CG + 對話</span>
                   </span>
                 </button>
                 <button class="simple-add-slide-menu-item" data-add-type="choice" type="button">
-                  <span class="simple-add-menu-icon" aria-hidden="true">🔀</span>
+                  <span class="simple-add-menu-icon" aria-hidden="true"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7h4l10 10h4"/><path d="M17 7h4M3 17h4l3-3"/><path d="M18 4l3 3-3 3M18 14l3 3-3 3"/></svg></span>
                   <span class="simple-add-menu-text">
                     <span class="simple-add-menu-title">選項幕</span>
                     <span class="simple-add-menu-desc">顯示選項並演出選擇</span>
@@ -146,7 +146,7 @@
           <!-- 收起窄條(直書) -->
           <div class="pane-collapsed-bar" id="slidesCollapsedBar" hidden>
             <button class="pane-expand-btn" type="button" aria-label="展開幕列表">
-              <span class="bar-icon" aria-hidden="true">🎬</span>
+              <span class="bar-icon" aria-hidden="true"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M8 5v14M16 5v14M3 10h5M3 14h5M16 10h5M16 14h5"/></svg></span>
               <span class="bar-text">幕</span>
             </button>
           </div>
@@ -157,7 +157,7 @@
         <!-- 第二欄:對話 / 選項編輯 -->
         <section class="simple-pane simple-pane-dialog" id="paneDialog">
           <div class="simple-pane-content">
-            <div class="simple-pane-header"><span class="simple-pane-title">💬 對話</span></div>
+            <div class="simple-pane-header"><span class="simple-pane-title"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M5 5h14a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H9l-4 3.5V6a1 1 0 0 1 1-1z"/></svg>對話</span></div>
             <!-- 一般幕:對話 textarea(撐滿) -->
             <div class="simple-dialog-text-row" id="simpleDialogTextRow">
               <textarea
@@ -175,7 +175,7 @@
             </div>
             <!-- 選項幕:選項編輯(取代對話 textarea) -->
             <div class="simple-row simple-choice-row" id="simpleChoiceEditor" hidden>
-              <div class="simple-row-label">🔀 選項</div>
+              <div class="simple-row-label"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7h4l10 10h4"/><path d="M17 7h4M3 17h4l3-3"/><path d="M18 4l3 3-3 3M18 14l3 3-3 3"/></svg>選項</div>
               <div class="simple-choice-list" id="simpleChoiceList"></div>
               <button class="btn btn-ghost simple-choice-add" id="simpleChoiceAddBtn" type="button">＋ 新增選項</button>
               <div class="simple-choice-warn" id="simpleChoiceWarn" hidden>⚠ 必須勾選一個選項為正解</div>
@@ -192,8 +192,8 @@
               <div class="simple-preview-stage" id="simplePreviewStage" data-ratio="16:9">
                 <div class="simple-preview-empty" id="simplePreviewEmpty">
                   <div class="simple-preview-empty-actions">
-                    <button class="btn btn-primary" id="simpleEmptyUploadBtn" type="button">📷 上傳圖片</button>
-                    <button class="btn" id="simpleEmptyCgBtn" type="button">📁 選擇 CG</button>
+                    <button class="btn btn-primary" id="simpleEmptyUploadBtn" type="button"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h3l1.5-2h7L17 8h3a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z"/><circle cx="12" cy="13" r="3.2"/></svg>上傳圖片</button>
+                    <button class="btn" id="simpleEmptyCgBtn" type="button"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h5l2 2h9v9a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7z"/></svg>選擇 CG</button>
                   </div>
                 </div>
                 <div class="simple-preview-cg" id="simplePreviewCg" hidden></div>
@@ -215,7 +215,7 @@
         <aside class="simple-pane simple-pane-effects" id="paneEffects">
           <div class="simple-pane-content" id="effectsPaneContent">
             <div class="simple-pane-header">
-              <span class="simple-pane-title">✨ 特效</span>
+              <span class="simple-pane-title"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4c.5 3.5 1.5 4.5 5 5-3.5.5-4.5 1.5-5 5-.5-3.5-1.5-4.5-5-5 3.5-.5 4.5-1.5 5-5z"/><path d="M18 14c.3 1.7.8 2.2 2.5 2.5-1.7.3-2.2.8-2.5 2.5-.3-1.7-.8-2.2-2.5-2.5 1.7-.3 2.2-.8 2.5-2.5z"/></svg>特效</span>
               <button class="pane-collapse-btn" id="effectsCollapseBtn" type="button" aria-label="收起特效面板" title="收起">→</button>
             </div>
             <div class="simple-settings" id="simpleSettings" hidden>
@@ -249,7 +249,7 @@
 
               <!-- 任務 3:停留時間 — 數字輸入 + 預設 -->
               <div class="simple-hold-section">
-                <span class="simple-hold-label">⏱ 本幕結束後</span>
+                <span class="simple-hold-label"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="13" r="7"/><path d="M12 9.5V13l2.5 1.5M9.5 3h5"/></svg>本幕結束後</span>
                 <input type="number" id="simpleHoldInput" class="simple-hold-input" min="0" max="10" step="0.1" value="1.0">
                 <span class="simple-hold-suffix">秒後切換到下一幕</span>
                 <button id="simpleHoldResetBtn" class="simple-hold-reset" type="button">↻ 預設</button>
@@ -257,7 +257,7 @@
 
               <!-- 任務 4:結束轉場 -->
               <div class="simple-transition-section">
-                <span class="simple-transition-label">🎬 結束轉場</span>
+                <span class="simple-transition-label"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M8 5v14M16 5v14M3 10h5M3 14h5M16 10h5M16 14h5"/></svg>結束轉場</span>
                 <div class="simple-transition-buttons" id="simpleTransitionButtons">
                   <button class="transition-btn active" type="button" data-transition="none">無</button>
                   <button class="transition-btn" type="button" data-transition="fade_black">黑屏淡出</button>
@@ -270,7 +270,7 @@
           <!-- 收起窄條(直書) -->
           <div class="pane-collapsed-bar" id="effectsCollapsedBar" hidden>
             <button class="pane-expand-btn" type="button" aria-label="展開特效面板">
-              <span class="bar-icon" aria-hidden="true">✨</span>
+              <span class="bar-icon" aria-hidden="true"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4c.5 3.5 1.5 4.5 5 5-3.5.5-4.5 1.5-5 5-.5-3.5-1.5-4.5-5-5 3.5-.5 4.5-1.5 5-5z"/><path d="M18 14c.3 1.7.8 2.2 2.5 2.5-1.7.3-2.2.8-2.5 2.5-.3-1.7-.8-2.2-2.5-2.5 1.7-.3 2.2-.8 2.5-2.5z"/></svg></span>
               <span class="bar-text">特效</span>
             </button>
           </div>
@@ -291,8 +291,8 @@
         </div>
         <div class="bottom-bar-divider"></div>
         <div class="bottom-bar-group bottom-bar-right">
-          <button class="btn" id="barScreenshotBtn" type="button">📷 截圖</button>
-          <button class="btn btn-primary" id="barMp4Btn" type="button">🎥 MP4</button>
+          <button class="btn" id="barScreenshotBtn" type="button"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h3l1.5-2h7L17 8h3a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z"/><circle cx="12" cy="13" r="3.2"/></svg>截圖</button>
+          <button class="btn btn-primary" id="barMp4Btn" type="button"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="6" width="13" height="12" rx="2"/><path d="M16 10l5-3v10l-5-3z"/></svg>MP4</button>
         </div>
       </footer>
 
@@ -360,7 +360,7 @@
 <div class="modal-backdrop" id="styleModal">
   <div class="modal style-modal-wide" role="dialog" aria-modal="true">
     <div class="modal-header">
-      <div class="modal-title">🎨 對話框樣式</div>
+      <div class="modal-title"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a9 9 0 1 0 0 18c1.1 0 1.5-.8 1.5-1.5 0-.5-.3-.9-.3-1.4 0-.6.5-1.1 1.1-1.1H16a5 5 0 0 0 5-5c0-4.4-4-9-9-9z"/><circle cx="7.5" cy="11" r="1"/><circle cx="11" cy="7.5" r="1"/><circle cx="15.5" cy="8.5" r="1"/></svg>對話框樣式</div>
       <button class="modal-close" id="styleModalClose" aria-label="關閉">×</button>
     </div>
     <div class="modal-body style-modal-body">
@@ -375,7 +375,7 @@
       </div>
 
         <div class="defaults-section">
-          <h3>🌐 全域預設樣式</h3>
+          <h3><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.5 2.5 2.5 15 0 18M12 3c-2.5 2.5-2.5 15 0 18"/></svg>全域預設樣式</h3>
           <p class="defaults-hint">行內 tag 優先。</p>
 
           <div class="default-row default-row--speed">
@@ -464,7 +464,7 @@
         </div>
 
         <div class="defaults-section" style="margin-top:24px;">
-          <h3>🖋 字體預覽</h3>
+          <h3><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20l1-4L16 5l3 3L8 19l-4 1z"/><path d="M14 7l3 3"/></svg>字體預覽</h3>
           <div class="font-preview-list" id="fontPreviewList">
             <!-- JS 動態填入 -->
           </div>
@@ -497,7 +497,7 @@
 <div class="modal-backdrop" id="cgLibraryModal">
   <div class="modal" role="dialog" aria-modal="true" style="max-width: 760px;">
     <div class="modal-header">
-      <div class="modal-title">🖼 CG 庫</div>
+      <div class="modal-title"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="5" width="16" height="14" rx="2"/><circle cx="9" cy="10" r="1.5"/><path d="M5 16l4-3.5 3.5 3 3-2.5L19 16"/></svg>CG 庫</div>
       <button class="modal-close" id="cgLibraryModalClose" aria-label="關閉">×</button>
     </div>
     <div class="modal-body">
@@ -510,7 +510,7 @@
         <!-- JS 動態填入 -->
       </div>
       <div class="cg-library-empty" id="cgLibraryEmpty" hidden>
-        <div class="cg-library-empty-icon" aria-hidden="true">🖼</div>
+        <div class="cg-library-empty-icon" aria-hidden="true"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="5" width="16" height="14" rx="2"/><circle cx="9" cy="10" r="1.5"/><path d="M5 16l4-3.5 3.5 3 3-2.5L19 16"/></svg></div>
         <div>CG 庫還是空的</div>
         <div class="cg-library-empty-sub">點上方「＋ 上傳新 CG」開始</div>
       </div>
@@ -522,7 +522,7 @@
 <div class="modal-backdrop" id="projectsModal">
   <div class="modal" role="dialog" aria-modal="true" style="max-width: 640px;">
     <div class="modal-header">
-      <div class="modal-title">📁 我的專案</div>
+      <div class="modal-title"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h5l2 2h9v9a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7z"/></svg>我的專案</div>
       <button class="modal-close" id="projectsModalClose" aria-label="關閉">×</button>
     </div>
     <div class="modal-body">
@@ -534,7 +534,7 @@
         <!-- JS 動態填入 -->
       </div>
       <div class="projects-empty" id="projectsEmpty" hidden>
-        <div class="projects-empty-icon" aria-hidden="true">📭</div>
+        <div class="projects-empty-icon" aria-hidden="true"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 13l3-8h12l3 8v5a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1v-5z"/><path d="M3 13h5l1 2h6l1-2h5"/></svg></div>
         <div>還沒有任何專案</div>
       </div>
     </div>
@@ -544,20 +544,20 @@
 <div class="modal-backdrop" id="settingsModal">
   <div class="modal" role="dialog" aria-modal="true" style="max-width: 480px;">
     <div class="modal-header">
-      <div class="modal-title">⚙ 系統設定</div>
+      <div class="modal-title"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3.2"/><path d="M12 3.5v3M12 17.5v3M3.5 12h3M17.5 12h3M6 6l2 2M16 16l2 2M18 6l-2 2M8 16l-2 2"/></svg>系統設定</div>
       <button class="modal-close" id="settingsModalClose" aria-label="關閉">×</button>
     </div>
     <div class="modal-body">
       <!-- 💾 儲存空間 -->
       <div class="settings-storage" id="settingsStorage">
-        <div class="settings-storage-label">💾 儲存空間</div>
+        <div class="settings-storage-label"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4h10l4 4v12H5z"/><path d="M8 4v5h7"/><rect x="8" y="13" width="8" height="6"/></svg>儲存空間</div>
         <div class="storage-bar" aria-hidden="true">
           <div class="storage-bar-fill" id="storageBarFill" style="width:0%"></div>
         </div>
         <div class="storage-summary" id="storageSummary">偵測中…</div>
         <div class="storage-breakdown" id="storageBreakdown"></div>
         <div class="storage-actions">
-          <button class="btn" id="storageManageCgs">🖼 管理 CG 庫</button>
+          <button class="btn" id="storageManageCgs"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="5" width="16" height="14" rx="2"/><circle cx="9" cy="10" r="1.5"/><path d="M5 16l4-3.5 3.5 3 3-2.5L19 16"/></svg>管理 CG 庫</button>
           <button class="btn btn-ghost" id="storageRefresh" title="重新計算用量">↻</button>
         </div>
         <div class="storage-persist-note" id="storagePersistNote" hidden></div>
@@ -565,7 +565,7 @@
 
       <!-- 📹 影片輸出 -->
       <div class="settings-section settings-output">
-        <h3>📹 影片輸出</h3>
+        <h3><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="6" width="13" height="12" rx="2"/><path d="M16 10l5-3v10l-5-3z"/></svg>影片輸出</h3>
         <label class="settings-toggle">
           <input type="checkbox" id="introBufferEnabled">
           <span>MP4 / GIF 輸出時加入片頭緩衝</span>

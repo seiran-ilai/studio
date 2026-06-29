@@ -341,11 +341,11 @@ async function exportMP4(){
   const mt=fmts.find(f=>window.MediaRecorder&&MediaRecorder.isTypeSupported(f))||''; const isMp4=mt.startsWith('video/mp4');
   const stream=cv.captureStream(S.fps); const rec=new MediaRecorder(stream,mt?{mimeType:mt,videoBitsPerSecond:10000000}:{});
   const chunks=[]; rec.ondataavailable=e=>{ if(e.data&&e.data.size)chunks.push(e.data); }; const stopped=new Promise(r=>rec.onstop=r);
-  const btn=document.getElementById('mp4Btn'); btn.textContent='● 錄製中…';
+  const btn=document.getElementById('mp4Btn'); const btnLabel=document.getElementById('mp4BtnLabel'); btnLabel.textContent='● 錄製中…';
   exporting=true;
   rec.start(); render(0); await new Promise(r=>setTimeout(r,120)); await runAnim(); await new Promise(r=>setTimeout(r,180));
   rec.stop(); await stopped; exporting=false; render(1); dl(new Blob(chunks,{type:isMp4?'video/mp4':'video/webm'}), isMp4?'mp4':'webm');
-  btn.textContent='🎬 輸出影片 MP4';
+  btnLabel.textContent='輸出影片 MP4';
   document.getElementById('exportHint').textContent= isMp4?'已輸出 MP4。':'此瀏覽器 MediaRecorder 不支援 MP4，已輸出 WebM（建議 Chrome / Edge）。';
 }
 
@@ -669,7 +669,7 @@ function renderMsgs(){
     const isSys=m.cid==='__sys';
     const imgCell=isSys?'':`<div class="imgcell">${m.img
       ?`<img class="thumb" src="${m.img.src}" data-imgedit="${m.id}" title="點擊重新裁切"><button class="mv" data-imgdel="${m.id}" style="font-size:10px;color:var(--ink3)">移除圖</button>`
-      :`<button class="addimg" data-imgedit="${m.id}">🖼 圖片</button>`}</div>`;
+      :`<button class="addimg" data-imgedit="${m.id}"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="5" width="16" height="14" rx="2"/><circle cx="9" cy="10" r="1.5"/><path d="M5 16l4-3.5 3.5 3 3-2.5L19 16"/></svg>圖片</button>`}</div>`;
     const el=document.createElement('div'); el.className='msg'; el.draggable=true; el.dataset.id=m.id;
     el.innerHTML=`<span class="drag" title="拖曳排序">⠿</span>
       <div class="who">${escapeHtml(name)}</div>
