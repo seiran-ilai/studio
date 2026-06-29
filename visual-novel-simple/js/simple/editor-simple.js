@@ -793,6 +793,21 @@ function initSimpleEditorBindings() {
   const barMp4 = document.getElementById("barMp4Btn");
   if (barMp4) barMp4.addEventListener("click", exportSimpleMp4);
 
+  // 輸出設定浮層(片頭緩衝,由原系統設定搬至此)
+  const outBtn = document.getElementById("barOutputSettingsBtn");
+  const outPop = document.getElementById("outputSettingsPopover");
+  if (outBtn && outPop) {
+    outBtn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      const willShow = outPop.hidden;
+      outPop.hidden = !willShow;
+      // 每次開啟時同步當前狀態到控制項(只綁一次事件)
+      if (willShow && typeof setupIntroBufferSettings === "function") setupIntroBufferSettings();
+    });
+    outPop.addEventListener("click", (e) => e.stopPropagation());
+    document.addEventListener("click", () => { outPop.hidden = true; });
+  }
+
   // 版面:四欄拖曳分隔條 + 特效面板收起/展開 + 載入記憶欄寬
   initLayoutControls();
 

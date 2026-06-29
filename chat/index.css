@@ -57,6 +57,13 @@ main{display:flex; flex:1; min-height:0}
 .side.chars{width:330px; border-left:1px solid var(--line)}
 .side.export{width:300px; border-left:1px solid var(--line)}
 .side.collapsed{width:46px !important}
+.resizer{position:absolute; top:0; bottom:0; width:8px; cursor:col-resize; z-index:30}
+.resizer::before{content:''; position:absolute; top:0; bottom:0; left:50%; transform:translateX(-50%); width:1px; background:transparent; transition:background .15s, width .15s}
+.resizer:hover::before, body.resizing .resizer::before{width:3px; background:var(--accent)}
+.side.left .resizer{right:0}
+.side.chars .resizer, .side.export .resizer{left:0}
+.side.collapsed .resizer{display:none}
+body.resizing{cursor:col-resize; user-select:none}
 .side-head{display:flex; align-items:center; gap:8px; padding:10px 12px; border-bottom:1px solid var(--line); min-height:44px}
 .side-head .title{font-size:12px; font-weight:700; white-space:nowrap}
 .collapse{background:var(--panel2); border:1px solid var(--line); color:var(--ink2); border-radius:6px; cursor:pointer; width:26px; height:26px; flex:none; font-size:11px}
@@ -67,6 +74,7 @@ main{display:flex; flex:1; min-height:0}
 .side.collapsed .side-body{display:none}
 .side.collapsed .title{display:none}
 .side.collapsed .side-head{flex-direction:column; border-bottom:none; padding-top:12px; gap:12px}
+.side.collapsed .collapse{order:-1; margin:0 auto}
 .side.collapsed .vtitle{display:block; writing-mode:vertical-rl; color:var(--ink2); font-size:12px; font-weight:700; letter-spacing:3px}
 
 .center{flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center;
@@ -196,6 +204,7 @@ canvas{touch-action:none}
 .modal-actions .btn{min-width:84px}
 .help-btn{flex:none; width:30px; height:30px; display:grid; place-items:center; border:1px solid var(--line); border-radius:50%; background:none; color:var(--ink3); cursor:pointer; transition:color .2s, border-color .2s}
 .help-btn:hover{color:var(--accent-deep); border-color:var(--accent)}
+.help-btn.wide{width:auto; border-radius:8px; padding:0 11px; gap:5px; display:inline-flex; align-items:center; font-family:inherit; font-size:12px}
 .help-body{font-size:13px; line-height:1.7; color:var(--ink2)}
 .help-body h4{font-size:12.5px; color:var(--accent-deep); margin:14px 0 4px; letter-spacing:.04em}
 .help-body h4:first-child{margin-top:0}

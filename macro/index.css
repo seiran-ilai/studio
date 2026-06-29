@@ -47,14 +47,8 @@
   html.ui-xlarge { font-size: 20px; }
 
   /* 大尺寸時主面板寬度同步調大 */
-  html.ui-large .app { max-width: 1100px; }
-  html.ui-xlarge .app { max-width: 1240px; }
-  html.ui-large .emote-floater { width: 360px; }
-  html.ui-xlarge .emote-floater { width: 400px; }
-  @media (min-width: 1380px) {
-    html.ui-large .app { margin-right: 420px; }
-    html.ui-xlarge .app { margin-right: 460px; }
-  }
+  html.ui-large .app { max-width: 1560px; }
+  html.ui-xlarge .app { max-width: 1720px; }
 
   /* UI 縮放 seg(右上資訊列) */
   .ui-scale-switch {
@@ -193,23 +187,10 @@
 
   /* ===== 容器 ===== */
   .app {
-    max-width: 980px;
+    max-width: 1400px;
     margin: 0 auto;
     padding: 24px 32px 72px;
-    /* 大螢幕時往左偏一點，騰出右側空間給浮動視窗 */
     transition: padding 0.2s ease;
-  }
-  @media (min-width: 1380px) {
-    .app {
-      margin-right: 380px;
-      margin-left: max(32px, calc(50% - 700px));
-    }
-  }
-  @media (max-width: 1379px) and (min-width: 1101px) {
-    .app {
-      margin-right: 320px;
-      margin-left: 32px;
-    }
   }
 
   /* ===== 標題(統一 compact header)===== */
@@ -279,6 +260,237 @@
     height: 1px;
     background: linear-gradient(90deg, transparent, var(--aether-blue), transparent);
     opacity: 0.6;
+  }
+
+  /* ===== 左右工作區(左輸入 / 右工具側欄) ===== */
+  /* 固定高度,各欄等高;欄內各自捲動 — 收起時為整條到底的直軌,展開時內容溢出可捲 */
+  .workspace {
+    display: flex;
+    align-items: stretch;
+    gap: 0;
+    height: calc(100vh - 290px);
+    min-height: 440px;
+    /* 工具欄放不下時改為水平捲動,絕不擠壓編輯區 */
+    overflow-x: auto;
+    overflow-y: hidden;
+  }
+  .editor-pane {
+    flex: 1 0 auto;
+    min-width: 340px;
+    display: flex;
+    flex-direction: column;
+  }
+  .editor-section {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
+  }
+  .editor-pane .macro-editor {
+    flex: 1;
+    min-height: 120px;
+    resize: none;
+  }
+
+  /* ===== 右側工具側欄:可向右收起 + 可拖曳寬度 ===== */
+  .tools-side {
+    --tools-w: 290px;
+    flex: none;
+    width: var(--tools-w);
+    margin-left: 16px;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    background: rgba(255, 255, 255, 0.5);
+    border: 1px solid var(--border-subtle);
+    border-radius: 8px;
+    transition: width 0.2s ease;
+  }
+  .resizer {
+    position: absolute;
+    left: -11px; top: 0; bottom: 0;
+    width: 16px;
+    cursor: col-resize;
+    z-index: 5;
+    touch-action: none;
+  }
+  .resizer::before {
+    content: '';
+    position: absolute;
+    left: 50%; top: 0; bottom: 0;
+    width: 1px;
+    transform: translateX(-50%);
+    background: transparent;
+    border-radius: 2px;
+    transition: width 0.15s ease, background 0.15s ease;
+  }
+  .resizer:hover::before,
+  body.ws-resizing .resizer::before {
+    width: 3px;
+    background: var(--aether-blue);
+    box-shadow: var(--glow-blue);
+  }
+  body.ws-resizing { cursor: col-resize; user-select: none; }
+
+  .side-head {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--border-subtle);
+    flex: none;
+  }
+  .side-title {
+    font-family: var(--font-display);
+    font-size: 0.8rem;
+    letter-spacing: 0.16em;
+    color: var(--aether-blue);
+    white-space: nowrap;
+  }
+  .side-vtitle { display: none; }
+  .side-collapse {
+    margin-left: auto;
+    width: 26px; height: 26px;
+    flex: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--bg-card-solid);
+    border: 1px solid var(--border-soft);
+    color: var(--aether-blue);
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 11px;
+    transition: all 0.15s ease;
+  }
+  .side-collapse:hover {
+    border-color: var(--aether-blue);
+    color: #fff;
+    background: var(--aether-blue);
+  }
+  .side-body {
+    padding: 12px;
+    overflow-y: auto;
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  /* 各工具區塊保持原生高度,內容過長時由 side-body 捲動(不壓縮、不裁切) */
+  .side-body > * { flex: none; }
+  .side-body::-webkit-scrollbar { width: 7px; }
+  .side-body::-webkit-scrollbar-track { background: transparent; }
+  .side-body::-webkit-scrollbar-thumb { background: var(--border-soft); border-radius: 3px; }
+  .side-body::-webkit-scrollbar-thumb:hover { background: var(--aether-blue-dim); }
+  /* 情感動作面板:動作清單填滿剩餘高度 */
+  #sideEmote .emote-grid { max-height: none; flex: 1; min-height: 140px; }
+
+  /* 收起狀態:細直條 */
+  .tools-side.collapsed {
+    width: 46px !important;
+    cursor: pointer;
+  }
+  .tools-side.collapsed .side-body,
+  .tools-side.collapsed .side-title,
+  .tools-side.collapsed .resizer { display: none; }
+  .tools-side.collapsed .side-head {
+    flex-direction: column;
+    border-bottom: none;
+    padding: 12px 0;
+    gap: 12px;
+  }
+  .tools-side.collapsed .side-collapse { margin-left: 0; order: -1; }
+  .tools-side.collapsed .side-vtitle {
+    display: block;
+    writing-mode: vertical-rl;
+    font-family: var(--font-display);
+    font-size: 0.82rem;
+    letter-spacing: 0.3em;
+    color: var(--aether-blue);
+  }
+
+  /* ===== 工具:可收合區塊 ===== */
+  .tool-block {
+    background: rgba(255, 255, 255, 0.55);
+    border: 1px solid var(--border-subtle);
+    border-radius: 6px;
+    overflow: hidden;
+  }
+  .tool-summary {
+    cursor: pointer;
+    padding: 9px 12px;
+    font-family: var(--font-display);
+    font-size: 0.78rem;
+    letter-spacing: 0.1em;
+    color: var(--aether-blue);
+    user-select: none;
+    list-style: none;
+    display: flex;
+    align-items: center;
+    transition: background 0.15s ease;
+  }
+  .tool-summary::-webkit-details-marker { display: none; }
+  .tool-summary::after {
+    content: '▾';
+    margin-left: auto;
+    font-size: 0.7rem;
+    opacity: 0.55;
+    transition: transform 0.2s ease;
+  }
+  .tool-block[open] > .tool-summary::after { transform: rotate(180deg); }
+  .tool-summary:hover { background: rgba(125, 214, 255, 0.06); }
+  .tool-block[open] > .tool-summary { border-bottom: 1px dashed var(--border-subtle); }
+  .tool-body { padding: 12px; }
+  /* 側欄內工具不再重複外框 */
+  .tools-side .mini-tools,
+  .tools-side .micon-row {
+    background: none;
+    border: none;
+    padding: 0;
+    margin: 0;
+  }
+  .tool-body > .sub-desc:first-child { margin-top: 0; }
+
+  /* 工具大欄位內的分類段落(等待 / 小工具 / 自訂圖標),用標籤行分隔 */
+  .tool-group {
+    margin-top: 14px;
+    padding-top: 14px;
+    border-top: 1px dashed var(--border-subtle);
+  }
+  .tool-group:first-child {
+    margin-top: 0;
+    padding-top: 0;
+    border-top: none;
+  }
+  .tool-group-label {
+    font-family: var(--font-display);
+    font-size: 0.72rem;
+    letter-spacing: 0.14em;
+    color: var(--aether-blue);
+    margin-bottom: 10px;
+  }
+  .tool-group .micon-row { flex-direction: column; align-items: stretch; gap: 8px; }
+  .tool-group .micon-name { min-width: 0; }
+
+  /* 窄螢幕:工具欄改為下方堆疊、整列展開 */
+  @media (max-width: 1080px) {
+    .workspace { flex-direction: column; height: auto; min-height: 0; align-items: stretch; overflow: visible; }
+    .editor-pane .macro-editor { min-height: 340px; flex: none; resize: vertical; }
+    .tools-side {
+      width: 100% !important;
+      margin-left: 0;
+      margin-top: 18px;
+      max-height: none;
+    }
+    #sideEmote .emote-grid { max-height: 360px; flex: none; }
+    .resizer { display: none; }
+    .tools-side.collapsed { width: 100% !important; cursor: default; }
+    .tools-side.collapsed .side-body { display: flex; }
+    .tools-side.collapsed .side-title { display: inline; }
+    .tools-side.collapsed .side-vtitle { display: none; }
+    .tools-side.collapsed .side-head { flex-direction: row; border-bottom: 1px solid var(--border-subtle); padding: 10px 14px; }
   }
   .panel-title {
     font-family: var(--font-display);
@@ -611,12 +823,23 @@
   .macro-editor::-webkit-scrollbar-thumb:hover { background: var(--aether-blue-dim); }
 
   /* 編輯器底部資訊 + 按鈕 */
+  /* 獨立橫條:整頁寬,置於工作區下方 */
   .editor-footer {
     display: flex;
     align-items: center;
-    gap: 10px;
-    margin-top: 12px;
+    gap: 8px 10px;
+    margin-top: 16px;
+    padding-top: 14px;
+    border-top: 1px solid var(--border-subtle);
     flex-wrap: wrap;
+  }
+  /* 行末+wait / 複製 / 清空 集中在右下,空間不足時整組一起換行靠右 */
+  .editor-actions {
+    margin-left: auto;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 8px;
   }
   .line-count {
     font-family: var(--font-serif);
@@ -624,7 +847,6 @@
     color: var(--text-secondary);
     font-size: 0.9rem;
     flex-shrink: 0;
-    margin-right: auto;
   }
   .line-count.warn { color: var(--aether-gold); }
   .line-count.danger { color: var(--aether-rose); }
@@ -734,17 +956,44 @@
     font-size: 0.88em;
   }
 
-  /* ===== 統一頻道按鈕網格 ===== */
+  /* ===== 選擇頻道（可收合區塊） ===== */
+  .channel-block {
+    margin-top: 14px;
+    margin-bottom: 14px;
+    background: rgba(255, 255, 255, 0.45);
+    border: 1px solid var(--border-subtle);
+    border-radius: 3px;
+    overflow: hidden;
+  }
+  .channel-block-summary {
+    cursor: pointer;
+    padding: 9px 12px;
+    font-family: var(--font-display);
+    font-size: 0.76rem;
+    letter-spacing: 0.14em;
+    color: var(--aether-blue);
+    user-select: none;
+    list-style: none;
+    transition: background 0.15s ease;
+  }
+  .channel-block-summary::-webkit-details-marker { display: none; }
+  .channel-block-summary:hover { background: rgba(125, 214, 255, 0.06); }
+  .channel-block[open] .channel-block-summary {
+    border-bottom: 1px dashed var(--border-subtle);
+  }
+  .channel-block-body { padding: 12px; }
+
+  /* ===== 頻道按鈕網格 ===== */
   .channel-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
-    gap: 8px;
+    grid-template-columns: repeat(auto-fill, minmax(86px, 1fr));
+    gap: 6px;
   }
   .chan-btn {
     background: rgba(255, 255, 255, 0.75);
     border: 1px solid var(--border-subtle);
     border-radius: 3px;
-    padding: 10px 8px;
+    padding: 5px 6px;
     cursor: pointer;
     transition: all 0.15s ease;
     color: var(--text-primary);
@@ -759,19 +1008,49 @@
     box-shadow: var(--glow-blue);
   }
   .chan-btn .name {
-    font-size: 0.86rem;
+    font-size: 0.78rem;
     font-weight: 500;
-    margin-bottom: 2px;
+    margin-bottom: 1px;
   }
   .chan-btn .cmd {
     font-family: var(--font-mono);
-    font-size: 0.74rem;
+    font-size: 0.68rem;
     color: var(--text-secondary);
     opacity: 0.85;
   }
   .chan-btn:hover .cmd {
     color: var(--aether-blue);
     opacity: 1;
+  }
+
+  /* 一鍵套用 toggle */
+  .oneclick-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    font-family: var(--font-body);
+    font-size: 0.88rem;
+    color: var(--text-secondary);
+    user-select: none;
+    margin-bottom: 12px;
+    padding: 6px 12px;
+    background: rgba(255, 255, 255, 0.55);
+    border: 1px solid var(--border-subtle);
+    border-radius: 3px;
+    transition: all 0.15s ease;
+  }
+  .oneclick-toggle:hover { border-color: var(--border-bright); }
+  .oneclick-toggle input {
+    width: 15px;
+    height: 15px;
+    accent-color: var(--aether-blue);
+    cursor: pointer;
+  }
+  .oneclick-toggle.checked {
+    color: var(--aether-blue);
+    border-color: var(--aether-blue);
+    background: rgba(125, 214, 255, 0.08);
   }
 
   /* 選擇範圍提示 */
@@ -790,6 +1069,7 @@
     font-size: 0.88rem;
     line-height: 1.4;
   }
+  .scope-indicator[hidden] { display: none; }
   .scope-indicator .scope-icon {
     font-style: normal;
   }
@@ -1342,6 +1622,30 @@
     background: var(--aether-blue);
   }
 
+  /* ═══ 快捷鍵 button — 右上資訊列(文字+圖示) ═══ */
+  .hr-btn {
+    flex: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    height: 30px;
+    padding: 0 12px;
+    background: var(--bg-card-solid);
+    border: 1px solid var(--border-soft);
+    color: var(--aether-blue);
+    cursor: pointer;
+    border-radius: 8px;
+    font-family: var(--font-body);
+    font-size: 0.82rem;
+    transition: all 0.18s ease;
+  }
+  .hr-btn .ic { width: 16px; height: 16px; }
+  .hr-btn:hover {
+    border-color: var(--aether-blue);
+    color: #fff;
+    background: var(--aether-blue);
+  }
+
   /* ═══ Info button (ℹ) — 右上資訊列 ═══ */
   .info-btn {
     flex: none;
@@ -1413,6 +1717,8 @@
     box-shadow: 0 24px 60px rgba(63, 127, 179, 0.22);
     font-family: var(--font-body);
   }
+  .hotkey-dialog { max-width: 560px; }
+  .hotkey-dialog .hotkey-list { padding: 6px 0 0; }
   .about-dialog::backdrop {
     background: rgba(40, 52, 70, 0.34);
     backdrop-filter: blur(6px);

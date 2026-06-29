@@ -43,12 +43,16 @@
   </div>
   <div class="spacer"></div>
   <div class="header-right">
+    <button class="help-btn wide" id="syntaxBtn" title="行內語法快捷鍵"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7V5h16v2"/><path d="M9 19h6"/><path d="M12 5v14"/></svg>語法</button>
     <span class="lbl">介面</span>
     <div class="seg" id="uiSeg">
       <button data-v="std" class="on">標準</button>
       <button data-v="lg">大</button>
       <button data-v="xl">最大</button>
     </div>
+    <button class="help-btn" id="saveBtn" title="存檔"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v11"/><path d="M7 10l5 5 5-5"/><path d="M5 20h14"/></svg></button>
+    <button class="help-btn" id="loadBtn" title="讀檔"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20V9"/><path d="M7 14l5-5 5 5"/><path d="M5 4h14"/></svg></button>
+    <input type="file" id="loadFile" accept="application/json,.json" hidden>
     <button class="help-btn" id="helpBtn" title="使用說明"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 11v5"/><path d="M12 8h.01"/></svg></button>
   </div>
 </header>
@@ -56,6 +60,7 @@
 <main>
   <!-- COL 1: 主題、外觀設定 -->
   <section class="side left" id="colLeft">
+    <div class="resizer" data-resizer></div>
     <div class="side-head">
       <span class="title">主題、外觀設定</span>
       <span class="vtitle">主題、外觀設定</span>
@@ -146,6 +151,7 @@
 
   <!-- COL 3: 角色、台詞輸入 -->
   <section class="side chars" id="colChars">
+    <div class="resizer" data-resizer></div>
     <div class="side-head">
       <button class="collapse" data-arrow>▶</button>
       <span class="title">角色、台詞輸入</span>
@@ -164,7 +170,6 @@
       </div>
 
       <div class="pane hidden" data-clpane="lines">
-        <div class="cheat">行內語法：<code>**粗**</code> <code>*斜*</code> <code>~~刪~~</code> <code>__底線__</code> <code>++放大++</code> <code>--縮小--</code></div>
         <div class="tabs" id="inTabs">
           <button class="tab on" data-in="quick">直接輸入</button>
           <button class="tab" data-in="text">純文本</button>
@@ -203,6 +208,7 @@
 
   <!-- COL 4: 動畫、時間、匯出 -->
   <section class="side export" id="colExport">
+    <div class="resizer" data-resizer></div>
     <div class="side-head">
       <button class="collapse" data-arrow>▶</button>
       <span class="title">動畫、時間、匯出</span>
@@ -244,6 +250,17 @@
   <span class="footer-divider" aria-hidden="true">·</span>
   <a href="../" aria-label="回到 ilai's Studios 入口">All Studios</a>
 </footer>
+
+<div id="syntaxModal" class="modal hidden">
+  <div class="modal-card" style="width:auto; min-width:320px; max-width:420px">
+    <div class="modal-title">行內語法</div>
+    <div class="cheat">
+      在台詞中可直接使用這些標記：<br>
+      <code>**粗體**</code> <code>*斜體*</code> <code>~~刪除線~~</code> <code>__底線__</code> <code>++放大++</code> <code>--縮小--</code>
+    </div>
+    <div class="modal-actions"><button class="btn pri" id="syntaxOk">知道了</button></div>
+  </div>
+</div>
 
 <div id="bgModal" class="modal hidden">
   <div class="modal-card" style="width:auto; min-width:340px">

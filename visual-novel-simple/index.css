@@ -3575,6 +3575,7 @@ body[data-ui="xl"] .pane-preview { zoom: 0.769; }
   flex-shrink: 0;
   min-width: 80px;
   text-align: center;
+  white-space: nowrap;
 }
 
 .syntax-quick-desc {
@@ -4350,6 +4351,34 @@ body.simple-resizing { cursor: col-resize; user-select: none; }
   background: var(--danger);
   border-color: var(--danger);
 }
+
+/* 輸出設定:齒輪 + 向上開啟的浮層(片頭緩衝) */
+.output-settings-wrap { position: relative; display: inline-flex; }
+.simple-bottom-bar .btn.btn-icon { padding: 6px; }
+.output-settings-popover {
+  position: absolute;
+  right: 0;
+  bottom: calc(100% + 8px);
+  width: 300px;
+  background: var(--bg-panel);
+  border: 1px solid var(--border-strong);
+  border-radius: 12px;
+  padding: 14px 16px;
+  z-index: var(--z-dropdown);
+  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.25);
+}
+.output-settings-popover[hidden] { display: none; }
+.output-settings-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--gold-bright);
+  letter-spacing: 0.05em;
+  margin-bottom: 6px;
+}
+.output-settings-popover .settings-sub { padding-left: 0; }
 
 /* ===== 左側:幕列表 ===== */
 .simple-sidebar {

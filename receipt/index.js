@@ -1260,6 +1260,7 @@ document.addEventListener('keydown',e=>{ if($('#tour').classList.contains('hidde
 window.addEventListener('resize',()=>{ if(!$('#tour').classList.contains('hidden')) tourShow(); });
 try{ if(!localStorage.getItem(GUIDE_KEY)) setTimeout(()=>startTour(TOUR_EDIT,'edit',GUIDE_KEY),400); }catch(e){}
 $('#dataBtn').onclick=()=>$('#dataModal').classList.remove('hidden');
+$('#loadBtn').onclick=()=>$('#dataFile').click();
 $('#dataClose').onclick=()=>$('#dataModal').classList.add('hidden');
 $('#dataExportBtn').onclick=dataExport;
 $('#dataImport').onclick=()=>$('#dataFile').click();

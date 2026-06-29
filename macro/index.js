@@ -48,6 +48,8 @@ const motionToggle = $('motionToggle');
 const waitCustom = $('waitCustom');
 const scopeIndicator = $('scopeIndicator');
 const scopeText = $('scopeText');
+const oneClickCheck = $('oneClickCheck');
+const oneClickToggle = $('oneClickToggle');
 const toast = $('toast');
 
 /* =================== 工具：行操作 =================== */
@@ -135,7 +137,13 @@ function renderChannels() {
     const btn = document.createElement('button');
     btn.className = 'chan-btn';
     btn.innerHTML = `<div class="name">${c.name}</div><div class="cmd">${c.cmd}</div>`;
-    btn.onclick = () => unifyChannel(c.cmd);
+    btn.onclick = () => {
+      if (oneClickCheck && oneClickCheck.checked) {
+        unifyChannel(c.cmd);
+      } else {
+        addChannelLine(c.cmd);
+      }
+    };
     channelGrid.appendChild(btn);
   });
 }
@@ -175,6 +183,22 @@ function unifyChannel(channelCmd) {
     if (skippedEmote > 0) msg += `（${skippedEmote} 行動作指令跳過）`;
     showToast(msg);
   }
+}
+
+/* 預設模式：點頻道 → 在文字框末尾新增一行並帶上頻道前綴 */
+function addChannelLine(channelCmd) {
+  appendNewLine(channelCmd + ' ');
+  showToast(`已新增一行：${channelCmd}`);
+}
+
+/* 一鍵套用切換 */
+if (oneClickCheck) {
+  oneClickCheck.addEventListener('change', () => {
+    const on = oneClickCheck.checked;
+    oneClickToggle.classList.toggle('checked', on);
+    scopeIndicator.hidden = !on;
+    if (on) updateScopeIndicator();
+  });
 }
 
 /* 清空頻道（保留動作行的 / 開頭，例如 /擁抱） */
@@ -245,18 +269,28 @@ $('applyBatchWait').onclick = () => {
   const v = state.waitValue || '2';
   const indices = getActiveLineIndices();
   const lines = getEditorLines();
+  // 找出作用範圍內「最後一行非空白行」— 該行不加 wait（巨集最後一行不需等待）
+  let lastNonEmpty = -1;
+  indices.forEach((i) => {
+    if (lines[i] !== undefined && lines[i].trim() !== '') lastNonEmpty = i;
+  });
   let changed = 0;
   let skippedCountdown = 0;
   indices.forEach((i) => {
     const line = lines[i];
     if (line === undefined) return;
     if (line.trim() === '') return;
+    // 移除既有尾端 <wait.X>
+    const stripped = line.replace(/\s*<wait\.[^>]+>\s*$/, '');
+    // 最後一行:清掉尾端 wait 但不再加上
+    if (i === lastNonEmpty) {
+      lines[i] = stripped;
+      return;
+    }
     if (isCountdownLine(line)) {
       skippedCountdown++;
       return;
     }
-    // 移除既有尾端 <wait.X>
-    const stripped = line.replace(/\s*<wait\.[^>]+>\s*$/, '');
     lines[i] = stripped + ' <wait.' + v + '>';
     changed++;
   });
@@ -265,7 +299,7 @@ $('applyBatchWait').onclick = () => {
     showToast('沒有可套用的行', true);
   } else {
     const range = getSelectionLineRange();
-    let msg = `已在${range ? '選取的' : '所有'} ${changed} 行末加上 <wait.${v}>`;
+    let msg = `已在${range ? '選取的' : ''} ${changed} 行末加上 <wait.${v}>（最後一行不加）`;
     if (skippedCountdown > 0) msg += `（${skippedCountdown} 行倒數行跳過）`;
     showToast(msg);
   }
@@ -415,120 +449,119 @@ motionCheck.addEventListener('change', (e) => {
   motionToggle.classList.toggle('checked', state.motion);
 });
 
-/* 浮動視窗摺疊 */
-$('emoteFloaterHeader').onclick = (e) => {
-  if (e.target.closest('.emote-floater-toggle')) return;
-  if (e.target.closest('.emote-resize-handle')) return;
-  $('emoteFloater').classList.toggle('collapsed');
-};
-$('emoteFloaterToggle').onclick = (e) => {
-  e.stopPropagation();
-  $('emoteFloater').classList.toggle('collapsed');
-};
+/* =================== 工具側欄:每欄可收起 / 展開 + 拖曳調整寬度 =================== */
+(function setupToolsSides() {
+  const MIN = 200;
+  const MAX = 460;
 
-/* 浮動視窗 resize（左邊、底部、左下角） */
-(function setupEmoteResize() {
-  const fl = $('emoteFloater');
-  if (!fl) return;
-  const handles = [
-    { el: $('emoteResizeLeft'), dir: 'x' },
-    { el: $('emoteResizeBottom'), dir: 'y' },
-    { el: $('emoteResizeCorner'), dir: 'xy' },
-  ];
+  document.querySelectorAll('.tools-side').forEach((side) => {
+    const id = side.id || 'side';
+    const resizer = side.querySelector('[data-resizer]');
+    const collapseBtn = side.querySelector('[data-collapse]');
+    const defaultW = parseInt(side.dataset.w, 10) || 300;
+    const KEY_W = 'macroSideW:' + id;
+    const KEY_C = 'macroSideC:' + id;
 
-  handles.forEach(({ el, dir }) => {
-    if (!el) return;
-    el.addEventListener('mousedown', (ev) => {
-      ev.preventDefault();
-      ev.stopPropagation();
-      const startX = ev.clientX;
-      const startY = ev.clientY;
-      const r = fl.getBoundingClientRect();
-      const startW = r.width;
-      const startH = r.height;
-      document.body.classList.add('emote-resizing');
+    function setWidth(px) {
+      const w = Math.max(MIN, Math.min(MAX, px));
+      side.style.setProperty('--tools-w', w + 'px');
+      return w;
+    }
+    function syncArrow() {
+      if (collapseBtn) collapseBtn.textContent = side.classList.contains('collapsed') ? '◀' : '▶';
+    }
 
-      function onMove(e) {
-        if (dir.includes('x')) {
-          // 視窗釘在右邊，拖左 handle 往左拉 → 寬度增加（dx 為負時 width 增加）
-          const dx = e.clientX - startX;
-          const newW = Math.max(240, Math.min(window.innerWidth - 48, startW - dx));
-          fl.style.width = newW + 'px';
-        }
-        if (dir.includes('y')) {
-          const dy = e.clientY - startY;
-          const newH = Math.max(200, Math.min(window.innerHeight - 48, startH + dy));
-          fl.style.height = newH + 'px';
-        }
-      }
-      function onUp() {
-        document.body.classList.remove('emote-resizing');
-        document.removeEventListener('mousemove', onMove);
-        document.removeEventListener('mouseup', onUp);
-        // 儲存大小
-        try {
-          localStorage.setItem('emoteFloaterSize', JSON.stringify({
-            w: fl.style.width || '',
-            h: fl.style.height || ''
-          }));
-        } catch {}
-      }
-      document.addEventListener('mousemove', onMove);
-      document.addEventListener('mouseup', onUp);
+    // 初始寬度與收合狀態(還原值一律 clamp,避免舊的過寬值擠壓編輯區)
+    setWidth(defaultW);
+    try {
+      const sw = localStorage.getItem(KEY_W);
+      if (sw && resizer) setWidth(parseInt(sw, 10));  // 不可縮放的欄位固定用預設寬度
+      if (localStorage.getItem(KEY_C) === '1') side.classList.add('collapsed');
+    } catch {}
+    syncArrow();
+
+    // 收起 / 展開
+    if (collapseBtn) {
+      collapseBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        side.classList.toggle('collapsed');
+        syncArrow();
+        try { localStorage.setItem(KEY_C, side.classList.contains('collapsed') ? '1' : '0'); } catch {}
+      });
+    }
+    // 收合狀態下點整條側欄也能展開
+    side.addEventListener('click', (e) => {
+      if (!side.classList.contains('collapsed')) return;
+      if (e.target.closest('[data-collapse]')) return;
+      side.classList.remove('collapsed');
+      syncArrow();
+      try { localStorage.setItem(KEY_C, '0'); } catch {}
     });
 
-    // touch 支援
-    el.addEventListener('touchstart', (ev) => {
-      if (ev.touches.length !== 1) return;
-      ev.preventDefault();
-      ev.stopPropagation();
-      const t = ev.touches[0];
-      const startX = t.clientX;
-      const startY = t.clientY;
-      const r = fl.getBoundingClientRect();
-      const startW = r.width;
-      const startH = r.height;
-      document.body.classList.add('emote-resizing');
-
-      function onMove(e) {
-        if (e.touches.length !== 1) return;
-        const t = e.touches[0];
-        if (dir.includes('x')) {
-          const dx = t.clientX - startX;
-          const newW = Math.max(240, Math.min(window.innerWidth - 48, startW - dx));
-          fl.style.width = newW + 'px';
-        }
-        if (dir.includes('y')) {
-          const dy = t.clientY - startY;
-          const newH = Math.max(200, Math.min(window.innerHeight - 48, startH + dy));
-          fl.style.height = newH + 'px';
-        }
-      }
+    // 拖曳調整寬度(側欄 resizer 在左緣,釘在自身右緣)
+    function beginDrag() {
+      const rect = side.getBoundingClientRect();
+      document.body.classList.add('ws-resizing');
+      function onMove(clientX) { setWidth(rect.right - clientX); }
       function onEnd() {
-        document.body.classList.remove('emote-resizing');
-        document.removeEventListener('touchmove', onMove);
-        document.removeEventListener('touchend', onEnd);
+        document.body.classList.remove('ws-resizing');
         try {
-          localStorage.setItem('emoteFloaterSize', JSON.stringify({
-            w: fl.style.width || '',
-            h: fl.style.height || ''
-          }));
+          const cur = side.style.getPropertyValue('--tools-w');
+          if (cur) localStorage.setItem(KEY_W, parseInt(cur, 10));
         } catch {}
       }
-      document.addEventListener('touchmove', onMove, { passive: false });
-      document.addEventListener('touchend', onEnd);
-    }, { passive: false });
-  });
-
-  // 還原儲存的大小
-  try {
-    const raw = localStorage.getItem('emoteFloaterSize');
-    if (raw) {
-      const { w, h } = JSON.parse(raw);
-      if (w) fl.style.width = w;
-      if (h) fl.style.height = h;
+      return { onMove, onEnd };
     }
-  } catch {}
+
+    if (resizer) {
+      resizer.addEventListener('mousedown', (ev) => {
+        if (side.classList.contains('collapsed')) return;
+        ev.preventDefault();
+        const { onMove, onEnd } = beginDrag();
+        function move(e) { onMove(e.clientX); }
+        function up() {
+          onEnd();
+          document.removeEventListener('mousemove', move);
+          document.removeEventListener('mouseup', up);
+        }
+        document.addEventListener('mousemove', move);
+        document.addEventListener('mouseup', up);
+      });
+
+      resizer.addEventListener('touchstart', (ev) => {
+        if (side.classList.contains('collapsed')) return;
+        if (ev.touches.length !== 1) return;
+        ev.preventDefault();
+        const { onMove, onEnd } = beginDrag();
+        function move(e) {
+          if (e.touches.length !== 1) return;
+          onMove(e.touches[0].clientX);
+        }
+        function end() {
+          onEnd();
+          document.removeEventListener('touchmove', move);
+          document.removeEventListener('touchend', end);
+        }
+        document.addEventListener('touchmove', move, { passive: false });
+        document.addEventListener('touchend', end);
+      }, { passive: false });
+
+      // 雙擊重設預設寬度
+      resizer.addEventListener('dblclick', () => {
+        side.style.setProperty('--tools-w', defaultW + 'px');
+        try { localStorage.removeItem(KEY_W); } catch {}
+      });
+    }
+  });
+})();
+
+/* =================== 快捷鍵 dialog =================== */
+(function setupHotkeyDialog() {
+  const dlg = $('hotkeyDialog');
+  const btn = $('hotkeyBtn');
+  if (!dlg || !btn) return;
+  btn.addEventListener('click', () => dlg.showModal());
+  dlg.addEventListener('click', (e) => { if (e.target === dlg) dlg.close(); });
 })();
 
 /* =================== 自動完成 =================== */
@@ -1475,6 +1508,75 @@ miconCheck.addEventListener('change', () => {
 miconName.addEventListener('input', updateMiconLine);
 miconType.addEventListener('change', updateMiconLine);
 
+/* =================== 存檔 / 讀檔 =================== */
+// 把目前狀態 + 編輯框文字打包成 JSON 下載
+function saveToFile() {
+  const data = {
+    _type: "macro-save",
+    version: 1,
+    editorText: $("macroEditor").value,
+    state: { ...state }
+  };
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "macro-" + timestampStr() + ".json";
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  showToast("已存檔");
+}
+
+// 產生 YYYYMMDD-HHmmss 時間字串
+function timestampStr() {
+  const d = new Date();
+  const p = (n) => String(n).padStart(2, "0");
+  return (
+    d.getFullYear() +
+    p(d.getMonth() + 1) +
+    p(d.getDate()) +
+    "-" +
+    p(d.getHours()) +
+    p(d.getMinutes()) +
+    p(d.getSeconds())
+  );
+}
+
+// 讀取上傳的 JSON 並還原
+function loadFromData(data) {
+  if (!data || data._type !== "macro-save") {
+    alert("檔案格式不符，無法讀取。");
+    return;
+  }
+  // 還原編輯框文字
+  $("macroEditor").value = typeof data.editorText === "string" ? data.editorText : "";
+  // 還原狀態
+  if (data.state && typeof data.state === "object") {
+    Object.assign(state, data.state);
+  }
+  // 同步對應 DOM
+  if (emoteSearch) emoteSearch.value = state.emoteSearch || "";
+  if (motionCheck) {
+    motionCheck.checked = !!state.motion;
+    if (motionToggle) motionToggle.classList.toggle("checked", !!state.motion);
+  }
+  // 重繪畫面
+  renderCatTabs();
+  renderEmotes();
+  highlightActiveSec();
+  updateLineCount();
+  showToast("已讀檔");
+  editor.focus();
+}
+
+// 觸發隱藏 file input
+function triggerLoad() {
+  const input = $("loadFile");
+  if (input) input.click();
+}
+
 function init() {
   renderChannels();
   renderCatTabs();
@@ -1483,6 +1585,24 @@ function init() {
   updateSecLabels();
   updateLineCount();
   updateScopeIndicator();
+
+  // 存檔 / 讀檔
+  $("saveBtn").addEventListener("click", saveToFile);
+  $("loadBtn").addEventListener("click", triggerLoad);
+  $("loadFile").addEventListener("change", (e) => {
+    const file = e.target.files && e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      try {
+        loadFromData(JSON.parse(reader.result));
+      } catch {
+        alert("檔案無法解析，請確認是有效的 JSON 存檔。");
+      }
+    };
+    reader.readAsText(file);
+    e.target.value = ""; // 允許重複選同一檔
+  });
 
   // 還原 UI 大小設定
   try {

@@ -600,16 +600,26 @@ let _vnsAutoSaveStopped = false;
 const styleModalEl = document.getElementById("styleModal");
 
 
-// 語法速查 popover:點按鈕開關,點別處關閉
+// 語法速查 / 快捷鍵 popover:點按鈕開關,點別處關閉,兩者互斥
 const btnSyntaxQuick = document.getElementById("btnSyntaxQuick");
 const syntaxQuickPopover = document.getElementById("syntaxQuickPopover");
-if (btnSyntaxQuick && syntaxQuickPopover) {
-  btnSyntaxQuick.addEventListener("click", (e) => {
+const btnShortcuts = document.getElementById("btnShortcuts");
+const shortcutsPopover = document.getElementById("shortcutsPopover");
+function bindTopbarPopover(btn, popover, others) {
+  if (!btn || !popover) return;
+  btn.addEventListener("click", (e) => {
     e.stopPropagation();
-    syntaxQuickPopover.hidden = !syntaxQuickPopover.hidden;
+    const show = popover.hidden;
+    others.forEach((p) => { if (p) p.hidden = true; });
+    popover.hidden = !show;
   });
+}
+bindTopbarPopover(btnSyntaxQuick, syntaxQuickPopover, [shortcutsPopover]);
+bindTopbarPopover(btnShortcuts, shortcutsPopover, [syntaxQuickPopover]);
+if (syntaxQuickPopover || shortcutsPopover) {
   document.addEventListener("click", () => {
-    syntaxQuickPopover.hidden = true;
+    if (syntaxQuickPopover) syntaxQuickPopover.hidden = true;
+    if (shortcutsPopover) shortcutsPopover.hidden = true;
   });
 }
 
@@ -735,12 +745,6 @@ syncStyleDefaultsUI();
   }
 })();
 
-// ----- Settings modal (系統設定) -----
-const settingsModalEl = document.getElementById("settingsModal");
-
-
-
-
 // ----- 任務 1:本地檔案 儲存 / 開啟(File System Access)-----
 const btnSaveFile = document.getElementById("btnSaveFile");
 if (btnSaveFile) {
@@ -764,25 +768,9 @@ document.addEventListener("keydown", (e) => {
   }
 });
 
-const btnSettings = document.getElementById("btnSettings");
-if (btnSettings) btnSettings.addEventListener("click", openSettingsModal);
-const settingsModalCloseEl = document.getElementById("settingsModalClose");
-if (settingsModalCloseEl) settingsModalCloseEl.addEventListener("click", closeSettingsModal);
-const settingsModalDoneEl = document.getElementById("settingsModalDone");
-if (settingsModalDoneEl) settingsModalDoneEl.addEventListener("click", closeSettingsModal);
-if (settingsModalEl) settingsModalEl.addEventListener("click", (e) => {
-  if (e.target === settingsModalEl) closeSettingsModal();
-});
-
-// ----- 💾 儲存空間按鈕(管理 CG 庫 / 重新計算) -----
-// 任務 1:「管理專案」入口移除(專案管理改為本地檔案 .vns + IndexedDB 暫存層)。
-const storageManageCgsBtn = document.getElementById("storageManageCgs");
-if (storageManageCgsBtn) storageManageCgsBtn.addEventListener("click", () => {
-  // CG 庫 modal 在簡易模式重設計任務中建立;這裡先給溫和提示
-  showToast("CG 庫管理介面將在簡易模式中提供", "info", 3000);
-});
-const storageRefreshBtn = document.getElementById("storageRefresh");
-if (storageRefreshBtn) storageRefreshBtn.addEventListener("click", renderStorageSection);
+// ----- CG 庫:獨立工具列按鈕(原「系統設定 → 管理 CG 庫」入口已移除)-----
+const btnCgLibrary = document.getElementById("btnCgLibrary");
+if (btnCgLibrary) btnCgLibrary.addEventListener("click", openCgLibraryModal);
 
 // 任務 1:.vns 檔案格式版本(buildVnsBlobFromState / parseVnsZip 共用)
 const VNS_EXPORT_FORMAT_VERSION = "1.0";
@@ -1218,19 +1206,6 @@ if (cgLibraryModalEl) cgLibraryModalEl.addEventListener("click", (e) => {
   if (e.target === cgLibraryModalEl) closeCgLibraryModal();
 });
 
-// 設定 modal 內「🖼 管理 CG 庫」按鈕改成真的開 CG 庫 modal
-{
-  const _btn = document.getElementById("storageManageCgs");
-  if (_btn) {
-    // 移除前一個 toast handler 並接上正確的開 modal 行為
-    const fresh = _btn.cloneNode(true);
-    _btn.parentNode.replaceChild(fresh, _btn);
-    fresh.addEventListener("click", () => {
-      closeSettingsModal();
-      openCgLibraryModal();
-    });
-  }
-}
 
 
 
@@ -1416,4 +1391,106 @@ function ensureInitialSlide() {
 setInterval(refreshSaveTimeDisplay, 10000);
 updateStatusBar();
 refreshSaveTimeDisplay();
+
+// ============================================================
+//  版面分隔條:觸控拖曳 + 雙擊還原(補強既有滑鼠拖曳邏輯)
+// ============================================================
+// 既有的欄寬拖曳 / 收合 / localStorage 記憶在 js/simple/editor-simple.js,
+// 但只綁了 mousedown。這裡補上 touch 支援與雙擊還原預設寬度,
+// 共用同一組 CSS 變數與 localStorage key,不重複也不衝突(只多監聽 touch / dblclick)。
+(function initSplitterTouchAndReset() {
+  const LAYOUT_KEYS = {
+    slides: "vns_pane_slides_width",
+    dialog: "vns_pane_dialog_width",
+    effects: "vns_pane_effects_width",
+  };
+  const DEFAULTS = { slides: 200, dialog: 320, effects: 270 };
+  const MIN_WIDTH = 20;
+
+  function layoutEl() { return document.getElementById("simpleLayout"); }
+
+  function persistWidths(layout) {
+    const s = getComputedStyle(layout);
+    const px = (v) => parseInt(s.getPropertyValue(v), 10) || 0;
+    try {
+      localStorage.setItem(LAYOUT_KEYS.slides, String(px("--pane-slides-width") || DEFAULTS.slides));
+      localStorage.setItem(LAYOUT_KEYS.dialog, String(px("--pane-dialog-width") || DEFAULTS.dialog));
+      if (layout.getAttribute("data-effects-collapsed") !== "true") {
+        localStorage.setItem(LAYOUT_KEYS.effects, String(px("--pane-effects-width") || DEFAULTS.effects));
+      }
+    } catch (e) {}
+  }
+
+  // 觸控拖曳:對應既有 mouse 拖曳的同一套規則(idx 1 = 幕列表 / 2 = 對話 / 3 = 特效)
+  function startTouchDrag(e, splitter) {
+    const layout = layoutEl();
+    if (!layout) return;
+    const touch = e.touches && e.touches[0];
+    if (!touch) return;
+    e.preventDefault();
+    const idx = parseInt(splitter.dataset.splitter, 10);
+    splitter.classList.add("dragging");
+    document.body.classList.add("simple-resizing");
+    const startX = touch.clientX;
+    const s = getComputedStyle(layout);
+    const startSlides = parseInt(s.getPropertyValue("--pane-slides-width"), 10) || DEFAULTS.slides;
+    const startDialog = parseInt(s.getPropertyValue("--pane-dialog-width"), 10) || DEFAULTS.dialog;
+    const startEffects = parseInt(s.getPropertyValue("--pane-effects-width"), 10) || DEFAULTS.effects;
+
+    function endDrag() {
+      splitter.classList.remove("dragging");
+      document.body.classList.remove("simple-resizing");
+      document.removeEventListener("touchmove", onMove);
+      document.removeEventListener("touchend", onUp);
+      document.removeEventListener("touchcancel", onUp);
+    }
+    function onMove(ev) {
+      const tt = ev.touches && ev.touches[0];
+      if (!tt) return;
+      const dx = tt.clientX - startX;
+      if (idx === 1) {
+        const w = Math.max(0, startSlides + dx);
+        layout.style.setProperty("--pane-slides-width", w + "px");
+        if (w < MIN_WIDTH && typeof collapseSlidesPane === "function") { endDrag(); collapseSlidesPane(); }
+      } else if (idx === 2) {
+        layout.style.setProperty("--pane-dialog-width", Math.max(0, startDialog + dx) + "px");
+      } else if (idx === 3) {
+        const w = Math.max(0, startEffects - dx);
+        layout.style.setProperty("--pane-effects-width", w + "px");
+        if (w < MIN_WIDTH && typeof collapseEffectsPane === "function") { endDrag(); collapseEffectsPane(); }
+      }
+    }
+    function onUp() { endDrag(); persistWidths(layout); }
+    document.addEventListener("touchmove", onMove, { passive: false });
+    document.addEventListener("touchend", onUp);
+    document.addEventListener("touchcancel", onUp);
+  }
+
+  // 雙擊分隔條 → 還原該欄預設寬度
+  function resetWidth(splitter) {
+    const layout = layoutEl();
+    if (!layout) return;
+    const idx = parseInt(splitter.dataset.splitter, 10);
+    if (idx === 1) layout.style.setProperty("--pane-slides-width", DEFAULTS.slides + "px");
+    else if (idx === 2) layout.style.setProperty("--pane-dialog-width", DEFAULTS.dialog + "px");
+    else if (idx === 3) layout.style.setProperty("--pane-effects-width", DEFAULTS.effects + "px");
+    persistWidths(layout);
+  }
+
+  function bind() {
+    const layout = layoutEl();
+    if (!layout) return;
+    layout.querySelectorAll(".simple-splitter").forEach((sp) => {
+      sp.style.touchAction = "none";
+      sp.addEventListener("touchstart", (e) => startTouchDrag(e, sp), { passive: false });
+      sp.addEventListener("dblclick", () => resetWidth(sp));
+    });
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", bind);
+  } else {
+    bind();
+  }
+})();
 

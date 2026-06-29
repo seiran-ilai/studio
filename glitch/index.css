@@ -132,7 +132,11 @@ body::after {
 .lay {
   flex: 1;
   display: grid;
-  grid-template-columns: 1fr calc(360px * var(--ui-scale));
+  grid-template-columns:
+    minmax(0, 1fr)
+    calc(var(--col-fx, 320px) * var(--ui-scale))
+    calc(var(--col-txt, 300px) * var(--ui-scale))
+    calc(var(--col-out, 300px) * var(--ui-scale));
   overflow: hidden;
 }
 
@@ -280,7 +284,9 @@ body::after {
 }
 
 /* ═══ Right pane (控制面板) ═══ */
-.right-pane {
+/* ═══ 控制欄（特效 / 文字 / 輸出，各自可拖寬 + 收合） ═══ */
+.gcol {
+  position: relative;
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -291,39 +297,88 @@ body::after {
   zoom: var(--ui-scale);
 }
 
-/* ═══ Tabs ═══ */
-.tabs {
+/* 欄標題列（收合 / 展開） */
+.gcol-head {
   display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 12px;
   border-bottom: 1px solid var(--b);
   flex-shrink: 0;
+  min-height: 40px;
 }
-.tab {
-  flex: 1;
-  padding: 12px;
-  background: transparent;
-  border: none;
-  border-bottom: 2px solid transparent;
+.gcol-title {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  color: var(--a2);
+  white-space: nowrap;
+}
+.gcol-vtitle {
+  display: none;
+  writing-mode: vertical-rl;
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 4px;
+  color: var(--m);
+  white-space: nowrap;
+}
+.gcol-collapse {
+  margin-left: auto;
+  flex: none;
+  width: 26px; height: 26px;
+  display: grid; place-items: center;
+  background: var(--surface-2);
+  border: 1px solid var(--b);
+  border-radius: 6px;
   color: var(--m);
   cursor: pointer;
-  font-family: inherit;
-  font-size: 13px;
-  letter-spacing: 2px;
-  transition: all .15s;
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 12px;
+  transition: color .15s, border-color .15s;
 }
-.tab:hover { color: var(--t); }
-.tab.on { color: var(--a2); border-bottom-color: var(--a2); }
+.gcol-collapse:hover { color: var(--t); border-color: var(--a2); }
 
-/* ═══ Panel ═══ */
-.panel {
+/* 欄左緣拖曳調寬 */
+.gcol-resizer {
+  position: absolute;
+  left: -4px; top: 0; bottom: 0;
+  width: 9px;
+  cursor: col-resize;
+  z-index: 25;
+  touch-action: none;
+}
+.gcol-resizer:hover,
+.gcol-resizer.active {
+  background: linear-gradient(90deg, transparent, var(--a2), transparent);
+}
+
+/* 欄收合狀態 → 窄條 */
+.gcol.collapsed { cursor: pointer; }
+.gcol.collapsed .gcol-body,
+.gcol.collapsed .gcol-resizer,
+.gcol.collapsed .gcol-title { display: none; }
+.gcol.collapsed .gcol-head {
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding-top: 12px;
+  border-bottom: none;
+}
+.gcol.collapsed .gcol-collapse { margin-left: 0; order: -1; }
+.gcol.collapsed .gcol-vtitle { display: block; }
+
+/* 欄內容（捲動區） */
+.gcol-body {
   flex: 1;
   overflow-y: auto;
   scrollbar-width: thin;
-  display: none;
   padding: 12px;
 }
-.panel.on { display: block; }
-.panel::-webkit-scrollbar { width: 4px; }
-.panel::-webkit-scrollbar-thumb { background: var(--b); }
+.gcol-body::-webkit-scrollbar { width: 4px; }
+.gcol-body::-webkit-scrollbar-thumb { background: var(--b); }
 
 .section {
   margin-bottom: 16px;

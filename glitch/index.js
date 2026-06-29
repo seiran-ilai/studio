@@ -287,16 +287,19 @@ function loadFile(file) {
   }
 }
 
+/** 設定一張載入完成的圖片為當前媒體（loadImage 與讀檔共用）*/
+function applyLoadedImage(img) {
+  state.img = img;
+  state.isVideo = false;
+  buildGraded();
+  setupMedia(img.naturalWidth, img.naturalHeight);
+  $('#metaFx').textContent = state.fx === 'err' ? '404' : state.fx.toUpperCase();
+  $('#trimBar').style.display = 'none';
+}
+
 function loadImage(file) {
   const img = new Image();
-  img.onload = () => {
-    state.img = img;
-    state.isVideo = false;
-    buildGraded();
-    setupMedia(img.naturalWidth, img.naturalHeight);
-    $('#metaFx').textContent = state.fx === 'err' ? '404' : state.fx.toUpperCase();
-    $('#trimBar').style.display = 'none';
-  };
+  img.onload = () => applyLoadedImage(img);
   img.src = URL.createObjectURL(file);
 }
 
@@ -345,20 +348,91 @@ function recommendedSize(w, h) {
 // C3 控制元件監聽
 // ═══════════════════════════════════════════
 
-// Tabs
-$$('.tab').forEach(b => b.addEventListener('click', () => {
-  $$('.tab').forEach(x => x.classList.remove('on'));
-  b.classList.add('on');
-  $$('.panel').forEach(p => p.classList.remove('on'));
-  $(`.panel[data-panel="${b.dataset.tab}"]`).classList.add('on');
-}));
-
 // UI 大小
 $$('.us-btn').forEach(b => b.addEventListener('click', () => {
   $$('.us-btn').forEach(x => x.classList.remove('on'));
   b.classList.add('on');
   document.documentElement.style.setProperty('--ui-scale', b.dataset.size);
 }));
+
+// ─── 三欄控制面板:各自收合 / 拖曳調寬 / 記憶 ───
+(function initColumns() {
+  const MIN = 240, MAX = 560, BAR = 30;
+  const COLS = [
+    { sel: "#colFx",  cssVar: "--col-fx",  wKey: "glitchColFxW",  cKey: "glitchColFxC",  def: 320 },
+    { sel: "#colTxt", cssVar: "--col-txt", wKey: "glitchColTxtW", cKey: "glitchColTxtC", def: 300 },
+    { sel: "#colOut", cssVar: "--col-out", wKey: "glitchColOutW", cKey: "glitchColOutC", def: 300 },
+  ];
+
+  function uiScale() {
+    const v = parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--ui-scale"));
+    return v > 0 ? v : 1;
+  }
+
+  COLS.forEach(c => {
+    const col = $(c.sel);
+    if (!col) return;
+    const resizer = col.querySelector(".gcol-resizer");
+    const collapseBtn = col.querySelector(".gcol-collapse");
+    const head = col.querySelector(".gcol-head");
+
+    let width = c.def;
+    try { const s = parseFloat(localStorage.getItem(c.wKey)); if (s > 0) width = s; } catch (e) {}
+    let collapsed = false;
+    try { collapsed = localStorage.getItem(c.cKey) === "1"; } catch (e) {}
+
+    function applyWidth() {
+      const w = collapsed ? BAR : Math.max(MIN, Math.min(MAX, Math.round(width)));
+      document.documentElement.style.setProperty(c.cssVar, w + "px");
+    }
+    function setCollapsed(on) {
+      collapsed = on;
+      col.classList.toggle("collapsed", on);
+      if (collapseBtn) collapseBtn.textContent = on ? "⟩" : "⟨";
+      try { localStorage.setItem(c.cKey, on ? "1" : "0"); } catch (e) {}
+      applyWidth();
+    }
+    setCollapsed(collapsed);
+
+    if (collapseBtn) collapseBtn.addEventListener("click", e => {
+      e.stopPropagation();
+      setCollapsed(!collapsed);
+    });
+    // 收合成窄條時,點整條也能展開
+    if (head) head.addEventListener("click", () => { if (collapsed) setCollapsed(false); });
+
+    // 拖曳調寬:gcol 有 zoom,故以渲染寬度反推(除以 ui scale)
+    let dragging = false;
+    if (resizer) {
+      resizer.addEventListener("pointerdown", e => {
+        if (collapsed) return;
+        dragging = true;
+        resizer.classList.add("active");
+        document.body.style.userSelect = "none";
+        try { resizer.setPointerCapture(e.pointerId); } catch (_) {}
+        e.preventDefault();
+      });
+      window.addEventListener("pointermove", e => {
+        if (!dragging) return;
+        const right = col.getBoundingClientRect().right;
+        width = Math.max(MIN, Math.min(MAX, Math.round((right - e.clientX) / uiScale())));
+        applyWidth();
+      });
+      window.addEventListener("pointerup", () => {
+        if (!dragging) return;
+        dragging = false;
+        resizer.classList.remove("active");
+        document.body.style.userSelect = "";
+        try { localStorage.setItem(c.wKey, Math.round(width)); } catch (e) {}
+      });
+      resizer.addEventListener("dblclick", () => {
+        width = c.def;
+        applyWidth();
+        try { localStorage.setItem(c.wKey, c.def); } catch (e) {}
+      });
+    }
+  });
+})();
 
 // ─── 段落清單管理 ───
 function renderTxtList() {
@@ -1919,5 +1993,147 @@ $('#btnMp4').addEventListener('click', async () => {
     if (note) note.textContent = '此瀏覽器將輸出 WebM 格式（非 MP4）';
   }
 })();
+
+// ═══════════════════════════════════════════
+// C9 存檔 / 讀檔（下載 / 上傳 .json）
+// ═══════════════════════════════════════════
+
+// 可序列化的設定欄位白名單（排除 img / video / _graded / paused 等執行期欄位）
+const SAVE_FIELDS = [
+  'isVideo', 'trimStart', 'trimEnd', 'fx',
+  'NO', 'CO', 'DK', 'HU', 'SP', 'HUE', 'SAT',
+  'focusMode', 'duration', 'resMode', 'customWidth', 'quality',
+  'selectedTxt'
+];
+
+/** 把 state 全量同步回各 UI 控制項顯示值（讀檔後呼叫）*/
+function syncAllUIFromState() {
+  // 特效強度滑桿
+  ['NO', 'CO', 'DK', 'HU', 'SP'].forEach(k => {
+    const slider = $(`#s${k}`);
+    const num = $(`#v${k}`);
+    if (slider) slider.value = state[k];
+    if (num) num.value = state[k];
+  });
+  // 色調 / 飽和
+  $('#sHUE').value = state.HUE; $('#vHUE').value = state.HUE;
+  $('#sSAT').value = state.SAT; $('#vSAT').value = state.SAT;
+
+  // 特效選擇 + 進階面板
+  $$('[data-fx]').forEach(b => b.classList.toggle('on', b.dataset.fx === state.fx));
+  $('#metaFx').textContent = state.fx === 'err' ? '404' : state.fx.toUpperCase();
+  renderAdv(state.fx);
+  updateSliderLock();
+
+  // 焦點
+  $$('[data-focus]').forEach(b => b.classList.toggle('on', b.dataset.focus === state.focusMode));
+
+  // 解析度
+  $$('.res-btn').forEach(b => b.classList.toggle('on', b.dataset.res === state.resMode));
+  $('#customWidthRow').style.display = state.resMode === 'custom' ? 'flex' : 'none';
+  $('#customWidth').value = state.customWidth;
+  $('#vCustomWidth').textContent = state.customWidth;
+  updateResInfo();
+
+  // 輸出長度
+  $$('.dur-btn').forEach(b => b.classList.toggle('on', +b.dataset.d === state.duration));
+  $('#frameInfo').textContent = `MP4 ${state.duration * FPS} 幀 @ ${FPS}fps · GIF ${state.duration * GIF_FPS} 幀 @ ${GIF_FPS}fps`;
+
+  // 影片畫質
+  $$('.qual-btn').forEach(b => b.classList.toggle('on', b.dataset.qual === state.quality));
+  $('#qualInfo').textContent = QUALITY_INFO[state.quality].label;
+
+  // 文字段落清單 + 選中段落編輯器
+  if (state.selectedTxt >= state.txts.length) state.selectedTxt = state.txts.length - 1;
+  if (state.selectedTxt < 0) state.selectedTxt = 0;
+  renderTxtList();
+  syncEditorFromCurrent();
+}
+
+/** 把當前狀態組成存檔物件並下載成 .json */
+function downloadSave() {
+  const settings = {};
+  SAVE_FIELDS.forEach(k => { settings[k] = state[k]; });
+  // adv（各特效進階）與 txts（多段文字）整個深拷貝存入
+  settings.adv = JSON.parse(JSON.stringify(state.adv));
+  settings.txts = JSON.parse(JSON.stringify(state.txts));
+
+  // 圖片：用暫時 canvas 轉 dataURL（blob: 短命 URL 不能直接存）
+  let imageData = null;
+  if (state.img && !state.isVideo) {
+    const tmp = document.createElement('canvas');
+    tmp.width = state.img.naturalWidth;
+    tmp.height = state.img.naturalHeight;
+    tmp.getContext('2d').drawImage(state.img, 0, 0);
+    imageData = tmp.toDataURL('image/jpeg', 0.92);
+  }
+
+  const save = { _type: 'glitch-save', version: 1, settings, imageData };
+
+  // 檔名 glitch-YYYYMMDD-HHmmss.json
+  const n = new Date();
+  const p = x => String(x).padStart(2, '0');
+  const stamp = `${n.getFullYear()}${p(n.getMonth() + 1)}${p(n.getDate())}-${p(n.getHours())}${p(n.getMinutes())}${p(n.getSeconds())}`;
+
+  const blob = new Blob([JSON.stringify(save)], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `glitch-${stamp}.json`;
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+
+/** 讀取 .json 存檔並套用回 state + UI */
+async function loadSaveFile(file) {
+  let save;
+  try {
+    const text = await new Promise((resolve, reject) => {
+      const fr = new FileReader();
+      fr.onload = () => resolve(fr.result);
+      fr.onerror = () => reject(fr.error);
+      fr.readAsText(file);
+    });
+    save = JSON.parse(text);
+  } catch (e) {
+    alert('讀檔失敗：檔案無法解析');
+    return;
+  }
+  if (!save || save._type !== 'glitch-save') {
+    alert('讀檔失敗：這不是 Glitch 的存檔檔');
+    return;
+  }
+
+  const s = save.settings || {};
+  // 1) 逐欄位寫回 state
+  SAVE_FIELDS.forEach(k => { if (k in s) state[k] = s[k]; });
+  if (s.adv) state.adv = s.adv;                                  // 整個取代
+  if (Array.isArray(s.txts) && s.txts.length) state.txts = s.txts; // 整個取代
+  else state.txts = [newTxt()];
+  if (typeof s.selectedTxt === 'number') state.selectedTxt = s.selectedTxt;
+
+  // 2) 套用圖片（若有）
+  if (save.imageData) {
+    const img = new Image();
+    img.onload = () => {
+      clearMedia();
+      applyLoadedImage(img);     // 比照 loadImage 成功後的後續處理
+      syncAllUIFromState();
+      redrawNow();
+    };
+    img.onerror = () => { syncAllUIFromState(); redrawNow(); };
+    img.src = save.imageData;
+  } else {
+    // 無圖片：影片需重新拖入；保留目前畫面，只還原設定 + UI
+    syncAllUIFromState();
+    redrawNow();
+  }
+}
+
+$('#saveBtn').addEventListener('click', downloadSave);
+$('#loadBtn').addEventListener('click', () => $('#loadFile').click());
+$('#loadFile').addEventListener('change', e => {
+  if (e.target.files[0]) loadSaveFile(e.target.files[0]);
+  e.target.value = '';   // 允許重複選同一個檔
+});
 
 // Glitch Studio loaded

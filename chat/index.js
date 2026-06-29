@@ -358,6 +358,51 @@ document.querySelectorAll('.collapse').forEach(b=>b.onclick=()=>{
   const collapsed=sec.classList.contains('collapsed'), isLeft=sec.classList.contains('left');
   b.textContent = isLeft ? (collapsed?'▶':'◀') : (collapsed?'◀':'▶');
 });
+// 收合狀態下點整條側欄也能展開
+document.querySelectorAll('.side').forEach(sec=>sec.addEventListener('click',e=>{
+  if(!sec.classList.contains('collapsed'))return;
+  if(e.target.closest('.collapse'))return;
+  const btn=sec.querySelector('.collapse'); if(btn) btn.click();
+}));
+
+// 側欄拖曳調整寬度
+(function(){
+  const MIN=240, MAX=620;
+  document.querySelectorAll('.side').forEach(side=>{
+    const rz=side.querySelector('[data-resizer]'); if(!rz) return;
+    const isLeft=side.classList.contains('left');
+    const key='chatSideW:'+(side.id||'side');
+    try{ const w=localStorage.getItem(key); if(w) side.style.width=parseInt(w,10)+'px'; }catch{}
+    function begin(){
+      const r=side.getBoundingClientRect();
+      document.body.classList.add('resizing');
+      function move(x){ let w=isLeft?(x-r.left):(r.right-x); w=Math.max(MIN,Math.min(MAX,w)); side.style.width=w+'px'; }
+      function end(){ document.body.classList.remove('resizing'); try{ localStorage.setItem(key,parseInt(side.style.width,10)); }catch{} }
+      return {move,end};
+    }
+    rz.addEventListener('mousedown',ev=>{ if(side.classList.contains('collapsed'))return; ev.preventDefault();
+      const {move,end}=begin();
+      function mm(e){ move(e.clientX); }
+      function mu(){ end(); document.removeEventListener('mousemove',mm); document.removeEventListener('mouseup',mu); }
+      document.addEventListener('mousemove',mm); document.addEventListener('mouseup',mu);
+    });
+    rz.addEventListener('touchstart',ev=>{ if(side.classList.contains('collapsed'))return; if(ev.touches.length!==1)return; ev.preventDefault();
+      const {move,end}=begin();
+      function tm(e){ if(e.touches.length!==1)return; move(e.touches[0].clientX); }
+      function te(){ end(); document.removeEventListener('touchmove',tm); document.removeEventListener('touchend',te); }
+      document.addEventListener('touchmove',tm,{passive:false}); document.addEventListener('touchend',te);
+    },{passive:false});
+    rz.addEventListener('dblclick',()=>{ side.style.width=''; try{ localStorage.removeItem(key); }catch{} });
+  });
+})();
+
+// 行內語法 dialog
+(function(){
+  const m=$('#syntaxModal'); if(!m) return;
+  $('#syntaxBtn').onclick=()=>m.classList.remove('hidden');
+  $('#syntaxOk').onclick=()=>m.classList.add('hidden');
+  m.onclick=e=>{ if(e.target===m) m.classList.add('hidden'); };
+})();
 
 function segPick(seg,val,cb){ seg.querySelectorAll('button').forEach(b=>b.classList.toggle('on',b.dataset.v===val)); cb&&cb(val); }
 $('#modeSeg').onclick=e=>{ const b=e.target.closest('button'); if(!b)return; segPick($('#modeSeg'),b.dataset.v,v=>S.mode=v); syncToggleRows(); render(1); };
@@ -862,18 +907,47 @@ $('#imgCropOk').onclick=()=>{ if(!imgState)return; if(!imgState.img){ alert('請
 const LS_KEY='chat-studio-v1';
 function imgSrc(im){ return im&&im.src?im.src:null; }
 function srcToImg(src){ return new Promise(res=>{ if(!src){res(null);return;} const im=new Image(); im.onload=()=>res(im); im.onerror=()=>res(null); im.src=src; }); }
+function buildSaveData(){
+  const data={ v:1, uid,
+    mode:S.mode, ratio:S.ratio, fontKey:S.fontKey,
+    room:{...S.room, img:imgSrc(S.room.img)},
+    style:{...S.style},
+    chars:S.chars.map(c=>({...c, img:imgSrc(c.img)})),
+    msgs:S.msgs.map(m=>({...m, img:imgSrc(m.img)})),
+    interval:S.interval, tail:S.tail, showTime:S.showTime, startTime:S.startTime,
+    showRead:S.showRead, readCount:S.readCount, showMeAvatar:S.showMeAvatar, showMeName:S.showMeName, showInput:S.showInput, typeSpeed:S.typeSpeed };
+  return data;
+}
 function saveState(){
   try{
-    const data={ v:1, uid,
-      mode:S.mode, ratio:S.ratio, fontKey:S.fontKey,
-      room:{...S.room, img:imgSrc(S.room.img)},
-      style:{...S.style},
-      chars:S.chars.map(c=>({...c, img:imgSrc(c.img)})),
-      msgs:S.msgs.map(m=>({...m, img:imgSrc(m.img)})),
-      interval:S.interval, tail:S.tail, showTime:S.showTime, startTime:S.startTime,
-      showRead:S.showRead, readCount:S.readCount, showMeAvatar:S.showMeAvatar, showMeName:S.showMeName, showInput:S.showInput, typeSpeed:S.typeSpeed };
-    localStorage.setItem(LS_KEY, JSON.stringify(data));
+    localStorage.setItem(LS_KEY, JSON.stringify(buildSaveData()));
   }catch(e){ /* 容量超出等錯誤：自動儲存為盡力而為,忽略 */ }
+}
+// ---- 手動存檔 / 讀檔（下載 / 上傳 .json）----
+function downloadSave(){
+  const data=buildSaveData();
+  data._type="chat-save";
+  const now=new Date();
+  const p=n=>String(n).padStart(2,"0");
+  const name=`chat-${now.getFullYear()}${p(now.getMonth()+1)}${p(now.getDate())}-${p(now.getHours())}${p(now.getMinutes())}${p(now.getSeconds())}.json`;
+  const blob=new Blob([JSON.stringify(data)],{type:"application/json"});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement("a");
+  a.href=url; a.download=name; a.click();
+  setTimeout(()=>URL.revokeObjectURL(url),1000);
+}
+async function loadSaveFile(file){
+  if(!file) return;
+  let d;
+  try{
+    const text=await file.text();
+    d=JSON.parse(text);
+  }catch(e){ alert("讀檔失敗：檔案無法解析"); return; }
+  if(!(d&&(d.v===1||d._type==="chat-save"))){ alert("讀檔失敗：不是有效的 Chat 存檔"); return; }
+  await applyState(d);
+  syncUIFromState();
+  render(1);
+  saveState();
 }
 let saveTimer=null;
 function scheduleSave(){ clearTimeout(saveTimer); saveTimer=setTimeout(saveState,600); }
@@ -934,5 +1008,9 @@ function syncUIFromState(){
   document.addEventListener('change',scheduleSave,true);
   document.addEventListener('click',scheduleSave,true);
   window.addEventListener('beforeunload',saveState);
+  // 手動存檔 / 讀檔
+  $('#saveBtn').addEventListener('click',downloadSave);
+  $('#loadBtn').addEventListener('click',()=>$('#loadFile').click());
+  $('#loadFile').addEventListener('change',e=>{ const f=e.target.files[0]; loadSaveFile(f); e.target.value=''; });
   // 使用說明改為導覽 tour（見 index.html 末尾 inline script，沿用 #helpBtn 與 'chat-seen-guide'）
 })();

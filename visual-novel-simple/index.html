@@ -73,24 +73,21 @@
     </div>
     <!-- 細節版尚未完成,暫時隱藏「簡易／細節」切換入口。程式碼保留,未來把這個 toggle 加回即可重新開放。 -->
     <div class="topbar-actions">
-      <div class="ui-scale" id="uiScale" role="group" aria-label="介面大小">
-        <button class="us-btn on" type="button" data-ui="std">標準</button>
-        <button class="us-btn" type="button" data-ui="lg">大</button>
-        <button class="us-btn" type="button" data-ui="xl">最大</button>
-      </div>
-      <span class="topbar-divider"></span>
-      <button class="help-btn" id="helpBtn" title="使用說明" aria-label="使用說明"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 11v5"/><path d="M12 8h.01"/></svg></button>
+      <!-- 工具設定:語法速查(icon)→ 樣式 → CG 庫 → 更多 -->
       <button class="btn btn-icon" id="btnSyntaxQuick" title="語法速查" aria-label="語法速查">
         <span class="btn-emoji"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 6.5C12 5 10.5 4 8 4S4 4.5 4 5.5v13C4 17.5 5.5 17 8 17s4 1 4 2"/><path d="M12 6.5C12 5 13.5 4 16 4s4 .5 4 1.5v13C20 17.5 18.5 17 16 17s-4 1-4 2"/></svg></span>
         <span class="btn-text">語法速查</span>
       </button>
-      <!-- 工具設定:樣式(高頻,保留文字)→ 設定(icon)-->
+      <button class="btn btn-icon" id="btnShortcuts" title="快捷鍵" aria-label="快捷鍵">
+        <span class="btn-emoji"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="6" width="18" height="12" rx="2"/><path d="M7 10h.01M11 10h.01M15 10h.01M7 14h10"/></svg></span>
+        <span class="btn-text">快捷鍵</span>
+      </button>
       <button class="btn" id="btnStyle"><span class="btn-emoji"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a9 9 0 1 0 0 18c1.1 0 1.5-.8 1.5-1.5 0-.5-.3-.9-.3-1.4 0-.6.5-1.1 1.1-1.1H16a5 5 0 0 0 5-5c0-4.4-4-9-9-9z"/><circle cx="7.5" cy="11" r="1"/><circle cx="11" cy="7.5" r="1"/><circle cx="15.5" cy="8.5" r="1"/></svg></span><span class="btn-text">樣式</span></button>
-      <button class="btn btn-icon" id="btnSettings" title="設定" aria-label="設定"><span class="btn-emoji"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3.2"/><path d="M12 3.5v3M12 17.5v3M3.5 12h3M17.5 12h3M6 6l2 2M16 16l2 2M18 6l-2 2M8 16l-2 2"/></svg></span><span class="btn-text">設定</span></button>
+      <button class="btn" id="btnCgLibrary" title="CG 庫" aria-label="CG 庫"><span class="btn-emoji"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="5" width="16" height="14" rx="2"/><circle cx="9" cy="10" r="1.5"/><path d="M5 16l4-3.5 3.5 3 3-2.5L19 16"/></svg></span><span class="btn-text">CG</span></button>
 
       <!-- 更多功能選單(重設 / 最近開啟。任務 1:專案匯入匯出已移除,改用 💾 儲存 / 📂 開啟) -->
       <div class="topbar-more">
-        <button class="btn btn-ghost" id="btnMore" title="更多" aria-haspopup="true">⋯</button>
+        <button class="btn btn-ghost btn-icon" id="btnMore" title="重設 / 更多" aria-label="重設 / 更多" aria-haspopup="true"><span class="btn-emoji"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v5h-5"/></svg></span></button>
         <div class="topbar-menu" id="topbarMenu" hidden>
           <button class="topbar-menu-item" id="btnResetScript">↻ 只重設劇本</button>
           <button class="topbar-menu-item" id="btnResetStyle">↻ 只重設樣式</button>
@@ -101,10 +98,19 @@
         </div>
       </div>
 
-      <!-- 檔案操作:垂直分隔線後 開啟 / 儲存(儲存固定在最右側,任務 1)-->
+      <!-- 檔案操作:垂直分隔線後 開啟 / 儲存(統一純圖示圓鈕) -->
       <span class="topbar-divider topbar-divider-files"></span>
-      <button class="btn" id="btnOpenFile"><span class="btn-emoji"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h5l2 2h9v9a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7z"/></svg></span><span class="btn-text">開啟</span></button>
-      <button class="btn btn-primary" id="btnSaveFile"><span class="btn-emoji"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4h10l4 4v12H5z"/><path d="M8 4v5h7"/><rect x="8" y="13" width="8" height="6"/></svg></span><span class="btn-text">儲存</span></button>
+      <button class="help-btn" id="btnOpenFile" title="開啟 .vns 檔案" aria-label="開啟"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20V9"/><path d="M7 14l5-5 5 5"/><path d="M5 4h14"/></svg></button>
+      <button class="help-btn" id="btnSaveFile" title="儲存" aria-label="儲存"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v11"/><path d="M7 10l5 5 5-5"/><path d="M5 20h14"/></svg></button>
+
+      <!-- 資訊列(對齊其他工具,固定最右):介面縮放 → 使用說明 → 快捷鍵 -->
+      <span class="topbar-divider"></span>
+      <div class="ui-scale" id="uiScale" role="group" aria-label="介面大小">
+        <button class="us-btn on" type="button" data-ui="std">標準</button>
+        <button class="us-btn" type="button" data-ui="lg">大</button>
+        <button class="us-btn" type="button" data-ui="xl">最大</button>
+      </div>
+      <button class="help-btn" id="helpBtn" title="使用說明" aria-label="使用說明"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 11v5"/><path d="M12 8h.01"/></svg></button>
     </div>
   </header>
 
@@ -294,6 +300,26 @@
         <div class="bottom-bar-group bottom-bar-right">
           <button class="btn" id="barScreenshotBtn" type="button"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h3l1.5-2h7L17 8h3a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z"/><circle cx="12" cy="13" r="3.2"/></svg>截圖</button>
           <button class="btn btn-primary" id="barMp4Btn" type="button"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="6" width="13" height="12" rx="2"/><path d="M16 10l5-3v10l-5-3z"/></svg>MP4</button>
+          <!-- 輸出設定:片頭緩衝(由系統設定搬至此)。點齒輪開浮層 -->
+          <div class="output-settings-wrap">
+            <button class="btn btn-ghost btn-icon" id="barOutputSettingsBtn" type="button" title="輸出設定" aria-label="輸出設定" aria-haspopup="true"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3.2"/><path d="M12 3.5v3M12 17.5v3M3.5 12h3M17.5 12h3M6 6l2 2M16 16l2 2M18 6l-2 2M8 16l-2 2"/></svg></button>
+            <div class="output-settings-popover" id="outputSettingsPopover" hidden>
+              <div class="output-settings-title"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="6" width="13" height="12" rx="2"/><path d="M16 10l5-3v10l-5-3z"/></svg>影片輸出</div>
+              <label class="settings-toggle">
+                <input type="checkbox" id="introBufferEnabled">
+                <span>MP4 / GIF 輸出時加入片頭緩衝</span>
+              </label>
+              <div class="settings-sub" id="introBufferSettings">
+                <label class="settings-sub-row">
+                  <span>片頭時長</span>
+                  <input type="range" id="introBufferDuration" min="0.5" max="3.0" step="0.1" value="1.5">
+                  <span id="introBufferDurationVal">1.5 秒</span>
+                </label>
+                <p class="settings-hint">💡 開頭顯示乾淨的 CG 畫面,方便上傳社群平台時抓取縮圖。</p>
+                <p class="settings-hint">💡 片頭緩衝只在 MP4 / GIF 輸出時生效,預覽不顯示。</p>
+              </div>
+            </div>
+          </div>
         </div>
       </footer>
 
@@ -493,7 +519,6 @@
   </div>
 </div>
 
-<!-- ========== Settings Modal (系統設定) ========== -->
 <!-- ========== CG Library Modal (🖼 CG 庫) ========== -->
 <div class="modal-backdrop" id="cgLibraryModal">
   <div class="modal" role="dialog" aria-modal="true" style="max-width: 760px;">
@@ -538,96 +563,6 @@
         <div class="projects-empty-icon" aria-hidden="true"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 13l3-8h12l3 8v5a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1v-5z"/><path d="M3 13h5l1 2h6l1-2h5"/></svg></div>
         <div>還沒有任何專案</div>
       </div>
-    </div>
-  </div>
-</div>
-
-<div class="modal-backdrop" id="settingsModal">
-  <div class="modal" role="dialog" aria-modal="true" style="max-width: 480px;">
-    <div class="modal-header">
-      <div class="modal-title"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3.2"/><path d="M12 3.5v3M12 17.5v3M3.5 12h3M17.5 12h3M6 6l2 2M16 16l2 2M18 6l-2 2M8 16l-2 2"/></svg>系統設定</div>
-      <button class="modal-close" id="settingsModalClose" aria-label="關閉">×</button>
-    </div>
-    <div class="modal-body">
-      <!-- 💾 儲存空間 -->
-      <div class="settings-storage" id="settingsStorage">
-        <div class="settings-storage-label"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4h10l4 4v12H5z"/><path d="M8 4v5h7"/><rect x="8" y="13" width="8" height="6"/></svg>儲存空間</div>
-        <div class="storage-bar" aria-hidden="true">
-          <div class="storage-bar-fill" id="storageBarFill" style="width:0%"></div>
-        </div>
-        <div class="storage-summary" id="storageSummary">偵測中…</div>
-        <div class="storage-breakdown" id="storageBreakdown"></div>
-        <div class="storage-actions">
-          <button class="btn" id="storageManageCgs"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="5" width="16" height="14" rx="2"/><circle cx="9" cy="10" r="1.5"/><path d="M5 16l4-3.5 3.5 3 3-2.5L19 16"/></svg>管理 CG 庫</button>
-          <button class="btn btn-ghost" id="storageRefresh" title="重新計算用量">↻</button>
-        </div>
-        <div class="storage-persist-note" id="storagePersistNote" hidden></div>
-      </div>
-
-      <!-- 📹 影片輸出 -->
-      <div class="settings-section settings-output">
-        <h3><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="6" width="13" height="12" rx="2"/><path d="M16 10l5-3v10l-5-3z"/></svg>影片輸出</h3>
-        <label class="settings-toggle">
-          <input type="checkbox" id="introBufferEnabled">
-          <span>MP4 / GIF 輸出時加入片頭緩衝</span>
-        </label>
-        <div class="settings-sub" id="introBufferSettings">
-          <label class="settings-sub-row">
-            <span>片頭時長</span>
-            <input type="range" id="introBufferDuration" min="0.5" max="3.0" step="0.1" value="1.5">
-            <span id="introBufferDurationVal">1.5 秒</span>
-          </label>
-          <p class="settings-hint">💡 開頭顯示乾淨的 CG 畫面,方便上傳社群平台時抓取縮圖。</p>
-          <p class="settings-hint">💡 片頭緩衝只在 MP4 / GIF 輸出時生效,預覽不顯示。</p>
-        </div>
-      </div>
-
-      <div class="settings-author">
-        <div class="settings-author-label">關於作者</div>
-        <div class="settings-author-name">Made by ilai</div>
-        <div class="settings-author-links">
-          <a
-            class="settings-author-link"
-            href="https://www.threads.com/@ilai_sei"
-            target="_blank"
-            rel="noopener noreferrer"
-            aria-label="作者的 Threads 主帳號 @ilai_sei(個人/工具,新分頁開啟)"
-          >
-            <span class="settings-author-platform">Threads (個人 / 工具)</span>
-            <span class="settings-author-handle">@ilai_sei</span>
-            <span class="settings-author-arrow" aria-hidden="true">→</span>
-          </a>
-          <a
-            class="settings-author-link"
-            href="https://www.threads.com/@ilainosu.ffxiv"
-            target="_blank"
-            rel="noopener noreferrer"
-            aria-label="作者的 FFXIV 創作 Threads 帳號 @ilainosu.ffxiv(新分頁開啟)"
-          >
-            <span class="settings-author-platform">Threads (FFXIV 創作)</span>
-            <span class="settings-author-handle">@ilainosu.ffxiv</span>
-            <span class="settings-author-arrow" aria-hidden="true">→</span>
-          </a>
-          <a
-            class="settings-author-link"
-            href="https://www.plurk.com/ilai_sei"
-            target="_blank"
-            rel="noopener noreferrer"
-            aria-label="作者的 Plurk 帳號 @ilai_sei(新分頁開啟)"
-          >
-            <span class="settings-author-platform">Plurk</span>
-            <span class="settings-author-handle">@ilai_sei</span>
-            <span class="settings-author-arrow" aria-hidden="true">→</span>
-          </a>
-        </div>
-        <div class="settings-author-msg">
-          希望每個喜歡 FFXIV 的玩家、<br>
-          喜歡創作的創作者們,喜歡這份工具!💛
-        </div>
-      </div>
-    </div>
-    <div class="modal-footer">
-      <button class="btn btn-primary" id="settingsModalDone">完成</button>
     </div>
   </div>
 </div>
@@ -697,6 +632,41 @@
     <div class="syntax-quick-item">
       <span class="syntax-quick-key">(文字)</span>
       <span class="syntax-quick-desc">內心話格式</span>
+    </div>
+  </div>
+</div>
+
+<!-- 快捷鍵說明 popover(沿用語法速查樣式)-->
+<div class="syntax-quick-popover" id="shortcutsPopover" hidden>
+  <div class="syntax-quick-title">快捷鍵</div>
+  <div class="syntax-quick-list">
+    <div class="syntax-quick-item">
+      <span class="syntax-quick-key">Space</span>
+      <span class="syntax-quick-desc">播放 / 暫停預覽(不在輸入框時)</span>
+    </div>
+    <div class="syntax-quick-item">
+      <span class="syntax-quick-key">Esc</span>
+      <span class="syntax-quick-desc">停止播放</span>
+    </div>
+    <div class="syntax-quick-item">
+      <span class="syntax-quick-key">Ctrl + Enter</span>
+      <span class="syntax-quick-desc">新增一幕</span>
+    </div>
+    <div class="syntax-quick-item">
+      <span class="syntax-quick-key">Ctrl + Del</span>
+      <span class="syntax-quick-desc">刪除當前幕</span>
+    </div>
+    <div class="syntax-quick-item">
+      <span class="syntax-quick-key">Ctrl + ↑ / ↓</span>
+      <span class="syntax-quick-desc">切換上一 / 下一幕</span>
+    </div>
+    <div class="syntax-quick-item">
+      <span class="syntax-quick-key">Ctrl + Shift + ↑ / ↓</span>
+      <span class="syntax-quick-desc">把當前幕往上 / 往下移動</span>
+    </div>
+    <div class="syntax-quick-item">
+      <span class="syntax-quick-key">Ctrl + S</span>
+      <span class="syntax-quick-desc">儲存專案</span>
     </div>
   </div>
 </div>

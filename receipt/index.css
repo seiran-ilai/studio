@@ -67,6 +67,7 @@ main{display:flex; flex:1; min-height:0}
 .side-body{padding:14px; overflow-y:auto; flex:1}
 .side.collapsed .side-body, .side.collapsed .title{display:none}
 .side.collapsed .side-head{flex-direction:column; border-bottom:none; padding-top:12px; gap:12px}
+.side.collapsed .collapse{order:-1; margin:0 auto}
 .side.collapsed .vtitle{display:block; writing-mode:vertical-rl; color:var(--ink2); font-size:12px; font-weight:700; letter-spacing:3px}
 .vtitle{display:none}
 .center{flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center;

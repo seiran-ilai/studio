@@ -152,12 +152,22 @@ window.Engine = (function () {
     } else {
       const img = new Image();
       img.onload = () => {
-        state.media = img;
-        state.isVideo = false;
-        onMediaReady();
+        applyLoadedImage(img, file.name);
       };
       img.src = url;
     }
+  }
+
+  // 把已載入的 <img> 設為當前媒體並更新 UI(loadMedia 圖片分支與讀檔共用)
+  function applyLoadedImage(img, name) {
+    if (state.media && state.isVideo) {
+      state.media.pause();
+      state.media.src = "";
+    }
+    state.media = img;
+    state.isVideo = false;
+    state.mediaName = name || "";
+    onMediaReady();
   }
 
   function mediaSize() {
@@ -1064,6 +1074,130 @@ window.Engine = (function () {
   }
 
   /* ─────────────────────────────
+     存檔 / 讀檔(下載 / 上傳 .json)
+     ───────────────────────────── */
+  // 可序列化的設定欄位(排除 media / runtime 等執行期狀態)
+  const SAVE_KEYS = [
+    "glass", "fill", "fillC1", "fillC2", "fillAngle",
+    "blur", "opacity", "shine", "radius", "tint", "bgBlur", "bgDim",
+    "cardX", "cardY", "cardScale", "mediaZoom", "mediaX", "mediaY",
+    "outW", "outH", "dur"
+  ];
+
+  function tsName() {
+    const d = new Date();
+    const p = n => String(n).padStart(2, "0");
+    return `${d.getFullYear()}${p(d.getMonth() + 1)}${p(d.getDate())}-${p(d.getHours())}${p(d.getMinutes())}${p(d.getSeconds())}`;
+  }
+
+  function downloadSave() {
+    const settings = {};
+    SAVE_KEYS.forEach(k => { settings[k] = state[k]; });
+
+    // 圖片素材轉成 dataURL 一併存入;影片太大不存
+    let mediaImage = null;
+    if (state.media && !state.isVideo) {
+      const { mw, mh } = mediaSize();
+      const tmp = document.createElement("canvas");
+      tmp.width = mw;
+      tmp.height = mh;
+      tmp.getContext("2d").drawImage(state.media, 0, 0, mw, mh);
+      mediaImage = tmp.toDataURL("image/jpeg", 0.92);
+    }
+
+    const payload = {
+      _type: "templates-save",
+      version: 1,
+      settings,
+      mediaImage,
+      mediaName: state.isVideo ? "" : state.mediaName
+    };
+    const blob = new Blob([JSON.stringify(payload)], { type: "application/json" });
+    download(blob, `templates-${tsName()}.json`);
+  }
+
+  // 把載入的 settings 套回所有控制項 UI(透過既有的 input 事件同步 state 與標籤)
+  function applyLoadedSettings(settings) {
+    // 玻璃材質(segmented 按鈕)
+    if (settings.glass) {
+      const gb = $(`.glass-btn[data-glass="${settings.glass}"]`);
+      if (gb) gb.click();
+    }
+    // 卡片色系(segmented 按鈕)
+    if (settings.fill) {
+      const fb = $(`[data-fill="${settings.fill}"]`);
+      if (fb) fb.click();
+    }
+    // 顏色
+    if (settings.fillC1 !== undefined) {
+      const c1 = $("#fillC1");
+      if (c1) { c1.value = settings.fillC1; c1.dispatchEvent(new Event("input")); }
+    }
+    if (settings.fillC2 !== undefined) {
+      const c2 = $("#fillC2");
+      if (c2) { c2.value = settings.fillC2; c2.dispatchEvent(new Event("input")); }
+    }
+    // 輸出尺寸(segmented 按鈕)
+    if (settings.outW !== undefined && settings.outH !== undefined) {
+      const sb = $(`.size-btn[data-w="${settings.outW}"][data-h="${settings.outH}"]`);
+      if (sb) sb.click();
+    }
+    // 滑桿:設值後派發 input,讓 bindRange 同步 state 與標籤
+    const sliders = {
+      fillAngle: "#fillAngle", blur: "#glassBlur", opacity: "#glassOpacity",
+      shine: "#glassShine", radius: "#glassRadius", tint: "#glassTint",
+      bgBlur: "#bgBlur", bgDim: "#bgDim",
+      cardX: "#cardX", cardY: "#cardY", cardScale: "#cardScale",
+      mediaZoom: "#mediaZoom", mediaX: "#mediaX", mediaY: "#mediaY",
+      dur: "#outDur"
+    };
+    Object.keys(sliders).forEach(key => {
+      if (settings[key] === undefined) return;
+      const el = $(sliders[key]);
+      if (el) { el.value = settings[key]; el.dispatchEvent(new Event("input")); }
+    });
+    // 卡片位置緩動目標歸位,避免讀檔後卡片飄移
+    cardTarget.x = state.cardX;
+    cardTarget.y = state.cardY;
+  }
+
+  async function loadSaveFile(file) {
+    let data;
+    try {
+      const text = await new Promise((resolve, reject) => {
+        const fr = new FileReader();
+        fr.onload = () => resolve(fr.result);
+        fr.onerror = () => reject(fr.error);
+        fr.readAsText(file);
+      });
+      data = JSON.parse(text);
+    } catch (e) {
+      alert("讀檔失敗:檔案無法解析。");
+      return;
+    }
+    if (!data || data._type !== "templates-save") {
+      alert("這不是有效的 Template 存檔檔案。");
+      return;
+    }
+
+    const settings = data.settings || {};
+    Object.assign(state, settings);
+    applyLoadedSettings(settings);
+
+    // 若存有圖片素材,還原為當前媒體
+    if (data.mediaImage) {
+      const img = new Image();
+      img.onload = () => {
+        applyLoadedImage(img, data.mediaName || "");
+        requestInk();
+      };
+      img.src = data.mediaImage;
+    } else {
+      requestInk();
+    }
+  }
+
+  /* ─────────────────────────────
      模板選單(rail)
      ───────────────────────────── */
   function buildRail() {
@@ -1102,6 +1236,19 @@ window.Engine = (function () {
     addTab("質感", buildGlassTab);
     addTab("版面", buildLayoutTab);
     addTab("輸出", buildOutputTab);
+
+    // header:存檔 / 讀檔
+    const btnSave = $("#btnSave");
+    const btnLoad = $("#btnLoad");
+    const loadFile = $("#loadFile");
+    if (btnSave) btnSave.addEventListener("click", downloadSave);
+    if (btnLoad && loadFile) {
+      btnLoad.addEventListener("click", () => loadFile.click());
+      loadFile.addEventListener("change", () => {
+        if (loadFile.files[0]) loadSaveFile(loadFile.files[0]);
+        loadFile.value = "";
+      });
+    }
 
     applyCanvasSize();
     resetClock();
