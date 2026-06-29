@@ -1321,6 +1321,27 @@
     font-size: 0.92em;
   }
 
+  /* ═══ Help button (?) — 使用說明,右上資訊列 ═══ */
+  .help-btn {
+    flex: none;
+    width: 30px;
+    height: 30px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--bg-card-solid);
+    border: 1px solid var(--border-soft);
+    color: var(--aether-blue);
+    cursor: pointer;
+    border-radius: 50%;
+    transition: all 0.18s ease;
+  }
+  .help-btn:hover {
+    border-color: var(--aether-blue);
+    color: #fff;
+    background: var(--aether-blue);
+  }
+
   /* ═══ Info button (ℹ) — 右上資訊列 ═══ */
   .info-btn {
     flex: none;
@@ -1584,3 +1605,69 @@
     line-height: 1;
   }
   #desktop-hint button:hover { background: var(--aether-blue); color: #fff; }
+  /* ===== 引導導覽 (coach-mark tour) ===== */
+  .tour { position: fixed; inset: 0; z-index: 300; }
+  .tour.hidden { display: none; }
+  .tour-spot {
+    position: fixed;
+    border-radius: 10px;
+    box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.55);
+    outline: 2px solid var(--aether-blue);
+    transition: all 0.25s ease;
+    pointer-events: none;
+  }
+  .tour-bubble {
+    position: fixed;
+    max-width: 300px;
+    background: var(--bg-card-solid);
+    border: 1px solid var(--border-soft);
+    border-radius: 14px;
+    padding: 14px 16px;
+    box-shadow: var(--shadow-soft, 0 10px 30px rgba(0, 0, 0, 0.15));
+    z-index: 301;
+    transition: left 0.22s ease, top 0.22s ease;
+  }
+  .tour-text {
+    font-size: 13px;
+    line-height: 1.75;
+    color: var(--text-primary);
+    margin: 0 0 12px;
+  }
+  .tour-text b { color: var(--aether-gold); }
+  .tour-foot {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+  }
+  .tour-step { font-size: 11px; color: var(--text-muted); }
+  .tour-btns { display: flex; gap: 6px; }
+  .tour-btn {
+    background: var(--bg-card-solid);
+    border: 1px solid var(--border-soft);
+    color: var(--text-primary);
+    border-radius: 8px;
+    padding: 6px 11px;
+    font-size: 12px;
+    font-family: inherit;
+    cursor: pointer;
+  }
+  .tour-btn:hover { border-color: var(--aether-blue); }
+  .tour-btn.primary {
+    background: var(--aether-blue);
+    border-color: var(--aether-blue);
+    color: #fff;
+  }
+  .tour-bubble::before {
+    content: "";
+    position: absolute;
+    width: 12px;
+    height: 12px;
+    background: var(--bg-card-solid);
+    border: 1px solid var(--border-soft);
+    transform: rotate(45deg);
+  }
+  .tour-bubble[data-arrow="left"]::before { left: -7px; top: 22px; border-right: none; border-top: none; }
+  .tour-bubble[data-arrow="right"]::before { right: -7px; top: 22px; border-left: none; border-bottom: none; }
+  .tour-bubble[data-arrow="top"]::before { top: -7px; left: 24px; border-right: none; border-bottom: none; }
+  .tour-bubble[data-arrow="bottom"]::before { bottom: -7px; left: 24px; border-left: none; border-top: none; }

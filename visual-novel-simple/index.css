@@ -149,6 +149,44 @@ body::after {
   background: var(--border-soft);
   margin: 0 4px;
 }
+
+/* 使用說明按鈕(圓形 ⓘ) */
+.help-btn {
+  flex: none;
+  width: 30px;
+  height: 30px;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--border-soft);
+  border-radius: 50%;
+  background: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: color 0.2s, border-color 0.2s;
+}
+.help-btn:hover {
+  color: var(--gold);
+  border-color: var(--gold-bright);
+}
+
+/* 使用說明導覽(spotlight + 氣泡) */
+.tour{position:fixed;inset:0;z-index:3000}
+.tour.hidden{display:none}
+.tour-spot{position:fixed;border-radius:10px;box-shadow:0 0 0 9999px rgba(0,0,0,.55);outline:2px solid var(--gold);transition:all .25s ease;pointer-events:none}
+.tour-bubble{position:fixed;max-width:300px;background:var(--bg-panel,#fff);border:1px solid var(--border-soft);border-radius:14px;padding:14px 16px;box-shadow:var(--shadow-soft,0 10px 30px rgba(0,0,0,.18));z-index:3001;transition:left .22s ease,top .22s ease}
+.tour-text{font-size:13px;line-height:1.75;color:var(--text-primary);margin:0 0 12px}
+.tour-text b{color:var(--gold-bright,var(--gold))}
+.tour-foot{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.tour-step{font-size:11px;color:var(--text-muted)}
+.tour-btns{display:flex;gap:6px}
+.tour-btn{background:var(--bg-panel,#fff);border:1px solid var(--border-soft);color:var(--text-primary);border-radius:8px;padding:6px 11px;font-size:12px;font-family:inherit;cursor:pointer}
+.tour-btn:hover{border-color:var(--gold)}
+.tour-btn.primary{background:var(--gold);border-color:var(--gold);color:#fff}
+.tour-bubble::before{content:"";position:absolute;width:12px;height:12px;background:var(--bg-panel,#fff);border:1px solid var(--border-soft);transform:rotate(45deg)}
+.tour-bubble[data-arrow="left"]::before{left:-7px;top:22px;border-right:none;border-top:none}
+.tour-bubble[data-arrow="right"]::before{right:-7px;top:22px;border-left:none;border-bottom:none}
+.tour-bubble[data-arrow="top"]::before{top:-7px;left:24px;border-right:none;border-bottom:none}
+.tour-bubble[data-arrow="bottom"]::before{bottom:-7px;left:24px;border-left:none;border-top:none}
 .topbar-more { position: relative; }
 .topbar-menu {
   position: absolute;

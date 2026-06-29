@@ -194,6 +194,13 @@ canvas{touch-action:none}
 #bgCv{border-radius:10px; background:#cdd6d2; cursor:pointer; touch-action:none; border:1px solid var(--line)}
 .modal-actions{display:flex; gap:10px; justify-content:flex-end; margin-top:16px}
 .modal-actions .btn{min-width:84px}
+.help-btn{flex:none; width:30px; height:30px; display:grid; place-items:center; border:1px solid var(--line); border-radius:50%; background:none; color:var(--ink3); cursor:pointer; transition:color .2s, border-color .2s}
+.help-btn:hover{color:var(--accent-deep); border-color:var(--accent)}
+.help-body{font-size:13px; line-height:1.7; color:var(--ink2)}
+.help-body h4{font-size:12.5px; color:var(--accent-deep); margin:14px 0 4px; letter-spacing:.04em}
+.help-body h4:first-child{margin-top:0}
+.help-body p{margin:0 0 7px}
+.help-body b{color:var(--ink)}
 #imgCv{border-radius:10px; background:#cdd6d2; cursor:pointer; touch-action:none; border:1px solid var(--line)}
 
 /* 訊息圖片：縮圖與按鈕 */
@@ -213,6 +220,25 @@ canvas{touch-action:none}
 #desktop-hint button{flex:none; width:30px; height:30px; border-radius:50%; cursor:pointer;
   background:var(--accent-soft); border:none; color:var(--ink2); font-size:15px; line-height:1}
 #desktop-hint button:hover{background:var(--accent); color:#fff}
+
+/* 導覽 tour:聚光燈 + 對話泡泡 */
+.tour{position:fixed; inset:0; z-index:300}
+.tour.hidden{display:none}
+.tour-spot{position:fixed; border-radius:10px; box-shadow:0 0 0 9999px rgba(0,0,0,.5); outline:2px solid var(--accent); transition:all .25s ease; pointer-events:none}
+.tour-bubble{position:fixed; max-width:300px; background:var(--panel2); border:1px solid var(--line-strong); border-radius:14px; padding:14px 16px; box-shadow:var(--shadow-soft); z-index:301; backdrop-filter:blur(var(--blur)); -webkit-backdrop-filter:blur(var(--blur)); transition:left .22s ease, top .22s ease}
+.tour-text{font-size:13px; line-height:1.75; color:var(--ink); margin:0 0 12px}
+.tour-text b{color:var(--accent-deep)}
+.tour-foot{display:flex; align-items:center; justify-content:space-between; gap:10px}
+.tour-step{font-size:11px; color:var(--ink3)}
+.tour-btns{display:flex; gap:6px}
+.tour-btn{background:var(--panel2); border:1px solid var(--line); color:var(--ink); border-radius:8px; padding:6px 11px; font-size:12px; font-family:inherit; cursor:pointer}
+.tour-btn:hover{border-color:var(--accent)}
+.tour-btn.primary{background:var(--accent); border-color:var(--accent); color:#fff}
+.tour-bubble::before{content:""; position:absolute; width:12px; height:12px; background:var(--panel2); border:1px solid var(--line-strong); transform:rotate(45deg)}
+.tour-bubble[data-arrow="left"]::before{left:-7px; top:22px; border-right:none; border-top:none}
+.tour-bubble[data-arrow="right"]::before{right:-7px; top:22px; border-left:none; border-bottom:none}
+.tour-bubble[data-arrow="top"]::before{top:-7px; left:24px; border-right:none; border-bottom:none}
+.tour-bubble[data-arrow="bottom"]::before{bottom:-7px; left:24px; border-left:none; border-top:none}
 
 ::-webkit-scrollbar{width:9px;height:9px}
 ::-webkit-scrollbar-track{background:transparent}

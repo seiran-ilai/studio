@@ -837,6 +837,10 @@ function applyDesign(key){
   const d=designData(key);
   S.blocks=d.blocks; S.items=d.items; S.fin=d.fin;
   S.sty=Object.assign({}, S.sty, d.sty); S.type=Object.assign({}, d.type); S.design=key;
+  S.sty.texture='';   // 預設模板不帶紙張紋理
+  S.bg={ img:null, mode:'none', pos:'center', opacity:15, size:40, effect:'none', paperAlpha:100, margin:80 };   // 不帶底圖
+  segPick($('#bgModeSeg'),S.bg.mode); segPick($('#bgEffectSeg'),S.bg.effect); bgSyncRows();
+  $('#bgPaperAlpha').value=S.bg.paperAlpha; $('#bgPaperAlphaV').textContent=S.bg.paperAlpha+'%';
   syncStyleInputs(); syncFin(); syncType(); renderBlocks(); renderItems();
   if(blkMode==='text') $('#blockSource').value=serializeBlocks();
   render(1);
@@ -1110,7 +1114,8 @@ function setView(v){
   else if(previewing) exitPreview();   // 切回設計編輯:放棄預覽,回到自己的設計
   else render(1);
 }
-$('#viewSeg').onclick=e=>{ const b=e.target.closest('button'); if(b) setView(b.dataset.v); };
+$('#viewSeg').onclick=e=>{ const b=e.target.closest('button'); if(!b)return; setView(b.dataset.v);
+  if(b.dataset.v==='pos'){ try{ if(!localStorage.getItem(POS_GUIDE_KEY)) setTimeout(()=>startTour(TOUR_POS,null,POS_GUIDE_KEY),350); }catch(e){} } };
 $('#posManageBtn').onclick=()=>{ renderCatalog(); renderCats(); $('#posMng').classList.remove('hidden'); };
 $('#posMngClose').onclick=()=>$('#posMng').classList.add('hidden');
 $('#posOptCancel').onclick=()=>$('#posOpt').classList.add('hidden');
@@ -1200,6 +1205,60 @@ function dataImportFile(file){ if(!file)return; const r=new FileReader();
     $('#dataModal').classList.add('hidden'); alert('已載入:'+done.join('、'));
   }catch(e){ alert('無法讀取此檔案。'); } };
   r.readAsText(file); }
+// 引導式導覽:聚光燈 + 對話框拉出解說
+const GUIDE_KEY='receipt-seen-guide', POS_GUIDE_KEY='receipt-seen-pos-guide';
+const TOUR_EDIT=[
+  {sel:'#viewSeg', text:'這裡切換 <b>設計編輯</b> 與 <b>收銀</b> 兩種模式。', pos:'bottom'},
+  {sel:'#designSeg', text:'點預設模板會<b>即時預覽</b>；按右側「<b>套用</b>」才真正覆蓋目前設計，切回「設計編輯」可放棄預覽。', pos:'bottom'},
+  {sel:'#colLeft', text:'左欄：金額與付款、文字樣式、<b>外觀</b>（紙張效果 / 紋理 / 圓角 / 不透明度）、<b>背景圖片</b>、匯出 PNG / MP4。', pos:'right'},
+  {sel:'.center', text:'中間是即時預覽，<b>滑鼠滾輪可縮放</b>，所見即所得。', pos:'left'},
+  {sel:'#colBlocks', text:'版面區塊：拖曳 <b>⋮⋮</b> 排序、點標題收合；可切「<b>區塊 / 純文字</b>」用語法快速排版（# 大標、- 分隔線、[品項] [金額] [備註]…）。', pos:'left'},
+  {sel:'#colRight', text:'品項區：品名 / 數量 / 單價，可加子項目；收銀模式會用到這些商品。', pos:'left'},
+  {sel:'#dataBtn', text:'<b>資料</b>：勾選模板 / 商品表 / 今日收銀，一鍵匯出或載入備份。完成後可隨時點右上的 <b>i</b> 重看導覽。', pos:'bottom'},
+];
+const TOUR_POS=[
+  {sel:'#posManageBtn', text:'先按「<b>管理</b>」建立商品與分類；在「<b>類別編輯</b>」可設每個分類的<b>共用子項目</b>與<b>店家抽成 %</b>。', pos:'bottom'},
+  {sel:'#posGrid', text:'點商品即可<b>加入購物車</b>；商品若有子項目會跳出選擇（可選「無」）。上方可依<b>分類</b>篩選。', pos:'right'},
+  {sel:'.pos-cart', text:'購物車顯示明細與<b>合計</b>；可手動填「<b>收據資訊</b>」（日期 / 單號）、<b>訂單備註</b>，以及本筆<b>小費</b>。', pos:'left'},
+  {sel:'#posRecord', text:'按「<b>紀錄本筆交易</b>」把這筆存入今日收銀（也可另外輸出 PNG）。', pos:'top'},
+  {sel:'.pos-preview', text:'右側即時預覽收據；<b>點圖可複製</b>，或按「<b>輸出 PNG</b>」下載。', pos:'left'},
+  {sel:'#posLedgerBtn', text:'「<b>今日收銀</b>」看統計（總額 / 店家抽成 / 淨額 / 小費），可依<b>資訊欄位分組、排序</b>，並用<b>表格</b>或<b>純文字</b>彈窗截圖 / 複製。', pos:'top'},
+];
+let tourIdx=0, tourSteps=TOUR_EDIT, tourKey=GUIDE_KEY;
+function tourShow(){
+  const step=tourSteps[tourIdx], el=document.querySelector(step.sel);
+  if(!el || (!el.offsetWidth && !el.offsetHeight)){ if(tourIdx<tourSteps.length-1){ tourIdx++; return tourShow(); } return tourEnd(); }
+  const r=el.getBoundingClientRect(), pad=8, spot=$('#tourSpot');
+  spot.style.left=(r.left-pad)+'px'; spot.style.top=(r.top-pad)+'px'; spot.style.width=(r.width+pad*2)+'px'; spot.style.height=(r.height+pad*2)+'px';
+  const bub=$('#tourBubble'); bub.querySelector('.tour-text').innerHTML=step.text;
+  $('#tourStepNo').textContent=(tourIdx+1)+' / '+tourSteps.length;
+  $('#tourPrev').style.visibility=tourIdx?'visible':'hidden';
+  $('#tourNext').textContent=tourIdx===tourSteps.length-1?'完成':'下一步';
+  $('#tour').classList.remove('hidden');
+  tourPos(bub,r,step.pos);
+}
+function tourPos(bub,r,pos){
+  bub.style.left='-9999px'; bub.style.top='0px';
+  const bw=bub.offsetWidth, bh=bub.offsetHeight, gap=14, vw=innerWidth, vh=innerHeight; let left,top,arrow;
+  if(pos==='right'){ left=r.right+gap; top=r.top; arrow='left'; }
+  else if(pos==='left'){ left=r.left-gap-bw; top=r.top; arrow='right'; }
+  else if(pos==='top'){ left=r.left; top=r.top-gap-bh; arrow='bottom'; }
+  else { left=r.left; top=r.bottom+gap; arrow='top'; }
+  left=Math.max(12,Math.min(left,vw-bw-12)); top=Math.max(12,Math.min(top,vh-bh-12));
+  bub.style.left=left+'px'; bub.style.top=top+'px'; bub.dataset.arrow=arrow;
+}
+function startTour(steps,view,key){ tourSteps=steps; tourKey=key; tourIdx=0; if(view) setView(view); requestAnimationFrame(()=>requestAnimationFrame(tourShow)); }
+function tourEnd(){ $('#tour').classList.add('hidden'); try{ localStorage.setItem(tourKey,'1'); }catch(e){} }
+function tourNext(){ if(tourIdx<tourSteps.length-1){ tourIdx++; tourShow(); } else tourEnd(); }
+function tourPrev(){ if(tourIdx>0){ tourIdx--; tourShow(); } }
+$('#helpBtn').onclick=()=>{ (!$('#posView').classList.contains('hidden')) ? startTour(TOUR_POS,'pos',POS_GUIDE_KEY) : startTour(TOUR_EDIT,'edit',GUIDE_KEY); };
+$('#tourSkip').onclick=tourEnd;
+$('#tourPrev').onclick=tourPrev;
+$('#tourNext').onclick=tourNext;
+$('#tour').onclick=e=>{ if(e.target.id==='tour') tourNext(); };   // 點暗區=下一步
+document.addEventListener('keydown',e=>{ if($('#tour').classList.contains('hidden'))return; if(e.key==='Escape')tourEnd(); else if(e.key==='ArrowRight'||e.key==='Enter')tourNext(); else if(e.key==='ArrowLeft')tourPrev(); });
+window.addEventListener('resize',()=>{ if(!$('#tour').classList.contains('hidden')) tourShow(); });
+try{ if(!localStorage.getItem(GUIDE_KEY)) setTimeout(()=>startTour(TOUR_EDIT,'edit',GUIDE_KEY),400); }catch(e){}
 $('#dataBtn').onclick=()=>$('#dataModal').classList.remove('hidden');
 $('#dataClose').onclick=()=>$('#dataModal').classList.add('hidden');
 $('#dataExportBtn').onclick=dataExport;

@@ -45,11 +45,13 @@
       </div>
       <div class="header-right">
         <span class="tpl-badge" id="tplBadge"></span>
+        <span class="lbl">介面</span>
         <div class="ui-scale" id="uiScale" role="group" aria-label="介面大小">
           <button class="us-btn on" type="button" data-ui="std">標準</button>
           <button class="us-btn" type="button" data-ui="lg">大</button>
           <button class="us-btn" type="button" data-ui="xl">最大</button>
         </div>
+        <button class="help-btn" id="helpBtn" title="使用說明"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 11v5"/><path d="M12 8h.01"/></svg></button>
       </div>
     </header>
 
@@ -114,6 +116,22 @@
     </footer>
   </div>
 
+  <!-- 導覽 coach-mark -->
+  <div id="tour" class="tour hidden">
+    <div id="tourSpot" class="tour-spot"></div>
+    <div id="tourBubble" class="tour-bubble">
+      <p class="tour-text"></p>
+      <div class="tour-foot">
+        <span class="tour-step" id="tourStepNo"></span>
+        <span class="tour-btns">
+          <button class="tour-btn" id="tourSkip">跳過</button>
+          <button class="tour-btn" id="tourPrev">上一步</button>
+          <button class="tour-btn primary" id="tourNext">下一步</button>
+        </span>
+      </div>
+    </div>
+  </div>
+
   <!-- 共用引擎 -->
   <script src="index.js"></script>
   <!-- 模板(新增模板時在此加一行,模板會自行向 Engine 註冊)-->
@@ -138,6 +156,29 @@
         btns.forEach(function (x) { x.classList.toggle("on", x.dataset.ui === v); });
       }
     })();
+  </script>
+
+  <!-- 導覽:首次自動開始,i 鈕可再開 -->
+  <script>
+    (function(){var KEY='templates-seen-guide';var TOUR=[
+      {sel:'#dz',pos:'left',text:'先在這裡<b>上傳素材</b>：把圖片或影片拖進來，或點「點擊選擇檔案」。支援 JPG / PNG / WebP / MP4 / WebM。'},
+      {sel:'.tpl-rail',pos:'right',text:'左欄選<b>模板</b>。目前提供 <b>Music Player</b>，標示 Coming Soon 的尚在製作中。'},
+      {sel:'.stage',pos:'left',text:'中間是<b>預覽</b>。可直接<b>拖曳卡片</b>調位置，靠近中線或邊距會自動<b>吸附</b>。'},
+      {sel:'#tabs',pos:'left',text:'右欄分頁可調整<b>播放器 / 質感 / 版面 / 輸出</b>：玻璃材質、對齊、社群尺寸與影片長度都在這裡。'},
+      {sel:'#uiScale',pos:'bottom',text:'覺得介面太小？用「<b>標準 / 大 / 最大</b>」放大左右控制欄，方便細部操作。'},
+      {sel:'#helpBtn',pos:'bottom',text:'隨時點這顆 <b>i</b> 鈕可再看一次本導覽。開始創作吧！'}
+    ];
+    var tour=document.getElementById('tour');if(!tour)return;var spot=document.getElementById('tourSpot'),bub=document.getElementById('tourBubble'),idx=0;
+    function show(){var s=TOUR[idx],el=document.querySelector(s.sel);if(!el){if(idx<TOUR.length-1){idx++;return show();}return end();}var r=el.getBoundingClientRect(),pad=8;spot.style.left=(r.left-pad)+'px';spot.style.top=(r.top-pad)+'px';spot.style.width=(r.width+pad*2)+'px';spot.style.height=(r.height+pad*2)+'px';bub.querySelector('.tour-text').innerHTML=s.text;document.getElementById('tourStepNo').textContent=(idx+1)+' / '+TOUR.length;document.getElementById('tourPrev').style.visibility=idx?'visible':'hidden';document.getElementById('tourNext').textContent=idx===TOUR.length-1?'完成':'下一步';tour.classList.remove('hidden');pos(r,s.pos);}
+    function pos(r,p){bub.style.left='-9999px';bub.style.top='0px';var bw=bub.offsetWidth,bh=bub.offsetHeight,gap=14,vw=innerWidth,vh=innerHeight,left,top,arrow;if(p==='right'){left=r.right+gap;top=r.top;arrow='left';}else if(p==='left'){left=r.left-gap-bw;top=r.top;arrow='right';}else if(p==='top'){left=r.left;top=r.top-gap-bh;arrow='bottom';}else{left=r.left;top=r.bottom+gap;arrow='top';}left=Math.max(12,Math.min(left,vw-bw-12));top=Math.max(12,Math.min(top,vh-bh-12));bub.style.left=left+'px';bub.style.top=top+'px';bub.dataset.arrow=arrow;}
+    function start(){idx=0;requestAnimationFrame(function(){requestAnimationFrame(show);});}
+    function end(){tour.classList.add('hidden');try{localStorage.setItem(KEY,'1');}catch(e){}}
+    function next(){if(idx<TOUR.length-1){idx++;show();}else end();}function prev(){if(idx>0){idx--;show();}}
+    var hb=document.getElementById('helpBtn');if(hb)hb.onclick=start;document.getElementById('tourSkip').onclick=end;document.getElementById('tourPrev').onclick=prev;document.getElementById('tourNext').onclick=next;
+    tour.onclick=function(e){if(e.target.id==='tour')next();};
+    document.addEventListener('keydown',function(e){if(tour.classList.contains('hidden'))return;if(e.key==='Escape')end();else if(e.key==='ArrowRight'||e.key==='Enter')next();else if(e.key==='ArrowLeft')prev();});
+    window.addEventListener('resize',function(){if(!tour.classList.contains('hidden'))show();});
+    try{if(!localStorage.getItem(KEY))setTimeout(start,400);}catch(e){}})();
   </script>
 </body>
 </html>

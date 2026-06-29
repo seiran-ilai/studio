@@ -934,4 +934,5 @@ function syncUIFromState(){
   document.addEventListener('change',scheduleSave,true);
   document.addEventListener('click',scheduleSave,true);
   window.addEventListener('beforeunload',saveState);
+  // 使用說明改為導覽 tour（見 index.html 末尾 inline script，沿用 #helpBtn 與 'chat-seen-guide'）
 })();

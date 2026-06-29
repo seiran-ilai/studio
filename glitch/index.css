@@ -642,29 +642,6 @@ input[type=checkbox] {
   accent-color: var(--a2);
 }
 
-/* ═══ Info button (ℹ 關於) — header 右側 ═══ */
-.info-btn {
-  margin-left: auto;
-  width: 28px;
-  height: 28px;
-  background: transparent;
-  border: 1px solid var(--b);
-  color: var(--m);
-  font-family: 'Share Tech Mono', monospace;
-  font-size: 14px;
-  cursor: pointer;
-  transition: all 0.15s ease;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 2px;
-}
-.info-btn:hover {
-  border-color: var(--a2);
-  color: var(--a2);
-  box-shadow: 0 0 8px rgba(141, 92, 126, 0.3);
-}
-
 /* ═══ Site footer — 低調列 ═══ */
 .site-footer {
   display: flex;
@@ -701,159 +678,50 @@ input[type=checkbox] {
   background: var(--a2-soft);
 }
 
-/* ═══ About dialog ═══ */
-.about-dialog {
-  background: var(--surface-solid);
-  border: 1px solid var(--b);
-  color: var(--t);
-  border-radius: 14px;
-  max-width: 460px;
-  width: calc(100% - 32px);
-  padding: 0;
-  box-shadow: var(--shadow-soft);
-}
-.about-dialog::backdrop {
-  background: rgba(40, 36, 40, 0.34);
-  backdrop-filter: blur(4px);
-  -webkit-backdrop-filter: blur(4px);
-}
-.about-form {
-  position: relative;
-  padding: 26px 28px 22px;
-}
-.about-close {
-  position: absolute;
-  top: 8px;
-  right: 10px;
-  width: 32px;
-  height: 32px;
-  background: transparent;
-  border: none;
-  color: var(--m);
-  font-size: 22px;
-  cursor: pointer;
-  border-radius: 2px;
-  transition: color 0.15s, background 0.15s;
-  padding: 0;
-}
-.about-close:hover {
-  color: var(--a);
-  background: rgba(255, 34, 68, 0.12);
-}
-.about-title {
-  font-family: 'Bebas Neue', sans-serif;
-  font-size: 16px;
-  letter-spacing: 0.18em;
-  color: var(--a2);
-  margin: 0 0 12px;
-  font-weight: 400;
-}
-.about-name {
-  font-family: 'Bebas Neue', sans-serif;
-  font-size: 22px;
-  letter-spacing: 0.06em;
-  color: var(--t);
-  margin-bottom: 14px;
-}
-.about-links {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  margin-bottom: 14px;
-}
-.about-link,
-.about-tool {
-  display: grid;
-  grid-template-columns: 76px 1fr auto;
-  align-items: center;
-  gap: 12px;
-  padding: 9px 12px;
-  background: var(--surface-2);
-  border: 1px solid var(--b);
-  border-radius: 8px;
-  color: var(--m);
-  text-decoration: none;
-  font-size: 12.5px;
-  transition: all 0.15s ease;
-}
-.about-link:hover,
-.about-tool:not(.about-tool-current):hover {
-  background: var(--a2-soft);
-  border-color: var(--a2);
-  color: var(--t);
-}
-/* 作者連結首欄需容納「Threads (FFXIV 創作)」標籤 */
-.about-link { grid-template-columns: minmax(135px, max-content) 1fr auto; }
-.about-link:focus-visible,
 .site-footer a:focus-visible {
   outline: 2px solid var(--a2);
   outline-offset: 2px;
 }
-.about-platform {
+
+/* ═══ Help button + modal ═══ */
+.help-btn {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: transparent;
+  border: 1px solid var(--b);
+  color: var(--m);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  transition: all 0.15s ease;
+}
+.help-btn:hover {
+  border-color: var(--a2);
   color: var(--a2);
-  font-weight: 600;
-  letter-spacing: 0.08em;
-  white-space: nowrap;
+  box-shadow: 0 0 8px rgba(141, 92, 126, 0.3);
 }
-.about-handle {
-  font-family: 'Share Tech Mono', monospace;
-  font-size: 12px;
-  color: inherit;
-}
-.about-arrow { color: var(--m); transition: color 0.15s, transform 0.15s; }
-.about-link:hover .about-arrow,
-.about-tool:hover .about-tool-arrow { color: var(--a2); transform: translateX(2px); }
-.about-msg {
-  font-size: 12px;
-  color: var(--m);
-  line-height: 1.95;
-  text-align: center;
-  font-style: italic;
-  padding: 8px 4px 2px;
-  letter-spacing: 0.04em;
-}
-.about-sep {
-  margin: 18px 0;
-  border: none;
-  border-top: 1px dashed var(--b);
-}
-.about-tools {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-.about-tool {
-  grid-template-columns: 28px 1fr auto;
-}
-.about-tool-icon {
-  font-size: 18px;
-  text-align: center;
-  user-select: none;
-}
-.about-tool-name {
-  color: inherit;
-  font-weight: 500;
-  letter-spacing: 0.04em;
-}
-.about-tool-arrow {
-  color: var(--m);
-  font-size: 13px;
-  transition: color 0.15s, transform 0.15s;
-}
-.about-tool-current {
-  cursor: default;
-  border-color: var(--a);
-  background: rgba(255, 34, 68, 0.06);
-  color: var(--t);
-}
-.about-tool-badge {
-  font-size: 10px;
-  color: var(--a);
-  border: 1px solid var(--a);
-  padding: 1px 6px;
-  border-radius: 999px;
-  letter-spacing: 0.08em;
-}
+
+/* ═══ Coach-mark Tour ═══ */
+.tour { position: fixed; inset: 0; z-index: 300; }
+.tour.hidden { display: none; }
+.tour-spot { position: fixed; border-radius: 10px; box-shadow: 0 0 0 9999px rgba(0, 0, 0, .55); outline: 2px solid var(--a2); transition: all .25s ease; pointer-events: none; }
+.tour-bubble { position: fixed; max-width: 300px; background: var(--surface-solid); border: 1px solid var(--b); border-radius: 14px; padding: 14px 16px; box-shadow: var(--shadow-soft); z-index: 301; transition: left .22s ease, top .22s ease; }
+.tour-text { font-size: 13px; line-height: 1.75; color: var(--t); margin: 0 0 12px; }
+.tour-text b { color: var(--a2); }
+.tour-foot { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.tour-step { font-size: 11px; color: var(--m); }
+.tour-btns { display: flex; gap: 6px; }
+.tour-btn { background: var(--surface-solid); border: 1px solid var(--b); color: var(--t); border-radius: 8px; padding: 6px 11px; font-size: 12px; font-family: inherit; cursor: pointer; }
+.tour-btn:hover { border-color: var(--a2); }
+.tour-btn.primary { background: var(--a2); border-color: var(--a2); color: #fff; }
+.tour-bubble::before { content: ""; position: absolute; width: 12px; height: 12px; background: var(--surface-solid); border: 1px solid var(--b); transform: rotate(45deg); }
+.tour-bubble[data-arrow="left"]::before { left: -7px; top: 22px; border-right: none; border-top: none; }
+.tour-bubble[data-arrow="right"]::before { right: -7px; top: 22px; border-left: none; border-bottom: none; }
+.tour-bubble[data-arrow="top"]::before { top: -7px; left: 24px; border-right: none; border-bottom: none; }
+.tour-bubble[data-arrow="bottom"]::before { bottom: -7px; left: 24px; border-left: none; border-top: none; }
 
 /* 手機提示:非阻擋式,建議改用電腦瀏覽器 */
 #desktop-hint {
