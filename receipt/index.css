@@ -47,6 +47,7 @@ header.top{display:flex; align-items:center; gap:14px; padding:12px 20px; border
 .seg button.on{background:var(--accent); color:#fff}
 .spacer{flex:1}
 .lbl{color:var(--ink3); font-size:11px}
+.hr-sep{flex:none; width:1px; height:18px; background:var(--line)}
 
 /* ═ Layout ═ */
 main{display:flex; flex:1; min-height:0}
@@ -55,6 +56,7 @@ main{display:flex; flex:1; min-height:0}
 .side.left{width:300px; border-right:1px solid var(--line)}
 .side.right{width:330px; border-left:1px solid var(--line)}
 .side.blocks{width:340px; border-left:1px solid var(--line)}
+.side.output{width:250px; border-left:1px solid var(--line)}
 .resizer{position:absolute; left:-3px; top:0; bottom:0; width:7px; cursor:col-resize; z-index:25}
 .resizer:hover,.resizer.active{background:linear-gradient(90deg,transparent,var(--accent),transparent)}
 .side.collapsed .resizer{display:none}
@@ -176,7 +178,8 @@ canvas{max-height:100%; max-width:100%; border-radius:4px; box-shadow:var(--shad
 .texpick select{flex:1; min-width:0; text-align:center; text-align-last:center; cursor:pointer}
 .texpick-arw{flex:none; width:30px; height:32px; border:1px solid var(--line); background:var(--panel2); border-radius:8px; color:var(--ink2); cursor:pointer; font-size:15px; line-height:1; font-family:inherit}
 .texpick-arw:hover{border-color:var(--accent); color:var(--ink)}
-.ctlbar{display:flex; gap:10px; align-items:center}
+.ctlbar{display:flex; gap:10px; align-items:center; flex-wrap:wrap; justify-content:center}
+.ctlbar-sep{width:1px; height:22px; background:var(--line); flex:none}
 .badge{font-size:10px; color:var(--ink3); background:var(--panel); border:1px solid var(--line); padding:3px 8px; border-radius:20px}
 hr{border:none; border-top:1px solid var(--line); margin:12px 0}
 .sub{font-size:11px; color:var(--ink3); font-weight:400; margin-left:auto}

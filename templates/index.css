@@ -151,6 +151,7 @@ input { font-family: inherit; }
 .logo-sub { font-size: 11px; color: var(--t-dim); letter-spacing: 0.08em; }
 .header-right { margin-left: auto; display: flex; align-items: center; gap: 12px; }
 .header-right .lbl { font-size: 11px; color: var(--t-dim); letter-spacing: 0.05em; }
+.hr-sep { flex: none; width: 1px; height: 20px; background: var(--line); }
 .tpl-badge {
   font-size: 11px;
   letter-spacing: 0.12em;
@@ -407,6 +408,7 @@ body[data-ui="xl"] .side { zoom: 1.3; }
 }
 .dropzone.has-media { cursor: grab; }
 .dropzone.has-media:active { cursor: grabbing; }
+#cvs.grabbing { cursor: grabbing; }
 
 .upload-prompt {
   position: absolute;

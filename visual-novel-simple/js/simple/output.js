@@ -53,8 +53,9 @@ async function exportSimpleScreenshot() {
     if (!ok) return;
   }
   const ratio = state.ratio || "16:9";
-  const w = ratio === "9:16" ? 1080 : 1920;
-  const h = ratio === "9:16" ? 1920 : 1080;
+  const q = state.outQuality || 1;
+  const w = Math.round((ratio === "9:16" ? 1080 : 1920) * q);
+  const h = Math.round((ratio === "9:16" ? 1920 : 1080) * q);
   const canvas = document.createElement("canvas");
   canvas.width = w;
   canvas.height = h;
@@ -87,8 +88,9 @@ async function exportSimpleMp4() {
   if (!(await checkAllChoiceSlidesBeforeOutput())) return;
 
   const ratio = state.ratio || "16:9";
-  const w = ratio === "9:16" ? 1080 : 1920;
-  const h = ratio === "9:16" ? 1920 : 1080;
+  const q = state.outQuality || 1;
+  const w = Math.round((ratio === "9:16" ? 1080 : 1920) * q);
+  const h = Math.round((ratio === "9:16" ? 1920 : 1080) * q);
 
   // 用 overlay 內的 canvas 當作 render 目標,使用者可即時看到錄影內容
   const canvas = _vnsExportOverlayOpen("MP4 錄影中", "● REC");

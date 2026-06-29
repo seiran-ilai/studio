@@ -105,6 +105,7 @@ body::after {
 /* 右上資訊列 */
 .header-right { margin-left: auto; display: flex; align-items: center; gap: 10px; }
 .hr-label { color: var(--m); font-size: 11px; letter-spacing: 1px; }
+.hr-sep { flex: none; width: 1px; height: 20px; background: var(--b); }
 
 /* 介面縮放 seg(標準 / 大 / 最大)*/
 .ui-sizes {

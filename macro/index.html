@@ -35,7 +35,7 @@
 
   <!-- 頂列:單行工具列(標題 · 行數 · wait 預設 · 複製 · 清空 · 存讀 · 介面 · 說明 · ℹ)-->
   <header class="topbar">
-    <a class="back" href="../" aria-label="回到 Studio 入口">←</a>
+    <a class="back" href="../" aria-label="回到 Studio 入口"><svg class="ic-back" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/></svg></a>
     <div class="logo-block">
       <h1 class="logo-main">RP Macro</h1>
       <span class="logo-sub">為 FF14 角色扮演而生的巨集工具</span>
@@ -56,15 +56,16 @@
     <button class="help-btn" id="saveBtn" type="button" aria-label="存檔" title="存檔(下載 .json)"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v11"/><path d="M7 10l5 5 5-5"/><path d="M5 20h14"/></svg></button>
     <button class="help-btn" id="loadBtn" type="button" aria-label="讀檔" title="讀檔(上傳 .json)"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20V9"/><path d="M7 14l5-5 5 5"/><path d="M5 4h14"/></svg></button>
     <input type="file" id="loadFile" accept="application/json,.json" hidden>
-    <button class="help-btn" id="hotkeyBtn" type="button" aria-label="快捷鍵說明" title="快捷鍵說明"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="6" width="18" height="12" rx="2"/><path d="M7 10h.01M11 10h.01M15 10h.01M7 14h10"/></svg></button>
+    <span class="tb-sep"></span>
 
-    <span class="hr-label">介面</span>
     <div class="ui-scale-switch" id="uiScaleSwitch" role="group" aria-label="介面大小">
       <button class="ui-scale-btn active" data-scale="default">標準</button>
       <button class="ui-scale-btn" data-scale="large">大</button>
       <button class="ui-scale-btn" data-scale="xlarge">最大</button>
     </div>
+    <span class="tb-sep"></span>
 
+    <button class="help-btn" id="hotkeyBtn" type="button" aria-label="快捷鍵說明" title="快捷鍵說明"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="6" width="18" height="12" rx="2"/><path d="M7 10h.01M11 10h.01M15 10h.01M7 14h10"/></svg></button>
     <button class="help-btn" id="helpBtn" type="button" aria-label="使用導覽" title="使用導覽"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M9.5 9.2a2.5 2.5 0 0 1 4.5 1.5c0 1.5-2 2-2 3.1"/><path d="M12 17h.01"/></svg></button>
     <button class="help-btn" id="infoBtn" type="button" aria-label="關於 / 其他工具" title="關於 / 其他工具"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 11v5"/><path d="M12 8h.01"/></svg></button>
   </header>

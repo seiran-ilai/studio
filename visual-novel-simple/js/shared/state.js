@@ -124,6 +124,7 @@ const state = {
   parsed: [],
   currentIndex: 0,
   ratio: "16:9",
+  outQuality: 1,        // 輸出畫質倍率:1 | 1.5 | 2(只影響截圖 / 錄影輸出解析度)
   typingTimer: null,
   isTyping: false,
   fullText: "",

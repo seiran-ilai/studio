@@ -32,7 +32,7 @@
 </script>
 
 <header class="top">
-  <a class="back" href="../" aria-label="回到 Studio 入口">←</a>
+  <a class="back" href="../" aria-label="回到 Studio 入口"><svg class="ic-back" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/></svg></a>
   <div class="logo">
     <span class="logo-main">Receipt</span>
     <span class="logo-sub">收據 / 標籤模板 · 預覽即輸出</span>
@@ -52,11 +52,11 @@
   <div class="header-right">
     <button class="help-btn" id="dataBtn" title="匯出資料" aria-label="匯出資料"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v11"/><path d="M7 10l5 5 5-5"/><path d="M5 20h14"/></svg></button>
     <button class="help-btn" id="loadBtn" title="載入資料" aria-label="載入資料"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20V9"/><path d="M7 14l5-5 5 5"/><path d="M5 4h14"/></svg></button>
-    <span class="save-status" id="saveStatus" title="自動儲存狀態">✓ 已儲存</span>
-    <span class="lbl">介面</span>
+    <span class="hr-sep"></span>
     <div class="seg" id="uiSeg">
       <button data-v="std" class="on">標準</button><button data-v="lg">大</button><button data-v="xl">最大</button>
     </div>
+    <span class="hr-sep"></span>
     <button class="help-btn" id="helpBtn" title="使用說明"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 11v5"/><path d="M12 8h.01"/></svg></button>
   </div>
 </header>
@@ -85,15 +85,8 @@
         <p class="hint">這些設定會套用到「金額小計」區塊。</p>
       </div></div>
 
-      <div class="panel" data-c="1"><div class="ph">文字樣式 <span class="chev">▾</span></div><div class="pb">
-        <div class="field"><label>整體字級</label><div class="rng"><input type="range" id="t_scale" min="0.8" max="1.3" step="0.01" value="1"><b id="t_scaleV">100%</b></div></div>
-        <div class="field"><label>行距</label><div class="rng"><input type="range" id="t_line" min="0.85" max="1.6" step="0.01" value="1"><b id="t_lineV">1.00</b></div></div>
-        <p class="hint">各文字區塊的大小／對齊／粗細,在該區塊內各自設定。</p>
-      </div></div>
-
       <div class="panel" data-c="1"><div class="ph">外觀樣式 <span class="chev">▾</span></div><div class="pb">
         <div class="field"><label>字體</label><select id="s_font"></select></div>
-        <div class="field"><label>紙張寬度</label><div class="rng"><input type="range" id="s_pw" min="520" max="900" step="10" value="720"><b id="s_pwV">720</b></div></div>
         <div class="two">
           <div class="field"><label>紙張色</label><div class="row"><input type="color" id="s_paper" value="#ffffff"></div></div>
           <div class="field"><label>文字色</label><div class="row"><input type="color" id="s_ink" value="#111111"></div></div>
@@ -147,11 +140,10 @@
         <p class="hint">浮水印:圖片可調大小、自動重複鋪滿收據、文字下方。底圖:收據疊在整張圖上(輸出尺寸會放大)。紙張效果(霧面/液態玻璃)在「外觀樣式」設定。</p>
       </div></div>
 
-      <div class="panel" data-c="0"><div class="ph">匯出 <span class="chev">▾</span></div><div class="pb">
-        <button class="btn ok full" id="pngBtn" style="margin-bottom:8px"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="5" width="16" height="14" rx="2"/><circle cx="9" cy="10" r="1.5"/><path d="M5 16l4-3.5 3.5 3 3-2.5L19 16"/></svg>輸出圖片 PNG</button>
-        <button class="btn pri full" id="mp4Btn"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M8 5v14M16 5v14M3 10h5M3 14h5M16 10h5M16 14h5"/></svg><span id="mp4Label">輸出列印動畫 MP4</span></button>
-        <p class="hint" id="exportHint"></p>
-        <p class="hint">模板 / 商品 / 收銀的匯出與載入,請用右上角「資料」。</p>
+      <div class="panel" data-c="1"><div class="ph">文字樣式 <span class="chev">▾</span></div><div class="pb">
+        <div class="field"><label>整體字級</label><div class="rng"><input type="range" id="t_scale" min="0.8" max="1.3" step="0.01" value="1"><b id="t_scaleV">100%</b></div></div>
+        <div class="field"><label>行距</label><div class="rng"><input type="range" id="t_line" min="0.85" max="1.6" step="0.01" value="1"><b id="t_lineV">1.00</b></div></div>
+        <p class="hint">各文字區塊的大小／對齊／粗細,在該區塊內各自設定。</p>
       </div></div>
     </div>
   </section>
@@ -204,13 +196,33 @@
 
   <!-- RIGHT -->
   <section class="side right" id="colRight">
-    <div class="side-head"><button class="collapse" data-arrow>▶</button><span class="title">品項</span><span class="vtitle">品項</span></div>
+    <div class="side-head"><button class="collapse" data-arrow>▶</button><span class="title">品項 <span class="sub" id="itemCount"></span></span><span class="vtitle">品項</span></div>
     <div class="side-body">
-      <div class="panel" data-c="0"><div class="ph">品項 <span class="sub" id="itemCount"></span><span class="chev">▾</span></div><div class="pb">
-        <div id="itemList"></div>
-        <button class="btn full sm" id="addItem">＋ 新增品項</button>
-        <p class="hint">每項:品名 / 數量 / 單價,「說明」可留空。可加「內容物 / 子項目」做細項或加價。</p>
-      </div></div>
+      <div id="itemList"></div>
+      <button class="btn full sm" id="addItem">＋ 新增品項</button>
+      <p class="hint">每項:品名 / 數量 / 單價,「說明」可留空。可加「內容物 / 子項目」做細項或加價。</p>
+    </div>
+  </section>
+
+  <!-- OUTPUT (independent, resizable) -->
+  <section class="side output" id="colOutput">
+    <div class="resizer" id="outResizer" title="拖曳調整寬度"></div>
+    <div class="side-head"><button class="collapse" data-arrow>▶</button><span class="title">輸出</span><span class="vtitle">輸出</span></div>
+    <div class="side-body">
+      <div class="field"><label>紙張寬度（基礎解析度）</label><div class="rng"><input type="range" id="s_pw" min="520" max="900" step="10" value="720"><b id="s_pwV">720</b></div></div>
+      <div class="field"><label>輸出畫質</label>
+        <div class="seg" id="qualSeg" style="width:100%">
+          <button data-v="1" class="on" style="flex:1">1x</button>
+          <button data-v="1.5" style="flex:1">1.5x</button>
+          <button data-v="2" style="flex:1">2x</button>
+        </div>
+      </div>
+      <p class="hint" id="qualNote"></p>
+      <p class="hint">畫質倍率會在紙張寬度的基礎上,整體放大輸出 PNG / MP4 的像素。</p>
+      <hr>
+      <button class="btn ok full" id="pngBtn" style="margin-bottom:8px"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="5" width="16" height="14" rx="2"/><circle cx="9" cy="10" r="1.5"/><path d="M5 16l4-3.5 3.5 3 3-2.5L19 16"/></svg>輸出 PNG</button>
+      <button class="btn pri full" id="mp4Btn"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M8 5v14M16 5v14M3 10h5M3 14h5M16 10h5M16 14h5"/></svg><span id="mp4Label">輸出 MP4</span></button>
+      <p class="hint" id="exportHint"></p>
     </div>
   </section>
 </main>

@@ -23,6 +23,7 @@ const S={
   },
   chars:[], msgs:[],
   interval:0.8, tail:1.2, showTime:false, startTime:'21:30', showRead:true, readCount:2, showMeAvatar:true, showMeName:true, showInput:true, typeSpeed:1, fps:30,
+  quality:1,
 };
 
 function pad2(n){ return String(n).padStart(2,'0'); }
@@ -64,6 +65,8 @@ function seed(){
 const DIMS={'9:16':[1080,1920],'4:5':[1080,1350],'1:1':[1080,1080]};
 const cv=document.getElementById('cv'), ctx=cv.getContext('2d');
 function setSize(){ const [w,h]=DIMS[S.ratio]; cv.width=w; cv.height=h; }
+// 匯出畫質:把畫布暫時放大到 base×倍率(render 全程以 W 為基準等比縮放,故直接生效)
+function setExportSize(){ const [w,h]=DIMS[S.ratio]; cv.width=Math.round(w*S.quality); cv.height=Math.round(h*S.quality); }
 function hexToRgba(hex,a){ let h=hex.replace('#',''); if(h.length===3)h=h.split('').map(c=>c+c).join(''); const n=parseInt(h,16); return `rgba(${(n>>16)&255},${(n>>8)&255},${n&255},${a})`; }
 
 // ---- font loading ----
@@ -334,17 +337,18 @@ function runAnim(onFrame){ return new Promise(res=>{ playing=true; const dur=ani
   (function step(now){ const p=Math.min(1,(now-t0)/(dur*1000)); render(p); onFrame&&onFrame(p); if(p<1&&playing)requestAnimationFrame(step); else{playing=false;res();} })(performance.now()); }); }
 function fname(e){ return 'chat_'+Date.now()+'.'+e; }
 function dl(blob,e){ const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=fname(e); a.click(); setTimeout(()=>URL.revokeObjectURL(a.href),2000); }
-function exportPNG(){ exporting=true; render(1); cv.toBlob(b=>{ dl(b,'png'); exporting=false; render(1); },'image/png'); }
+function exportPNG(){ exporting=true; setExportSize(); render(1); cv.toBlob(b=>{ dl(b,'png'); exporting=false; setSize(); render(1); },'image/png'); }
 async function exportMP4(){
   if(playing) return;
   const fmts=['video/mp4;codecs=avc1.42E01E','video/mp4','video/webm;codecs=vp9','video/webm;codecs=vp8','video/webm'];
   const mt=fmts.find(f=>window.MediaRecorder&&MediaRecorder.isTypeSupported(f))||''; const isMp4=mt.startsWith('video/mp4');
+  setExportSize();
   const stream=cv.captureStream(S.fps); const rec=new MediaRecorder(stream,mt?{mimeType:mt,videoBitsPerSecond:10000000}:{});
   const chunks=[]; rec.ondataavailable=e=>{ if(e.data&&e.data.size)chunks.push(e.data); }; const stopped=new Promise(r=>rec.onstop=r);
   const btn=document.getElementById('mp4Btn'); const btnLabel=document.getElementById('mp4BtnLabel'); btnLabel.textContent='● 錄製中…';
   exporting=true;
   rec.start(); render(0); await new Promise(r=>setTimeout(r,120)); await runAnim(); await new Promise(r=>setTimeout(r,180));
-  rec.stop(); await stopped; exporting=false; render(1); dl(new Blob(chunks,{type:isMp4?'video/mp4':'video/webm'}), isMp4?'mp4':'webm');
+  rec.stop(); await stopped; exporting=false; setSize(); render(1); dl(new Blob(chunks,{type:isMp4?'video/mp4':'video/webm'}), isMp4?'mp4':'webm');
   btnLabel.textContent='輸出影片 MP4';
   document.getElementById('exportHint').textContent= isMp4?'已輸出 MP4。':'此瀏覽器 MediaRecorder 不支援 MP4，已輸出 WebM（建議 Chrome / Edge）。';
 }
@@ -422,7 +426,9 @@ document.querySelectorAll('.side').forEach(sec=>sec.addEventListener('click',e=>
 
 function segPick(seg,val,cb){ seg.querySelectorAll('button').forEach(b=>b.classList.toggle('on',b.dataset.v===val)); cb&&cb(val); }
 $('#modeSeg').onclick=e=>{ const b=e.target.closest('button'); if(!b)return; segPick($('#modeSeg'),b.dataset.v,v=>S.mode=v); syncToggleRows(); render(1); };
-$('#ratioSeg').onclick=e=>{ const b=e.target.closest('button'); if(!b)return; segPick($('#ratioSeg'),b.dataset.v,v=>{S.ratio=v;setSize();}); render(1); updateDur(); };
+$('#ratioSeg').onclick=e=>{ const b=e.target.closest('button'); if(!b)return; segPick($('#ratioSeg'),b.dataset.v,v=>{S.ratio=v;setSize();}); render(1); updateDur(); updateQualNote(); };
+$('#qualSeg').onclick=e=>{ const b=e.target.closest('button'); if(!b)return; segPick($('#qualSeg'),b.dataset.v,v=>{S.quality=+v;}); updateQualNote(); };
+function updateQualNote(){ const el=$('#qualNote'); if(!el)return; const [w,h]=DIMS[S.ratio]; el.textContent='輸出 '+Math.round(w*S.quality)+' × '+Math.round(h*S.quality)+' px'; }
 $('#uiSeg').onclick=e=>{ const b=e.target.closest('button'); if(!b)return; segPick($('#uiSeg'),b.dataset.v,v=>{ document.body.dataset.ui=v; }); };
 
 // outer tabs

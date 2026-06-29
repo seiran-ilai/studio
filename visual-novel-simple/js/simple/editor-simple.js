@@ -688,6 +688,17 @@ function initSimpleEditorBindings() {
     });
   });
 
+  // 輸出畫質切換(倍率,只影響截圖 / 錄影輸出解析度,不動預覽)
+  document.querySelectorAll("#simpleQualityToggle button").forEach(b => {
+    b.addEventListener("click", () => {
+      document.querySelectorAll("#simpleQualityToggle button").forEach(bb => {
+        bb.classList.toggle("active", bb === b);
+      });
+      state.outQuality = Number(b.dataset.q);
+      saveToStorage();
+    });
+  });
+
   // 任務 4:CG 操作(換 / 移除 / 檔案選擇)。上傳入口已合併進預覽框(見下方任務 3 區塊)
   const cgInput = document.getElementById("simpleCgFileInput");
   const cgReplaceBtn = document.getElementById("simpleCgReplaceBtn");

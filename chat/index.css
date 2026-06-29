@@ -49,6 +49,7 @@ header.top h1 span{color:var(--ink3); font-weight:400; margin-left:8px; font-siz
 .seg button.on{background:var(--accent); color:#fff}
 .spacer{flex:1}
 .lbl{color:var(--ink3); font-size:11px}
+.hr-sep{flex:none; width:1px; height:18px; background:var(--line)}
 
 main{display:flex; flex:1; min-height:0}
 .side{position:relative; background:var(--panel); display:flex; flex-direction:column; transition:width .2s ease; overflow:hidden;

@@ -23,7 +23,7 @@ const S={
   type:{ scale:1, line:1, accent:'#111111' },
   sty:{ font:'dot', paperW:720, paper:'#ffffff', ink:'#111111', zig:true, divider:'dash', radius:0, texture:'', texHue:0, texBright:100, texContrast:140, texStrength:100 },
   bg:{ img:null, imgOrig:null, crop:null, mode:'none', pos:'center', opacity:15, size:40, effect:'none', paperAlpha:100, margin:80 },
-  design:'tailor', fps:30,
+  design:'tailor', fps:30, quality:1,
 };
 const SZmap={lg:37,md:26,sm:18,xs:16};
 
@@ -293,12 +293,14 @@ function drawPaperBase(W,paperH,margin,useBack){
     ctx.fillStyle=r; ctx.fillRect(0,0,W,paperH*0.55);
   }
 }
+// 匯出畫質倍率:只在匯出時把 W / margin 整體放大(render 全程以 W 為基準等比縮放,故直接生效)
+let exportScale=1;
 function render(progress=1){
-  const W=S.sty.paperW;
+  const W=Math.round(S.sty.paperW*exportScale);
   const {blocks,H}=build(W);
   const paperH=Math.ceil(H); lastH=H;
   const useBack = S.bg.img && S.bg.mode==='back';
-  const margin = useBack? (S.bg.margin==null?80:S.bg.margin) : 0;
+  const margin = Math.round((useBack? (S.bg.margin==null?80:S.bg.margin) : 0) * exportScale);
   const eff=S.bg.effect||'none';
   const cw=W+margin*2, chh=paperH+margin*2;
   if(cv.width!==cw||cv.height!==chh){ cv.width=cw; cv.height=chh; }
@@ -331,8 +333,10 @@ function render(progress=1){
   }
   ctx.restore();
   const tb=$('#totalBadge'); if(tb){ const c=calc(); tb.textContent='合計 '+money(c.total); }
-  // 目前 PNG 輸出版面尺寸(像素)
-  $('#sizeNote').textContent='輸出尺寸 '+cv.width+' × '+cv.height+' px';
+  // 目前輸出版面尺寸(含畫質倍率;預覽時 exportScale=1,顯示套用倍率後的實際輸出像素)
+  const _oW=Math.round(cv.width/exportScale*S.quality), _oH=Math.round(cv.height/exportScale*S.quality);
+  $('#sizeNote').textContent='輸出尺寸 '+_oW+' × '+_oH+' px';
+  const _qn=$('#qualNote'); if(_qn) _qn.textContent='實際輸出 '+_oW+' × '+_oH+' px';
   applyZoom();
   if(!_noSave && !previewing) scheduleSave();
 }
@@ -342,17 +346,18 @@ let playing=false;
 function runAnim(){ return new Promise(res=>{ playing=true; const dur=1.6,t0=performance.now();
   (function step(now){ const p=Math.min(1,(now-t0)/(dur*1000)); render(p); if(p<1&&playing)requestAnimationFrame(step); else{playing=false;res();} })(performance.now()); }); }
 function dl(blob,e){ const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='receipt_'+Date.now()+'.'+e; a.click(); setTimeout(()=>URL.revokeObjectURL(a.href),2000); }
-function exportPNG(){ render(1); cv.toBlob(b=>dl(b,'png'),'image/png'); }
+function exportPNG(){ exportScale=S.quality; render(1); cv.toBlob(b=>{ dl(b,'png'); exportScale=1; render(1); },'image/png'); }
 async function exportMP4(){
   if(playing) return;
   const fmts=['video/mp4;codecs=avc1.42E01E','video/mp4','video/webm;codecs=vp9','video/webm'];
   const mt=fmts.find(f=>window.MediaRecorder&&MediaRecorder.isTypeSupported(f))||''; const isMp4=mt.startsWith('video/mp4');
+  exportScale=S.quality; render(1);
   const stream=cv.captureStream(S.fps); const rec=new MediaRecorder(stream,mt?{mimeType:mt,videoBitsPerSecond:8000000}:{});
   const chunks=[]; rec.ondataavailable=e=>{ if(e.data&&e.data.size)chunks.push(e.data); }; const stopped=new Promise(r=>rec.onstop=r);
   const lbl=$('#mp4Label'); lbl.textContent='錄製中…';
   rec.start(); render(0); await new Promise(r=>setTimeout(r,120)); await runAnim(); await new Promise(r=>setTimeout(r,400));
-  rec.stop(); await stopped; dl(new Blob(chunks,{type:isMp4?'video/mp4':'video/webm'}), isMp4?'mp4':'webm');
-  lbl.textContent='輸出列印動畫 MP4';
+  rec.stop(); await stopped; exportScale=1; render(1); dl(new Blob(chunks,{type:isMp4?'video/mp4':'video/webm'}), isMp4?'mp4':'webm');
+  lbl.textContent='輸出 MP4';
   $('#exportHint').textContent= isMp4?'已輸出 MP4。':'此瀏覽器不支援 MP4，已輸出 WebM（建議 Chrome / Edge）。';
 }
 
@@ -362,6 +367,7 @@ document.querySelectorAll('.collapse').forEach(b=>b.onclick=()=>{ const sec=b.cl
 function segPick(seg,val,cb){ seg.querySelectorAll('button').forEach(b=>b.classList.toggle('on',b.dataset.v===val)); cb&&cb(val); }
 const UI_KEY='receipt-ui-scale';
 $('#uiSeg').onclick=e=>{ const b=e.target.closest('button'); if(!b)return; segPick($('#uiSeg'),b.dataset.v,v=>{ document.body.dataset.ui=v; localStorage.setItem(UI_KEY,v); }); };
+$('#qualSeg').onclick=e=>{ const b=e.target.closest('button'); if(!b)return; S.quality=+b.dataset.v; segPick($('#qualSeg'),b.dataset.v); render(1); };
 
 const bind=(id,fn)=>{ const el=$(id); if(el) el.addEventListener('input',()=>{ fn(el); render(1); }); };
 // finance / payment
@@ -515,6 +521,11 @@ $('#blockSource').addEventListener('input',()=>{ S.blocks=parseSource($('#blockS
 (function(){ const col=$('#colBlocks'), rz=$('#blkResizer'); if(!col||!rz)return; let sx,sw,drag=false;
   rz.addEventListener('pointerdown',e=>{ drag=true; sx=e.clientX; sw=col.getBoundingClientRect().width; rz.classList.add('active'); document.body.style.userSelect='none'; try{rz.setPointerCapture(e.pointerId);}catch(_){}; e.preventDefault(); });
   window.addEventListener('pointermove',e=>{ if(!drag)return; let w=sw+(sx-e.clientX); w=Math.max(280,Math.min(640,Math.round(w))); col.style.width=w+'px'; });
+  window.addEventListener('pointerup',()=>{ if(drag){ drag=false; rz.classList.remove('active'); document.body.style.userSelect=''; } });
+})();
+(function(){ const col=$('#colOutput'), rz=$('#outResizer'); if(!col||!rz)return; let sx,sw,drag=false;
+  rz.addEventListener('pointerdown',e=>{ drag=true; sx=e.clientX; sw=col.getBoundingClientRect().width; rz.classList.add('active'); document.body.style.userSelect='none'; try{rz.setPointerCapture(e.pointerId);}catch(_){}; e.preventDefault(); });
+  window.addEventListener('pointermove',e=>{ if(!drag)return; let w=sw+(sx-e.clientX); w=Math.max(210,Math.min(420,Math.round(w))); col.style.width=w+'px'; });
   window.addEventListener('pointerup',()=>{ if(drag){ drag=false; rz.classList.remove('active'); document.body.style.userSelect=''; } });
 })();
 function newBlock(type){
@@ -1189,7 +1200,7 @@ function serializeDesign(){
     blocks:S.blocks.map(b=> b.type==='image'? Object.assign({},b,{img:b.img?b.img.src:null}) : b),
     items:S.items, fin:S.fin, type:S.type, sty:S.sty,
     bg:Object.assign({},S.bg,{img:S.bg.img?S.bg.img.src:null, imgOrig:S.bg.imgOrig?S.bg.imgOrig.src:null}),
-    design:S.design
+    design:S.design, quality:S.quality
   };
 }
 function applyDesignData(d,onReady){
@@ -1206,7 +1217,9 @@ function applyDesignData(d,onReady){
   if(d.bg&&d.bg.imgOrig){ const im=new Image(); im.src=d.bg.imgOrig; S.bg.imgOrig=im; imgs.push(im); }
   else if(S.bg.img){ S.bg.imgOrig=S.bg.img; S.bg.crop=null; }   // 舊資料無原圖時退而用裁切後當原圖
   S.design=d.design||'custom';
+  S.quality=d.quality||1;
   buildFontSel(); syncStyleInputs(); syncFin(); syncType();
+  segPick($('#qualSeg'),String(S.quality));
   segPick($('#bgModeSeg'),S.bg.mode); segPick($('#bgEffectSeg'),S.bg.effect); bgSyncRows(); bgEditState();
   $('#bgOpacity').value=S.bg.opacity; $('#bgOpacityV').textContent=S.bg.opacity+'%';
   $('#bgSize').value=S.bg.size; $('#bgSizeV').textContent=S.bg.size+'%';
@@ -1252,8 +1265,8 @@ const GUIDE_KEY='receipt-seen-guide', POS_GUIDE_KEY='receipt-seen-pos-guide';
 const TOUR_EDIT=[
   {sel:'#viewSeg', text:'這裡切換 <b>設計編輯</b> 與 <b>收銀</b> 兩種模式。', pos:'bottom'},
   {sel:'#designSeg', text:'點預設模板會<b>即時預覽</b>；按右側「<b>套用</b>」才真正覆蓋目前設計，切回「設計編輯」可放棄預覽。', pos:'bottom'},
-  {sel:'#colLeft', text:'左欄：金額與付款、文字樣式、<b>外觀</b>（紙張效果 / 紋理 / 圓角 / 不透明度）、<b>背景圖片</b>、匯出 PNG / MP4。', pos:'right'},
-  {sel:'.center', text:'中間是即時預覽，<b>滑鼠滾輪可縮放</b>，所見即所得。', pos:'left'},
+  {sel:'#colLeft', text:'左欄：金額與付款、<b>外觀</b>（紙張效果 / 紋理 / 圓角 / 不透明度）、<b>背景圖片</b>、文字樣式。', pos:'right'},
+  {sel:'.center', text:'中間是即時預覽，<b>滑鼠滾輪可縮放</b>，所見即所得；下方控制列可<b>輸出 PNG / 列印 MP4</b>。', pos:'left'},
   {sel:'#colBlocks', text:'版面區塊：拖曳 <b>⋮⋮</b> 排序、點標題收合；可切「<b>區塊 / 純文字</b>」用語法快速排版（# 大標、- 分隔線、[品項] [金額] [備註]…）。', pos:'left'},
   {sel:'#colRight', text:'品項區：品名 / 數量 / 單價，可加子項目；收銀模式會用到這些商品。', pos:'left'},
   {sel:'#dataBtn', text:'<b>資料</b>：勾選模板 / 商品表 / 今日收銀，一鍵匯出或載入備份。完成後可隨時點右上的 <b>i</b> 重看導覽。', pos:'bottom'},

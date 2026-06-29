@@ -472,10 +472,12 @@
      控制面板:播放器分頁
      ───────────────────────────── */
   function buildPanel(api) {
-    api.addTab("播放器", buildPlayerTab);
+    api.addTab("歌曲", buildSongTab);
+    api.addTab("外觀", buildLookTab);
   }
 
-  function buildPlayerTab(panel) {
+  // 「歌曲」分頁:卡片要呈現的內容(歌名、封面、播放狀態)
+  function buildSongTab(panel) {
     panel.innerHTML = `
       <div class="group">
         <div class="group-title">歌曲資訊</div>
@@ -487,14 +489,6 @@
           <span class="field-label">演出者</span>
           <input type="text" id="songArtist" value="ilai" maxlength="40" spellcheck="false">
         </label>
-      </div>
-
-      <div class="group">
-        <div class="group-title">卡片樣式</div>
-        <div class="row">
-          <button class="seg-btn on" data-card="vertical" type="button">直式(大封面)</button>
-          <button class="seg-btn" data-card="horizontal" type="button">橫式(小封面)</button>
-        </div>
       </div>
 
       <div class="group">
@@ -541,6 +535,32 @@
           <label class="check"><input type="checkbox" id="showTime" checked><span>時間</span></label>
           <label class="check"><input type="checkbox" id="animateBar" checked><span>進度動畫</span></label>
         </div>
+      </div>`;
+
+    bindSongControls();
+  }
+
+  // 「外觀」分頁:卡片的呈現方式(版式、文字色、開場動畫)
+  function buildLookTab(panel) {
+    panel.innerHTML = `
+      <div class="group">
+        <div class="group-title">卡片樣式</div>
+        <div class="row">
+          <button class="seg-btn on" data-card="vertical" type="button">直式(大封面)</button>
+          <button class="seg-btn" data-card="horizontal" type="button">橫式(小封面)</button>
+        </div>
+      </div>
+
+      <div id="lookPlacementMount"></div>
+
+      <div class="group">
+        <div class="group-title">文字顏色</div>
+        <div class="row">
+          <button class="seg-btn on" data-ink="auto" type="button">自動</button>
+          <button class="seg-btn" data-ink="light" type="button">亮色</button>
+          <button class="seg-btn" data-ink="dark" type="button">暗色</button>
+        </div>
+        <p class="hint">「自動」會依卡片底下的明暗自動選白字或黑字。</p>
       </div>
 
       <div class="group">
@@ -557,33 +577,18 @@
           <input type="range" id="introDur" min="0.3" max="2" step="0.1" value="0.9">
         </label>
         <button class="seg-btn" id="introReplay" type="button" style="width:100%;">↻ 重播開場動畫</button>
-      </div>
-
-      <div class="group">
-        <div class="group-title">文字顏色</div>
-        <div class="row">
-          <button class="seg-btn on" data-ink="auto" type="button">自動</button>
-          <button class="seg-btn" data-ink="light" type="button">亮色</button>
-          <button class="seg-btn" data-ink="dark" type="button">暗色</button>
-        </div>
+        <p class="hint">開場動畫會呈現在輸出的影片裡。</p>
       </div>`;
 
-    bindPlayerControls();
+    // 卡片對齊與大小由共用引擎掛進此分頁(原「位置」分頁已移除)
+    if (E.buildPlacement) E.buildPlacement($("#lookPlacementMount"));
+    bindLookControls();
   }
 
-  function bindPlayerControls() {
+  function bindSongControls() {
     // 文字
     $("#songTitle").addEventListener("input", e => { S.title = e.target.value || " "; });
     $("#songArtist").addEventListener("input", e => { S.artist = e.target.value || " "; });
-
-    // 卡片樣式
-    $$("[data-card]").forEach(btn => {
-      btn.addEventListener("click", () => {
-        S.card = btn.dataset.card;
-        $$("[data-card]").forEach(x => x.classList.toggle("on", x === btn));
-        E.requestInk();
-      });
-    });
 
     // 封面來源
     const coverFi = $("#coverFi");
@@ -640,6 +645,25 @@
     $("#showControls").addEventListener("change", e => { S.showControls = e.target.checked; });
     $("#showTime").addEventListener("change", e => { S.showTime = e.target.checked; });
     $("#animateBar").addEventListener("change", e => { S.animateBar = e.target.checked; E.resetClock(); });
+  }
+
+  function bindLookControls() {
+    // 卡片樣式
+    $$("[data-card]").forEach(btn => {
+      btn.addEventListener("click", () => {
+        S.card = btn.dataset.card;
+        $$("[data-card]").forEach(x => x.classList.toggle("on", x === btn));
+        E.requestInk();
+      });
+    });
+
+    // 文字顏色
+    $$("[data-ink]").forEach(btn => {
+      btn.addEventListener("click", () => {
+        S.ink = btn.dataset.ink;
+        $$("[data-ink]").forEach(x => x.classList.toggle("on", x === btn));
+      });
+    });
 
     // 開場動畫
     $$("[data-intro]").forEach(btn => {
@@ -651,14 +675,6 @@
     });
     E.bindRange("#introDur", "#introDurVal", v => { S.introDur = v; E.resetClock(); }, v => v.toFixed(1) + "s");
     $("#introReplay").addEventListener("click", E.resetClock);
-
-    // 文字顏色
-    $$("[data-ink]").forEach(btn => {
-      btn.addEventListener("click", () => {
-        S.ink = btn.dataset.ink;
-        $$("[data-ink]").forEach(x => x.classList.toggle("on", x === btn));
-      });
-    });
   }
 
   function syncCoverButtons() {

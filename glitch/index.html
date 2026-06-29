@@ -35,7 +35,7 @@
   <div class="app-wrap">
     <!-- ═ Header ═ -->
     <header class="header">
-      <a class="back" href="../" aria-label="回到 Studio 入口">←</a>
+      <a class="back" href="../" aria-label="回到 Studio 入口"><svg class="ic-back" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/></svg></a>
       <div class="logo-block">
         <div class="logo">
           <span class="g1">Gl</span><span class="g2">it</span><span class="g3">ch</span>
@@ -44,14 +44,15 @@
       </div>
 
       <div class="header-right">
-        <span class="hr-label">介面</span>
+        <button class="help-btn" id="saveBtn" title="存檔(下載 .json)"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v11"/><path d="M7 10l5 5 5-5"/><path d="M5 20h14"/></svg></button>
+        <button class="help-btn" id="loadBtn" title="讀檔(上傳 .json)"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20V9"/><path d="M7 14l5-5 5 5"/><path d="M5 4h14"/></svg></button>
+        <span class="hr-sep"></span>
         <div class="ui-sizes" role="group" aria-label="介面大小">
           <button class="us-btn on" data-size="1.375">標準</button>
           <button class="us-btn" data-size="1.65">大</button>
           <button class="us-btn" data-size="1.95">最大</button>
         </div>
-        <button class="help-btn" id="saveBtn" title="存檔(下載 .json)"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v11"/><path d="M7 10l5 5 5-5"/><path d="M5 20h14"/></svg></button>
-        <button class="help-btn" id="loadBtn" title="讀檔(上傳 .json)"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20V9"/><path d="M7 14l5-5 5 5"/><path d="M5 4h14"/></svg></button>
+        <span class="hr-sep"></span>
         <button class="help-btn" id="helpBtn" title="使用說明"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 11v5"/><path d="M12 8h.01"/></svg></button>
         <input type="file" id="loadFile" accept="application/json,.json" style="display:none;">
       </div>

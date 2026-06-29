@@ -48,6 +48,7 @@ window.Engine = (function () {
     outW: 1080,
     outH: 1350,
     dur: 8,
+    quality: 1,           // 輸出畫質倍率:1 | 1.5 | 2(只影響匯出,預覽維持基準解析度)
 
     // runtime
     raf: 0,
@@ -539,7 +540,9 @@ window.Engine = (function () {
      ───────────────────────────── */
   let dragging = false;          // 拖曳卡片(引擎)
   let tplDragging = false;       // 模板自定義拖曳(如封面平移)
+  let bgDragging = false;        // 拖曳背景素材(平移顯示範圍)
   let dragOff = { x: 0, y: 0 };
+  const bgDrag = { lastX: 0, lastY: 0 };
   const dragGuide = { v: null, h: null };
   const SNAP_STOPS = [5, 50, 95];   // 對齊九宮格使用相同的停靠點
 
@@ -550,6 +553,27 @@ window.Engine = (function () {
     const ox = rect.left + (rect.width - cv.width * scale) / 2;
     const oy = rect.top + (rect.height - cv.height * scale) / 2;
     return { x: (e.clientX - ox) / scale, y: (e.clientY - oy) / scale };
+  }
+
+  // 背景素材在畫布上的溢出量(≤0,為 0 表示該方向已填滿無法平移)
+  function mediaOverflow() {
+    const { mw, mh } = mediaSize();
+    if (!mw || !mh) return { ox: 0, oy: 0 };
+    const w = cv.width, h = cv.height;
+    const sc = Math.max(w / mw, h / mh) * (state.mediaZoom / 100);
+    return { ox: w - mw * sc, oy: h - mh * sc };
+  }
+
+  // 把 state 的素材填滿值同步回「位置」分頁的滑桿(拖曳/滾輪改動時)
+  function syncMediaUI() {
+    const map = { mediaX: "#mediaX", mediaY: "#mediaY", mediaZoom: "#mediaZoom" };
+    for (const key in map) {
+      const el = $(map[key]);
+      if (!el) continue;
+      el.value = state[key];
+      const val = $(map[key] + "Val");
+      if (val) val.textContent = Math.round(state[key]) + "%";
+    }
   }
 
   cv.addEventListener("mousedown", e => {
@@ -568,13 +592,30 @@ window.Engine = (function () {
       // 接手前先把殘留的緩動目標歸位,避免跳動
       cardTarget.x = state.cardX;
       cardTarget.y = state.cardY;
+      return;
     }
+    // 點在卡片以外的背景 → 平移素材顯示範圍
+    bgDragging = true;
+    bgDrag.lastX = px;
+    bgDrag.lastY = py;
+    cv.classList.add("grabbing");
   });
 
   window.addEventListener("mousemove", e => {
     if (tplDragging) {
       const { x: px, y: py } = canvasPoint(e);
       if (active && active.dragMove) active.dragMove(px, py);
+      return;
+    }
+    if (bgDragging) {
+      const { x: px, y: py } = canvasPoint(e);
+      const { ox, oy } = mediaOverflow();
+      if (ox < 0) state.mediaX = Math.min(100, Math.max(0, state.mediaX + ((px - bgDrag.lastX) * 100) / ox));
+      if (oy < 0) state.mediaY = Math.min(100, Math.max(0, state.mediaY + ((py - bgDrag.lastY) * 100) / oy));
+      bgDrag.lastX = px;
+      bgDrag.lastY = py;
+      syncMediaUI();
+      requestInk();
       return;
     }
     if (!dragging) return;
@@ -618,6 +659,11 @@ window.Engine = (function () {
       tplDragging = false;
       if (active && active.dragEnd) active.dragEnd();
     }
+    if (bgDragging) {
+      bgDragging = false;
+      cv.classList.remove("grabbing");
+      requestInk();
+    }
     if (dragging) {
       dragging = false;
       dragGuide.v = null;
@@ -625,6 +671,16 @@ window.Engine = (function () {
       requestInk();
     }
   });
+
+  // 滾輪縮放背景素材(顯示範圍)
+  cv.addEventListener("wheel", e => {
+    if (!state.media || !active) return;
+    e.preventDefault();
+    const step = e.deltaY < 0 ? 4 : -4;
+    state.mediaZoom = Math.min(200, Math.max(100, state.mediaZoom + step));
+    syncMediaUI();
+    requestInk();
+  }, { passive: false });
 
   /* ─────────────────────────────
      控制面板:tabs / 共用控制元件
@@ -789,10 +845,12 @@ window.Engine = (function () {
     bindRange("#bgDim", "#bgDimVal", v => { state.bgDim = v; }, v => v + "%");
   }
 
-  function buildLayoutTab(panel) {
-    panel.innerHTML = `
+  // 卡片對齊與大小:由模板掛進「外觀」分頁(append 進指定容器)。
+  // 已移除「位置」滑桿(改用九宮格對齊 + 直接拖曳)與「素材填滿」。
+  function buildPlacement(target) {
+    target.insertAdjacentHTML("beforeend", `
       <div class="group">
-        <div class="group-title">對齊</div>
+        <div class="group-title">對齊與大小</div>
         <div class="align-grid">
           <button class="align-btn" data-align="5,5" type="button" aria-label="左上對齊">&#8598;</button>
           <button class="align-btn" data-align="50,5" type="button" aria-label="上方對齊">&#8593;</button>
@@ -804,39 +862,12 @@ window.Engine = (function () {
           <button class="align-btn" data-align="50,95" type="button" aria-label="下方對齊">&#8595;</button>
           <button class="align-btn" data-align="95,95" type="button" aria-label="右下對齊">&#8600;</button>
         </div>
-        <p class="hint">拖曳卡片時靠近中線或邊距會自動吸附。</p>
-      </div>
-      <div class="group">
-        <div class="group-title">位置與大小</div>
-        <label class="slider-row">
-          <span class="field-label">水平位置 <b id="posXVal">50%</b></span>
-          <input type="range" id="cardX" min="0" max="100" value="50">
-        </label>
-        <label class="slider-row">
-          <span class="field-label">垂直位置 <b id="posYVal">42%</b></span>
-          <input type="range" id="cardY" min="0" max="100" value="42">
-        </label>
-        <label class="slider-row">
+        <label class="slider-row" style="margin-top:10px;">
           <span class="field-label">卡片大小 <b id="scaleVal">100%</b></span>
           <input type="range" id="cardScale" min="50" max="150" value="100">
         </label>
-        <p class="hint">也可以直接在預覽畫面上拖曳卡片調整位置。</p>
-      </div>
-      <div class="group">
-        <div class="group-title">素材填滿</div>
-        <label class="slider-row">
-          <span class="field-label">素材縮放 <b id="mediaZoomVal">100%</b></span>
-          <input type="range" id="mediaZoom" min="100" max="200" value="100">
-        </label>
-        <label class="slider-row">
-          <span class="field-label">素材水平 <b id="mediaXVal">50%</b></span>
-          <input type="range" id="mediaX" min="0" max="100" value="50">
-        </label>
-        <label class="slider-row">
-          <span class="field-label">素材垂直 <b id="mediaYVal">50%</b></span>
-          <input type="range" id="mediaY" min="0" max="100" value="50">
-        </label>
-      </div>`;
+        <p class="hint">也可以直接在預覽畫面上拖曳卡片;靠近中線或邊距會自動吸附。</p>
+      </div>`);
 
     $$(".align-btn").forEach(btn => {
       btn.addEventListener("click", () => {
@@ -846,18 +877,14 @@ window.Engine = (function () {
         requestInk();
       });
     });
-    bindRange("#cardX", "#posXVal", v => { state.cardX = v; cardTarget.x = v; }, v => v + "%");
-    bindRange("#cardY", "#posYVal", v => { state.cardY = v; cardTarget.y = v; }, v => v + "%");
     bindRange("#cardScale", "#scaleVal", v => { state.cardScale = v; }, v => v + "%");
-    bindRange("#mediaZoom", "#mediaZoomVal", v => { state.mediaZoom = v; }, v => v + "%");
-    bindRange("#mediaX", "#mediaXVal", v => { state.mediaX = v; }, v => v + "%");
-    bindRange("#mediaY", "#mediaYVal", v => { state.mediaY = v; }, v => v + "%");
   }
 
-  function buildOutputTab(panel) {
+  function buildFormatTab(panel) {
     panel.innerHTML = `
       <div class="group">
         <div class="group-title">輸出尺寸</div>
+        <p class="hint" style="margin-top:0;">先選好要發佈的版面比例,後面的卡片會依此版面預覽。</p>
         <div class="size-grid" id="sizeGrid">
           <button class="size-btn" data-w="1080" data-h="1080" type="button">
             <span class="sz-ratio r11" aria-hidden="true"></span>
@@ -880,6 +907,29 @@ window.Engine = (function () {
             <span class="sz-name">3:4 直式</span><span class="sz-px">1080×1440・通用</span>
           </button>
         </div>
+      </div>`;
+
+    $$(".size-btn").forEach(btn => {
+      btn.addEventListener("click", () => {
+        state.outW = Number(btn.dataset.w);
+        state.outH = Number(btn.dataset.h);
+        $$(".size-btn").forEach(x => x.classList.toggle("on", x === btn));
+        applyCanvasSize();
+        requestInk();
+      });
+    });
+  }
+
+  function buildOutputTab(panel) {
+    panel.innerHTML = `
+      <div class="group">
+        <div class="group-title">輸出畫質</div>
+        <div class="row">
+          <button class="seg-btn on" data-q="1" type="button">1x</button>
+          <button class="seg-btn" data-q="1.5" type="button">1.5x</button>
+          <button class="seg-btn" data-q="2" type="button">2x</button>
+        </div>
+        <p class="hint" id="qualNote"></p>
       </div>
       <div class="group" id="durGroup">
         <div class="group-title">影片長度</div>
@@ -898,26 +948,32 @@ window.Engine = (function () {
         <p class="hint" id="videoNote"></p>
       </div>`;
 
-    $$(".size-btn").forEach(btn => {
+    bindRange("#outDur", "#durVal", v => { state.dur = v; }, v => v + "s");
+
+    $$("[data-q]").forEach(btn => {
       btn.addEventListener("click", () => {
-        state.outW = Number(btn.dataset.w);
-        state.outH = Number(btn.dataset.h);
-        $$(".size-btn").forEach(x => x.classList.toggle("on", x === btn));
-        applyCanvasSize();
-        requestInk();
+        state.quality = Number(btn.dataset.q);
+        $$("[data-q]").forEach(x => x.classList.toggle("on", x === btn));
+        updateQualNote();
       });
     });
-    bindRange("#outDur", "#durVal", v => { state.dur = v; }, v => v + "s");
 
     $("#btnPng").addEventListener("click", exportPng);
     $("#btnVideo").addEventListener("click", exportVideo);
     reflectVideoFormat();
+    updateQualNote();
+  }
+
+  function updateQualNote() {
+    const note = $("#qualNote");
+    if (note) note.textContent = `實際輸出 ${Math.round(state.outW * state.quality)}×${Math.round(state.outH * state.quality)} px`;
   }
 
   function applyCanvasSize() {
     cv.width = state.outW;
     cv.height = state.outH;
     $("#metaSize").textContent = `輸出 ${state.outW}×${state.outH}`;
+    updateQualNote();
   }
 
   /* ─────────────────────────────
@@ -952,7 +1008,7 @@ window.Engine = (function () {
   /* ─ 匯出:PNG ─ */
   function exportPng() {
     if (!state.media || state.exporting) return;
-    const w = state.outW, h = state.outH;
+    const w = Math.round(state.outW * state.quality), h = Math.round(state.outH * state.quality);
     // 直接以目前畫面狀態輸出(t = 目前時鐘,進度條停在當下)
     const off = document.createElement("canvas");
     off.width = w; off.height = h;
@@ -984,7 +1040,7 @@ window.Engine = (function () {
     disableExport(true);
     cancelAnimationFrame(state.raf);
 
-    const w = state.outW, h = state.outH;
+    const w = Math.round(state.outW * state.quality), h = Math.round(state.outH * state.quality);
     const ext = mime.startsWith("video/mp4") ? "mp4" : "webm";
     const off = document.createElement("canvas");
     off.width = w; off.height = h;
@@ -1081,7 +1137,7 @@ window.Engine = (function () {
     "glass", "fill", "fillC1", "fillC2", "fillAngle",
     "blur", "opacity", "shine", "radius", "tint", "bgBlur", "bgDim",
     "cardX", "cardY", "cardScale", "mediaZoom", "mediaX", "mediaY",
-    "outW", "outH", "dur"
+    "outW", "outH", "dur", "quality"
   ];
 
   function tsName() {
@@ -1141,6 +1197,11 @@ window.Engine = (function () {
     if (settings.outW !== undefined && settings.outH !== undefined) {
       const sb = $(`.size-btn[data-w="${settings.outW}"][data-h="${settings.outH}"]`);
       if (sb) sb.click();
+    }
+    // 輸出畫質(segmented 按鈕)
+    if (settings.quality !== undefined) {
+      const qb = $(`[data-q="${settings.quality}"]`);
+      if (qb) qb.click();
     }
     // 滑桿:設值後派發 input,讓 bindRange 同步 state 與標籤
     const sliders = {
@@ -1231,10 +1292,10 @@ window.Engine = (function () {
     if (!active) return;
     $("#tplBadge").textContent = active.badge || active.name;
     buildRail();
-    // 分頁順序:模板自有分頁 → 質感 → 版面 → 輸出
+    // 分頁順序:版面(尺寸)先選 → 模板自有分頁(對齊/大小由模板掛進「外觀」)→ 質感 → 輸出
+    addTab("版面", buildFormatTab);
     if (active.buildPanel) active.buildPanel({ addTab });
     addTab("質感", buildGlassTab);
-    addTab("版面", buildLayoutTab);
     addTab("輸出", buildOutputTab);
 
     // header:存檔 / 讀檔
@@ -1281,6 +1342,7 @@ window.Engine = (function () {
     cardLuminance,
     clock, resetClock, requestInk,
     bindRange, setRange,
+    buildPlacement,
     mediaSize
   };
 

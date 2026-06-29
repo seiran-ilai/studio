@@ -4826,6 +4826,42 @@ body.simple-resizing { cursor: col-resize; user-select: none; }
   color: var(--bg-deep);
 }
 
+/* 輸出畫質倍率(底部輸出列,緊鄰截圖 / MP4):與方向切換同款膠囊分段 */
+.quality-seg {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  background: var(--bg-elev);
+  border: 1px solid var(--border-soft);
+  border-radius: 999px;
+  padding: 4px;
+}
+.quality-seg-label {
+  font-size: 12px;
+  color: var(--gold-bright);
+  letter-spacing: 0.05em;
+  font-weight: 500;
+  padding: 0 6px 0 8px;
+}
+.quality-seg button {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  padding: 6px 13px;
+  font-size: 12px;
+  border-radius: 999px;
+  cursor: pointer;
+  font-family: var(--font-body);
+  transition: all 0.15s;
+}
+.quality-seg button:hover { color: var(--text-primary); }
+.quality-seg button.active {
+  background: var(--gold);
+  color: var(--bg-deep);
+  font-weight: 600;
+}
+.quality-seg button.active:hover { background: var(--gold-bright); }
+
 
 /* 對話 textarea */
 .simple-dialog-text {
