@@ -131,6 +131,7 @@
       <div class="panel" data-c="1"><div class="ph">背景圖片 <span class="chev">▾</span></div><div class="pb">
         <div class="row" style="margin-bottom:9px">
           <button class="btn sm" id="bgUpload" style="flex:1">上傳圖片</button>
+          <button class="btn sm" id="bgEdit" style="flex:none" disabled>編輯</button>
           <button class="btn sm" id="bgRemove" style="flex:none">移除</button>
         </div>
         <div class="field"><label>套用方式</label>
@@ -271,6 +272,16 @@
     <div class="field"><label>縮放</label><div class="rng"><input type="range" id="logoZoom" min="1" max="4" step="0.01" value="1"><b id="logoZoomV">100%</b></div></div>
     <div class="row"><button class="btn sm" id="logoCropReset">重設</button><span class="hint" style="flex:1;margin:0">拖曳圖片移動,框內即為 LOGO 範圍</span></div>
     <div class="modal-actions"><button class="btn" id="logoCancel">取消</button><button class="btn pri" id="logoOk">套用</button></div>
+  </div>
+</div>
+
+<div id="bgModal" class="modal hidden">
+  <div class="modal-card">
+    <div class="modal-title">編輯背景圖片（裁切 / 縮放）</div>
+    <div class="crop-wrap"><canvas id="bgCropCv"></canvas></div>
+    <div class="field"><label>縮放</label><div class="rng"><input type="range" id="bgZoom" min="1" max="4" step="0.01" value="1"><b id="bgZoomV">100%</b></div></div>
+    <div class="row"><button class="btn sm" id="bgCropReset">重設</button><span class="hint" style="flex:1;margin:0">拖曳圖片移動,框內即為背景範圍(依收據比例)</span></div>
+    <div class="modal-actions"><button class="btn" id="bgCropCancel">取消</button><button class="btn pri" id="bgCropOk">套用</button></div>
   </div>
 </div>
 

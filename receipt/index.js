@@ -22,7 +22,7 @@ const S={
   fin:{ sym:'NT$', dec:0, taxPct:5, incl:true, svcPct:0, dtype:'amount', dval:0, method:'信用卡 VISA ****1234', paid:'' },
   type:{ scale:1, line:1, accent:'#111111' },
   sty:{ font:'dot', paperW:720, paper:'#ffffff', ink:'#111111', zig:true, divider:'dash', radius:0, texture:'', texHue:0, texBright:100, texContrast:140, texStrength:100 },
-  bg:{ img:null, mode:'none', pos:'center', opacity:15, size:40, effect:'none', paperAlpha:100, margin:80 },
+  bg:{ img:null, imgOrig:null, crop:null, mode:'none', pos:'center', opacity:15, size:40, effect:'none', paperAlpha:100, margin:80 },
   design:'tailor', fps:30,
 };
 const SZmap={lg:37,md:26,sm:18,xs:16};
@@ -388,8 +388,10 @@ bind('#s_texContrast',el=>{ S.sty.texContrast=+el.value; $('#s_texContrastV').te
 $('#s_zig').addEventListener('change',e=>{ S.sty.zig=e.target.checked; render(1); });
 // background image
 function bgSyncRows(){ const w=S.bg.mode==='water'; $('#bgSizeRow').classList.toggle('hidden',!w); $('#bgOpacityRow').classList.toggle('hidden',!w); $('#bgMarginRow').classList.toggle('hidden', S.bg.mode!=='back'); }
-$('#bgUpload').onclick=()=>pickImage(im=>{ S.bg.img=im; if(S.bg.mode==='none'){ S.bg.mode='water'; segPick($('#bgModeSeg'),'water'); } bgSyncRows(); render(1); });
-$('#bgRemove').onclick=()=>{ S.bg.img=null; render(1); };
+$('#bgUpload').onclick=()=>pickImage(im=>{ S.bg.imgOrig=im; S.bg.crop=null; S.bg.img=im; if(S.bg.mode==='none'){ S.bg.mode='water'; segPick($('#bgModeSeg'),'water'); } bgSyncRows(); bgEditState(); render(1); openBgCropper(); });
+$('#bgEdit').onclick=()=>openBgCropper();
+$('#bgRemove').onclick=()=>{ S.bg.img=null; S.bg.imgOrig=null; S.bg.crop=null; bgEditState(); render(1); };
+function bgEditState(){ const b=$('#bgEdit'); if(b) b.disabled=!S.bg.imgOrig; }
 $('#bgModeSeg').onclick=e=>{ const b=e.target.closest('button'); if(!b)return; S.bg.mode=b.dataset.v; segPick($('#bgModeSeg'),b.dataset.v); bgSyncRows(); render(1); };
 bind('#bgOpacity',el=>{ S.bg.opacity=+el.value; $('#bgOpacityV').textContent=el.value+'%'; });
 bind('#bgSize',el=>{ S.bg.size=+el.value; $('#bgSizeV').textContent=el.value+'%'; });
@@ -626,6 +628,44 @@ $('#logoOk').onclick=()=>{ if(!logoCrop)return; const [W,H]=logoFrame(logoCrop.a
   const out=new Image(); out.onload=()=>logoDone(out); out.src=oc.toDataURL('image/png');
   $('#logoModal').classList.add('hidden'); logoCrop=null; };
 
+// ---- background image cropper ----
+const bgCropCv=document.getElementById('bgCropCv'), bgCropCtx=bgCropCv.getContext('2d');
+let bgCrop=null, bgCropDrag=null;
+// 裁切框比例 = 收據目前比例(WYSIWYG;clamp 避免極端瘦長)
+function bgFrame(){
+  const pw=S.sty.paperW||720, ph=lastH||pw*1.4;
+  const Wd=560; let H=Math.round(Wd*ph/pw);
+  H=Math.min(760,Math.max(220,H));
+  return [Wd,H];
+}
+function drawBgCropModal(){
+  const [W,H]=bgFrame(); bgCropCv.width=W; bgCropCv.height=H;
+  const sc=Math.min(360/W,420/H); bgCropCv.style.width=(W*sc)+'px'; bgCropCv.style.height=(H*sc)+'px';
+  coverDraw(bgCropCtx,W,H,bgCrop.img,bgCrop.zoom,bgCrop.fx,bgCrop.fy);
+  bgCropCtx.strokeStyle='rgba(255,255,255,.85)'; bgCropCtx.lineWidth=2; bgCropCtx.strokeRect(1,1,W-2,H-2);
+}
+function openBgCropper(){
+  const src=S.bg.imgOrig; if(!src)return;
+  const c=S.bg.crop||{zoom:1,fx:0.5,fy:0.5};
+  bgCrop={img:src,zoom:c.zoom,fx:c.fx,fy:c.fy};
+  $('#bgZoom').value=bgCrop.zoom; $('#bgZoomV').textContent=Math.round(bgCrop.zoom*100)+'%';
+  $('#bgModal').classList.remove('hidden'); drawBgCropModal();
+}
+$('#bgZoom').oninput=e=>{ if(!bgCrop)return; bgCrop.zoom=+e.target.value; $('#bgZoomV').textContent=Math.round(e.target.value*100)+'%'; drawBgCropModal(); };
+$('#bgCropReset').onclick=()=>{ if(!bgCrop)return; bgCrop.zoom=1; bgCrop.fx=0.5; bgCrop.fy=0.5; $('#bgZoom').value=1; $('#bgZoomV').textContent='100%'; drawBgCropModal(); };
+bgCropCv.addEventListener('pointerdown',e=>{ if(!bgCrop)return; bgCropDrag={x:e.clientX,y:e.clientY}; try{bgCropCv.setPointerCapture(e.pointerId);}catch(_){} });
+bgCropCv.addEventListener('pointermove',e=>{ if(!bgCropDrag||!bgCrop)return; const r=bgCropCv.getBoundingClientRect(); const [W,H]=bgFrame();
+  const dx=(e.clientX-bgCropDrag.x)*(W/r.width), dy=(e.clientY-bgCropDrag.y)*(H/r.height); bgCropDrag.x=e.clientX; bgCropDrag.y=e.clientY;
+  const im=bgCrop.img, s=Math.max(W/im.width,H/im.height)*bgCrop.zoom, dw=im.width*s, dh=im.height*s;
+  bgCrop.fx=Math.min(1,Math.max(0,bgCrop.fx - dx/dw)); bgCrop.fy=Math.min(1,Math.max(0,bgCrop.fy - dy/dh)); drawBgCropModal(); });
+window.addEventListener('pointerup',()=>{ bgCropDrag=null; });
+$('#bgCropCancel').onclick=()=>{ $('#bgModal').classList.add('hidden'); bgCrop=null; };
+$('#bgCropOk').onclick=()=>{ if(!bgCrop)return; const [W,H]=bgFrame(); const oc=document.createElement('canvas'); oc.width=W; oc.height=H;
+  coverDraw(oc.getContext('2d'),W,H,bgCrop.img,bgCrop.zoom,bgCrop.fx,bgCrop.fy);
+  S.bg.crop={zoom:bgCrop.zoom,fx:bgCrop.fx,fy:bgCrop.fy};
+  const out=new Image(); out.onload=()=>render(1); out.src=oc.toDataURL('image/png'); S.bg.img=out;
+  $('#bgModal').classList.add('hidden'); bgCrop=null; };
+
 // ---- block list editor (Notion-style) ----
 const QR_OFFLINE_NOTE='在離線狀態下無法使用此選項（QR Code 產生器需連線載入）';
 const BLABEL={ image:'圖片 / LOGO', text:'文字', fields:'資訊欄位', divider:'分隔線', space:'間距', items:'品項清單', services:'特別服務', totals:'金額小計', note:'備註', barcode:'條碼', qr:'QR Code' };
@@ -838,8 +878,8 @@ function applyDesign(key){
   S.blocks=d.blocks; S.items=d.items; S.fin=d.fin;
   S.sty=Object.assign({}, S.sty, d.sty); S.type=Object.assign({}, d.type); S.design=key;
   S.sty.texture='';   // 預設模板不帶紙張紋理
-  S.bg={ img:null, mode:'none', pos:'center', opacity:15, size:40, effect:'none', paperAlpha:100, margin:80 };   // 不帶底圖
-  segPick($('#bgModeSeg'),S.bg.mode); segPick($('#bgEffectSeg'),S.bg.effect); bgSyncRows();
+  S.bg={ img:null, imgOrig:null, crop:null, mode:'none', pos:'center', opacity:15, size:40, effect:'none', paperAlpha:100, margin:80 };   // 不帶底圖
+  segPick($('#bgModeSeg'),S.bg.mode); segPick($('#bgEffectSeg'),S.bg.effect); bgSyncRows(); bgEditState();
   $('#bgPaperAlpha').value=S.bg.paperAlpha; $('#bgPaperAlphaV').textContent=S.bg.paperAlpha+'%';
   syncStyleInputs(); syncFin(); syncType(); renderBlocks(); renderItems();
   if(blkMode==='text') $('#blockSource').value=serializeBlocks();
@@ -1148,7 +1188,7 @@ function serializeDesign(){
   return {
     blocks:S.blocks.map(b=> b.type==='image'? Object.assign({},b,{img:b.img?b.img.src:null}) : b),
     items:S.items, fin:S.fin, type:S.type, sty:S.sty,
-    bg:Object.assign({},S.bg,{img:S.bg.img?S.bg.img.src:null}),
+    bg:Object.assign({},S.bg,{img:S.bg.img?S.bg.img.src:null, imgOrig:S.bg.imgOrig?S.bg.imgOrig.src:null}),
     design:S.design
   };
 }
@@ -1161,11 +1201,13 @@ function applyDesignData(d,onReady){
   });
   S.items=(d.items||[]).map(it=>JSON.parse(JSON.stringify(it)));
   S.fin=Object.assign({},d.fin); S.type=Object.assign({},d.type); S.sty=Object.assign({},d.sty);
-  S.bg=Object.assign({img:null,mode:'none',pos:'center',opacity:15,size:40,effect:'none',paperAlpha:100,margin:80}, d.bg||{}, {img:null});
+  S.bg=Object.assign({img:null,imgOrig:null,crop:null,mode:'none',pos:'center',opacity:15,size:40,effect:'none',paperAlpha:100,margin:80}, d.bg||{}, {img:null,imgOrig:null});
   if(d.bg&&d.bg.img){ const im=new Image(); im.src=d.bg.img; S.bg.img=im; imgs.push(im); }
+  if(d.bg&&d.bg.imgOrig){ const im=new Image(); im.src=d.bg.imgOrig; S.bg.imgOrig=im; imgs.push(im); }
+  else if(S.bg.img){ S.bg.imgOrig=S.bg.img; S.bg.crop=null; }   // 舊資料無原圖時退而用裁切後當原圖
   S.design=d.design||'custom';
   buildFontSel(); syncStyleInputs(); syncFin(); syncType();
-  segPick($('#bgModeSeg'),S.bg.mode); segPick($('#bgEffectSeg'),S.bg.effect); bgSyncRows();
+  segPick($('#bgModeSeg'),S.bg.mode); segPick($('#bgEffectSeg'),S.bg.effect); bgSyncRows(); bgEditState();
   $('#bgOpacity').value=S.bg.opacity; $('#bgOpacityV').textContent=S.bg.opacity+'%';
   $('#bgSize').value=S.bg.size; $('#bgSizeV').textContent=S.bg.size+'%';
   $('#bgPaperAlpha').value=S.bg.paperAlpha; $('#bgPaperAlphaV').textContent=S.bg.paperAlpha+'%';

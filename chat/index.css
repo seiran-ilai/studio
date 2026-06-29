@@ -196,6 +196,12 @@ canvas{touch-action:none}
 .modal-card{background:var(--surface-2); border:1px solid var(--line-strong); border-radius:16px; padding:18px; width:372px; box-shadow:var(--shadow-soft);
   backdrop-filter:blur(var(--blur)) saturate(1.4); -webkit-backdrop-filter:blur(var(--blur)) saturate(1.4)}
 .modal-title{font-weight:700; font-size:14px; margin-bottom:14px}
+/* 行內語法:按鈕旁浮動 popover */
+.syntax-popover{position:fixed; top:60px; left:16px; z-index:120; width:auto; min-width:300px; max-width:calc(100vw - 24px);
+  background:var(--surface-2); border:1px solid var(--line-strong); border-radius:14px; padding:14px 16px; box-shadow:var(--shadow-soft);
+  backdrop-filter:blur(var(--blur)) saturate(1.4); -webkit-backdrop-filter:blur(var(--blur)) saturate(1.4)}
+.syntax-popover.hidden{display:none}
+.syntax-popover-title{font-weight:700; font-size:14px; margin-bottom:10px}
 .crop-wrap{display:flex; justify-content:center; margin-bottom:14px}
 #cropCv{width:300px; height:300px; border-radius:10px; background:#cdd6d2; cursor:grab; touch-action:none; border:1px solid var(--line)}
 #cropCv:active{cursor:grabbing}

@@ -12,7 +12,7 @@
 <title>RP Macro</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600;700&family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=Noto+Serif+TC:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="index.css">
 </head>
 <body>
@@ -33,196 +33,192 @@
 
 <div class="app">
 
-  <!-- 標頭(統一:返回 + 標題 + 右上資訊列)-->
-  <header class="header">
+  <!-- 頂列:單行工具列(標題 · 行數 · wait 預設 · 複製 · 清空 · 存讀 · 介面 · 說明 · ℹ)-->
+  <header class="topbar">
     <a class="back" href="../" aria-label="回到 Studio 入口">←</a>
     <div class="logo-block">
       <h1 class="logo-main">RP Macro</h1>
       <span class="logo-sub">為 FF14 角色扮演而生的巨集工具</span>
     </div>
-    <div class="header-right">
-      <button class="help-btn" id="saveBtn" type="button" aria-label="存檔" title="存檔(下載 .json)"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v11"/><path d="M7 10l5 5 5-5"/><path d="M5 20h14"/></svg></button>
-      <button class="help-btn" id="loadBtn" type="button" aria-label="讀檔" title="讀檔(上傳 .json)"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20V9"/><path d="M7 14l5-5 5 5"/><path d="M5 4h14"/></svg></button>
-      <input type="file" id="loadFile" accept="application/json,.json" hidden>
-      <button class="help-btn" id="hotkeyBtn" type="button" aria-label="快捷鍵說明" title="快捷鍵說明"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="6" width="18" height="12" rx="2"/><path d="M7 10h.01M11 10h.01M15 10h.01M7 14h10"/></svg></button>
-      <span class="hr-label">介面</span>
-      <div class="ui-scale-switch" id="uiScaleSwitch" role="group" aria-label="介面大小">
-        <button class="ui-scale-btn active" data-scale="default">標準</button>
-        <button class="ui-scale-btn" data-scale="large">大</button>
-        <button class="ui-scale-btn" data-scale="xlarge">最大</button>
-      </div>
-      <button class="help-btn" id="helpBtn" type="button" aria-label="使用說明" title="使用說明"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 11v5"/><path d="M12 8h.01"/></svg></button>
+
+    <span class="tb-spacer"></span>
+
+    <span class="line-count tb-count" id="lineCount">0 / 15 行</span>
+    <span class="tb-sep"></span>
+
+    <span class="hr-label">等待</span>
+    <input type="text" class="wait-input tb-wait" id="waitCustom" placeholder="預設秒" inputmode="decimal" title="預設等待秒數（行末按 Tab / 每行末加 wait 會用到）" />
+
+    <button class="chip primary" id="copyBtn">⎘ 複製巨集</button>
+    <button class="chip danger" id="clearBtn">✕ 清空</button>
+    <span class="tb-sep"></span>
+
+    <button class="help-btn" id="saveBtn" type="button" aria-label="存檔" title="存檔(下載 .json)"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v11"/><path d="M7 10l5 5 5-5"/><path d="M5 20h14"/></svg></button>
+    <button class="help-btn" id="loadBtn" type="button" aria-label="讀檔" title="讀檔(上傳 .json)"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20V9"/><path d="M7 14l5-5 5 5"/><path d="M5 4h14"/></svg></button>
+    <input type="file" id="loadFile" accept="application/json,.json" hidden>
+    <button class="help-btn" id="hotkeyBtn" type="button" aria-label="快捷鍵說明" title="快捷鍵說明"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="6" width="18" height="12" rx="2"/><path d="M7 10h.01M11 10h.01M15 10h.01M7 14h10"/></svg></button>
+
+    <span class="hr-label">介面</span>
+    <div class="ui-scale-switch" id="uiScaleSwitch" role="group" aria-label="介面大小">
+      <button class="ui-scale-btn active" data-scale="default">標準</button>
+      <button class="ui-scale-btn" data-scale="large">大</button>
+      <button class="ui-scale-btn" data-scale="xlarge">最大</button>
     </div>
+
+    <button class="help-btn" id="helpBtn" type="button" aria-label="使用導覽" title="使用導覽"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M9.5 9.2a2.5 2.5 0 0 1 4.5 1.5c0 1.5-2 2-2 3.1"/><path d="M12 17h.01"/></svg></button>
+    <button class="help-btn" id="infoBtn" type="button" aria-label="關於 / 其他工具" title="關於 / 其他工具"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 11v5"/><path d="M12 8h.01"/></svg></button>
   </header>
 
-  <!-- 主面板:左輸入 / 右工具(可向右收起 + 可拖曳寬度) -->
-  <section class="panel">
-    <div class="workspace" id="workspace">
+  <!-- 常駐迷你提示列 -->
+  <div class="hintbar">
+    <kbd>/</kbd> 動作建議<span class="sep">｜</span>
+    <kbd>Tab</kbd> 補全<span class="sep">｜</span>
+    補完情感再 <kbd>Tab</kbd> 加 motion<span class="sep">｜</span>
+    行末 <kbd>Tab</kbd> 加 wait<span class="sep">｜</span>
+    <kbd>t</kbd>+<kbd>Tab</kbd> 轉 &lt;t&gt;
+  </div>
 
-      <!-- 左側:輸入 -->
-      <div class="editor-pane">
-        <div class="editor-section">
-          <div class="sub-section-title">編輯區</div>
-          <textarea class="macro-editor" id="macroEditor" rows="18"
-                    placeholder="例如：&#10;/em 把<t>抓過來用力親了一口。&#10;/p 副本要開始了 <wait.2>&#10;/擁抱 motion"></textarea>
-        </div>
+  <!-- 主區:左編輯 / 右分頁工具 -->
+  <main class="main">
+
+    <!-- 左:編輯區 -->
+    <div class="editor-pane">
+      <textarea class="macro-editor" id="macroEditor"
+                placeholder="例如：&#10;/em 把<t>抓過來用力親了一口。&#10;/p 副本要開始了 <wait.2>&#10;/擁抱 motion"></textarea>
+    </div>
+
+    <!-- 右:分頁工具欄 -->
+    <aside class="rightpanel">
+      <div class="tab-bar" id="tabBar" role="tablist">
+        <button class="tab-btn active" type="button" data-tab="emote">♥ 情感動作</button>
+        <button class="tab-btn" type="button" data-tab="channel">◆ 頻道</button>
+        <button class="tab-btn" type="button" data-tab="tools">⚙ 工具</button>
       </div>
+      <div class="tab-panels">
 
-      <!-- 情感動作 -->
-      <aside class="tools-side" id="sideEmote" data-w="280">
-        <div class="resizer" data-resizer title="拖曳調整寬度"></div>
-        <div class="side-head">
-          <span class="side-title">♥ 情感動作</span>
-          <span class="side-vtitle">情感動作</span>
-          <button class="side-collapse" data-collapse type="button" title="收起 / 展開" aria-label="收起或展開">▶</button>
-        </div>
-        <div class="side-body">
-          <p class="emote-floater-desc">點擊動作 → 在文字框最後新增一行</p>
-          <div class="emote-search-row">
-            <input type="text" class="emote-search" id="emoteSearch" placeholder="搜尋動作..." />
-            <label class="motion-toggle" id="motionToggle">
-              <input type="checkbox" id="motionCheck" />
-              <span>+motion</span>
-            </label>
-          </div>
-          <div class="cat-tabs" id="catTabs"></div>
-          <div class="emote-grid" id="emoteGrid"></div>
-        </div>
-      </aside>
-
-      <!-- 工具大欄位:等待 / 小工具 / 自訂圖標(分類標籤,不可縮放) -->
-      <aside class="tools-side noresize" id="sideTools" data-w="290">
-        <div class="side-head">
-          <span class="side-title">⚙ 工具</span>
-          <span class="side-vtitle">工具</span>
-          <button class="side-collapse" data-collapse type="button" title="收起 / 展開" aria-label="收起或展開">▶</button>
-        </div>
-        <div class="side-body">
-
-          <!-- 等待 -->
-          <div class="tool-group">
-            <div class="tool-group-label">⏱ 等待 ＜wait.X＞</div>
-            <div class="wait-num-row" id="waitNumRow">
-              <button class="wait-num" data-secs="1">1</button>
-              <button class="wait-num" data-secs="2">2</button>
-              <button class="wait-num" data-secs="3">3</button>
-              <button class="wait-num" data-secs="4">4</button>
-              <button class="wait-num" data-secs="5">5</button>
-              <button class="wait-num" data-secs="6">6</button>
-              <button class="wait-num" data-secs="7">7</button>
-              <button class="wait-num" data-secs="8">8</button>
-              <button class="wait-num" data-secs="9">9</button>
-              <button class="wait-num" data-secs="10">10</button>
-              <input type="text" class="wait-input" id="waitCustom" placeholder="自訂" inputmode="decimal" />
-            </div>
-            <div class="wait-actions">
-              <button class="chip danger" id="clearAllWait">✕ 清空所有 &lt;wait.X&gt;</button>
-            </div>
-          </div>
-
-          <!-- 小工具 -->
-          <div class="tool-group">
-            <div class="tool-group-label">⚙ 小工具</div>
-            <div class="mini-tools">
-              <div class="mini-tools-grid" id="miniToolsGrid">
-                <!-- 由 JS 動態渲染 -->
-              </div>
-              <div class="mini-tool-form" id="miniToolForm">
-                <!-- 展開時的填空欄位 -->
-              </div>
-            </div>
-          </div>
-
-          <!-- 自訂圖標 /micon -->
-          <div class="tool-group">
-            <div class="tool-group-label">✦ 自訂圖標 /micon</div>
-            <div class="micon-row">
-              <label class="micon-toggle">
-                <input type="checkbox" id="miconCheck" />
-                <span>自訂圖標</span>
+        <!-- 情感動作 -->
+        <section class="tab-panel active" data-panel="emote" id="sideEmote">
+          <div class="emote-top">
+            <p class="emote-floater-desc">點擊動作 → 在文字框最後新增一行</p>
+            <div class="emote-search-row">
+              <input type="text" class="emote-search" id="emoteSearch" placeholder="搜尋動作..." />
+              <label class="motion-toggle" id="motionToggle">
+                <input type="checkbox" id="motionCheck" />
+                <span>+motion</span>
               </label>
-              <input type="text" class="micon-name" id="miconName" placeholder="圖標名稱（如：擁抱、絕望之歌）" disabled />
-              <select class="micon-type" id="miconType" disabled>
-                <option value="" disabled selected>選擇類型（必填）</option>
-                <option value="action">技能 / action</option>
-                <option value="blueaction">青魔法技能 / blueaction</option>
-                <option value="pvpaction">對戰技能 / pvpaction</option>
-                <option value="general">共通技能 / general</option>
-                <option value="emote">情感動作 / emote</option>
-                <option value="buddy">搭檔 / buddy</option>
-                <option value="pet">召喚獸 / pet</option>
-                <option value="minion">寵物 / minion</option>
-                <option value="mount">坐騎 / mount</option>
-                <option value="item">道具 / item</option>
-                <option value="marking">標記 / marking</option>
-                <option value="waymark">場景標記 / waymark</option>
-                <option value="gearset">套裝 / gearset</option>
-                <option value="classjob">職業 / classjob</option>
-              </select>
+            </div>
+            <div class="cat-tabs" id="catTabs"></div>
+          </div>
+          <div class="emote-grid" id="emoteGrid"></div>
+        </section>
+
+        <!-- 頻道 -->
+        <section class="tab-panel" data-panel="channel">
+          <div class="panel-pad" id="channelTool">
+            <label class="oneclick-toggle" id="oneClickToggle">
+              <input type="checkbox" id="oneClickCheck" />
+              <span>一鍵套用（套用到每一行）</span>
+            </label>
+            <div class="scope-indicator global" id="scopeIndicator" hidden>
+              <span class="scope-icon">◇</span>
+              <span id="scopeText">未選取 — 變動將套用至所有行</span>
+            </div>
+            <div class="channel-grid" id="channelGrid"></div>
+            <div class="channel-unify-row">
+              <button class="chip danger" id="clearAllChannels" title="移除任何頻道前綴,保留動作">✕ 清空頻道</button>
             </div>
           </div>
+        </section>
 
-        </div>
-      </aside>
+        <!-- 工具:等待 / 小工具 / 自訂圖標 -->
+        <section class="tab-panel" data-panel="tools" id="sideTools">
+          <div class="panel-pad">
 
-      <!-- 頻道(獨立欄位) -->
-      <aside class="tools-side" id="sideChannel" data-w="240">
-        <div class="resizer" data-resizer title="拖曳調整寬度"></div>
-        <div class="side-head">
-          <span class="side-title">◆ 選擇頻道</span>
-          <span class="side-vtitle">選擇頻道</span>
-          <button class="side-collapse" data-collapse type="button" title="收起 / 展開" aria-label="收起或展開">▶</button>
-        </div>
-        <div class="side-body" id="channelTool">
-          <label class="oneclick-toggle" id="oneClickToggle">
-            <input type="checkbox" id="oneClickCheck" />
-            <span>一鍵套用（套用到每一行）</span>
-          </label>
-          <div class="scope-indicator global" id="scopeIndicator" hidden>
-            <span class="scope-icon">◇</span>
-            <span id="scopeText">未選取 — 變動將套用至所有行</span>
+            <!-- 等待 -->
+            <div class="tool-group">
+              <div class="tool-group-label">⏱ 等待 ＜wait.X＞</div>
+              <div class="wait-num-row" id="waitNumRow">
+                <button class="wait-num" data-secs="1">1</button>
+                <button class="wait-num" data-secs="2">2</button>
+                <button class="wait-num" data-secs="3">3</button>
+                <button class="wait-num" data-secs="4">4</button>
+                <button class="wait-num" data-secs="5">5</button>
+                <button class="wait-num" data-secs="6">6</button>
+                <button class="wait-num" data-secs="7">7</button>
+                <button class="wait-num" data-secs="8">8</button>
+                <button class="wait-num" data-secs="9">9</button>
+                <button class="wait-num" data-secs="10">10</button>
+              </div>
+              <div class="wait-actions">
+                <button class="chip violet" id="applyBatchWait">↳ 每行末加 &lt;wait.<span id="batchSecLabel">2</span>&gt;</button>
+                <button class="chip danger" id="clearAllWait">✕ 清空所有 &lt;wait.X&gt;</button>
+              </div>
+            </div>
+
+            <!-- 小工具 -->
+            <div class="tool-group">
+              <div class="tool-group-label">⚙ 小工具</div>
+              <div class="mini-tools">
+                <div class="mini-tools-grid" id="miniToolsGrid">
+                  <!-- 由 JS 動態渲染 -->
+                </div>
+                <div class="mini-tool-form" id="miniToolForm">
+                  <!-- 展開時的填空欄位 -->
+                </div>
+              </div>
+            </div>
+
+            <!-- 自訂圖標 /micon -->
+            <div class="tool-group">
+              <div class="tool-group-label">✦ 自訂圖標 /micon</div>
+              <div class="micon-row">
+                <label class="micon-toggle">
+                  <input type="checkbox" id="miconCheck" />
+                  <span>自訂圖標</span>
+                </label>
+                <input type="text" class="micon-name" id="miconName" placeholder="圖標名稱（如：擁抱、絕望之歌）" disabled />
+                <select class="micon-type" id="miconType" disabled>
+                  <option value="" disabled selected>選擇類型（必填）</option>
+                  <option value="action">技能 / action</option>
+                  <option value="blueaction">青魔法技能 / blueaction</option>
+                  <option value="pvpaction">對戰技能 / pvpaction</option>
+                  <option value="general">共通技能 / general</option>
+                  <option value="emote">情感動作 / emote</option>
+                  <option value="buddy">搭檔 / buddy</option>
+                  <option value="pet">召喚獸 / pet</option>
+                  <option value="minion">寵物 / minion</option>
+                  <option value="mount">坐騎 / mount</option>
+                  <option value="item">道具 / item</option>
+                  <option value="marking">標記 / marking</option>
+                  <option value="waymark">場景標記 / waymark</option>
+                  <option value="gearset">套裝 / gearset</option>
+                  <option value="classjob">職業 / classjob</option>
+                </select>
+              </div>
+            </div>
+
           </div>
-          <div class="channel-grid" id="channelGrid"></div>
-          <div class="channel-unify-row" style="margin-top: 10px;">
-            <button class="chip danger" id="clearAllChannels" title="移除任何頻道前綴,保留動作">✕ 清空頻道</button>
-          </div>
-        </div>
-      </aside>
+        </section>
 
-    </div>
-
-    <!-- 獨立橫條:行數 + 動作按鈕(放在最下方) -->
-    <div class="editor-footer">
-      <span class="line-count" id="lineCount">0 / 15 行</span>
-      <div class="editor-actions">
-        <button class="chip violet" id="applyBatchWait">↳ 每行末加 &lt;wait.<span id="batchSecLabel">2</span>&gt;</button>
-        <button class="chip primary" id="copyBtn">⎘ 複製巨集</button>
-        <button class="chip danger" id="clearBtn">✕ 清空全部</button>
       </div>
-    </div>
-  </section>
+    </aside>
+  </main>
 
-  <footer class="footer">
-    <span class="glyph">◆</span>
-    RP Macro · 為扮演者打造
-    <span class="glyph">◆</span>
+  <!-- 站尾低調列 -->
+  <footer class="site-footer">
+    <span class="footer-tool-name">RP Macro</span>
+    <span class="footer-divider" aria-hidden="true">·</span>
+    <span class="footer-author">Made by ilai</span>
+    <span class="footer-divider" aria-hidden="true">·</span>
+    <a href="https://www.threads.com/@ilai_sei" target="_blank" rel="noopener noreferrer" aria-label="作者的 Threads 帳號 ilai_sei(個人/工具,新分頁開啟)">@ilai_sei</a>
+    <span class="footer-divider" aria-hidden="true">·</span>
+    <a href="https://www.threads.com/@ilainosu.ffxiv" target="_blank" rel="noopener noreferrer" aria-label="作者的 FFXIV 創作 Threads 帳號 ilainosu.ffxiv(新分頁開啟)">@ilainosu.ffxiv</a>
+    <span class="footer-divider" aria-hidden="true">·</span>
+    <a href="https://www.plurk.com/ilai_sei" target="_blank" rel="noopener noreferrer" aria-label="作者的 Plurk 帳號 @ilai_sei(新分頁開啟)">Plurk</a>
+    <span class="footer-divider" aria-hidden="true">·</span>
+    <a href="../" aria-label="回到 ilai's Studios 入口">All Studios</a>
   </footer>
 </div>
-
-<!-- 站尾低調列(整頁寬,放在 .app 外側) -->
-<footer class="site-footer">
-  <span class="footer-tool-name">RP Macro</span>
-  <span class="footer-divider" aria-hidden="true">·</span>
-  <span class="footer-author">Made by ilai</span>
-  <span class="footer-divider" aria-hidden="true">·</span>
-  <a href="https://www.threads.com/@ilai_sei" target="_blank" rel="noopener noreferrer" aria-label="作者的 Threads 帳號 ilai_sei(個人/工具,新分頁開啟)">@ilai_sei</a>
-  <span class="footer-divider" aria-hidden="true">·</span>
-  <a href="https://www.threads.com/@ilainosu.ffxiv" target="_blank" rel="noopener noreferrer" aria-label="作者的 FFXIV 創作 Threads 帳號 ilainosu.ffxiv(新分頁開啟)">@ilainosu.ffxiv</a>
-  <span class="footer-divider" aria-hidden="true">·</span>
-  <a href="https://www.plurk.com/ilai_sei" target="_blank" rel="noopener noreferrer" aria-label="作者的 Plurk 帳號 @ilai_sei(新分頁開啟)">Plurk</a>
-  <span class="footer-divider" aria-hidden="true">·</span>
-  <a href="../" aria-label="回到 ilai's Studios 入口">All Studios</a>
-</footer>
 
 <div class="toast" id="toast">已複製到剪貼簿</div>
 
@@ -261,32 +257,6 @@
   <form method="dialog" class="about-form">
     <button class="about-close" type="submit" value="cancel" aria-label="關閉">×</button>
 
-    <h2 class="about-title">關於作者</h2>
-    <div class="about-name">Made by ilai</div>
-    <div class="about-links">
-      <a class="about-link" href="https://www.threads.com/@ilai_sei" target="_blank" rel="noopener noreferrer" aria-label="作者的 Threads 主帳號 @ilai_sei(個人/工具,新分頁開啟)">
-        <span class="about-platform">Threads (個人 / 工具)</span>
-        <span class="about-handle">@ilai_sei</span>
-        <span class="about-arrow" aria-hidden="true">→</span>
-      </a>
-      <a class="about-link" href="https://www.threads.com/@ilainosu.ffxiv" target="_blank" rel="noopener noreferrer" aria-label="作者的 FFXIV 創作 Threads 帳號 @ilainosu.ffxiv(新分頁開啟)">
-        <span class="about-platform">Threads (FFXIV 創作)</span>
-        <span class="about-handle">@ilainosu.ffxiv</span>
-        <span class="about-arrow" aria-hidden="true">→</span>
-      </a>
-      <a class="about-link" href="https://www.plurk.com/ilai_sei" target="_blank" rel="noopener noreferrer" aria-label="作者的 Plurk 帳號 @ilai_sei(新分頁開啟)">
-        <span class="about-platform">Plurk</span>
-        <span class="about-handle">@ilai_sei</span>
-        <span class="about-arrow" aria-hidden="true">→</span>
-      </a>
-    </div>
-    <p class="about-msg">
-      希望每個喜歡 FFXIV 的玩家、<br>
-      喜歡創作的創作者們,喜歡這份工具!💛
-    </p>
-
-    <hr class="about-sep">
-
     <h2 class="about-title">其他工具</h2>
     <div class="about-tools">
       <a class="about-tool" href="../glitch/" aria-label="開啟 Glitch - 圖片與影片故障特效工具">
@@ -312,10 +282,10 @@
 <div id="tour" class="tour hidden"><div id="tourSpot" class="tour-spot"></div><div id="tourBubble" class="tour-bubble"><p class="tour-text"></p><div class="tour-foot"><span class="tour-step" id="tourStepNo"></span><span class="tour-btns"><button class="tour-btn" id="tourSkip">跳過</button><button class="tour-btn" id="tourPrev">上一步</button><button class="tour-btn primary" id="tourNext">下一步</button></span></div></div></div>
 
 <script>
-  // About dialog 開啟 / backdrop 點擊關閉
+  // About dialog 開啟(ℹ)/ backdrop 點擊關閉
   (function () {
     var dlg = document.getElementById("aboutDialog");
-    var btn = document.getElementById("btnInfo");
+    var btn = document.getElementById("infoBtn");
     if (!dlg || !btn) return;
     btn.addEventListener("click", function () { dlg.showModal(); });
     dlg.addEventListener("click", function (e) {
@@ -323,18 +293,34 @@
     });
   })();
 
+  // 右欄分頁切換(情感動作 / 頻道 / 工具)
+  (function () {
+    var bar = document.getElementById("tabBar");
+    if (!bar) return;
+    var btns = bar.querySelectorAll(".tab-btn");
+    var panels = document.querySelectorAll(".tab-panel");
+    bar.addEventListener("click", function (e) {
+      var b = e.target.closest(".tab-btn");
+      if (!b) return;
+      var key = b.dataset.tab;
+      btns.forEach(function (x) { x.classList.toggle("active", x === b); });
+      panels.forEach(function (p) { p.classList.toggle("active", p.dataset.panel === key); });
+    });
+  })();
+
   // 引導導覽 (coach-mark tour):i 按鈕啟動 / 首次造訪自動顯示
   (function(){var KEY='macro-seen-guide';var TOUR=[
-    {sel:'#macroEditor',pos:'right',text:'最左是<b>編輯區</b>。直接輸入台詞或動作，右側各工具欄都會寫進這個文字框。輸入 <b>/</b> 加字會跳出動作建議，<b>Tab / Enter</b> 補全。一則巨集上限 <b>15 行</b>。'},
-    {sel:'#sideEmote',pos:'left',text:'右側分成幾欄:<b>情感動作 / 工具 / 頻道</b>。每欄都能按 <b>▶</b> 向右收起、拖曳左緣調整寬度。這欄是<b>情感動作</b>:搜尋或分類瀏覽，點一下即新增一行；勾 <b>+motion</b> 一併加靜止動作。'},
-    {sel:'#waitNumRow',pos:'left',text:'<b>工具</b>欄上半是<b>等待</b>:先選好秒數（或自訂），之後在左側行末按 <b>Tab</b>、或按編輯區的 <b>每行末加 wait</b> 就會加上 <b>&lt;wait.X&gt;</b>。'},
-    {sel:'#sideTools',pos:'left',text:'<b>工具</b>欄下半是<b>小工具</b>:換裝、倒數、切換介面等;底部的<b>自訂圖標</b>會在巨集最前面加上 /micon 行。'},
-    {sel:'#channelTool',pos:'left',text:'<b>選擇頻道</b>(獨立一欄):點頻道按鈕會在文字框<b>新增一行</b>並帶上前綴。勾 <b>一鍵套用</b> 改為幫每行套上前綴；在文字框<b>選取多行</b>只動選取範圍，不選取則套用至所有行。'},
-    {sel:'#copyBtn',pos:'top',text:'編好之後按 <b>複製巨集</b>，把整段內容貼回遊戲的巨集設定即可。'},
-    {sel:'#hotkeyBtn',pos:'bottom',text:'右上角的 <b>快捷鍵</b> 可隨時叫出快捷鍵說明；旁邊可切換<b>介面大小</b>，設定都會自動記住。'}
+    {sel:'#macroEditor',pos:'right',text:'最左是<b>編輯區</b>。直接輸入台詞或動作，右側分頁工具都會寫進這個文字框。輸入 <b>/</b> 加字會跳出動作建議，<b>Tab / Enter</b> 補全。一則巨集上限 <b>15 行</b>。'},
+    {sel:'#sideEmote',tab:'emote',pos:'left',text:'右側是<b>分頁工具</b>:上方可切換<b>情感動作 / 頻道 / 工具</b>三頁。這頁是<b>情感動作</b>:用頂部搜尋框或分類瀏覽，點一下即新增一行；勾 <b>+motion</b> 一併加靜止動作。'},
+    {sel:'#waitNumRow',tab:'tools',pos:'left',text:'<b>工具</b>頁上半是<b>等待</b>:先選好秒數（或在頂列填預設秒），之後在左側行末按 <b>Tab</b>、或按 <b>每行末加 wait</b> 就會加上 <b>&lt;wait.X&gt;</b>。'},
+    {sel:'#sideTools',tab:'tools',pos:'left',text:'<b>工具</b>頁還有<b>小工具</b>:換裝、倒數、切換介面等;底部的<b>自訂圖標</b>會在巨集最前面加上 /micon 行。'},
+    {sel:'#channelTool',tab:'channel',pos:'left',text:'<b>頻道</b>頁:點頻道按鈕會在文字框<b>新增一行</b>並帶上前綴。勾 <b>一鍵套用</b> 改為幫每行套上前綴；在文字框<b>選取多行</b>只動選取範圍，不選取則套用至所有行。'},
+    {sel:'#copyBtn',pos:'bottom',text:'編好之後按頂列的 <b>複製巨集</b>，把整段內容貼回遊戲的巨集設定即可。'},
+    {sel:'#hotkeyBtn',pos:'bottom',text:'頂列的 <b>快捷鍵</b> 可隨時叫出快捷鍵說明；旁邊可切換<b>介面大小</b>、開 <b>ℹ</b> 看關於與其他工具，設定都會自動記住。'}
   ];
   var tour=document.getElementById('tour');if(!tour)return;var spot=document.getElementById('tourSpot'),bub=document.getElementById('tourBubble'),idx=0;
-  function show(){var s=TOUR[idx],el=document.querySelector(s.sel);if(!el){if(idx<TOUR.length-1){idx++;return show();}return end();}var r=el.getBoundingClientRect(),pad=8;spot.style.left=(r.left-pad)+'px';spot.style.top=(r.top-pad)+'px';spot.style.width=(r.width+pad*2)+'px';spot.style.height=(r.height+pad*2)+'px';bub.querySelector('.tour-text').innerHTML=s.text;document.getElementById('tourStepNo').textContent=(idx+1)+' / '+TOUR.length;document.getElementById('tourPrev').style.visibility=idx?'visible':'hidden';document.getElementById('tourNext').textContent=idx===TOUR.length-1?'完成':'下一步';tour.classList.remove('hidden');pos(r,s.pos);}
+  function activateTab(key){var bar=document.getElementById('tabBar');if(!bar)return;var b=bar.querySelector('.tab-btn[data-tab="'+key+'"]');if(b&&!b.classList.contains('active'))b.click();}
+  function show(){var s=TOUR[idx];if(s.tab)activateTab(s.tab);var el=document.querySelector(s.sel);if(!el){if(idx<TOUR.length-1){idx++;return show();}return end();}var r=el.getBoundingClientRect(),pad=8;spot.style.left=(r.left-pad)+'px';spot.style.top=(r.top-pad)+'px';spot.style.width=(r.width+pad*2)+'px';spot.style.height=(r.height+pad*2)+'px';bub.querySelector('.tour-text').innerHTML=s.text;document.getElementById('tourStepNo').textContent=(idx+1)+' / '+TOUR.length;document.getElementById('tourPrev').style.visibility=idx?'visible':'hidden';document.getElementById('tourNext').textContent=idx===TOUR.length-1?'完成':'下一步';tour.classList.remove('hidden');pos(r,s.pos);}
   function pos(r,p){bub.style.left='-9999px';bub.style.top='0px';var bw=bub.offsetWidth,bh=bub.offsetHeight,gap=14,vw=innerWidth,vh=innerHeight,left,top,arrow;if(p==='right'){left=r.right+gap;top=r.top;arrow='left';}else if(p==='left'){left=r.left-gap-bw;top=r.top;arrow='right';}else if(p==='top'){left=r.left;top=r.top-gap-bh;arrow='bottom';}else{left=r.left;top=r.bottom+gap;arrow='top';}left=Math.max(12,Math.min(left,vw-bw-12));top=Math.max(12,Math.min(top,vh-bh-12));bub.style.left=left+'px';bub.style.top=top+'px';bub.dataset.arrow=arrow;}
   function start(){idx=0;requestAnimationFrame(function(){requestAnimationFrame(show);});}
   function end(){tour.classList.add('hidden');try{localStorage.setItem(KEY,'1');}catch(e){}}

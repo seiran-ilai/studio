@@ -605,17 +605,35 @@ const btnSyntaxQuick = document.getElementById("btnSyntaxQuick");
 const syntaxQuickPopover = document.getElementById("syntaxQuickPopover");
 const btnShortcuts = document.getElementById("btnShortcuts");
 const shortcutsPopover = document.getElementById("shortcutsPopover");
+function positionTopbarPopover(btn, popover) {
+  const r = btn.getBoundingClientRect();
+  const w = popover.offsetWidth;
+  const margin = 8;
+  let left = r.right - w;            // 右緣對齊按鈕
+  if (left < margin) left = margin;
+  if (left + w > window.innerWidth - margin) left = window.innerWidth - w - margin;
+  popover.style.top = (r.bottom + 8) + "px";
+  popover.style.left = left + "px";
+}
+const _topbarPopovers = [];
 function bindTopbarPopover(btn, popover, others) {
   if (!btn || !popover) return;
+  _topbarPopovers.push({ btn, popover });
   btn.addEventListener("click", (e) => {
     e.stopPropagation();
     const show = popover.hidden;
     others.forEach((p) => { if (p) p.hidden = true; });
     popover.hidden = !show;
+    if (show) positionTopbarPopover(btn, popover);
   });
 }
 bindTopbarPopover(btnSyntaxQuick, syntaxQuickPopover, [shortcutsPopover]);
 bindTopbarPopover(btnShortcuts, shortcutsPopover, [syntaxQuickPopover]);
+window.addEventListener("resize", () => {
+  _topbarPopovers.forEach(({ btn, popover }) => {
+    if (!popover.hidden) positionTopbarPopover(btn, popover);
+  });
+});
 if (syntaxQuickPopover || shortcutsPopover) {
   document.addEventListener("click", () => {
     if (syntaxQuickPopover) syntaxQuickPopover.hidden = true;

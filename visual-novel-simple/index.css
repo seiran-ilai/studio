@@ -3530,14 +3530,14 @@ body[data-ui="xl"] .pane-preview { zoom: 0.769; }
 /* ========== 語法速查 popover ========== */
 .syntax-quick-popover {
   position: fixed;
-  top: 64px;
-  left: 50%;
-  transform: translateX(-50%);
+  top: 64px;            /* JS 會錨定到按鈕下方,此為 fallback */
+  left: 16px;
   background: var(--bg-panel);
   border: 1px solid var(--border-strong);
   border-radius: 8px;
   padding: 14px 18px;
-  min-width: 320px;
+  min-width: 300px;
+  max-width: calc(100vw - 24px);
   z-index: var(--z-dropdown);
   box-shadow: 0 12px 36px rgba(0, 0, 0, 0.4);
 }

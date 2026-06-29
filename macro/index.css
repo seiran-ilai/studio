@@ -33,9 +33,9 @@
     --blur: 16px;
     --grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
 
-    --font-display: 'Cinzel', 'Noto Serif TC', serif;
-    --font-serif: 'Cormorant Garamond', 'Noto Serif TC', serif;
-    --font-body: 'Noto Serif TC', system-ui, serif;
+    --font-display: 'Noto Sans TC', 'PingFang TC', system-ui, sans-serif;
+    --font-serif: 'Noto Sans TC', 'PingFang TC', system-ui, sans-serif;
+    --font-body: 'Noto Sans TC', 'PingFang TC', system-ui, sans-serif;
     --font-mono: 'JetBrains Mono', 'Courier New', monospace;
   }
 
@@ -46,9 +46,9 @@
   html.ui-large { font-size: 18px; }
   html.ui-xlarge { font-size: 20px; }
 
-  /* 大尺寸時主面板寬度同步調大 */
-  html.ui-large .app { max-width: 1560px; }
-  html.ui-xlarge .app { max-width: 1720px; }
+  /* 大尺寸時右側分頁欄同步加寬 */
+  html.ui-large .rightpanel { width: 440px; }
+  html.ui-xlarge .rightpanel { width: 480px; }
 
   /* UI 縮放 seg(右上資訊列) */
   .ui-scale-switch {
@@ -156,8 +156,9 @@
     background: var(--bg-deep);
     color: var(--text-primary);
     font-family: var(--font-body);
-    min-height: 100vh;
-    overflow-x: hidden;
+    height: 100%;
+    margin: 0;
+    overflow: hidden;
   }
 
   /* 以太背景 */
@@ -185,12 +186,161 @@
     mix-blend-mode: multiply;
   }
 
-  /* ===== 容器 ===== */
+  /* ===== 容器:固定單畫面(整頁不出現垂直捲軸)===== */
   .app {
-    max-width: 1400px;
-    margin: 0 auto;
-    padding: 24px 32px 72px;
-    transition: padding 0.2s ease;
+    height: 100dvh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  /* ── 頂列:單行工具列 ── */
+  .topbar {
+    flex: none;
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    padding: 9px 16px;
+    background: var(--bg-card);
+    backdrop-filter: blur(var(--blur)) saturate(1.4);
+    -webkit-backdrop-filter: blur(var(--blur)) saturate(1.4);
+    border-bottom: 1px solid var(--border-subtle);
+  }
+  .topbar .logo-block { gap: 0; }
+  .topbar .logo-main { font-size: 1.18rem; }
+  .topbar .logo-sub { display: none; }
+  .tb-spacer { flex: 1 1 auto; min-width: 6px; }
+  .tb-sep {
+    flex: none;
+    width: 1px;
+    height: 22px;
+    background: var(--border-subtle);
+  }
+  .tb-count {
+    flex: none;
+    white-space: nowrap;
+    margin: 0;
+  }
+  .tb-wait { width: 72px; flex: none; }
+
+  /* ── 常駐迷你提示列 ── */
+  .hintbar {
+    flex: none;
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 3px 6px;
+    padding: 6px 18px;
+    background: rgba(255, 255, 255, 0.4);
+    border-bottom: 1px solid var(--border-subtle);
+    font-family: var(--font-body);
+    font-size: 0.78rem;
+    color: var(--text-muted);
+  }
+  .hintbar kbd {
+    font-family: var(--font-mono);
+    font-style: normal;
+    background: rgba(125, 214, 255, 0.12);
+    color: var(--aether-blue);
+    border: 1px solid rgba(125, 214, 255, 0.25);
+    padding: 0 5px;
+    border-radius: 3px;
+    font-size: 0.82em;
+  }
+  .hintbar .sep { color: var(--text-faint); opacity: 0.55; }
+
+  /* ── 主區:左編輯 / 右分頁 ── */
+  .main {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    justify-content: center;
+    gap: 16px;
+    padding: 14px 18px;
+  }
+  .editor-pane {
+    flex: 1 1 auto;
+    max-width: 680px;
+    min-width: 0;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+  }
+  .editor-pane .macro-editor {
+    flex: 1;
+    min-height: 0;
+    height: 100%;
+    resize: none;
+    margin: 0;
+  }
+
+  /* ── 右側分頁工具欄 ── */
+  .rightpanel {
+    width: 400px;
+    flex-shrink: 0;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    background: rgba(255, 255, 255, 0.5);
+    border: 1px solid var(--border-subtle);
+    border-radius: 10px;
+    overflow: hidden;
+  }
+  .tab-bar {
+    flex: none;
+    display: flex;
+    border-bottom: 1px solid var(--border-subtle);
+  }
+  .tab-btn {
+    flex: 1;
+    background: transparent;
+    border: none;
+    border-bottom: 2px solid transparent;
+    padding: 10px 4px;
+    color: var(--text-secondary);
+    font-family: var(--font-display);
+    font-size: 0.78rem;
+    letter-spacing: 0.06em;
+    cursor: pointer;
+    transition: color 0.15s ease, background 0.15s ease, border-color 0.15s ease;
+  }
+  .tab-btn:hover { color: var(--aether-blue); background: rgba(63, 127, 179, 0.06); }
+  .tab-btn.active {
+    color: var(--aether-blue);
+    border-bottom-color: var(--aether-blue);
+    background: rgba(63, 127, 179, 0.08);
+  }
+  .tab-panels { flex: 1; min-height: 0; display: flex; }
+  .tab-panel { display: none; flex: 1; min-height: 0; }
+  .tab-panel.active { display: flex; flex-direction: column; }
+
+  /* 通用內捲容器(頻道 / 工具頁) */
+  .panel-pad {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    padding: 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .panel-pad > * { flex: none; }
+  .panel-pad::-webkit-scrollbar,
+  .emote-grid::-webkit-scrollbar { width: 7px; }
+  .panel-pad::-webkit-scrollbar-track { background: transparent; }
+  .panel-pad::-webkit-scrollbar-thumb { background: var(--border-soft); border-radius: 3px; }
+  .panel-pad::-webkit-scrollbar-thumb:hover { background: var(--aether-blue-dim); }
+
+  /* 情感動作頁:頂部固定(搜尋/分類),動作清單填滿剩餘高度並自捲 */
+  #sideEmote .emote-top { flex: none; padding: 14px 14px 0; }
+  #sideEmote .emote-top .emote-floater-desc { margin-bottom: 10px; }
+  #sideEmote .emote-grid {
+    flex: 1;
+    min-height: 0;
+    max-height: none;
+    overflow-y: auto;
+    margin: 0;
+    padding: 0 14px 14px;
   }
 
   /* ===== 標題(統一 compact header)===== */
@@ -1717,7 +1867,17 @@
     box-shadow: 0 24px 60px rgba(63, 127, 179, 0.22);
     font-family: var(--font-body);
   }
-  .hotkey-dialog { max-width: 560px; }
+  /* 快捷鍵:按鈕附近的浮動 popover(非 modal,不暗屏) */
+  .hotkey-dialog {
+    position: fixed;
+    margin: 0;
+    inset: auto;
+    width: 480px;
+    max-width: calc(100vw - 24px);
+    z-index: 200;
+    box-shadow: 0 18px 48px rgba(63, 127, 179, 0.26);
+  }
+  .hotkey-dialog .about-form { padding: 22px 24px 20px; }
   .hotkey-dialog .hotkey-list { padding: 6px 0 0; }
   .about-dialog::backdrop {
     background: rgba(40, 52, 70, 0.34);

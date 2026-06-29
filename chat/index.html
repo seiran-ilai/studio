@@ -251,14 +251,12 @@
   <a href="../" aria-label="回到 ilai's Studios 入口">All Studios</a>
 </footer>
 
-<div id="syntaxModal" class="modal hidden">
-  <div class="modal-card" style="width:auto; min-width:320px; max-width:420px">
-    <div class="modal-title">行內語法</div>
-    <div class="cheat">
-      在台詞中可直接使用這些標記：<br>
-      <code>**粗體**</code> <code>*斜體*</code> <code>~~刪除線~~</code> <code>__底線__</code> <code>++放大++</code> <code>--縮小--</code>
-    </div>
-    <div class="modal-actions"><button class="btn pri" id="syntaxOk">知道了</button></div>
+<!-- 行內語法:按鈕旁浮動 popover(不暗屏,點外面關閉)-->
+<div id="syntaxPopover" class="syntax-popover hidden">
+  <div class="syntax-popover-title">行內語法</div>
+  <div class="cheat" style="margin-bottom:0">
+    在台詞中可直接使用這些標記：<br>
+    <code>**粗體**</code> <code>*斜體*</code> <code>~~刪除線~~</code> <code>__底線__</code> <code>++放大++</code> <code>--縮小--</code>
   </div>
 </div>
 

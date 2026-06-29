@@ -193,8 +193,8 @@ body[data-ui="xl"] .side{zoom:1.36}
   backdrop-filter:blur(var(--blur)) saturate(1.4); -webkit-backdrop-filter:blur(var(--blur)) saturate(1.4)}
 .modal-title{font-weight:700; font-size:14px; margin-bottom:12px}
 .crop-wrap{display:flex; justify-content:center; align-items:center; min-height:240px; margin-bottom:12px}
-#logoCv{border-radius:8px; background:#cdd6d2; cursor:grab; touch-action:none; border:1px solid var(--line)}
-#logoCv:active{cursor:grabbing}
+#logoCv,#bgCropCv{border-radius:8px; background:#cdd6d2; cursor:grab; touch-action:none; border:1px solid var(--line)}
+#logoCv:active,#bgCropCv:active{cursor:grabbing}
 .modal-actions{display:flex; gap:10px; justify-content:flex-end; margin-top:14px}
 .modal-actions .btn{min-width:84px}
 

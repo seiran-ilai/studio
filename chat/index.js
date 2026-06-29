@@ -396,12 +396,28 @@ document.querySelectorAll('.side').forEach(sec=>sec.addEventListener('click',e=>
   });
 })();
 
-// 行內語法 dialog
+// 行內語法:按鈕旁浮動 popover(不暗屏,點外面關閉)
 (function(){
-  const m=$('#syntaxModal'); if(!m) return;
-  $('#syntaxBtn').onclick=()=>m.classList.remove('hidden');
-  $('#syntaxOk').onclick=()=>m.classList.add('hidden');
-  m.onclick=e=>{ if(e.target===m) m.classList.add('hidden'); };
+  const btn=$('#syntaxBtn'); const pop=$('#syntaxPopover'); if(!btn||!pop) return;
+  function position(){
+    const r=btn.getBoundingClientRect(); const w=pop.offsetWidth; const margin=8;
+    let left=r.right-w;                       // 右緣對齊按鈕
+    if(left<margin) left=margin;
+    if(left+w>window.innerWidth-margin) left=window.innerWidth-w-margin;
+    pop.style.top=(r.bottom+8)+'px'; pop.style.left=left+'px';
+  }
+  btn.onclick=e=>{
+    e.stopPropagation();
+    const show=pop.classList.contains('hidden');
+    pop.classList.toggle('hidden', !show);
+    if(show) position();
+  };
+  document.addEventListener('click',e=>{
+    if(pop.classList.contains('hidden')) return;
+    if(btn.contains(e.target)||pop.contains(e.target)) return;
+    pop.classList.add('hidden');
+  });
+  window.addEventListener('resize',()=>{ if(!pop.classList.contains('hidden')) position(); });
 })();
 
 function segPick(seg,val,cb){ seg.querySelectorAll('button').forEach(b=>b.classList.toggle('on',b.dataset.v===val)); cb&&cb(val); }

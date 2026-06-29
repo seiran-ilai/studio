@@ -388,7 +388,7 @@ $$('.us-btn').forEach(b => b.addEventListener('click', () => {
     function setCollapsed(on) {
       collapsed = on;
       col.classList.toggle("collapsed", on);
-      if (collapseBtn) collapseBtn.textContent = on ? "⟩" : "⟨";
+      if (collapseBtn) collapseBtn.textContent = on ? "◀" : "▶";
       try { localStorage.setItem(c.cKey, on ? "1" : "0"); } catch (e) {}
       applyWidth();
     }

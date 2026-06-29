@@ -23,6 +23,9 @@ const CHANNELS = [
 const CATEGORIES = ['全部', '情緒表情', '互動動作', '舞蹈動作', '戰鬥姿勢', '互動物品', '其他'];
 const MAX_LINES = 15;
 
+// 已知情感動作指令集合（EMOTES 由 emotes.js 先載入）— 用於判斷某行是否為「情感動作行」
+const EMOTE_CN_SET = new Set(EMOTES.map((e) => e.cn));
+
 // 已知頻道指令的正則（用於識別行首是否已有頻道）
 // /t <t> 要優先匹配（含 <t>），其次才是 /t Alice 這種
 const CHANNEL_PREFIX_RE = /^(\/(?:em|s|y|sh|p|a|e|cwl[1-8]|cwlinkshell[1-8]|linkshell[1-8]|l[1-8]|say|yell|shout|party|alliance|freecompany|fc|echo|tell)\b|\/t\s*<t>|\/t\b)/;
@@ -259,6 +262,25 @@ waitCustom.addEventListener('input', (e) => {
   updateSecLabels();
 });
 
+/* 行末一個(或多個重複)<wait.X> 的比對 — 用於防呆,確保每行只留一個 */
+const WAIT_TAIL_RE = /(?:\s*<wait\.[^>]+>)+\s*$/;
+
+/* 把行末的 motion / <wait.X>(不論原本順序、不論重複)剝掉,
+   回傳 { body, hadMotion } — 用來把每行正規化成「動作 [motion] <wait.X>」順序 */
+function stripTailTokens(line) {
+  let body = line;
+  let hadMotion = false;
+  let changed = true;
+  while (changed) {
+    changed = false;
+    const w = body.replace(WAIT_TAIL_RE, '');
+    if (w !== body) { body = w; changed = true; }
+    const m = body.replace(/\s+motion\s*$/, '');
+    if (m !== body) { body = m; hadMotion = true; changed = true; }
+  }
+  return { body, hadMotion };
+}
+
 /* 在作用範圍每行末加上 <wait.X> */
 /* 判斷是否為「倒數行」(內容只有「數字 [<se.X>] <wait.1>」) — 用於防呆 */
 function isCountdownLine(line) {
@@ -280,18 +302,19 @@ $('applyBatchWait').onclick = () => {
     const line = lines[i];
     if (line === undefined) return;
     if (line.trim() === '') return;
-    // 移除既有尾端 <wait.X>
-    const stripped = line.replace(/\s*<wait\.[^>]+>\s*$/, '');
-    // 最後一行:清掉尾端 wait 但不再加上
+    // 正規化:剝掉行末既有的 motion / wait(含重複堆疊),固定順序「動作 [motion] <wait.X>」
+    const { body, hadMotion } = stripTailTokens(line);
+    const base = body + (hadMotion ? ' motion' : '');
+    // 最後一行:清掉尾端 wait 但不再加上(motion 保留)
     if (i === lastNonEmpty) {
-      lines[i] = stripped;
+      lines[i] = base;
       return;
     }
     if (isCountdownLine(line)) {
       skippedCountdown++;
       return;
     }
-    lines[i] = stripped + ' <wait.' + v + '>';
+    lines[i] = base + ' <wait.' + v + '>';
     changed++;
   });
   setEditorLines(lines);
@@ -315,8 +338,8 @@ $('clearAllWait').onclick = () => {
       skippedCountdown++;
       return;  // 倒數行的 wait.1 不動
     }
-    if (/\s*<wait\.[^>]+>\s*$/.test(line)) {
-      lines[i] = line.replace(/\s*<wait\.[^>]+>\s*$/, '');
+    if (WAIT_TAIL_RE.test(line)) {
+      lines[i] = line.replace(WAIT_TAIL_RE, '');
       count++;
     }
   });
@@ -560,8 +583,32 @@ motionCheck.addEventListener('change', (e) => {
   const dlg = $('hotkeyDialog');
   const btn = $('hotkeyBtn');
   if (!dlg || !btn) return;
-  btn.addEventListener('click', () => dlg.showModal());
-  dlg.addEventListener('click', (e) => { if (e.target === dlg) dlg.close(); });
+
+  function positionPopover() {
+    const r = btn.getBoundingClientRect();
+    const w = dlg.offsetWidth;
+    const margin = 8;
+    let left = r.right - w;            // 右緣對齊按鈕
+    if (left < margin) left = margin;
+    if (left + w > window.innerWidth - margin) left = window.innerWidth - w - margin;
+    dlg.style.top = (r.bottom + 8) + 'px';
+    dlg.style.left = left + 'px';
+  }
+
+  btn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    if (dlg.open) { dlg.close(); return; }
+    dlg.show();                        // 非 modal:不暗屏、不鎖背景
+    positionPopover();
+  });
+
+  // 點對話框以外的地方就關閉
+  document.addEventListener('click', (e) => {
+    if (!dlg.open) return;
+    if (btn.contains(e.target) || dlg.contains(e.target)) return;
+    dlg.close();
+  });
+  window.addEventListener('resize', () => { if (dlg.open) positionPopover(); });
 })();
 
 /* =================== 自動完成 =================== */
@@ -1078,19 +1125,40 @@ editor.addEventListener('keydown', (e) => {
         showToast('倒數行已有 <wait.1>', true);
         return;
       }
-      const secs = state.waitValue || '2';
-      const insertion = ' <wait.' + secs + '>';
-      const before = text.slice(0, pos);
+      // 行末既有的 motion / wait(不論順序、含重複)剝掉,取得乾淨內容
+      const { body: lineBody, hadMotion } = stripTailTokens(currentLine);
+      const hadWait = WAIT_TAIL_RE.test(currentLine);
+      const beforeLine = text.slice(0, lineStart);
       const after = text.slice(pos);
-      editor.value = before + insertion + after;
-      const newPos = pos + insertion.length;
+
+      // 三段式 Tab:情感動作行,先補 motion 再補 wait。
+      // (此處處理「非 autocomplete 補完」的情況 — 例如手打或從面板點選;
+      //  autocomplete 補完的 motion 由上方 lastCompletion 區塊先處理。)
+      if (EMOTE_CN_SET.has(lineBody.trim()) && !hadMotion && !hadWait) {
+        const insertion = lineBody + ' motion';
+        editor.value = beforeLine + insertion + after;
+        const newPos = beforeLine.length + insertion.length;
+        editor.setSelectionRange(newPos, newPos);
+        clearLastCompletion();
+        clearLastInherit();
+        _skipNextInput = true;
+        updateLineCount();
+        showToast('已加上 motion(再按一次 Tab 加 wait)');
+        return;
+      }
+
+      // 防呆 + 正規化:每行只留一個 <wait.X>,順序固定為「動作 [motion] <wait.X>」
+      const secs = state.waitValue || '2';
+      const insertion = lineBody + (hadMotion ? ' motion' : '') + ' <wait.' + secs + '>';
+      editor.value = beforeLine + insertion + after;
+      const newPos = beforeLine.length + insertion.length;
       editor.setSelectionRange(newPos, newPos);
 
       clearLastCompletion();
       clearLastInherit();
       _skipNextInput = true;
       updateLineCount();
-      showToast(`已加上 <wait.${secs}>`);
+      showToast(hadWait ? `已更新為 <wait.${secs}>` : `已加上 <wait.${secs}>`);
       return;
     }
   }
