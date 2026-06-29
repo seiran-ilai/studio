@@ -200,12 +200,13 @@
     display: flex;
     align-items: center;
     gap: 9px;
-    padding: 9px 16px;
+    padding: 12px 20px;
     background: var(--bg-card);
     backdrop-filter: blur(var(--blur)) saturate(1.4);
     -webkit-backdrop-filter: blur(var(--blur)) saturate(1.4);
     border-bottom: 1px solid var(--border-subtle);
   }
+  .topbar .back { margin-right: 5px; }   /* 與其他工具對齊:上一頁↔標題 ≈ 14px */
   .topbar .logo-block { gap: 0; }
   .topbar .logo-main { font-size: 1.18rem; }
   .topbar .logo-sub { display: none; }
@@ -230,7 +231,7 @@
     align-items: center;
     flex-wrap: wrap;
     gap: 3px 6px;
-    padding: 6px 18px;
+    padding: 6px 20px;
     background: rgba(255, 255, 255, 0.4);
     border-bottom: 1px solid var(--border-subtle);
     font-family: var(--font-body);
@@ -1825,7 +1826,7 @@
     align-items: center;
     justify-content: center;
     gap: 8px;
-    padding: 12px 24px;
+    padding: 11px 20px;
     border-top: 1px solid var(--border-subtle);
     font-family: var(--font-body);
     font-size: 12px;

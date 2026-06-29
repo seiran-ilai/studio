@@ -32,13 +32,13 @@ body{font-family:"Noto Sans TC",system-ui,sans-serif; color:var(--ink); font-siz
 /* 消光顆粒:輕噪點疊層,提升霧面質感(沿用入口頁手法)*/
 body::after{content:""; position:fixed; inset:0; z-index:50; pointer-events:none;
   opacity:.035; mix-blend-mode:multiply; background-image:var(--grain); background-size:180px}
-header.top{display:flex; align-items:center; gap:14px; padding:10px 18px; border-bottom:1px solid var(--line); background:var(--panel);
+header.top{display:flex; align-items:center; gap:14px; padding:12px 20px; border-bottom:1px solid var(--line); background:var(--panel);
   backdrop-filter:blur(var(--blur)) saturate(1.4); -webkit-backdrop-filter:blur(var(--blur)) saturate(1.4)}
 header.top h1{font-size:14px; font-weight:700; margin:0}
 header.top h1 span{color:var(--ink3); font-weight:400; margin-left:8px; font-size:11px}
 /* 統一標題排版:返回 + 工具名 / 副標 */
-.back{flex:none; width:30px; height:30px; display:grid; place-items:center; border:1px solid var(--line); border-radius:50%;
-  color:var(--ink3); text-decoration:none; font-size:17px; transition:color .2s, border-color .2s}
+.back{flex:none; width:32px; height:32px; display:grid; place-items:center; border:1px solid var(--line); border-radius:50%;
+  color:var(--ink3); text-decoration:none; font-size:18px; transition:color .2s, border-color .2s}
 .back:hover{color:var(--ink); border-color:var(--accent)}
 .logo{display:flex; flex-direction:column; gap:1px; margin-right:6px}
 .logo-main{font-family:var(--font-serif); font-size:18px; font-weight:500; letter-spacing:.03em; line-height:1.1}
@@ -179,9 +179,9 @@ hr{border:none; border-top:1px solid var(--line); margin:12px 0}
 
 /* 作者資訊 footer */
 .site-footer{display:flex; align-items:center; justify-content:center; gap:8px; flex-wrap:wrap;
-  padding:9px 18px; border-top:1px solid var(--line); background:var(--panel);
+  padding:11px 20px; border-top:1px solid var(--line); background:var(--panel);
   backdrop-filter:blur(var(--blur)) saturate(1.4); -webkit-backdrop-filter:blur(var(--blur)) saturate(1.4);
-  font-size:11.5px; color:var(--ink3); flex:none}
+  font-size:12px; color:var(--ink3); flex:none}
 .footer-tool-name{color:var(--accent-deep); font-weight:700; letter-spacing:.04em}
 .footer-author{color:var(--ink2)}
 .footer-divider{color:var(--ink3); opacity:.6}

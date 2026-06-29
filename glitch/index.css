@@ -68,7 +68,7 @@ body::after {
   display: flex;
   align-items: center;
   gap: 14px;
-  padding: 10px 22px;
+  padding: 12px 20px;
   border-bottom: 1px solid var(--b);
   background: var(--surface);
   backdrop-filter: blur(var(--blur)) saturate(1.4);
@@ -79,13 +79,13 @@ body::after {
 /* 統一標題排版:返回 + logo + 副標 */
 .back {
   flex: none;
-  width: 30px; height: 30px;
+  width: 32px; height: 32px;
   display: grid; place-items: center;
   border: 1px solid var(--b);
   border-radius: 50%;
   color: var(--m);
   text-decoration: none;
-  font-size: 17px;
+  font-size: 18px;
   transition: color .2s, border-color .2s;
 }
 .back:hover { color: var(--t); border-color: var(--a2); }
@@ -703,7 +703,7 @@ input[type=checkbox] {
   align-items: center;
   justify-content: center;
   gap: 8px;
-  padding: 10px 24px;
+  padding: 11px 20px;
   border-top: 1px solid var(--b);
   font-family: 'Share Tech Mono', monospace;
   font-size: 12px;
