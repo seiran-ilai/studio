@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=1280">
+<title>Gacha</title>
+<meta name="description" content="抽卡演出模擬器:上傳自己的圖片編成抽卡序列,Canvas 預覽演出並輸出影片。">
+<meta property="og:title" content="Gacha">
+<meta property="og:description" content="上傳圖片,編排抽卡演出,輸出影片。">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Gacha">
+<meta name="twitter:description" content="上傳圖片,編排抽卡演出,輸出影片。">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&family=Noto+Serif+TC:wght@400;700&family=Fraunces:opsz,wght@9..144,400;9..144,500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="index.css">
+</head>
+<body>
+
+<!-- 手機提示:建議使用電腦瀏覽器(非阻擋) -->
+<div id="desktop-hint" role="note">
+  <span><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="6" width="16" height="10" rx="1"/><path d="M2 19h20"/></svg> 建議使用電腦瀏覽器開啟以獲得最佳體驗</span>
+  <button type="button" id="desktop-hint-close" aria-label="關閉提示">✕</button>
+</div>
+<script>
+  (function(){
+    var el=document.getElementById("desktop-hint");
+    var mobile=(window.matchMedia&&matchMedia("(pointer: coarse)").matches)||/Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
+    if(mobile) el.classList.add("show");
+    document.getElementById("desktop-hint-close").addEventListener("click",function(){ el.classList.remove("show"); });
+  })();
+</script>
+
+<header class="top">
+  <a class="back" href="../" aria-label="回到 Studio 入口"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/></svg></a>
+  <div class="logo">
+    <span class="logo-main">Gacha</span>
+    <span class="logo-sub">抽卡演出模擬器 · 編排即輸出</span>
+  </div>
+  <div class="spacer"></div>
+  <div class="header-right">
+    <span class="lbl" id="statusMsg"></span>
+    <button class="help-btn" id="saveBtn" title="匯出設定(.json)" aria-label="匯出設定"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v11"/><path d="M7 10l5 5 5-5"/><path d="M5 20h14"/></svg></button>
+    <button class="help-btn" id="loadBtn" title="匯入設定(.json)" aria-label="匯入設定"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20V9"/><path d="M7 14l5-5 5 5"/><path d="M5 4h14"/></svg></button>
+    <span class="hr-sep"></span>
+    <div class="seg" id="uiSeg">
+      <button data-v="std" class="on">標準</button><button data-v="lg">大</button><button data-v="xl">最大</button>
+    </div>
+    <span class="hr-sep"></span>
+    <button class="help-btn" id="helpBtn" title="使用說明" aria-label="使用說明"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 11v5"/><path d="M12 8h.01"/></svg></button>
+  </div>
+</header>
+
+<main>
+
+  <!-- ══ 卡片庫 ══ -->
+  <section class="side left" id="sideLib">
+    <div class="side-head">
+      <span class="title">卡片庫</span>
+      <span class="vtitle">卡片庫</span>
+      <button class="collapse" data-side="sideLib">◀</button>
+    </div>
+    <div class="side-body" id="libBody">
+      <button class="btn pri full" id="addCards">＋ 上傳圖片(可多選)</button>
+      <p class="hint">也可以把圖片直接拖進這一欄。每張圖是一張卡,可設名稱、稀有度、台詞。</p>
+      <hr>
+      <div id="cardList"></div>
+    </div>
+  </section>
+
+  <!-- ══ 抽卡序列 ══ -->
+  <section class="side seq" id="sideSeq">
+    <div class="side-head">
+      <span class="title">抽卡序列</span>
+      <span class="vtitle">抽卡序列</span>
+      <button class="btn sm ghost" id="seqClear" title="清空序列">清空</button>
+      <button class="collapse" data-side="sideSeq">◀</button>
+    </div>
+    <div class="side-body" id="seqBody">
+      <div id="seqList"></div>
+    </div>
+  </section>
+
+  <!-- ══ 預覽 ══ -->
+  <section class="center">
+    <div class="stage-wrap">
+      <canvas id="stage" width="1080" height="1920" aria-label="抽卡演出預覽"></canvas>
+    </div>
+    <div class="play-bar">
+      <button class="btn sm pri" id="btnPlay" title="播放 / 暫停(Space)">▶ 播放</button>
+      <button class="btn sm" id="btnHome" title="回到開頭(Home)">⏮</button>
+      <input type="range" id="scrub" class="scrub" min="0" max="1000" value="0" step="1" aria-label="時間軸">
+      <span class="phase-tag" id="phaseTag">0.00 / 0.00s</span>
+      <span class="phase-tag" id="stageTag" style="min-width:96px">—</span>
+    </div>
+  </section>
+
+  <!-- ══ 演出設定 ══ -->
+  <section class="side right" id="sideCfg">
+    <div class="side-head">
+      <button class="collapse" data-side="sideCfg">▶</button>
+      <span class="title">演出設定</span>
+      <span class="vtitle">演出設定</span>
+    </div>
+    <div class="side-body">
+
+      <div class="panel-sec"><div class="ph">畫布 <span class="chev">▾</span></div><div class="pb">
+        <div class="field"><label>比例</label>
+          <div class="seg full" id="presetSeg">
+            <button data-v="9:16" class="on">9:16</button><button data-v="1:1">1:1</button><button data-v="16:9">16:9</button>
+          </div>
+        </div>
+        <div class="two">
+          <div class="field"><label>亂數種子</label><input type="number" id="seed" value="20260902" step="1"></div>
+          <div class="field"><label>輸出 fps</label>
+            <select id="fps"><option value="30" selected>30</option><option value="60">60</option></select>
+          </div>
+        </div>
+        <p class="hint">同一個種子 = 同一組粒子與裂紋,預覽與輸出永遠一致。</p>
+      </div></div>
+
+      <div class="panel-sec"><div class="ph">背景 <span class="chev">▾</span></div><div class="pb">
+        <div class="field"><label>類型</label>
+          <div class="seg full" id="bgTypeSeg">
+            <button data-v="color" class="on">純色</button><button data-v="image">圖片</button>
+          </div>
+        </div>
+        <div class="field" id="bgColorField"><label>底色</label><div class="row"><input type="color" id="bgColor" value="#0A0812"></div></div>
+        <div class="field" id="bgImgField" hidden><label>背景圖片</label>
+          <div class="drop" id="bgDrop"><span class="thumb"></span><span class="dtx">點擊上傳</span><button class="dx" title="移除">✕</button></div>
+        </div>
+        <div class="field"><label>暗角 vignette</label><div class="rng"><input type="range" id="vignette" min="0" max="100" value="60"><b id="vignetteV">0.60</b></div></div>
+      </div></div>
+
+      <div class="panel-sec"><div class="ph">演出流程 <span class="chev">▾</span></div><div class="pb">
+        <div class="field"><label>模式</label>
+          <div class="seg full" id="modeSeg">
+            <button data-v="batch" class="on">共用開場</button><button data-v="perCard">每張各走</button>
+          </div>
+          <p class="hint" id="modeHint">共用開場:蓄力 / 預兆 / 爆發只跑一次,再依序播台詞與卡片。</p>
+        </div>
+        <hr>
+        <div class="stage-row">
+          <label class="ck"><input type="checkbox" data-stage="charge" checked> 蓄力 charge</label>
+          <input type="number" data-dur="charge" value="1.6" step="0.1" min="0.1">
+        </div>
+        <div class="field"><label>蓄力造型</label>
+          <select id="chargeShape"><option value="cardback">卡背</option><option value="orb">光球</option><option value="circle">魔法陣</option></select>
+        </div>
+        <div class="stage-row">
+          <label class="ck"><input type="checkbox" data-stage="omen" checked> 預兆 omen</label>
+          <input type="number" data-dur="omen" value="1.4" step="0.1" min="0.1">
+        </div>
+        <div class="stage-row">
+          <label class="ck"><input type="checkbox" data-stage="burst" checked> 爆發 burst</label>
+          <input type="number" data-dur="burst" value="0.9" step="0.1" min="0.1">
+        </div>
+        <div class="stage-row">
+          <label class="ck"><input type="checkbox" data-stage="line" checked> 台詞 line</label>
+          <input type="number" data-dur="line" value="2.2" step="0.1" min="0.1">
+        </div>
+        <p class="hint">台詞固定顯示在畫面中央,全部卡片共用這個秒數。</p>
+        <div class="stage-row">
+          <label class="ck"><input type="checkbox" data-stage="reveal" checked> 卡片 reveal</label>
+          <input type="number" data-dur="reveal" value="2.4" step="0.1" min="0.1">
+        </div>
+        <p class="hint">卡片段的秒數優先用該張卡稀有度的 dur,沒設到才用這裡的值。</p>
+        <label class="ck" style="margin:8px 0"><input type="checkbox" id="revealBlurBg" checked> 卡片段背景用卡圖模糊</label>
+        <div class="two" id="revealBlurFields">
+          <div class="field"><label>模糊強度</label><div class="rng"><input type="range" id="revealBlur" min="0" max="80" value="35"><b id="revealBlurV">35</b></div></div>
+          <div class="field"><label>壓暗</label><div class="rng"><input type="range" id="revealBlurDim" min="0" max="90" value="46"><b id="revealBlurDimV">46</b></div></div>
+        </div>
+        <div class="stage-row">
+          <label class="ck"><input type="checkbox" data-stage="summary" checked> 一覽 summary</label>
+          <input type="number" data-dur="summary" value="3.0" step="0.1" min="0.1">
+        </div>
+      </div></div>
+
+      <div class="panel-sec"><div class="ph">稀有度樣式 <span class="chev">▾</span></div><div class="pb">
+        <div id="rarityList"></div>
+        <button class="btn full sm" id="addRarity">＋ 新增稀有度</button>
+      </div></div>
+
+      <div class="panel-sec"><div class="ph">輸出 <span class="chev">▾</span></div><div class="pb">
+        <button class="btn rec full" id="btnRecord">● 輸出影片</button>
+        <div class="progress hidden" id="recProgress"><i></i></div>
+        <p class="hint" id="recHint">輸出格式會依瀏覽器支援自動選擇,錄製前會先告訴你實際格式。</p>
+        <button class="btn full" id="btnShot">⬇ 輸出目前這一格 PNG</button>
+      </div></div>
+
+    </div>
+  </section>
+
+</main>
+
+<footer class="site-footer">
+  <span class="footer-tool-name">Gacha</span>
+  <span class="footer-divider" aria-hidden="true">·</span>
+  <span class="footer-author">Made by ilai</span>
+  <span class="footer-divider" aria-hidden="true">·</span>
+  <a href="https://www.threads.com/@ilai_sei" target="_blank" rel="noopener noreferrer" aria-label="作者的 Threads 帳號 ilai_sei(新分頁開啟)">@ilai_sei</a>
+  <span class="footer-divider" aria-hidden="true">·</span>
+  <a href="https://www.plurk.com/ilai_sei" target="_blank" rel="noopener noreferrer" aria-label="作者的 Plurk 帳號 @ilai_sei(新分頁開啟)">Plurk</a>
+  <span class="footer-divider" aria-hidden="true">·</span>
+  <a href="../" aria-label="回到 ilai's Studios 入口">All Studios</a>
+</footer>
+
+<div id="helpModal" class="modal hidden">
+  <div class="modal-card">
+    <div class="modal-title">使用說明</div>
+    <div class="help-body">
+      <ol>
+        <li><b>卡片庫</b>上傳圖片(可拖曳整欄放開)。每張設名稱、稀有度、是否 NEW,以及一段<b>台詞</b>(可換行)。點縮圖可調整卡片的滿版範圍。</li>
+        <li>按卡片上的 <b>加入序列</b>,或把卡片拖到中間的<b>抽卡序列</b>欄,排出這次要抽到的結果。</li>
+        <li>序列每一項可單獨指定<b>預兆等級</b>(自動 / 平常 / 期待 / 確定)。</li>
+        <li>右欄調整<b>畫布比例、種子、背景、各段開關與秒數、稀有度樣式</b>。</li>
+        <li>下方時間軸可拖曳檢視任一格,滿意後按 <b>輸出影片</b>。</li>
+      </ol>
+      演出順序:蓄力 → 預兆 → 爆發 → 台詞 → 卡片 →(多張時)一覽。<br>
+      快捷鍵:<b>Space</b> 播放/暫停、<b>← →</b> 前後 0.1 秒、<b>Home</b> 回到開頭。<br>
+      這是內容創作工具,結果由你指定,沒有機率也沒有保底。
+    </div>
+    <div class="modal-actions"><button class="btn pri" id="helpClose">知道了</button></div>
+  </div>
+</div>
+
+<div id="cropModal" class="modal hidden">
+  <div class="modal-card">
+    <div class="modal-title"><span class="ct-h">調整卡片範圍</span><span class="lbl" id="cropName"></span></div>
+    <div class="crop-wrap"><canvas id="cropCv" width="400" height="600"></canvas></div>
+    <div class="field"><label>縮放</label><div class="rng"><input type="range" id="cropZoom" min="100" max="400" value="100"><b id="cropZoomV">1.00×</b></div></div>
+    <p class="hint">在圖上<b>拖曳</b>移動位置,<b>滾輪</b>縮放。卡片一律滿版,不會留黑邊。</p>
+    <div class="modal-actions">
+      <button class="btn" id="cropReset">重設</button>
+      <button class="btn pri" id="cropDone">完成</button>
+    </div>
+  </div>
+</div>
+
+<div id="saveModal" class="modal hidden">
+  <div class="modal-card">
+    <div class="modal-title">匯出設定</div>
+    <div class="help-body">
+      <b>含圖片</b>:圖片會轉成 dataURL 寫進 JSON,檔案會很大,但換一台電腦也能完整還原。<br>
+      <b>不含圖片</b>:只存設定與台詞,匯入後需要重新上傳同名圖片,會自動對回原本的卡片。
+    </div>
+    <div class="modal-actions">
+      <button class="btn" id="saveNoImg">不含圖片</button>
+      <button class="btn pri" id="saveWithImg">含圖片</button>
+    </div>
+  </div>
+</div>
+
+<input type="file" id="filePick" accept="image/*" multiple hidden>
+<input type="file" id="bgPick" accept="image/*" hidden>
+<input type="file" id="jsonPick" accept="application/json" hidden>
+
+<script src="index.js"></script>
+</body>
+</html>
