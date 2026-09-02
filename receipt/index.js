@@ -409,25 +409,166 @@ bind('#bgPaperAlpha',el=>{ S.bg.paperAlpha=+el.value; $('#bgPaperAlphaV').textCo
 // typography
 bind('#t_scale',el=>{ S.type.scale=+el.value; $('#t_scaleV').textContent=Math.round(el.value*100)+'%'; });
 bind('#t_line',el=>{ S.type.line=+el.value; $('#t_lineV').textContent=(+el.value).toFixed(2); });
-let selectedPreset='tailor', previewing=false, workBackup=null;
-// 點預設模板=即時預覽(不覆蓋);按「套用」才真正覆蓋;切回「設計編輯」回到自己的設計
+let selectedPreset='tailor', previewing=false, workBackup=null, presetDirty=false;
+// 點預設模板=純預覽,不會蓋掉已儲存的內容;按「還原」回到自己原本的設計
 $('#designSeg').onclick=e=>{ const b=e.target.closest('button'); if(!b)return; previewPreset(b.dataset.v); };
-$('#applyTpl').onclick=()=>commitPreset();
+$('#applyTpl').onclick=()=>restoreWork();
+function syncRestoreBtn(){ const b=$('#applyTpl'); if(!b)return; b.disabled=!workBackup; b.title=workBackup?'還原成預覽模板前的設計':'目前沒有可還原的設計'; }
 function previewPreset(key){
   selectedPreset=key; segPick($('#designSeg'),key);
-  if(!previewing){ workBackup=serializeDesign(); previewing=true; }
-  applyDesign(key);
-  const el=$('#saveStatus'); if(el){ el.textContent='👁 預覽中(未套用)'; el.classList.add('dirty'); }
+  if(!workBackup){ workBackup=serializeDesign(); presetDirty=false; }   // 只在第一次預覽時備份「我的內容」
+  previewing=true; applyDesign(key); previewing=false;                  // 預覽這一次 render 不寫入 localStorage
+  syncRestoreBtn();
+  const el=$('#saveStatus'); if(el){ el.textContent='👁 模板預覽(可按「還原」)'; el.classList.add('dirty'); }
 }
-function commitPreset(){
-  if(previewing){ previewing=false; workBackup=null; }
-  else applyDesign(selectedPreset);
+// ── 簡易 / 進階模式 ──
+const MODE_KEY='receipt-uimode';
+let uiMode='simple';
+function setUiMode(m){
+  uiMode = m==='adv' ? 'adv' : 'simple';
+  document.body.classList.toggle('simple', uiMode==='simple');
+  segPick($('#modeSeg'),uiMode);
+  if(uiMode==='simple') setBlkMode('blocks');   // 簡易表單直接編輯區塊資料
+  renderSimpleForm();
+  $('#leftTitle').textContent = uiMode==='simple' ? '樣式' : '金額・樣式';
+  $('#blocksTitle').firstChild.nodeValue = uiMode==='simple' ? '收據內容 ' : '版面區塊 ';
+  try{ localStorage.setItem(MODE_KEY,uiMode); }catch(e){}
+  requestAnimationFrame(applyZoom);
+}
+$('#modeSeg').onclick=e=>{ const b=e.target.closest('button'); if(b) setUiMode(b.dataset.v); };
+// ── 簡易模式:具名欄位表單(直接編輯 S.blocks,不用記語法)──
+function simpleSections(){
+  const bs=S.blocks;
+  const isCore=b=> b.type==='items'||b.type==='totals'||(b.type==='text'&&b.mode==='fields');
+  const isPara=b=> b.type==='text'&&(b.mode||'para')==='para';
+  let coreStart=bs.findIndex(isCore); if(coreStart<0) coreStart=bs.length;
+  let coreEnd=-1; bs.forEach((b,i)=>{ if(isCore(b)) coreEnd=i; });
+  const nameIdx=bs.findIndex((b,i)=> isPara(b)&&b.size==='lg'&&i<coreStart);
+  const head=[], foot=[];
+  bs.forEach((b,i)=>{ if(!isPara(b)||i===nameIdx) return; if(i<coreStart) head.push(b); else if(i>coreEnd) foot.push(b); });
+  return {
+    coreStart, coreEnd, nameIdx,
+    logo:  bs.find(b=>b.type==='image')||null,
+    imgs:  bs.filter(b=>b.type==='image').slice(1),
+    name:  nameIdx>=0?bs[nameIdx]:null,
+    head, foot,
+    fields: bs.find(b=>b.type==='text'&&b.mode==='fields')||null,
+    core:  bs.some(isCore),
+    note:  bs.find(b=>b.type==='note')||null,
+    qr:    bs.find(b=>b.type==='qr')||null,
+    barcode: bs.find(b=>b.type==='barcode')||null
+  };
+}
+function mkPara(size,align,weight){ return {id:nid(),type:'text',mode:'para',text:'',size:size||'md',align:align||'center',weight:weight||400,alpha:1}; }
+// 新的一行插在同群組最後一行之後
+function insertAfterGroup(group,fallbackIdx,blk){
+  let at=fallbackIdx;
+  if(group.length) at=S.blocks.indexOf(group[group.length-1])+1;
+  S.blocks.splice(Math.max(0,Math.min(at,S.blocks.length)),0,blk);
+}
+function renderSimpleForm(){
+  const box=$('#simpleForm'); if(!box) return;
+  const s=simpleSections();
+  const row=(inner,rmAttr)=>`<div class="sf-row">${inner}<button class="sf-x" ${rmAttr} title="刪除">✕</button></div>`;
+  let h='';
+  h+=`<div class="sf-sec"><div class="sf-lbl">LOGO</div>
+    <div class="row"><button class="btn sm" data-sflogo style="flex:1">${s.logo&&s.logo.img?'更換圖片':'上傳圖片'}</button>${s.logo&&s.logo.img?'<button class="btn sm" data-sflogorm>移除</button>':''}</div></div>`;
+
+  h+=`<div class="sf-sec"><div class="sf-lbl">店家名稱</div>
+    <input type="text" data-sfname placeholder="例如 雪人咖啡廳" value="${escapeAttr(s.name?(s.name.text||''):'')}"></div>`;
+
+  h+=`<div class="sf-sec"><div class="sf-lbl">店家資訊 <span class="sf-hint">副標 / 地址 / 電話</span></div>`;
+  s.head.forEach(b=>{ h+=row(`<input type="text" data-sftext="${b.id}" value="${escapeAttr(b.text||'')}" placeholder="輸入一行文字">`,`data-sfrm="${b.id}"`); });
+  h+=`<button class="btn sm ghost sf-add" data-sfadd="head">＋ 新增一行</button></div>`;
+
+  h+=`<div class="sf-sec"><div class="sf-lbl">收據資訊 <span class="sf-hint">日期 / 單號 / 店員…</span></div>`;
+  if(s.fields) (s.fields.rows||[]).forEach(r=>{ h+=row(`<input type="text" class="sf-k" data-sfrl="${r.id}" value="${escapeAttr(r.label||'')}" placeholder="項目"><input type="text" data-sfrv="${r.id}" value="${escapeAttr(r.value||'')}" placeholder="內容">`,`data-sfrx="${r.id}"`); });
+  h+=`<button class="btn sm ghost sf-add" data-sfadd="field">＋ 新增資訊項目</button></div>`;
+
+  if(s.core) h+=`<div class="sf-sec"><div class="sf-lbl">品項與金額</div><p class="hint" style="margin:0">品項在右欄「品項」編輯,金額自動計算。</p></div>`;
+
+  h+=`<div class="sf-sec"><div class="sf-lbl">結尾文字 <span class="sf-hint">感謝語 / 優惠說明</span></div>`;
+  s.foot.forEach(b=>{ h+=row(`<input type="text" data-sftext="${b.id}" value="${escapeAttr(b.text||'')}" placeholder="輸入一行文字">`,`data-sfrm="${b.id}"`); });
+  h+=`<button class="btn sm ghost sf-add" data-sfadd="foot">＋ 新增一行</button></div>`;
+
+  h+=`<div class="sf-sec"><div class="sf-lbl">備註 <span class="sf-hint">也可在收銀填寫</span></div>
+    <textarea rows="2" data-sfnote placeholder="例如 完成後將以簡訊通知取件">${escapeHtml(s.note?(s.note.text||''):'')}</textarea></div>`;
+
+  if(s.imgs.length){ h+=`<div class="sf-sec"><div class="sf-lbl">其他圖片</div>`;
+    s.imgs.forEach(b=>{ h+=row(`<button class="btn sm" data-sfimg="${b.id}" style="flex:1">${b.img?'更換圖片':'上傳圖片'}</button>`,`data-sfrm="${b.id}"`); });
+    h+=`</div>`; }
+
+  if(s.qr) h+=`<div class="sf-sec"><div class="sf-lbl">QR Code</div>
+    ${row(`<input type="text" data-sfqrurl="${s.qr.id}" value="${escapeAttr(s.qr.url||'')}" placeholder="https://...">`,`data-sfrm="${s.qr.id}"`)}
+    <input type="text" data-sfqrlabel="${s.qr.id}" value="${escapeAttr(s.qr.label||'')}" placeholder="說明文字（可留空）"></div>`;
+
+  if(s.barcode) h+=`<div class="sf-sec"><div class="sf-lbl">條碼</div>
+    ${row(`<input type="text" data-sfbar="${s.barcode.id}" value="${escapeAttr(s.barcode.src==='custom'?(s.barcode.num||''):'')}" placeholder="留空＝自動取單號">`,`data-sfrm="${s.barcode.id}"`)}</div>`;
+
+  h+=`<div class="row sf-bottom">
+    <button class="btn sm" data-sfadd="img" style="flex:1">＋ 圖片</button>
+    ${s.qr?'':'<button class="btn sm" data-sfadd="qr" style="flex:1">＋ QR</button>'}
+    ${s.barcode?'':'<button class="btn sm" data-sfadd="barcode" style="flex:1">＋ 條碼</button>'}
+  </div>`;
+  box.innerHTML=h;
+  wireSimpleForm(box);
+}
+function sfRefresh(){ renderBlocks(); render(1); }   // 結構有變:整張表單重畫
+function wireSimpleForm(box){
+  const q=sel=>box.querySelectorAll(sel);
+  // 內容輸入只更新資料 + 重畫收據,不重畫表單(否則游標會跳掉)
+  q('[data-sftext]').forEach(el=>el.oninput=()=>{ const b=block(el.dataset.sftext); if(b){ b.text=el.value; render(1); } });
+  q('[data-sfrl]').forEach(el=>el.oninput=()=>{ const r=sfFieldRow(el.dataset.sfrl); if(r){ r.label=el.value; render(1); renderPosFields(); } });
+  q('[data-sfrv]').forEach(el=>el.oninput=()=>{ const r=sfFieldRow(el.dataset.sfrv); if(r){ r.value=el.value; render(1); renderPosFields(); } });
+  q('[data-sfqrurl]').forEach(el=>el.oninput=()=>{ const b=block(el.dataset.sfqrurl); if(b){ b.url=el.value; render(1); } });
+  q('[data-sfqrlabel]').forEach(el=>el.oninput=()=>{ const b=block(el.dataset.sfqrlabel); if(b){ b.label=el.value; render(1); } });
+  q('[data-sfbar]').forEach(el=>el.oninput=()=>{ const b=block(el.dataset.sfbar); if(b){ const v=el.value.trim(); b.src=v?'custom':'auto'; b.num=v; render(1); } });
+  const nameEl=box.querySelector('[data-sfname]');
+  if(nameEl) nameEl.oninput=()=>{
+    let b=simpleSections().name;
+    if(!b){ b=mkPara('lg','center',700); const li=S.blocks.findIndex(x=>x.type==='image'); S.blocks.splice(li>=0?li+1:0,0,b); }
+    b.text=nameEl.value; render(1);
+  };
+  const noteEl=box.querySelector('[data-sfnote]');
+  if(noteEl) noteEl.oninput=()=>{
+    let b=simpleSections().note;
+    if(!b){ b={id:nid(),type:'note',text:''}; S.blocks.push(b); }
+    b.text=noteEl.value; render(1); renderPosFields();
+  };
+  const logoBtn=box.querySelector('[data-sflogo]');
+  if(logoBtn) logoBtn.onclick=()=>pickImage(im=>openLogoCropper(im,cropped=>{
+    let b=simpleSections().logo;
+    if(!b){ b={id:nid(),type:'image',img:null,scale:0.42,hue:0}; S.blocks.unshift(b); }
+    b.img=cropped; sfRefresh();
+  }));
+  const logoRm=box.querySelector('[data-sflogorm]');
+  if(logoRm) logoRm.onclick=()=>{ const b=simpleSections().logo; if(b){ b.img=null; sfRefresh(); } };
+  q('[data-sfimg]').forEach(el=>el.onclick=()=>pickImage(im=>openLogoCropper(im,cropped=>{ const b=block(el.dataset.sfimg); if(b){ b.img=cropped; sfRefresh(); } })));
+  q('[data-sfrm]').forEach(el=>el.onclick=()=>{ S.blocks=S.blocks.filter(b=>b.id!==el.dataset.sfrm); sfRefresh(); });
+  q('[data-sfrx]').forEach(el=>el.onclick=()=>{ const f=simpleSections().fields; if(!f)return; f.rows=(f.rows||[]).filter(r=>r.id!==el.dataset.sfrx); sfRefresh(); renderPosFields(); });
+  q('[data-sfadd]').forEach(el=>el.onclick=()=>sfAdd(el.dataset.sfadd));
+}
+function sfFieldRow(id){ const f=simpleSections().fields; return f?(f.rows||[]).find(r=>r.id===id):null; }
+function sfAdd(what){
+  const s=simpleSections();
+  if(what==='head'){ insertAfterGroup(s.head, s.name?S.blocks.indexOf(s.name)+1:0, mkPara('sm','center',400)); }
+  else if(what==='foot'){ insertAfterGroup(s.foot, S.blocks.length, mkPara('md','center',400)); }
+  else if(what==='field'){
+    let f=s.fields;
+    if(!f){ f={id:nid(),type:'text',mode:'fields',rows:[]}; S.blocks.splice(Math.min(s.coreStart,S.blocks.length),0,f); }
+    (f.rows=f.rows||[]).push({id:nid(),label:'',value:''});
+  }
+  else if(what==='img'){ pickImage(im=>openLogoCropper(im,cropped=>{ S.blocks.push({id:nid(),type:'image',img:cropped,scale:0.42,hue:0}); sfRefresh(); })); return; }
+  else if(what==='qr'){ const url=prompt('QR Code 網址:','https://'); if(!url||!url.trim())return; S.blocks.push({id:nid(),type:'qr',url:url.trim(),label:'',color:'#111111',bg:'#ffffff'}); }
+  else if(what==='barcode'){ S.blocks.push({id:nid(),type:'barcode',src:'auto',num:''}); }
+  sfRefresh(); renderPosFields();
+}
+
+function restoreWork(){
+  if(!workBackup) return;
+  if(presetDirty && !confirm('還原會捨棄預覽模板之後所做的修改,確定要還原嗎?')) return;
+  applyDesignData(workBackup);   // applyDesignData 內部會清掉 workBackup / previewing
   scheduleSave();
-}
-function exitPreview(){
-  if(!previewing) return;
-  previewing=false; const b=workBackup; workBackup=null;
-  if(b) applyDesignData(b); else render(1);
 }
 $('#playBtn').onclick=()=>{ if(!playing)runAnim(); };
 // 預覽縮放:直接以「符合視窗 × 縮放」設定 canvas 顯示尺寸(可捲動)
@@ -446,6 +587,7 @@ $('#zoomSeg').onclick=e=>{ const b=e.target.closest('button'); if(!b)return;
 cv.parentElement.addEventListener('wheel',e=>{ e.preventDefault(); setZoom(pvZoom+(e.deltaY<0?0.12:-0.12)); },{passive:false});
 window.addEventListener('resize',applyZoom);
 $('#pngBtn').onclick=exportPNG; $('#mp4Btn').onclick=exportMP4;
+$('#pngBtnQuick').onclick=exportPNG;
 $('#addItem').onclick=()=>{ S.items.push({id:nid(),name:'新品項',qty:1,price:0,desc:'',children:[]}); renderItems(); render(1); };
 // add-block menu
 $('#addBlockBtn').onclick=()=>$('#addMenu').classList.toggle('hidden');
@@ -727,6 +869,7 @@ function renderBlocks(){
   box.onpointermove=e=>{ if(!dragId)return; const after=[...box.querySelectorAll('.blk:not(.dragging)')].find(c=>{ const r=c.getBoundingClientRect(); return e.clientY < r.top + r.height/2; });
     const drag=box.querySelector('.blk.dragging'); if(!drag)return; if(after) box.insertBefore(drag,after); else box.appendChild(drag); };
   wireBlockEditors(box);
+  renderSimpleForm();
 }
 function endDrag(){ if(!dragId)return; const box=$('#blockList'); const order=[...box.querySelectorAll('.blk')].map(c=>c.dataset.id);
   S.blocks.sort((a,b)=>order.indexOf(a.id)-order.indexOf(b.id)); dragId=null; document.body.style.userSelect='';
@@ -1160,9 +1303,10 @@ function ledgerTable(){
 function setView(v){
   segPick($('#viewSeg'),v);
   document.querySelector('main').classList.toggle('hidden', v!=='edit');
+  $('#tplGroup').classList.toggle('hidden', v!=='edit');   // 收銀模式不提供切換模板
+  $('#modeSeg').classList.toggle('hidden', v!=='edit');
   $('#posView').classList.toggle('hidden', v!=='pos');
   if(v==='pos'){ renderPosGrid(); renderPosFields(); renderCart(); }
-  else if(previewing) exitPreview();   // 切回設計編輯:放棄預覽,回到自己的設計
   else render(1);
 }
 $('#viewSeg').onclick=e=>{ const b=e.target.closest('button'); if(!b)return; setView(b.dataset.v);
@@ -1193,7 +1337,8 @@ $('#ledgerTxtCopy').onclick=()=>{ if(navigator.clipboard) navigator.clipboard.wr
 const CUR_KEY='receipt-current';
 let _noSave=false, _saveT=0;
 function setSaved(s){ const el=$('#saveStatus'); if(!el)return; el.textContent=s?'✓ 已儲存':'● 尚未儲存'; el.classList.toggle('dirty',!s); }
-function scheduleSave(){ setSaved(false); clearTimeout(_saveT); _saveT=setTimeout(()=>{ try{ localStorage.setItem(CUR_KEY, JSON.stringify(serializeDesign())); }catch(e){} setSaved(true); },800); }
+function scheduleSave(){ if(workBackup) presetDirty=true;   // 預覽模板後又動過內容,還原時要先確認
+  setSaved(false); clearTimeout(_saveT); _saveT=setTimeout(()=>{ try{ localStorage.setItem(CUR_KEY, JSON.stringify(serializeDesign())); }catch(e){} setSaved(true); },800); }
 function downloadJSON(obj,name){ const blob=new Blob([JSON.stringify(obj)],{type:'application/json'}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=name; a.click(); setTimeout(()=>URL.revokeObjectURL(a.href),2000); }
 function serializeDesign(){
   return {
@@ -1204,7 +1349,7 @@ function serializeDesign(){
   };
 }
 function applyDesignData(d,onReady){
-  previewing=false; workBackup=null;
+  previewing=false; workBackup=null; presetDirty=false; syncRestoreBtn();
   const imgs=[];
   S.blocks=(d.blocks||[]).map(b=>{
     if(b.type==='image'){ const o=Object.assign({},b,{img:null}); if(b.img){ const im=new Image(); im.src=b.img; o.img=im; imgs.push(im); } return o; }
@@ -1264,10 +1409,11 @@ function dataImportFile(file){ if(!file)return; const r=new FileReader();
 const GUIDE_KEY='receipt-seen-guide', POS_GUIDE_KEY='receipt-seen-pos-guide';
 const TOUR_EDIT=[
   {sel:'#viewSeg', text:'這裡切換 <b>設計編輯</b> 與 <b>收銀</b> 兩種模式。', pos:'bottom'},
-  {sel:'#designSeg', text:'點預設模板會<b>即時預覽</b>；按右側「<b>套用</b>」才真正覆蓋目前設計，切回「設計編輯」可放棄預覽。', pos:'bottom'},
-  {sel:'#colLeft', text:'左欄：金額與付款、<b>外觀</b>（紙張效果 / 紋理 / 圓角 / 不透明度）、<b>背景圖片</b>、文字樣式。', pos:'right'},
+  {sel:'#designSeg', text:'點預設模板只是<b>預覽</b>，不會直接覆蓋你已儲存的內容；想留下就繼續編輯，不想要就按右側「<b>還原</b>」回到原本的設計。', pos:'bottom'},
+  {sel:'#modeSeg', text:'<b>簡易</b>只留最常用的設定（幣別 / 字體 / 顏色 / 紋理 / 背景圖 / 字級），內容用純文字寫；要細調就切到 <b>進階</b>。', pos:'bottom'},
+  {sel:'#colLeft', text:'左欄樣式：字體、紙張色 / 文字色、紙張紋理、背景圖片、字級與行距。進階模式還有金額稅費、圓角、鋸齒撕邊、紙張效果。', pos:'right'},
   {sel:'.center', text:'中間是即時預覽，<b>滑鼠滾輪可縮放</b>，所見即所得；下方控制列可<b>輸出 PNG / 列印 MP4</b>。', pos:'left'},
-  {sel:'#colBlocks', text:'版面區塊：拖曳 <b>⋮⋮</b> 排序、點標題收合；可切「<b>區塊 / 純文字</b>」用語法快速排版（# 大標、- 分隔線、[品項] [金額] [備註]…）。', pos:'left'},
+  {sel:'#colBlocks', text:'收據內容：照欄位直接填 —— <b>店家名稱</b>、店家資訊、<b>收據資訊</b>（按「＋ 新增資訊項目」加日期 / 單號…）、結尾文字、備註。進階模式才會出現區塊拖曳排序與純文字語法。', pos:'left'},
   {sel:'#colRight', text:'品項區：品名 / 數量 / 單價，可加子項目；收銀模式會用到這些商品。', pos:'left'},
   {sel:'#dataBtn', text:'<b>資料</b>：勾選模板 / 商品表 / 今日收銀，一鍵匯出或載入備份。完成後可隨時點右上的 <b>i</b> 重看導覽。', pos:'bottom'},
 ];
@@ -1327,5 +1473,6 @@ buildAddMenu();
 buildFontSel();
 buildTexSel();
 try{ const cur=JSON.parse(localStorage.getItem(CUR_KEY)); if(cur&&cur.blocks){ applyDesignData(cur); } else { applyDesign('tailor'); } }catch(e){ applyDesign('tailor'); }
+try{ setUiMode(localStorage.getItem(MODE_KEY)||'simple'); }catch(e){ setUiMode('simple'); }
 segPick($('#uiSeg'), localStorage.getItem(UI_KEY)||'std', v=>document.body.dataset.ui=v);
 loadFonts(); render(1);

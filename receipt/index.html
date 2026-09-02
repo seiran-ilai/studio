@@ -41,13 +41,19 @@
     <button data-v="edit" class="on">設計編輯</button>
     <button data-v="pos">收銀</button>
   </div>
-  <span class="lbl">預設模板</span>
-  <div class="seg" id="designSeg">
-    <button data-v="tailor" class="on">西裝店</button>
-    <button data-v="cafe">咖啡廳</button>
-    <button data-v="bar">酒吧</button>
+  <div class="seg" id="modeSeg">
+    <button data-v="simple" class="on">簡易</button>
+    <button data-v="adv">進階</button>
   </div>
-  <button class="btn sm" id="applyTpl">套用</button>
+  <div class="tpl-group" id="tplGroup">
+    <span class="lbl">預設模板</span>
+    <div class="seg" id="designSeg">
+      <button data-v="tailor" class="on">西裝店</button>
+      <button data-v="cafe">咖啡廳</button>
+      <button data-v="bar">酒吧</button>
+    </div>
+    <button class="btn sm" id="applyTpl" title="目前沒有可還原的設計" disabled>還原</button>
+  </div>
   <div class="spacer"></div>
   <div class="header-right">
     <button class="help-btn" id="dataBtn" title="匯出資料" aria-label="匯出資料"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v11"/><path d="M7 10l5 5 5-5"/><path d="M5 20h14"/></svg></button>
@@ -64,25 +70,25 @@
 <main>
   <!-- LEFT -->
   <section class="side left" id="colLeft">
-    <div class="side-head"><span class="title">金額・樣式</span><span class="vtitle">金額・樣式</span><button class="collapse" data-arrow>◀</button></div>
+    <div class="side-head"><span class="title" id="leftTitle">金額・樣式</span><span class="vtitle">金額・樣式</span><button class="collapse" data-arrow>◀</button></div>
     <div class="side-body">
       <div class="panel" data-c="0"><div class="ph">金額與付款 <span class="chev">▾</span></div><div class="pb">
         <div class="two">
           <div class="field"><label>幣別符號</label><input type="text" id="f_sym" value="NT$"></div>
-          <div class="field"><label>小數位數</label><select id="f_dec"><option value="0">0</option><option value="2">2</option></select></div>
+          <div class="field" data-adv><label>小數位數</label><select id="f_dec"><option value="0">0</option><option value="2">2</option></select></div>
         </div>
-        <div class="two">
+        <div class="two" data-adv>
           <div class="field"><label>稅率 %</label><input type="number" id="f_tax" value="5" min="0" step="0.1"></div>
           <div class="field"><label>服務費 %</label><input type="number" id="f_svc" value="0" min="0" step="0.1"></div>
         </div>
-        <label class="ck" style="margin-bottom:9px"><input type="checkbox" id="f_incl" checked> 金額已含稅（顯示為內含）</label>
-        <div class="two">
+        <label class="ck" style="margin-bottom:9px" data-adv><input type="checkbox" id="f_incl" checked> 金額已含稅（顯示為內含）</label>
+        <div class="two" data-adv>
           <div class="field"><label>折扣方式</label><select id="f_dtype"><option value="amount">金額</option><option value="pct">百分比</option></select></div>
           <div class="field"><label>折扣值</label><input type="number" id="f_dval" value="0" min="0" step="1"></div>
         </div>
-        <div class="field"><label>付款方式</label><input type="text" id="p_method" value="信用卡 VISA ****1234"></div>
-        <div class="field"><label>實收金額（留空＝不顯示找零）</label><input type="number" id="p_paid" placeholder="例如 1000"></div>
-        <p class="hint">這些設定會套用到「金額小計」區塊。</p>
+        <div class="field" data-adv><label>付款方式</label><input type="text" id="p_method" value="信用卡 VISA ****1234"></div>
+        <div class="field" data-adv><label>實收金額（留空＝不顯示找零）</label><input type="number" id="p_paid" placeholder="例如 1000"></div>
+        <p class="hint" data-adv>這些設定會套用到「金額小計」區塊。</p>
       </div></div>
 
       <div class="panel" data-c="1"><div class="ph">外觀樣式 <span class="chev">▾</span></div><div class="pb">
@@ -91,19 +97,19 @@
           <div class="field"><label>紙張色</label><div class="row"><input type="color" id="s_paper" value="#ffffff"></div></div>
           <div class="field"><label>文字色</label><div class="row"><input type="color" id="s_ink" value="#111111"></div></div>
         </div>
-        <div class="field"><label>圓角</label><div class="rng"><input type="range" id="s_radius" min="0" max="60" value="0"><b id="s_radiusV">0</b></div></div>
-        <label class="ck"><input type="checkbox" id="s_zig" checked> 鋸齒撕邊（熱感紙風）</label>
-        <p class="hint" style="margin-top:6px">圓角在「鋸齒撕邊」關閉時才會生效。</p>
-        <hr>
-        <div class="field"><label>紙張效果</label>
+        <div class="field" data-adv><label>圓角</label><div class="rng"><input type="range" id="s_radius" min="0" max="60" value="0"><b id="s_radiusV">0</b></div></div>
+        <label class="ck" data-adv><input type="checkbox" id="s_zig" checked> 鋸齒撕邊（熱感紙風）</label>
+        <p class="hint" style="margin-top:6px" data-adv>圓角在「鋸齒撕邊」關閉時才會生效。</p>
+        <hr data-adv>
+        <div class="field" data-adv><label>紙張效果</label>
           <div class="seg" id="bgEffectSeg" style="width:100%">
             <button data-v="none" class="on" style="flex:1">無</button>
             <button data-v="frost" style="flex:1">霧面</button>
             <button data-v="liquid" style="flex:1">液態玻璃</button>
           </div>
         </div>
-        <div class="field"><label>紙張不透明度</label><div class="rng"><input type="range" id="bgPaperAlpha" min="20" max="100" value="100"><b id="bgPaperAlphaV">100%</b></div></div>
-        <p class="hint">100% 完全不透明;調低才會透出底圖。霧面 / 液態玻璃會讓收據像玻璃(搭配背景圖「底圖」最明顯)。</p>
+        <div class="field" data-adv><label>紙張不透明度</label><div class="rng"><input type="range" id="bgPaperAlpha" min="20" max="100" value="100"><b id="bgPaperAlphaV">100%</b></div></div>
+        <p class="hint" data-adv>100% 完全不透明;調低才會透出底圖。霧面 / 液態玻璃會讓收據像玻璃(搭配背景圖「底圖」最明顯)。</p>
         <hr>
         <div class="field"><label>紙張紋理</label>
           <div class="texpick" id="texPick">
@@ -112,19 +118,19 @@
             <button type="button" class="texpick-arw" data-tex="1" aria-label="下一個">›</button>
           </div>
         </div>
-        <div id="texAdjust" class="hidden">
+        <div id="texAdjust" class="hidden" data-adv>
           <div class="field"><label>強度</label><div class="rng"><input type="range" id="s_texStrength" min="0" max="100" value="100"><b id="s_texStrengthV">100%</b></div></div>
           <div class="field"><label>色相（0＝黑白）</label><div class="rng"><input type="range" id="s_texHue" min="0" max="360" value="0"><b id="s_texHueV">黑白</b></div></div>
           <div class="field"><label>明度</label><div class="rng"><input type="range" id="s_texBright" min="50" max="150" value="100"><b id="s_texBrightV">100%</b></div></div>
           <div class="field"><label>對比</label><div class="rng"><input type="range" id="s_texContrast" min="50" max="260" value="140"><b id="s_texContrastV">140%</b></div></div>
         </div>
-        <p class="hint">紋理以「相乘」融合進紙張(非直接貼圖),預設黑白,可調色相上色。</p>
+        <p class="hint" data-adv>紋理以「相乘」融合進紙張(非直接貼圖),預設黑白,可調色相上色。</p>
       </div></div>
 
       <div class="panel" data-c="1"><div class="ph">背景圖片 <span class="chev">▾</span></div><div class="pb">
         <div class="row" style="margin-bottom:9px">
           <button class="btn sm" id="bgUpload" style="flex:1">上傳圖片</button>
-          <button class="btn sm" id="bgEdit" style="flex:none" disabled>編輯</button>
+          <button class="btn sm" id="bgEdit" style="flex:none" disabled data-adv>編輯</button>
           <button class="btn sm" id="bgRemove" style="flex:none">移除</button>
         </div>
         <div class="field"><label>套用方式</label>
@@ -134,16 +140,16 @@
             <button data-v="back" style="flex:1">底圖</button>
           </div>
         </div>
-        <div class="field hidden" id="bgSizeRow"><label>浮水印大小</label><div class="rng"><input type="range" id="bgSize" min="10" max="100" value="40"><b id="bgSizeV">40%</b></div></div>
+        <div class="field hidden" id="bgSizeRow" data-adv><label>浮水印大小</label><div class="rng"><input type="range" id="bgSize" min="10" max="100" value="40"><b id="bgSizeV">40%</b></div></div>
         <div class="field hidden" id="bgOpacityRow"><label>浮水印濃度</label><div class="rng"><input type="range" id="bgOpacity" min="3" max="60" value="15"><b id="bgOpacityV">15%</b></div></div>
-        <div class="field hidden" id="bgMarginRow"><label>背景外擴（四邊,px）</label><div class="rng"><input type="range" id="bgMargin" min="0" max="400" step="10" value="80"><b id="bgMarginV">80</b></div></div>
-        <p class="hint">浮水印:圖片可調大小、自動重複鋪滿收據、文字下方。底圖:收據疊在整張圖上(輸出尺寸會放大)。紙張效果(霧面/液態玻璃)在「外觀樣式」設定。</p>
+        <div class="field hidden" id="bgMarginRow" data-adv><label>背景外擴（四邊,px）</label><div class="rng"><input type="range" id="bgMargin" min="0" max="400" step="10" value="80"><b id="bgMarginV">80</b></div></div>
+        <p class="hint" data-adv>浮水印:圖片可調大小、自動重複鋪滿收據、文字下方。底圖:收據疊在整張圖上(輸出尺寸會放大)。紙張效果(霧面/液態玻璃)在「外觀樣式」設定。</p>
       </div></div>
 
       <div class="panel" data-c="1"><div class="ph">文字樣式 <span class="chev">▾</span></div><div class="pb">
         <div class="field"><label>整體字級</label><div class="rng"><input type="range" id="t_scale" min="0.8" max="1.3" step="0.01" value="1"><b id="t_scaleV">100%</b></div></div>
         <div class="field"><label>行距</label><div class="rng"><input type="range" id="t_line" min="0.85" max="1.6" step="0.01" value="1"><b id="t_lineV">1.00</b></div></div>
-        <p class="hint">各文字區塊的大小／對齊／粗細,在該區塊內各自設定。</p>
+        <p class="hint" data-adv>各文字區塊的大小／對齊／粗細,在該區塊內各自設定。</p>
       </div></div>
     </div>
   </section>
@@ -153,7 +159,8 @@
     <div class="stage"><canvas id="cv"></canvas></div>
     <div class="size-note" id="sizeNote">—</div>
     <div class="ctlbar">
-      <button class="btn" id="playBtn">▶ 預覽列印</button>
+      <button class="btn" id="playBtn" data-adv>▶ 預覽列印</button>
+      <button class="btn ok" id="pngBtnQuick" data-simple>輸出 PNG</button>
       <div class="seg" id="zoomSeg">
         <button data-z="out" title="縮小">－</button>
         <button data-z="fit" title="符合視窗">符合</button>
@@ -166,21 +173,22 @@
   <!-- BLOCKS (independent, resizable) -->
   <section class="side blocks" id="colBlocks">
     <div class="resizer" id="blkResizer" title="拖曳調整寬度"></div>
-    <div class="side-head"><span class="title">版面區塊 <span class="sub" id="blockCount"></span></span><span class="vtitle">版面區塊</span><button class="collapse" data-arrow>▶</button></div>
+    <div class="side-head"><span class="title" id="blocksTitle">版面區塊 <span class="sub" id="blockCount" data-adv></span></span><span class="vtitle">版面區塊</span><button class="collapse" data-arrow>▶</button></div>
     <div class="side-body">
-      <div class="seg" id="blkModeSeg" style="width:100%;margin-bottom:10px">
+      <div id="simpleForm" data-simple></div>
+      <div class="seg" id="blkModeSeg" data-adv style="width:100%;margin-bottom:10px">
         <button data-v="blocks" class="on" style="flex:1">區塊</button>
         <button data-v="text" style="flex:1">純文字</button>
       </div>
-      <div id="blockEditWrap">
-        <p class="hint" style="margin-top:0">拖曳 <b>⋮⋮</b> 排序、✕ 刪除、點標題收合。順序＝收據顯示順序。</p>
+      <div id="blockEditWrap" data-adv>
+        <p class="hint" style="margin-top:0" data-adv>拖曳 <b>⋮⋮</b> 排序、✕ 刪除、點標題收合。順序＝收據顯示順序。</p>
         <div id="blockList"></div>
         <div class="addwrap">
           <button class="btn full pri" id="addBlockBtn">＋ 新增區塊</button>
           <div class="addmenu hidden" id="addMenu"></div>
         </div>
       </div>
-      <div id="blockSourceWrap" class="hidden">
+      <div id="blockSourceWrap" class="hidden" data-adv>
         <textarea id="blockSource" spellcheck="false" placeholder="用純文字撰寫整張收據…"></textarea>
         <div class="cheat">
           <b>標題</b>　# 大標　## 小字　### 備註　（#&lt; 靠左　#&gt; 靠右）<br>
@@ -205,7 +213,7 @@
   </section>
 
   <!-- OUTPUT (independent, resizable) -->
-  <section class="side output" id="colOutput">
+  <section class="side output" id="colOutput" data-adv>
     <div class="resizer" id="outResizer" title="拖曳調整寬度"></div>
     <div class="side-head"><button class="collapse" data-arrow>▶</button><span class="title">輸出</span><span class="vtitle">輸出</span></div>
     <div class="side-body">
