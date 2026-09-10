@@ -73,15 +73,7 @@
     </div>
     <!-- 細節版尚未完成,暫時隱藏「簡易／細節」切換入口。程式碼保留,未來把這個 toggle 加回即可重新開放。 -->
     <div class="topbar-actions">
-      <!-- 工具設定:語法速查(icon)→ 樣式 → CG 庫 → 更多 -->
-      <button class="btn btn-icon" id="btnSyntaxQuick" title="語法速查" aria-label="語法速查">
-        <span class="btn-emoji"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 6.5C12 5 10.5 4 8 4S4 4.5 4 5.5v13C4 17.5 5.5 17 8 17s4 1 4 2"/><path d="M12 6.5C12 5 13.5 4 16 4s4 .5 4 1.5v13C20 17.5 18.5 17 16 17s-4 1-4 2"/></svg></span>
-        <span class="btn-text">語法速查</span>
-      </button>
-      <button class="btn btn-icon" id="btnShortcuts" title="快捷鍵" aria-label="快捷鍵">
-        <span class="btn-emoji"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="6" width="18" height="12" rx="2"/><path d="M7 10h.01M11 10h.01M15 10h.01M7 14h10"/></svg></span>
-        <span class="btn-text">快捷鍵</span>
-      </button>
+      <!-- 工具設定:樣式 → CG 庫 → 更多 -->
       <button class="btn" id="btnStyle"><span class="btn-emoji"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a9 9 0 1 0 0 18c1.1 0 1.5-.8 1.5-1.5 0-.5-.3-.9-.3-1.4 0-.6.5-1.1 1.1-1.1H16a5 5 0 0 0 5-5c0-4.4-4-9-9-9z"/><circle cx="7.5" cy="11" r="1"/><circle cx="11" cy="7.5" r="1"/><circle cx="15.5" cy="8.5" r="1"/></svg></span><span class="btn-text">樣式</span></button>
       <button class="btn" id="btnCgLibrary" title="CG 庫" aria-label="CG 庫"><span class="btn-emoji"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="5" width="16" height="14" rx="2"/><circle cx="9" cy="10" r="1.5"/><path d="M5 16l4-3.5 3.5 3 3-2.5L19 16"/></svg></span><span class="btn-text">CG</span></button>
 
@@ -89,8 +81,6 @@
       <div class="topbar-more">
         <button class="btn btn-ghost btn-icon" id="btnMore" title="重設 / 更多" aria-label="重設 / 更多" aria-haspopup="true"><span class="btn-emoji"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v5h-5"/></svg></span></button>
         <div class="topbar-menu" id="topbarMenu" hidden>
-          <button class="topbar-menu-item" id="btnResetScript">↻ 只重設劇本</button>
-          <button class="topbar-menu-item" id="btnResetStyle">↻ 只重設樣式</button>
           <button class="topbar-menu-item danger" id="btnReset">↻ 全部重設</button>
           <div class="topbar-menu-sep"></div>
           <div class="topbar-menu-label">最近開啟</div>
@@ -104,12 +94,6 @@
       <button class="help-btn" id="btnOpenFile" title="開啟 .vns 檔案" aria-label="開啟"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20V9"/><path d="M7 14l5-5 5 5"/><path d="M5 4h14"/></svg></button>
 
       <span class="topbar-divider"></span>
-      <div class="ui-scale" id="uiScale" role="group" aria-label="介面大小">
-        <button class="us-btn on" type="button" data-ui="std">標準</button>
-        <button class="us-btn" type="button" data-ui="lg">大</button>
-        <button class="us-btn" type="button" data-ui="xl">最大</button>
-      </div>
-      <span class="topbar-divider"></span>
       <button class="help-btn" id="helpBtn" title="使用說明" aria-label="使用說明"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 11v5"/><path d="M12 8h.01"/></svg></button>
     </div>
   </header>
@@ -117,54 +101,18 @@
   <!-- Main -->
   <main class="main">
 
-    <!-- Simple Pane — 四欄可拖曳布局:幕列表 / 對話 / 預覽 / 特效 + 底部工具列 -->
+    <!-- Simple Pane — 兩欄布局:對話 / 預覽 + 底部幕縮圖條與輸出列 -->
     <section class="pane pane-simple" id="paneSimple" hidden>
 
       <div class="simple-layout" id="simpleLayout">
 
-        <!-- 第一欄:幕列表 -->
-        <aside class="simple-pane simple-pane-slides" id="paneSlides" aria-label="幕列表">
-          <div class="simple-pane-content">
-            <div class="simple-pane-header">
-              <span class="simple-pane-title">幕 <span class="simple-sidebar-count" id="simpleSidebarCount">0</span></span>
-              <button class="pane-collapse-btn" id="slidesCollapseBtn" type="button" aria-label="收起幕列表" title="收起">←</button>
-            </div>
-            <div class="simple-slide-list" id="simpleSlideList"><!-- JS 動態填入 --></div>
-            <div class="simple-add-slide-wrap">
-              <button class="simple-add-slide-btn" id="simpleAddSlideBtn" type="button" aria-haspopup="true" aria-expanded="false">＋ 新增 ▾</button>
-              <div class="simple-add-slide-menu" id="simpleAddSlideMenu" hidden>
-                <button class="simple-add-slide-menu-item" data-add-type="dialog" type="button">
-                  <span class="simple-add-menu-icon" aria-hidden="true"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M5 5h14a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H9l-4 3.5V6a1 1 0 0 1 1-1z"/></svg></span>
-                  <span class="simple-add-menu-text">
-                    <span class="simple-add-menu-title">一般幕</span>
-                    <span class="simple-add-menu-desc">CG + 對話</span>
-                  </span>
-                </button>
-                <button class="simple-add-slide-menu-item" data-add-type="choice" type="button">
-                  <span class="simple-add-menu-icon" aria-hidden="true"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7h4l10 10h4"/><path d="M17 7h4M3 17h4l3-3"/><path d="M18 4l3 3-3 3M18 14l3 3-3 3"/></svg></span>
-                  <span class="simple-add-menu-text">
-                    <span class="simple-add-menu-title">選項幕</span>
-                    <span class="simple-add-menu-desc">顯示選項並演出選擇</span>
-                  </span>
-                </button>
-              </div>
-            </div>
-          </div>
-          <!-- 收起窄條(直書) -->
-          <div class="pane-collapsed-bar" id="slidesCollapsedBar" hidden>
-            <button class="pane-expand-btn" type="button" aria-label="展開幕列表">
-              <span class="bar-icon" aria-hidden="true"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M8 5v14M16 5v14M3 10h5M3 14h5M16 10h5M16 14h5"/></svg></span>
-              <span class="bar-text">幕</span>
-            </button>
-          </div>
-        </aside>
-
-        <div class="simple-splitter" data-splitter="1" aria-hidden="true"></div>
-
-        <!-- 第二欄:對話 / 選項編輯 -->
+        <!-- 左欄:對話 / 選項編輯 -->
         <section class="simple-pane simple-pane-dialog" id="paneDialog">
           <div class="simple-pane-content">
-            <div class="simple-pane-header"><span class="simple-pane-title"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M5 5h14a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H9l-4 3.5V6a1 1 0 0 1 1-1z"/></svg>對話</span></div>
+            <div class="simple-pane-header">
+              <span class="simple-pane-title"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M5 5h14a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H9l-4 3.5V6a1 1 0 0 1 1-1z"/></svg>對話</span>
+              <button class="syntax-hint-btn" id="btnSyntaxQuick" type="button" title="語法速查" aria-label="語法速查" aria-haspopup="true">語法 ?</button>
+            </div>
             <!-- 一般幕:對話 textarea(撐滿) -->
             <div class="simple-dialog-text-row" id="simpleDialogTextRow">
               <textarea
@@ -177,7 +125,7 @@
                 autocapitalize="off"
               ></textarea>
               <div class="simple-syntax-warn" id="simpleSyntaxWarn" hidden>
-                ⚠ 簡易模式不支援 <code>[bg:]</code> / <code>[cg:]</code> / <code>[選項]</code> / <code>[好感度]</code> 等場景指令,需要這些功能請使用「細節模式」。
+                ⚠ 不支援 <code>[bg:]</code> / <code>[cg:]</code> / <code>[選項]</code> / <code>[好感度]</code> 等場景指令,這些文字會原樣顯示。
               </div>
             </div>
             <!-- 選項幕:選項編輯(取代對話 textarea) -->
@@ -192,7 +140,7 @@
 
         <div class="simple-splitter" data-splitter="2" aria-hidden="true"></div>
 
-        <!-- 第三欄:預覽 + 播放控制 -->
+        <!-- 右欄:預覽 + 播放 / 本幕設定 -->
         <section class="simple-pane simple-pane-preview" id="panePreview">
           <div class="simple-pane-content">
             <div class="simple-preview" id="simplePreview">
@@ -202,118 +150,138 @@
                     <button class="btn btn-primary" id="simpleEmptyUploadBtn" type="button"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h3l1.5-2h7L17 8h3a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z"/><circle cx="12" cy="13" r="3.2"/></svg>上傳圖片</button>
                     <button class="btn" id="simpleEmptyCgBtn" type="button"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h5l2 2h9v9a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7z"/></svg>選擇 CG</button>
                   </div>
+                  <div class="simple-preview-empty-hint">也可以把圖片直接拖進來</div>
                 </div>
                 <div class="simple-preview-cg" id="simplePreviewCg" hidden></div>
+                <!-- 有 CG 時滑過預覽才浮現的換 / 移除(取代底部兩顆常駐鈕) -->
+                <div class="preview-cg-actions" id="previewCgActions" hidden>
+                  <button class="preview-cg-action" id="simpleCgReplaceBtn" type="button" title="換一張 CG">↻ 換 CG</button>
+                  <button class="preview-cg-action is-danger" id="simpleCgClearBtn" type="button" title="移除 CG" aria-label="移除 CG">✕</button>
+                </div>
                 <div class="simple-preview-dialog" id="simplePreviewDialog" hidden></div>
                 <div class="simple-preview-choices" id="simplePreviewChoices" hidden></div>
               </div>
             </div>
+
+            <!-- 預覽下方控制列:播放 + 本幕設定(特效 / 停留 / 轉場) -->
             <div class="simple-preview-controls" id="simplePreviewControls">
-              <button class="btn" id="simplePlayOneBtn" type="button">▶ 單幕預覽</button>
-              <button class="btn" id="simplePlayAllBtn" type="button">▶▶ 從這幕開始</button>
+              <button class="btn btn-primary" id="simplePlayAllBtn" type="button">▶ 播放</button>
+              <button class="btn btn-ghost simple-play-one" id="simplePlayOneBtn" type="button">只播這幕</button>
               <button class="btn btn-ghost simple-stop-btn" id="simpleStopBtn" type="button" hidden>⏹ 停止</button>
+
+              <span class="preview-controls-sep" aria-hidden="true"></span>
+
+              <div class="slide-settings-inline" id="simpleSettings" hidden>
+                <!-- 特效:一顆按鈕開浮層(原本是右側整欄) -->
+                <div class="slide-setting-wrap">
+                  <button class="slide-setting-btn" id="fxMenuBtn" type="button" aria-haspopup="true">✨ 特效<span class="slide-setting-badge" id="fxCountBadge" hidden>0</span></button>
+                  <div class="slide-setting-popover" id="fxPopover" hidden>
+                    <div class="simple-fx-section">
+                      <div class="simple-fx-cat">
+                        <span class="simple-fx-cat-label">文字級</span>
+                        <div class="simple-fx-buttons" data-cat="text">
+                          <button class="fx-toggle-btn" type="button" data-fx-id="blood_text">血字滲透</button>
+                          <button class="fx-toggle-btn" type="button" data-fx-id="fade_breathing">漸隱漸現</button>
+                          <button class="fx-toggle-btn" type="button" data-fx-id="glitch_text">亂碼閃爍</button>
+                          <button class="fx-toggle-btn" type="button" data-fx-id="text_decode">文字替換</button>
+                        </div>
+                      </div>
+                      <div class="simple-fx-cat">
+                        <span class="simple-fx-cat-label">畫面級</span>
+                        <div class="simple-fx-buttons" data-cat="screen">
+                          <button class="fx-toggle-btn" type="button" data-fx-id="screen_noise">雜訊壞掉</button>
+                          <button class="fx-toggle-btn" type="button" data-fx-id="scanlines">掃描線</button>
+                          <button class="fx-toggle-btn" type="button" data-fx-id="shake">晃動</button>
+                          <button class="fx-toggle-btn" type="button" data-fx-id="out_of_focus">失焦</button>
+                          <button class="fx-toggle-btn" type="button" data-fx-id="vignette">暗角強化</button>
+                        </div>
+                      </div>
+                      <div class="simple-fx-divider"></div>
+                      <div class="simple-fx-active">
+                        <span class="simple-fx-active-label">已啟用</span>
+                        <div class="simple-fx-active-list" id="simpleFxActiveList"></div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- 停留秒數:直接內嵌,不藏浮層 -->
+                <label class="hold-inline" title="本幕結束後停留幾秒才切到下一幕">
+                  <span aria-hidden="true">⏱</span>
+                  <input type="number" id="simpleHoldInput" class="simple-hold-input" min="0" max="10" step="0.1" value="1.0">
+                  <span>秒</span>
+                </label>
+
+                <!-- 結束轉場:一顆按鈕開小選單 -->
+                <div class="slide-setting-wrap">
+                  <button class="slide-setting-btn" id="transMenuBtn" type="button" aria-haspopup="true">⇄ 轉場<span class="slide-setting-cur" id="transCurrentLabel">無</span></button>
+                  <div class="slide-setting-popover slide-setting-popover--narrow" id="transPopover" hidden>
+                    <div class="simple-transition-buttons" id="simpleTransitionButtons">
+                      <button class="transition-btn active" type="button" data-transition="none">無</button>
+                      <button class="transition-btn" type="button" data-transition="fade_black">黑屏淡出</button>
+                      <button class="transition-btn" type="button" data-transition="fade_white">白屏淡出</button>
+                      <button class="transition-btn" type="button" data-transition="crossfade">交叉淡出</button>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </section>
 
-        <div class="simple-splitter" data-splitter="3" aria-hidden="true"></div>
-
-        <!-- 第四欄:特效面板(可收起為窄條) -->
-        <aside class="simple-pane simple-pane-effects" id="paneEffects">
-          <div class="simple-pane-content" id="effectsPaneContent">
-            <div class="simple-pane-header">
-              <span class="simple-pane-title"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4c.5 3.5 1.5 4.5 5 5-3.5.5-4.5 1.5-5 5-.5-3.5-1.5-4.5-5-5 3.5-.5 4.5-1.5 5-5z"/><path d="M18 14c.3 1.7.8 2.2 2.5 2.5-1.7.3-2.2.8-2.5 2.5-.3-1.7-.8-2.2-2.5-2.5 1.7-.3 2.2-.8 2.5-2.5z"/></svg>特效</span>
-              <button class="pane-collapse-btn" id="effectsCollapseBtn" type="button" aria-label="收起特效面板" title="收起">→</button>
-            </div>
-            <div class="simple-settings" id="simpleSettings" hidden>
-              <!-- 任務 2:特效按鈕直選(分文字級 / 畫面級)+ 已啟用清單 -->
-              <div class="simple-fx-section">
-                <div class="simple-fx-cat">
-                  <span class="simple-fx-cat-label">文字級</span>
-                  <div class="simple-fx-buttons" data-cat="text">
-                    <button class="fx-toggle-btn" type="button" data-fx-id="blood_text">血字滲透</button>
-                    <button class="fx-toggle-btn" type="button" data-fx-id="fade_breathing">漸隱漸現</button>
-                    <button class="fx-toggle-btn" type="button" data-fx-id="glitch_text">亂碼閃爍</button>
-                    <button class="fx-toggle-btn" type="button" data-fx-id="text_decode">文字替換</button>
-                  </div>
-                </div>
-                <div class="simple-fx-cat">
-                  <span class="simple-fx-cat-label">畫面級</span>
-                  <div class="simple-fx-buttons" data-cat="screen">
-                    <button class="fx-toggle-btn" type="button" data-fx-id="screen_noise">雜訊壞掉</button>
-                    <button class="fx-toggle-btn" type="button" data-fx-id="scanlines">掃描線</button>
-                    <button class="fx-toggle-btn" type="button" data-fx-id="shake">晃動</button>
-                    <button class="fx-toggle-btn" type="button" data-fx-id="out_of_focus">失焦</button>
-                    <button class="fx-toggle-btn" type="button" data-fx-id="vignette">暗角強化</button>
-                  </div>
-                </div>
-                <div class="simple-fx-divider"></div>
-                <div class="simple-fx-active">
-                  <span class="simple-fx-active-label">已啟用</span>
-                  <div class="simple-fx-active-list" id="simpleFxActiveList"></div>
-                </div>
-              </div>
-
-              <!-- 任務 3:停留時間 — 數字輸入 + 預設 -->
-              <div class="simple-hold-section">
-                <span class="simple-hold-label"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="13" r="7"/><path d="M12 9.5V13l2.5 1.5M9.5 3h5"/></svg>本幕結束後</span>
-                <input type="number" id="simpleHoldInput" class="simple-hold-input" min="0" max="10" step="0.1" value="1.0">
-                <span class="simple-hold-suffix">秒後切換到下一幕</span>
-                <button id="simpleHoldResetBtn" class="simple-hold-reset" type="button">↻ 預設</button>
-              </div>
-
-              <!-- 任務 4:結束轉場 -->
-              <div class="simple-transition-section">
-                <span class="simple-transition-label"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M8 5v14M16 5v14M3 10h5M3 14h5M16 10h5M16 14h5"/></svg>結束轉場</span>
-                <div class="simple-transition-buttons" id="simpleTransitionButtons">
-                  <button class="transition-btn active" type="button" data-transition="none">無</button>
-                  <button class="transition-btn" type="button" data-transition="fade_black">黑屏淡出</button>
-                  <button class="transition-btn" type="button" data-transition="fade_white">白屏淡出</button>
-                  <button class="transition-btn" type="button" data-transition="crossfade">交叉淡出</button>
-                </div>
-              </div>
-            </div>
-          </div>
-          <!-- 收起窄條(直書) -->
-          <div class="pane-collapsed-bar" id="effectsCollapsedBar" hidden>
-            <button class="pane-expand-btn" type="button" aria-label="展開特效面板">
-              <span class="bar-icon" aria-hidden="true"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4c.5 3.5 1.5 4.5 5 5-3.5.5-4.5 1.5-5 5-.5-3.5-1.5-4.5-5-5 3.5-.5 4.5-1.5 5-5z"/><path d="M18 14c.3 1.7.8 2.2 2.5 2.5-1.7.3-2.2.8-2.5 2.5-.3-1.7-.8-2.2-2.5-2.5 1.7-.3 2.2-.8 2.5-2.5z"/></svg></span>
-              <span class="bar-text">特效</span>
-            </button>
-          </div>
-        </aside>
-
       </div>
 
-      <!-- 底部工具列:左=當前幕設定 / 右=輸出 -->
+      <!-- 底部工具列:左=幕縮圖條(原本是左側整欄) / 右=輸出 -->
       <footer class="simple-bottom-bar">
-        <div class="bottom-bar-group bottom-bar-left">
-          <div class="orient-toggle simple-ratio-toggle" role="tablist">
-            <span class="simple-row-label">方向</span>
-            <button class="active" data-ratio="16:9" type="button">橫</button>
-            <button data-ratio="9:16" type="button">直</button>
+        <div class="slide-strip">
+          <div class="simple-slide-list" id="simpleSlideList"><!-- JS 動態填入 --></div>
+          <div class="simple-add-slide-wrap">
+            <button class="simple-add-slide-btn" id="simpleAddSlideBtn" type="button" aria-haspopup="true" aria-expanded="false">＋ 新增幕 ▾</button>
+            <div class="simple-add-slide-menu" id="simpleAddSlideMenu" hidden>
+              <button class="simple-add-slide-menu-item" data-add-type="dialog" type="button">
+                <span class="simple-add-menu-icon" aria-hidden="true"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M5 5h14a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H9l-4 3.5V6a1 1 0 0 1 1-1z"/></svg></span>
+                <span class="simple-add-menu-text">
+                  <span class="simple-add-menu-title">一般幕</span>
+                  <span class="simple-add-menu-desc">CG + 對話</span>
+                </span>
+              </button>
+              <button class="simple-add-slide-menu-item" data-add-type="choice" type="button">
+                <span class="simple-add-menu-icon" aria-hidden="true"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7h4l10 10h4"/><path d="M17 7h4M3 17h4l3-3"/><path d="M18 4l3 3-3 3M18 14l3 3-3 3"/></svg></span>
+                <span class="simple-add-menu-text">
+                  <span class="simple-add-menu-title">選項幕</span>
+                  <span class="simple-add-menu-desc">顯示選項並演出選擇</span>
+                </span>
+              </button>
+            </div>
           </div>
-          <button class="btn btn-ghost" id="simpleCgReplaceBtn" type="button">↻ 換 CG</button>
-          <button class="btn btn-ghost" id="simpleCgClearBtn" type="button">✕ 移除 CG</button>
         </div>
-        <div class="bottom-bar-divider"></div>
         <div class="bottom-bar-group bottom-bar-right">
-          <div class="quality-seg" id="simpleQualityToggle" role="group" aria-label="輸出畫質">
-            <span class="quality-seg-label">畫質</span>
-            <button class="active" data-q="1" type="button">1x</button>
-            <button data-q="1.5" type="button">1.5x</button>
-            <button data-q="2" type="button">2x</button>
-          </div>
           <button class="btn" id="barScreenshotBtn" type="button"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h3l1.5-2h7L17 8h3a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z"/><circle cx="12" cy="13" r="3.2"/></svg>截圖</button>
           <button class="btn btn-primary" id="barMp4Btn" type="button"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="6" width="13" height="12" rx="2"/><path d="M16 10l5-3v10l-5-3z"/></svg>MP4</button>
-          <!-- 輸出設定:片頭緩衝(由系統設定搬至此)。點齒輪開浮層 -->
+          <!-- 輸出設定:方向 / 畫質 / 片頭緩衝,全收進齒輪 -->
           <div class="output-settings-wrap">
             <button class="btn btn-ghost btn-icon" id="barOutputSettingsBtn" type="button" title="輸出設定" aria-label="輸出設定" aria-haspopup="true"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3.2"/><path d="M12 3.5v3M12 17.5v3M3.5 12h3M17.5 12h3M6 6l2 2M16 16l2 2M18 6l-2 2M8 16l-2 2"/></svg></button>
             <div class="output-settings-popover" id="outputSettingsPopover" hidden>
-              <div class="output-settings-title"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="6" width="13" height="12" rx="2"/><path d="M16 10l5-3v10l-5-3z"/></svg>影片輸出</div>
+              <div class="output-settings-title"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="6" width="13" height="12" rx="2"/><path d="M16 10l5-3v10l-5-3z"/></svg>輸出設定</div>
+              <div class="output-settings-row">
+                <span class="output-settings-row-label">畫面方向</span>
+                <div class="orient-toggle simple-ratio-toggle" role="group" aria-label="畫面方向">
+                  <button class="active" data-ratio="16:9" type="button">橫</button>
+                  <button data-ratio="9:16" type="button">直</button>
+                </div>
+              </div>
+              <div class="output-settings-row">
+                <span class="output-settings-row-label">輸出畫質</span>
+                <div class="quality-seg" id="simpleQualityToggle" role="group" aria-label="輸出畫質">
+                  <button class="active" data-q="1" type="button">1x</button>
+                  <button data-q="1.5" type="button">1.5x</button>
+                  <button data-q="2" type="button">2x</button>
+                </div>
+              </div>
+              <div class="output-settings-sep"></div>
               <label class="settings-toggle">
                 <input type="checkbox" id="introBufferEnabled">
-                <span>MP4 / GIF 輸出時加入片頭緩衝</span>
+                <span>MP4 輸出時加入片頭緩衝</span>
               </label>
               <div class="settings-sub" id="introBufferSettings">
                 <label class="settings-sub-row">
@@ -321,8 +289,7 @@
                   <input type="range" id="introBufferDuration" min="0.5" max="3.0" step="0.1" value="1.5">
                   <span id="introBufferDurationVal">1.5 秒</span>
                 </label>
-                <p class="settings-hint">💡 開頭顯示乾淨的 CG 畫面,方便上傳社群平台時抓取縮圖。</p>
-                <p class="settings-hint">💡 片頭緩衝只在 MP4 / GIF 輸出時生效,預覽不顯示。</p>
+                <p class="settings-hint">💡 開頭顯示乾淨的 CG 畫面,方便上傳社群平台時抓取縮圖。預覽不顯示。</p>
               </div>
             </div>
           </div>
@@ -334,22 +301,6 @@
     </section>
 
   </main>
-
-  <!-- Batch 6:Status bar -->
-  <div class="status-bar" id="statusBar">
-    <span class="status-item">
-      <span class="status-label">檔案預估容量:</span>
-      <strong id="statusExportSize">0 KB</strong>
-    </span>
-    <span class="status-item">
-      <span class="status-label">資產:</span>
-      <strong id="statusAssetCount">0 角色 · 0 張</strong>
-    </span>
-    <span class="status-item" id="statusRecentSave">
-      <span class="status-label">最後存檔:</span>
-      <strong id="statusRecentSaveTime">剛剛</strong>
-    </span>
-  </div>
 
   <!-- Footer:作者資訊(低調列) -->
   <footer class="app-footer">
@@ -401,7 +352,6 @@
 
         <div class="defaults-section">
           <h3><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.5 2.5 2.5 15 0 18M12 3c-2.5 2.5-2.5 15 0 18"/></svg>全域預設樣式</h3>
-          <p class="defaults-hint">行內 tag 優先。</p>
 
           <div class="default-row default-row--speed">
             <label>文字速度</label>
@@ -410,6 +360,27 @@
             <span class="speed-end">快</span>
             <span class="default-size-label" id="textSpeedLabel">50</span>
           </div>
+
+          <!-- 主控:一次設定五種文字的字體與字級(多數人只需要這一列) -->
+          <div class="default-row">
+            <label>字體</label>
+            <select id="defMasterFont">
+              <option value="">(混合)</option>
+              <option value="luoyan">辰宇落雁體</option>
+              <option value="serif">思源宋體</option>
+              <option value="sans">思源黑體</option>
+              <option value="round">粉圓體</option>
+              <option value="iansui">芫荽體</option>
+              <option value="marker">麥克黑體</option>
+              <option value="pixel">點陣體</option>
+            </select>
+            <input type="range" id="fontSizeMaster" class="default-size-range" min="12" max="32" step="1" value="18">
+            <span class="default-size-label" id="fontSizeMasterLabel">18 pt</span>
+          </div>
+
+          <details class="style-advanced">
+            <summary>進階:角色名 / 旁白 / 內心話 / 對話 / 選項分開設定</summary>
+            <p class="defaults-hint">行內 tag 優先。</p>
 
           <div class="default-row">
             <label>角色名</label>
@@ -486,6 +457,8 @@
             <span class="default-size-label" id="fontSizeChoiceLabel">16 pt</span>
           </div>
 
+          </details>
+
         </div>
 
         <div class="defaults-section" style="margin-top:24px;">
@@ -537,29 +510,6 @@
         <div class="cg-library-empty-icon" aria-hidden="true"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="5" width="16" height="14" rx="2"/><circle cx="9" cy="10" r="1.5"/><path d="M5 16l4-3.5 3.5 3 3-2.5L19 16"/></svg></div>
         <div>CG 庫還是空的</div>
         <div class="cg-library-empty-sub">點上方「＋ 上傳新 CG」開始</div>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- ========== Projects Modal (我的專案) ========== -->
-<div class="modal-backdrop" id="projectsModal">
-  <div class="modal" role="dialog" aria-modal="true" style="max-width: 640px;">
-    <div class="modal-header">
-      <div class="modal-title"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h5l2 2h9v9a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7z"/></svg>我的專案</div>
-      <button class="modal-close" id="projectsModalClose" aria-label="關閉">×</button>
-    </div>
-    <div class="modal-body">
-      <div class="projects-toolbar">
-        <button class="btn btn-primary" id="projectsNewBtn">＋ 新專案</button>
-        <span class="projects-count" id="projectsCount"></span>
-      </div>
-      <div class="projects-list" id="projectsList">
-        <!-- JS 動態填入 -->
-      </div>
-      <div class="projects-empty" id="projectsEmpty" hidden>
-        <div class="projects-empty-icon" aria-hidden="true"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 13l3-8h12l3 8v5a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1v-5z"/><path d="M3 13h5l1 2h6l1-2h5"/></svg></div>
-        <div>還沒有任何專案</div>
       </div>
     </div>
   </div>
@@ -634,8 +584,9 @@
   </div>
 </div>
 
-<!-- 快捷鍵說明 popover(沿用語法速查樣式)-->
-<div class="syntax-quick-popover" id="shortcutsPopover" hidden>
+<!-- 說明 popover:重看導覽 + 快捷鍵(由頂列 ⓘ 開啟)-->
+<div class="syntax-quick-popover help-popover" id="helpPopover" hidden>
+  <button class="help-popover-tour" id="helpTourBtn" type="button">▶ 重看操作導覽</button>
   <div class="syntax-quick-title">快捷鍵</div>
   <div class="syntax-quick-list">
     <div class="syntax-quick-item">
@@ -671,36 +622,13 @@
 
 <script type="module" src="js/main.js"></script>
 <script defer src="index.js"></script>
-<!-- 介面縮放(標準 / 大 / 最大),記憶於 localStorage -->
-<script>
-  (function () {
-    var KEY = "vns-ui-scale";
-    var bar = document.getElementById("uiScale");
-    if (!bar) return;
-    var btns = bar.querySelectorAll(".us-btn");
-    apply(localStorage.getItem(KEY) || "std");
-    btns.forEach(function (b) {
-      b.addEventListener("click", function () {
-        apply(b.dataset.ui);
-        localStorage.setItem(KEY, b.dataset.ui);
-      });
-    });
-    function apply(v) {
-      document.body.dataset.ui = v;
-      btns.forEach(function (x) { x.classList.toggle("on", x.dataset.ui === v); });
-    }
-  })();
-</script>
 <!-- 使用說明導覽:首次自動開啟,之後由 ⓘ 重新開啟(spotlight + 氣泡) -->
 <div id="tour" class="tour hidden"><div id="tourSpot" class="tour-spot"></div><div id="tourBubble" class="tour-bubble"><p class="tour-text"></p><div class="tour-foot"><span class="tour-step" id="tourStepNo"></span><span class="tour-btns"><button class="tour-btn" id="tourSkip">跳過</button><button class="tour-btn" id="tourPrev">上一步</button><button class="tour-btn primary" id="tourNext">下一步</button></span></div></div></div>
 <script>
 (function(){var KEY='vns-seen-guide';var TOUR=[
-{sel:'.topbar-actions',pos:'bottom',text:'歡迎使用<b>視覺小說快速截圖工具</b>。上方工具列可開啟<b>樣式</b>、<b>語法速查</b>、<b>設定</b>，以及<b>開啟</b> / <b>儲存</b>專案。資料會自動存在本機瀏覽器。'},
-{sel:'#paneSlides',pos:'right',text:'這是<b>幕列表</b>。把對話排成一幕一幕，點「<b>＋ 新增</b>」可加<b>一般幕</b>（CG + 對話）或<b>選項幕</b>。可點選切換、拖曳排序。'},
-{sel:'#paneDialog',pos:'right',text:'在<b>對話欄</b>輸入台詞，一行一句：<b>人名:台詞</b>為角色對話、<b>沒有人名</b>為旁白、<b>(括弧)</b>為內心話、<b>空行</b>切換下一個對話框。'},
-{sel:'#panePreview',pos:'left',text:'中間是<b>即時預覽</b>。在這裡「<b>上傳圖片</b>」或「<b>選擇 CG</b>」放入背景，並可「<b>單幕預覽</b>」或「<b>從這幕開始</b>」連播。'},
-{sel:'#paneEffects',pos:'left',text:'右欄<b>特效</b>可疊加<b>文字級</b>（血字、亂碼…）與<b>畫面級</b>（雜訊、掃描線、晃動…）效果，並設定本幕<b>停留秒數</b>與<b>結束轉場</b>。'},
-{sel:'.bottom-bar-right',pos:'top',text:'完成後從底部右側輸出：「<b>截圖</b>」存當前幕 PNG，「<b>MP4</b>」輸出整段影片。隨時可點右上角的 <b>ⓘ</b> 重看這段導覽。'}
+{sel:'#paneDialog',pos:'right',text:'左邊打台詞,一行一句:<b>人名:台詞</b>是角色對話、<b>沒有人名</b>是旁白、<b>(括弧)</b>是內心話、<b>空行</b>換下一個對話框。'},
+{sel:'#panePreview',pos:'left',text:'右邊<b>即時預覽</b>。點畫面「上傳圖片」放入背景,按「<b>▶ 播放</b>」看演出。下方可加<b>特效</b>、設<b>停留秒數</b>與<b>轉場</b>。'},
+{sel:'.simple-bottom-bar',pos:'top',text:'底部是<b>幕縮圖條</b>,點「<b>＋ 新增幕</b>」加下一幕、拖曳可排序。右邊「<b>截圖</b>」存 PNG、「<b>MP4</b>」輸出整段影片。隨時可從右上角 <b>ⓘ</b> 重看。'}
 ];
 var tour=document.getElementById('tour');if(!tour)return;var spot=document.getElementById('tourSpot'),bub=document.getElementById('tourBubble'),idx=0;
 function show(){var s=TOUR[idx],el=document.querySelector(s.sel);if(!el){if(idx<TOUR.length-1){idx++;return show();}return end();}var r=el.getBoundingClientRect(),pad=8;spot.style.left=(r.left-pad)+'px';spot.style.top=(r.top-pad)+'px';spot.style.width=(r.width+pad*2)+'px';spot.style.height=(r.height+pad*2)+'px';bub.querySelector('.tour-text').innerHTML=s.text;document.getElementById('tourStepNo').textContent=(idx+1)+' / '+TOUR.length;document.getElementById('tourPrev').style.visibility=idx?'visible':'hidden';document.getElementById('tourNext').textContent=idx===TOUR.length-1?'完成':'下一步';tour.classList.remove('hidden');pos(r,s.pos);}
@@ -708,7 +636,7 @@ function pos(r,p){bub.style.left='-9999px';bub.style.top='0px';var bw=bub.offset
 function start(){idx=0;requestAnimationFrame(function(){requestAnimationFrame(show);});}
 function end(){tour.classList.add('hidden');try{localStorage.setItem(KEY,'1');}catch(e){}}
 function next(){if(idx<TOUR.length-1){idx++;show();}else end();}function prev(){if(idx>0){idx--;show();}}
-var hb=document.getElementById('helpBtn');if(hb)hb.onclick=start;document.getElementById('tourSkip').onclick=end;document.getElementById('tourPrev').onclick=prev;document.getElementById('tourNext').onclick=next;
+var hb=document.getElementById('helpTourBtn');if(hb)hb.onclick=function(){var hp=document.getElementById('helpPopover');if(hp)hp.hidden=true;start();};document.getElementById('tourSkip').onclick=end;document.getElementById('tourPrev').onclick=prev;document.getElementById('tourNext').onclick=next;
 tour.onclick=function(e){if(e.target.id==='tour')next();};
 document.addEventListener('keydown',function(e){if(tour.classList.contains('hidden'))return;if(e.key==='Escape')end();else if(e.key==='ArrowRight'||e.key==='Enter')next();else if(e.key==='ArrowLeft')prev();});
 window.addEventListener('resize',function(){if(!tour.classList.contains('hidden'))show();});

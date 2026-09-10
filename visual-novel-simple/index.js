@@ -282,37 +282,7 @@ function setScript() {}  // 簡易版不使用詳細版 script
  * @param {'center'|'nearest'} [behavior='nearest'] - center=游標置中,nearest=只在跑出視野才滾
  */
 
-// ----- Reset actions: split into script-only / style-only / full -----
-document.getElementById("btnResetScript").addEventListener("click", async () => {
-  const ok = await inlineConfirm({
-    title: "只重設劇本",
-    message: "確定要清空劇本？角色、背景、CG、樣式都會保留。此動作不可復原。",
-    okText: "清空劇本",
-    danger: true,
-  });
-  if (!ok) return;
-  state.simpleCards = [];
-  state.simpleCurrentSlideId = null;
-  saveToStorage();
-  renderMainView();
-  showToast("✨ 劇本已清空", "success");
-});
-
-document.getElementById("btnResetStyle").addEventListener("click", async () => {
-  const ok = await inlineConfirm({
-    title: "只重設樣式",
-    message: "確定要把對話框樣式回到預設？此動作不可復原。",
-    okText: "重設樣式",
-    danger: true,
-  });
-  if (!ok) return;
-  state.dialogStyle = { ...DEFAULT_DIALOG_STYLE };
-  applyDialogStyle();
-  if (typeof renderStyleTab === "function") renderStyleTab();
-  saveToStorage();
-  showToast("✨ 對話框樣式已重設", "success");
-});
-
+// ----- Reset action:只保留「全部重設」(只重設劇本 / 只重設樣式已移除)-----
 document.getElementById("btnReset").addEventListener("click", async () => {
   const ok = await inlineConfirm({
     title: "⚠ 全部重設",
@@ -600,16 +570,17 @@ let _vnsAutoSaveStopped = false;
 const styleModalEl = document.getElementById("styleModal");
 
 
-// 語法速查 / 快捷鍵 popover:點按鈕開關,點別處關閉,兩者互斥
+// 浮層:語法速查(對話欄標頭的「語法 ?」)/ 說明(頂列 ⓘ,含重看導覽 + 快捷鍵)。
+// 點按鈕開關,點別處關閉,兩者互斥。
 const btnSyntaxQuick = document.getElementById("btnSyntaxQuick");
 const syntaxQuickPopover = document.getElementById("syntaxQuickPopover");
-const btnShortcuts = document.getElementById("btnShortcuts");
-const shortcutsPopover = document.getElementById("shortcutsPopover");
+const btnHelp = document.getElementById("helpBtn");
+const helpPopover = document.getElementById("helpPopover");
 function positionTopbarPopover(btn, popover) {
   const r = btn.getBoundingClientRect();
   const w = popover.offsetWidth;
   const margin = 8;
-  let left = r.right - w;            // 右緣對齊按鈕
+  let left = (r.left + w < window.innerWidth - 8) ? r.left : r.right - w;
   if (left < margin) left = margin;
   if (left + w > window.innerWidth - margin) left = window.innerWidth - w - margin;
   popover.style.top = (r.bottom + 8) + "px";
@@ -627,17 +598,17 @@ function bindTopbarPopover(btn, popover, others) {
     if (show) positionTopbarPopover(btn, popover);
   });
 }
-bindTopbarPopover(btnSyntaxQuick, syntaxQuickPopover, [shortcutsPopover]);
-bindTopbarPopover(btnShortcuts, shortcutsPopover, [syntaxQuickPopover]);
+bindTopbarPopover(btnSyntaxQuick, syntaxQuickPopover, [helpPopover]);
+bindTopbarPopover(btnHelp, helpPopover, [syntaxQuickPopover]);
 window.addEventListener("resize", () => {
   _topbarPopovers.forEach(({ btn, popover }) => {
     if (!popover.hidden) positionTopbarPopover(btn, popover);
   });
 });
-if (syntaxQuickPopover || shortcutsPopover) {
+if (syntaxQuickPopover || helpPopover) {
   document.addEventListener("click", () => {
     if (syntaxQuickPopover) syntaxQuickPopover.hidden = true;
-    if (shortcutsPopover) shortcutsPopover.hidden = true;
+    if (helpPopover) helpPopover.hidden = true;
   });
 }
 
@@ -714,6 +685,59 @@ const STYLE_DEFAULT_FIELDS = [
       reparseAndRender(false);
     });
   }
+})();
+
+// 樣式 modal:「字體 / 字級」主控 — 一次套到五種文字。
+// 五種分開設定收在下方「進階」摺疊區,多數人只會動這一列。
+function syncMasterFontControls() {
+  const sel = document.getElementById("defMasterFont");
+  const range = document.getElementById("fontSizeMaster");
+  const label = document.getElementById("fontSizeMasterLabel");
+  if (!sel || !range) return;
+
+  const fonts = STYLE_DEFAULT_FIELDS.map(f => {
+    const e = document.getElementById(f.font);
+    return e ? e.value : "";
+  });
+  sel.value = fonts.every(v => v === fonts[0]) ? fonts[0] : "";
+
+  const sizes = STYLE_DEFAULT_FIELDS
+    .map(f => {
+      const e = document.getElementById(f.size);
+      return e ? parseInt(e.value, 10) : NaN;
+    })
+    .filter(n => !isNaN(n));
+  if (sizes.length && sizes.every(n => n === sizes[0])) {
+    range.value = String(sizes[0]);
+    if (label) label.textContent = sizes[0] + " pt";
+  } else if (label) {
+    label.textContent = "混合";
+  }
+}
+
+(function initMasterFontControls() {
+  const sel = document.getElementById("defMasterFont");
+  const range = document.getElementById("fontSizeMaster");
+  const label = document.getElementById("fontSizeMasterLabel");
+  if (sel) sel.addEventListener("change", () => {
+    if (!sel.value) return;                  // 「(混合)」只是顯示用,不套用
+    for (const f of STYLE_DEFAULT_FIELDS) {
+      const e = document.getElementById(f.font);
+      if (!e) continue;
+      e.value = sel.value;
+      e.dispatchEvent(new Event("change"));
+    }
+  });
+  if (range) range.addEventListener("input", () => {
+    const v = Math.max(12, Math.min(32, parseInt(range.value, 10) || 16));
+    if (label) label.textContent = v + " pt";
+    for (const f of STYLE_DEFAULT_FIELDS) {
+      const e = document.getElementById(f.size);
+      if (!e) continue;
+      e.value = String(v);
+      e.dispatchEvent(new Event("input"));
+    }
+  });
 })();
 
 // 全域文字速度滑桿:即時更新數值與 state,不立即重播(下次播放/輸出才套用)。
@@ -1376,12 +1400,65 @@ if ((!state.simpleCards || !state.simpleCards.length) && state.script && state.s
   const cards = scriptToCards(state.script);
   if (cards !== null) state.simpleCards = cards;
 }
-// 首次開啟工具(無歷史標記)且沒有任何幕 → 自動建立一張空白幕,讓使用者直接進入編輯。
-// 之後(已標記)沿用既有資料;使用者主動刪光則維持回到空狀態。
-ensureInitialSlide();
-renderMainView();
+// 首次開啟:直接給一幕看得到成品的範例(內建漸層底圖 + 三行示範對話)。
+// 空白畫面比按鈕多更勸退 —— 先讓人看到「這工具做得出什麼」,再讓他改掉。
+const SAMPLE_DIALOG_TEXT = [
+  "夕陽把整條走廊染成橘色。",
+  "",
+  "學長:你今天看起來不太一樣。",
+  "",
+  "(該怎麼回答才好……)",
+].join("\n");
 
-// 首次開啟偵測:只在從未初始化過、且當前無幕時自動建一張空幕(沿用 createEmptySlide 預設值)
+// 用 canvas 畫一張黃昏色的預設底圖,免去外部檔案依賴(漸層壓縮後很小)
+function makeSampleCgDataUrl() {
+  try {
+    const c = document.createElement("canvas");
+    c.width = 1280;
+    c.height = 720;
+    const g = c.getContext("2d");
+    if (!g) return null;
+
+    const sky = g.createLinearGradient(0, 0, 0, 720);
+    sky.addColorStop(0, "#2b1c3d");
+    sky.addColorStop(0.55, "#6b3f5c");
+    sky.addColorStop(1, "#c98a6b");
+    g.fillStyle = sky;
+    g.fillRect(0, 0, 1280, 720);
+
+    const glow = g.createRadialGradient(880, 470, 20, 880, 470, 430);
+    glow.addColorStop(0, "rgba(255, 214, 160, 0.8)");
+    glow.addColorStop(1, "rgba(255, 214, 160, 0)");
+    g.fillStyle = glow;
+    g.fillRect(0, 0, 1280, 720);
+
+    g.fillStyle = "rgba(24, 14, 34, 0.85)";
+    g.beginPath();
+    g.moveTo(0, 720);
+    g.lineTo(0, 560);
+    g.lineTo(180, 500);
+    g.lineTo(340, 575);
+    g.lineTo(560, 505);
+    g.lineTo(780, 585);
+    g.lineTo(1010, 520);
+    g.lineTo(1280, 590);
+    g.lineTo(1280, 720);
+    g.closePath();
+    g.fill();
+
+    const vignette = g.createRadialGradient(640, 360, 260, 640, 360, 780);
+    vignette.addColorStop(0, "rgba(0, 0, 0, 0)");
+    vignette.addColorStop(1, "rgba(0, 0, 0, 0.45)");
+    g.fillStyle = vignette;
+    g.fillRect(0, 0, 1280, 720);
+
+    return c.toDataURL("image/jpeg", 0.72);
+  } catch (e) {
+    return null;
+  }
+}
+
+// 首次開啟偵測:只在從未初始化過、且當前無幕時建立範例幕
 function ensureInitialSlide() {
   const FIRST_OPEN_KEY = "vns_simple_has_initialized";
   let hasInit = false;
@@ -1391,13 +1468,24 @@ function ensureInitialSlide() {
   if (Array.isArray(state.simpleCards) && state.simpleCards.length > 0) return;  // 已有幕(載入專案)→ 不重複建
   if (!Array.isArray(state.simpleCards)) state.simpleCards = [];
   const slide = createEmptySlide();
+  slide.dialogText = SAMPLE_DIALOG_TEXT;
+  if (typeof parseSimpleDialogText === "function") {
+    slide.parsedLines = parseSimpleDialogText(slide.dialogText).parsedLines;
+  }
+  const dataUrl = makeSampleCgDataUrl();
+  if (dataUrl) slide.cg = { type: "upload", dataUrl, name: "範例背景" };
   state.simpleCards.push(slide);
   state.simpleCurrentSlideId = slide.id;
   if (typeof saveToStorage === "function") saveToStorage();
 }
 
+// 首次開啟工具(無歷史標記)且沒有任何幕 → 建立範例幕,讓使用者直接看到成品。
+// 之後(已標記)沿用既有資料;使用者主動刪光則維持回到空狀態。
+ensureInitialSlide();
+renderMainView();
+
 // ============================================================
-// Batch 6:Status bar + 手機橫滑
+// Batch 6:手機橫滑
 // ============================================================
 
 
@@ -1406,9 +1494,7 @@ function ensureInitialSlide() {
 
 
 
-setInterval(refreshSaveTimeDisplay, 10000);
-updateStatusBar();
-refreshSaveTimeDisplay();
+// 底部狀態列(檔案容量 / 資產數 / 最後存檔)已移除,不再需要定時刷新。
 
 // ============================================================
 //  版面分隔條:觸控拖曳 + 雙擊還原(補強既有滑鼠拖曳邏輯)
@@ -1417,43 +1503,29 @@ refreshSaveTimeDisplay();
 // 但只綁了 mousedown。這裡補上 touch 支援與雙擊還原預設寬度,
 // 共用同一組 CSS 變數與 localStorage key,不重複也不衝突(只多監聽 touch / dblclick)。
 (function initSplitterTouchAndReset() {
-  const LAYOUT_KEYS = {
-    slides: "vns_pane_slides_width",
-    dialog: "vns_pane_dialog_width",
-    effects: "vns_pane_effects_width",
-  };
-  const DEFAULTS = { slides: 200, dialog: 320, effects: 270 };
-  const MIN_WIDTH = 20;
+  const KEY = "vns_pane_dialog_width";
+  const DEFAULT_WIDTH = 380;
+  const MIN_WIDTH = 220;
 
   function layoutEl() { return document.getElementById("simpleLayout"); }
 
-  function persistWidths(layout) {
-    const s = getComputedStyle(layout);
-    const px = (v) => parseInt(s.getPropertyValue(v), 10) || 0;
-    try {
-      localStorage.setItem(LAYOUT_KEYS.slides, String(px("--pane-slides-width") || DEFAULTS.slides));
-      localStorage.setItem(LAYOUT_KEYS.dialog, String(px("--pane-dialog-width") || DEFAULTS.dialog));
-      if (layout.getAttribute("data-effects-collapsed") !== "true") {
-        localStorage.setItem(LAYOUT_KEYS.effects, String(px("--pane-effects-width") || DEFAULTS.effects));
-      }
-    } catch (e) {}
+  function curWidth(layout) {
+    return parseInt(getComputedStyle(layout).getPropertyValue("--pane-dialog-width"), 10) || DEFAULT_WIDTH;
+  }
+  function persistWidth(layout) {
+    try { localStorage.setItem(KEY, String(curWidth(layout))); } catch (e) {}
   }
 
-  // 觸控拖曳:對應既有 mouse 拖曳的同一套規則(idx 1 = 幕列表 / 2 = 對話 / 3 = 特效)
   function startTouchDrag(e, splitter) {
     const layout = layoutEl();
     if (!layout) return;
     const touch = e.touches && e.touches[0];
     if (!touch) return;
     e.preventDefault();
-    const idx = parseInt(splitter.dataset.splitter, 10);
     splitter.classList.add("dragging");
     document.body.classList.add("simple-resizing");
     const startX = touch.clientX;
-    const s = getComputedStyle(layout);
-    const startSlides = parseInt(s.getPropertyValue("--pane-slides-width"), 10) || DEFAULTS.slides;
-    const startDialog = parseInt(s.getPropertyValue("--pane-dialog-width"), 10) || DEFAULTS.dialog;
-    const startEffects = parseInt(s.getPropertyValue("--pane-effects-width"), 10) || DEFAULTS.effects;
+    const startW = curWidth(layout);
 
     function endDrag() {
       splitter.classList.remove("dragging");
@@ -1465,34 +1537,21 @@ refreshSaveTimeDisplay();
     function onMove(ev) {
       const tt = ev.touches && ev.touches[0];
       if (!tt) return;
-      const dx = tt.clientX - startX;
-      if (idx === 1) {
-        const w = Math.max(0, startSlides + dx);
-        layout.style.setProperty("--pane-slides-width", w + "px");
-        if (w < MIN_WIDTH && typeof collapseSlidesPane === "function") { endDrag(); collapseSlidesPane(); }
-      } else if (idx === 2) {
-        layout.style.setProperty("--pane-dialog-width", Math.max(0, startDialog + dx) + "px");
-      } else if (idx === 3) {
-        const w = Math.max(0, startEffects - dx);
-        layout.style.setProperty("--pane-effects-width", w + "px");
-        if (w < MIN_WIDTH && typeof collapseEffectsPane === "function") { endDrag(); collapseEffectsPane(); }
-      }
+      layout.style.setProperty("--pane-dialog-width",
+        Math.max(MIN_WIDTH, startW + (tt.clientX - startX)) + "px");
     }
-    function onUp() { endDrag(); persistWidths(layout); }
+    function onUp() { endDrag(); persistWidth(layout); }
     document.addEventListener("touchmove", onMove, { passive: false });
     document.addEventListener("touchend", onUp);
     document.addEventListener("touchcancel", onUp);
   }
 
-  // 雙擊分隔條 → 還原該欄預設寬度
-  function resetWidth(splitter) {
+  // 雙擊分隔條 → 還原預設寬度
+  function resetWidth() {
     const layout = layoutEl();
     if (!layout) return;
-    const idx = parseInt(splitter.dataset.splitter, 10);
-    if (idx === 1) layout.style.setProperty("--pane-slides-width", DEFAULTS.slides + "px");
-    else if (idx === 2) layout.style.setProperty("--pane-dialog-width", DEFAULTS.dialog + "px");
-    else if (idx === 3) layout.style.setProperty("--pane-effects-width", DEFAULTS.effects + "px");
-    persistWidths(layout);
+    layout.style.setProperty("--pane-dialog-width", DEFAULT_WIDTH + "px");
+    persistWidth(layout);
   }
 
   function bind() {
@@ -1501,7 +1560,7 @@ refreshSaveTimeDisplay();
     layout.querySelectorAll(".simple-splitter").forEach((sp) => {
       sp.style.touchAction = "none";
       sp.addEventListener("touchstart", (e) => startTouchDrag(e, sp), { passive: false });
-      sp.addEventListener("dblclick", () => resetWidth(sp));
+      sp.addEventListener("dblclick", resetWidth);
     });
   }
 

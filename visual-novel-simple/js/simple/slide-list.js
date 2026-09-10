@@ -12,7 +12,7 @@ function renderSimpleSlideList() {
 
   // 空狀態引導:還沒有任何幕時,提示從下方「＋ 新增」開始
   if (!cards.length) {
-    list.innerHTML = '<div class="simple-slide-empty">還沒有任何幕<span>點下方「＋ 新增」加入第一幕,開始你的視覺小說</span></div>';
+    list.innerHTML = '<div class="simple-slide-empty">還沒有任何幕<span>點右邊「＋ 新增幕」開始</span></div>';
     return;
   }
 

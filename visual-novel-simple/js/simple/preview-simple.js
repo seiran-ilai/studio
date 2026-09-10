@@ -437,12 +437,12 @@ function _vnsUpdatePlaybackBtn() {
   const isOne = pb.mode === "single";
   if (one) {
     if (active && isOne) one.textContent = pb.paused ? "▶ 繼續" : "⏸ 暫停";
-    else one.textContent = "▶ 單幕預覽";
+    else one.textContent = "只播這幕";
     one.disabled = active && !isOne;
   }
   if (all) {
     if (active && !isOne) all.textContent = pb.paused ? "▶ 繼續" : "⏸ 暫停";
-    else all.textContent = "▶▶ 從這幕開始";
+    else all.textContent = "▶ 播放";
     all.disabled = active && isOne;
   }
   if (stop) stop.hidden = !active;

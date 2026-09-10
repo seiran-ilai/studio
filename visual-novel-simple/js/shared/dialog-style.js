@@ -514,6 +514,7 @@ function syncStyleDefaultsUI() {
   const spv = (state.dialogStyle && typeof state.dialogStyle.textSpeed === "number") ? state.dialogStyle.textSpeed : 50;
   if (spd) spd.value = spv;
   if (spdLabel) spdLabel.textContent = String(spv);
+  if (typeof syncMasterFontControls === "function") syncMasterFontControls();
   updateDefaultsPreview();
 }
 

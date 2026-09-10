@@ -368,6 +368,7 @@ function _toggleFx(id) {
   saveToStorage();
   renderFxButtons();
   renderFxActiveList();
+  syncSlideSettingSummary();
   _fxApplyCurrent(slide);
 }
 
@@ -388,6 +389,7 @@ function _removeFx(id) {
   saveToStorage();
   renderFxButtons();
   renderFxActiveList();
+  syncSlideSettingSummary();
   _fxApplyCurrent(slide);
 }
 
@@ -415,12 +417,32 @@ function syncTransitionButtons() {
   });
 }
 
+// 控制列上的摘要:特效顆數 badge + 目前轉場名稱
+const TRANSITION_LABELS = {
+  none: "無", fade_black: "黑屏", fade_white: "白屏", crossfade: "交叉",
+};
+function syncSlideSettingSummary() {
+  const slide = getCurrentSlide();
+  const badge = document.getElementById("fxCountBadge");
+  if (badge) {
+    const n = (slide && Array.isArray(slide.effects)) ? slide.effects.length : 0;
+    badge.textContent = String(n);
+    badge.hidden = n === 0;
+  }
+  const label = document.getElementById("transCurrentLabel");
+  if (label) {
+    const t = (slide && slide.transition) || "none";
+    label.textContent = TRANSITION_LABELS[t] || "無";
+  }
+}
+
 // 切幕 / 載入時整批同步特效面板
 function refreshFxUI() {
   renderFxButtons();
   renderFxActiveList();
   syncHoldInput();
   syncTransitionButtons();
+  syncSlideSettingSummary();
 }
 
 // ============================================================
@@ -429,104 +451,36 @@ function refreshFxUI() {
 function updateCgButtonsAvailability() {
   const cur = getCurrentSlide();
   const hasCg = !!(cur && cur.cg && cur.cg.type && cur.cg.type !== "none");
-  const removeBtn = document.getElementById("simpleCgClearBtn");
-  if (removeBtn) {
-    removeBtn.disabled = !hasCg;
-    if (hasCg) removeBtn.removeAttribute("title");
-    else removeBtn.setAttribute("title", "目前沒有 CG");
-  }
-  const changeBtn = document.getElementById("simpleCgReplaceBtn");
-  if (changeBtn) changeBtn.disabled = false;
+  // 換 / 移除 CG 已改成預覽上滑過才浮現的按鈕:沒有 CG 時整組不出現
+  // (此時預覽本身就是上傳入口,不需要另外一顆「換 CG」)。
+  const actions = document.getElementById("previewCgActions");
+  if (actions) actions.hidden = !hasCg;
 }
 
 // ============================================================
-//  版面:四欄可拖曳分隔條 + 特效面板收起/展開 + 欄寬記憶(localStorage)
+//  版面:對話 / 預覽中間單一可拖曳分隔條 + 欄寬記憶(localStorage)
+//  (原本的四欄 + 幕列表收合 + 特效欄收合已移除:幕列表改到底部縮圖條,
+//   特效改成預覽下方的浮層,不再需要兩套收合機制。)
 // ============================================================
-const VNS_LAYOUT_KEYS = {
-  slides: "vns_pane_slides_width",
-  dialog: "vns_pane_dialog_width",
-  effects: "vns_pane_effects_width",
-  collapsed: "vns_effects_collapsed",
-  slidesCollapsed: "vns_slides_collapsed",
-};
+const VNS_DIALOG_WIDTH_KEY = "vns_pane_dialog_width";
+const VNS_DIALOG_DEFAULT_WIDTH = 380;
+const VNS_DIALOG_MIN_WIDTH = 220;
 function _layoutEl() { return document.getElementById("simpleLayout"); }
 
 function saveLayoutWidths() {
   const layout = _layoutEl();
   if (!layout) return;
-  const s = getComputedStyle(layout);
-  const px = (v) => parseInt(s.getPropertyValue(v), 10) || 0;
-  try {
-    localStorage.setItem(VNS_LAYOUT_KEYS.slides, String(px("--pane-slides-width") || 200));
-    localStorage.setItem(VNS_LAYOUT_KEYS.dialog, String(px("--pane-dialog-width") || 320));
-    // 收起時不要把特效寬覆寫成 0,保留上次展開寬度
-    if (layout.getAttribute("data-effects-collapsed") !== "true") {
-      localStorage.setItem(VNS_LAYOUT_KEYS.effects, String(px("--pane-effects-width") || 270));
-    }
-    localStorage.setItem(VNS_LAYOUT_KEYS.collapsed, layout.getAttribute("data-effects-collapsed") === "true" ? "1" : "0");
-    localStorage.setItem(VNS_LAYOUT_KEYS.slidesCollapsed, layout.getAttribute("data-slides-collapsed") === "true" ? "1" : "0");
-  } catch (e) {}
+  const w = parseInt(getComputedStyle(layout).getPropertyValue("--pane-dialog-width"), 10)
+    || VNS_DIALOG_DEFAULT_WIDTH;
+  try { localStorage.setItem(VNS_DIALOG_WIDTH_KEY, String(w)); } catch (e) {}
 }
 
 function loadLayoutWidths() {
   const layout = _layoutEl();
   if (!layout) return;
-  let slides, dialog, effects, collapsed;
-  try {
-    slides = localStorage.getItem(VNS_LAYOUT_KEYS.slides);
-    dialog = localStorage.getItem(VNS_LAYOUT_KEYS.dialog);
-    effects = localStorage.getItem(VNS_LAYOUT_KEYS.effects);
-    collapsed = localStorage.getItem(VNS_LAYOUT_KEYS.collapsed) === "1";
-  } catch (e) {}
-  if (slides && +slides > 20) layout.style.setProperty("--pane-slides-width", slides + "px");
-  if (dialog && +dialog > 20) layout.style.setProperty("--pane-dialog-width", dialog + "px");
-  if (effects && +effects > 20) layout.style.setProperty("--pane-effects-width", effects + "px");
-  if (collapsed) collapseEffectsPane(true);
-  let slidesCollapsed;
-  try { slidesCollapsed = localStorage.getItem(VNS_LAYOUT_KEYS.slidesCollapsed) === "1"; } catch (e) {}
-  if (slidesCollapsed) collapseSlidesPane(true);
-}
-
-function collapseEffectsPane(skipSave) {
-  const layout = _layoutEl();
-  if (!layout) return;
-  layout.setAttribute("data-effects-collapsed", "true");
-  const bar = document.getElementById("effectsCollapsedBar");
-  if (bar) bar.hidden = false;
-  if (!skipSave) saveLayoutWidths();
-}
-
-function expandEffectsPane() {
-  const layout = _layoutEl();
-  if (!layout) return;
-  layout.removeAttribute("data-effects-collapsed");
-  const bar = document.getElementById("effectsCollapsedBar");
-  if (bar) bar.hidden = true;
-  let saved;
-  try { saved = localStorage.getItem(VNS_LAYOUT_KEYS.effects); } catch (e) {}
-  layout.style.setProperty("--pane-effects-width", (saved && +saved > 20) ? saved + "px" : "270px");
-  saveLayoutWidths();
-}
-
-function collapseSlidesPane(skipSave) {
-  const layout = _layoutEl();
-  if (!layout) return;
-  layout.setAttribute("data-slides-collapsed", "true");
-  const bar = document.getElementById("slidesCollapsedBar");
-  if (bar) bar.hidden = false;
-  if (!skipSave) saveLayoutWidths();
-}
-
-function expandSlidesPane() {
-  const layout = _layoutEl();
-  if (!layout) return;
-  layout.removeAttribute("data-slides-collapsed");
-  const bar = document.getElementById("slidesCollapsedBar");
-  if (bar) bar.hidden = true;
-  let saved;
-  try { saved = localStorage.getItem(VNS_LAYOUT_KEYS.slides); } catch (e) {}
-  layout.style.setProperty("--pane-slides-width", (saved && +saved > 20) ? saved + "px" : "200px");
-  saveLayoutWidths();
+  let w;
+  try { w = localStorage.getItem(VNS_DIALOG_WIDTH_KEY); } catch (e) {}
+  if (w && +w >= VNS_DIALOG_MIN_WIDTH) layout.style.setProperty("--pane-dialog-width", w + "px");
 }
 
 function initSplitters() {
@@ -541,14 +495,11 @@ function _startSplitterDrag(e, splitter) {
   const layout = _layoutEl();
   if (!layout) return;
   e.preventDefault();
-  const idx = parseInt(splitter.dataset.splitter, 10);
   splitter.classList.add("dragging");
   document.body.classList.add("simple-resizing");
   const startX = e.clientX;
-  const s = getComputedStyle(layout);
-  const startSlides = parseInt(s.getPropertyValue("--pane-slides-width"), 10) || 200;
-  const startDialog = parseInt(s.getPropertyValue("--pane-dialog-width"), 10) || 320;
-  const startEffects = parseInt(s.getPropertyValue("--pane-effects-width"), 10) || 270;
+  const startW = parseInt(getComputedStyle(layout).getPropertyValue("--pane-dialog-width"), 10)
+    || VNS_DIALOG_DEFAULT_WIDTH;
 
   function endDrag() {
     splitter.classList.remove("dragging");
@@ -557,18 +508,8 @@ function _startSplitterDrag(e, splitter) {
     document.removeEventListener("mouseup", onUp);
   }
   function onMove(ev) {
-    const dx = ev.clientX - startX;
-    if (idx === 1) {
-      const w = Math.max(0, startSlides + dx);
-      layout.style.setProperty("--pane-slides-width", w + "px");
-      if (w < 20) { endDrag(); collapseSlidesPane(); }   // 拖到很窄 → 自動收起
-    } else if (idx === 2) {
-      layout.style.setProperty("--pane-dialog-width", Math.max(0, startDialog + dx) + "px");
-    } else if (idx === 3) {
-      const w = Math.max(0, startEffects - dx);
-      layout.style.setProperty("--pane-effects-width", w + "px");
-      if (w < 20) { endDrag(); collapseEffectsPane(); }   // 拖到很窄 → 自動收起
-    }
+    const w = Math.max(VNS_DIALOG_MIN_WIDTH, startW + (ev.clientX - startX));
+    layout.style.setProperty("--pane-dialog-width", w + "px");
   }
   function onUp() { endDrag(); saveLayoutWidths(); }
   document.addEventListener("mousemove", onMove);
@@ -578,14 +519,6 @@ function _startSplitterDrag(e, splitter) {
 function initLayoutControls() {
   initSplitters();
   loadLayoutWidths();
-  const collapseBtn = document.getElementById("effectsCollapseBtn");
-  if (collapseBtn) collapseBtn.addEventListener("click", () => collapseEffectsPane());
-  const bar = document.getElementById("effectsCollapsedBar");
-  if (bar) bar.addEventListener("click", expandEffectsPane);
-  const slidesBtn = document.getElementById("slidesCollapseBtn");
-  if (slidesBtn) slidesBtn.addEventListener("click", () => collapseSlidesPane());
-  const slidesBar = document.getElementById("slidesCollapsedBar");
-  if (slidesBar) slidesBar.addEventListener("click", expandSlidesPane);
 }
 
 // 簡易版編輯區事件綁定(由 index.js 的 IIFE 改為 init 函式,掛載後由 index.js 呼叫)
@@ -755,7 +688,7 @@ function initSimpleEditorBindings() {
     });
   }
 
-  // 任務 2:預覽框下方播放控制(單幕 / 從這幕開始 / 停止)
+  // 預覽框下方播放控制(主:整段播放 / 次:只播這幕 / 停止)
   const playOne = document.getElementById("simplePlayOneBtn");
   if (playOne) playOne.addEventListener("click", () => toggleSimplePlayback("single"));
   const playAll = document.getElementById("simplePlayAllBtn");
@@ -779,13 +712,6 @@ function initSimpleEditorBindings() {
     holdInput.value = v.toFixed(1);
     if (cur) { cur.holdDuration = v; saveToStorage(); }
   });
-  const holdResetBtn = document.getElementById("simpleHoldResetBtn");
-  if (holdResetBtn) holdResetBtn.addEventListener("click", () => {
-    if (holdInput) holdInput.value = SIMPLE_DEFAULT_HOLD_SEC.toFixed(1);
-    const cur = getCurrentSlide();
-    if (cur) { cur.holdDuration = SIMPLE_DEFAULT_HOLD_SEC; saveToStorage(); }
-  });
-
   // 任務 4:結束轉場單選
   const transContainer = document.getElementById("simpleTransitionButtons");
   if (transContainer) transContainer.querySelectorAll(".transition-btn").forEach(btn => {
@@ -795,6 +721,9 @@ function initSimpleEditorBindings() {
       cur.transition = btn.dataset.transition || "none";
       transContainer.querySelectorAll(".transition-btn").forEach(b => b.classList.toggle("active", b === btn));
       saveToStorage();
+      syncSlideSettingSummary();
+      const pop = document.getElementById("transPopover");
+      if (pop) pop.hidden = true;
     });
   });
 
@@ -819,7 +748,33 @@ function initSimpleEditorBindings() {
     document.addEventListener("click", () => { outPop.hidden = true; });
   }
 
-  // 版面:四欄拖曳分隔條 + 特效面板收起/展開 + 載入記憶欄寬
+  // 本幕設定浮層:特效 / 轉場。點按鈕開關、點外面關閉、互斥。
+  (function initSlideSettingPopovers() {
+    const pairs = [
+      { btn: document.getElementById("fxMenuBtn"), pop: document.getElementById("fxPopover") },
+      { btn: document.getElementById("transMenuBtn"), pop: document.getElementById("transPopover") },
+    ].filter(x => x.btn && x.pop);
+    function closeAll(except) {
+      pairs.forEach(({ btn, pop }) => {
+        if (pop === except) return;
+        pop.hidden = true;
+        btn.classList.remove("is-open");
+      });
+    }
+    pairs.forEach(({ btn, pop }) => {
+      btn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        const willShow = pop.hidden;
+        closeAll(pop);
+        pop.hidden = !willShow;
+        btn.classList.toggle("is-open", willShow);
+      });
+      pop.addEventListener("click", (e) => e.stopPropagation());
+    });
+    document.addEventListener("click", () => closeAll(null));
+  })();
+
+  // 版面:對話 / 預覽分隔條 + 載入記憶欄寬
   initLayoutControls();
 
   // 預覽框大小變化時,動態更新預覽字體縮放比例
