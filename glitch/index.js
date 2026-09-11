@@ -1760,20 +1760,8 @@ $('#btnPng').addEventListener('click', () => {
   }, 'image/png');
 });
 
-// GIF worker (繞 CORS)
-let gifWorkerURL = null;
-async function getGifWorker() {
-  if (gifWorkerURL) return gifWorkerURL;
-  try {
-    const res = await fetch('https://cdnjs.cloudflare.com/ajax/libs/gif.js/0.2.0/gif.worker.js');
-    const code = await res.text();
-    const blob = new Blob([code], { type: 'application/javascript' });
-    gifWorkerURL = URL.createObjectURL(blob);
-    return gifWorkerURL;
-  } catch (e) {
-    return 'https://cdnjs.cloudflare.com/ajax/libs/gif.js/0.2.0/gif.worker.js';
-  }
-}
+// GIF worker:同源檔案,不必再抓遠端腳本轉 Blob 繞 CORS
+const GIF_WORKER_URL = 'gif.worker.js';
 
 // GIF
 $('#btnGif').addEventListener('click', async () => {
@@ -1783,7 +1771,7 @@ $('#btnGif').addEventListener('click', async () => {
   const { w, h } = getOutputSize();
   showProgress(0, `準備 GIF (${w}×${h})...`);
   try {
-    const workerURL = await getGifWorker();
+    const workerURL = GIF_WORKER_URL;
     const off = document.createElement('canvas');
     off.width = w; off.height = h;
     const offCtx = off.getContext('2d');

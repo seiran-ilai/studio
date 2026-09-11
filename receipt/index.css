@@ -366,3 +366,9 @@ body.simple .two > .field{flex:1}
 .sf-x:hover{color:var(--danger); background:var(--surface-2)}
 .sf-add{width:100%; margin-top:2px}
 .sf-bottom{margin-top:4px}
+
+/* ═ 用途聲明 ═ */
+.use-notice{margin:0; flex:none; padding:9px 20px 0; text-align:center;
+  font-size:11px; line-height:1.6; color:var(--ink3); opacity:.85;
+  background:var(--panel); border-top:1px solid var(--line)}
+.use-notice + .site-footer{border-top:none}

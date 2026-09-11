@@ -260,3 +260,9 @@ canvas{touch-action:none}
 ::-webkit-scrollbar-track{background:transparent}
 ::-webkit-scrollbar-thumb{background:rgba(45,60,55,.22); border-radius:6px}
 ::-webkit-scrollbar-thumb:hover{background:rgba(45,60,55,.36)}
+
+/* ═ 用途聲明 ═ */
+.use-notice{margin:0; flex:none; padding:9px 20px 0; text-align:center;
+  font-size:11px; line-height:1.6; color:var(--ink3); opacity:.85;
+  background:var(--panel); border-top:1px solid var(--line)}
+.use-notice + .site-footer{border-top:none}

@@ -19,7 +19,7 @@ const S={
     {id:nid(),name:'訂製襯衫',qty:2,price:2200,desc:'埃及棉 · 白 · 標準領',children:[]},
     {id:nid(),name:'西裝褲改褲長',qty:1,price:300,desc:'',children:[]},
   ],
-  fin:{ sym:'NT$', dec:0, taxPct:5, incl:true, svcPct:0, dtype:'amount', dval:0, method:'信用卡 VISA ****1234', paid:'' },
+  fin:{ sym:'NT$', dec:0, taxPct:5, incl:true, svcPct:0, dtype:'amount', dval:0, method:'現金', paid:'' },
   type:{ scale:1, line:1, accent:'#111111' },
   sty:{ font:'dot', paperW:720, paper:'#ffffff', ink:'#111111', zig:true, divider:'dash', radius:0, texture:'', texHue:0, texBright:100, texContrast:140, texStrength:100 },
   bg:{ img:null, imgOrig:null, crop:null, mode:'none', pos:'center', opacity:15, size:40, effect:'none', paperAlpha:100, margin:80 },
@@ -1000,7 +1000,7 @@ function designData(key){
       {name:'起司拼盤',qty:1,price:800,desc:''},
       {name:'指名費',qty:1,price:2000,desc:''},
       {name:'桌費 SET',qty:1,price:3000,desc:'90 分鐘'} ]),
-    fin:{ sym:'NT$', dec:0, taxPct:5, incl:false, svcPct:15, dtype:'amount', dval:0, method:'信用卡 VISA ****1234', paid:'' },
+    fin:{ sym:'NT$', dec:0, taxPct:5, incl:false, svcPct:15, dtype:'amount', dval:0, method:'現金', paid:'' },
     sty:{ font:'serif', paper:'#2a1d3d', ink:'#ecdfb0', zig:false, divider:'solid' },
     type:{ scale:1, line:1.05, accent:'#d9b44a' },
   };
@@ -1022,7 +1022,7 @@ function designData(key){
       {name:'西裝褲改褲長',qty:1,price:300,desc:''},
       {name:'加急製作（7 日交件）',qty:1,price:3000,desc:''},
       {name:'內襯刺繡英文名',qty:1,price:500,desc:'JS.'} ]),
-    fin:{ sym:'NT$', dec:0, taxPct:5, incl:true, svcPct:0, dtype:'amount', dval:0, method:'信用卡 VISA ****1234', paid:'' },
+    fin:{ sym:'NT$', dec:0, taxPct:5, incl:true, svcPct:0, dtype:'amount', dval:0, method:'現金', paid:'' },
     sty:{ font:'dot', paper:'#ffffff', ink:'#111111', zig:true, divider:'dash' },
     type:{ scale:1, line:1, accent:'#111111' },
   };

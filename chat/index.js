@@ -597,6 +597,15 @@ function normalizeImg(im,cb,onFail){
 }
 function loadImgFromUrl(url,cb){
   url=(url||'').trim(); if(!url) return;
+  // 頁面跑在 HTTPS 時載入 http:// 圖片會被當成 mixed content,
+  // 瀏覽器會擋下來並在網址列顯示「不安全」警告,所以先試著升級成 https。
+  if(location.protocol==='https:'){
+    if(/^http:\/\//i.test(url)) url='https://'+url.slice(7);
+    if(!/^(https:|data:|blob:)/i.test(url)){
+      alert('請使用 https:// 開頭的圖片網址。http 網址會被瀏覽器封鎖並顯示安全性警告,請改用本機上傳。');
+      return;
+    }
+  }
   const im=new Image(); im.crossOrigin='anonymous';
   im.onerror=()=>alert('無法載入這個網址的圖片(可能是連結失效或不允許跨網站讀取),請改用上傳。');
   im.onload=()=>normalizeImg(im,cb,()=>alert('這個網址的圖片不允許跨網站使用,無法用於輸出,請改用上傳。'));
