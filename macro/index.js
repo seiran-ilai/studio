@@ -232,8 +232,13 @@ function onEditor(type, fn) {
   });
 }
 
+// 使用者點過 / 聚焦過的欄位才有可信的游標位置
+const caretTouched = new WeakSet();
+
 editorList.addEventListener("focusin", (e) => {
-  if (e.target.classList.contains("macro-editor")) setActiveEditor(e.target);
+  if (!e.target.classList.contains("macro-editor")) return;
+  caretTouched.add(e.target);
+  setActiveEditor(e.target);
 });
 
 editorList.addEventListener("click", (e) => {
@@ -685,14 +690,12 @@ function renderEmotes() {
     b.innerHTML = `${e.cn.replace('/', '')}<span class="en">${e.en}</span>`;
     b.title = `${e.cn} (${e.en})`;
     b.onclick = () => {
-      // 動作永遠獨立一行,新增後游標跳到下一行
+      // 在游標處插入獨立一行;這則還沒點過(沒有游標位置)就加在最後
       const cmdLine = e.cn + (state.motion ? ' motion' : '');
-      appendNewLine(cmdLine + "\n");
-      const pos = editor.value.length;
-      lastCompletion.active = true;
-      lastCompletion.lineStart = pos - 1 - cmdLine.length;
-      lastCompletion.cursorPos = pos;
-      lastCompletion.withMotion = state.motion;
+      const touched = caretTouched.has(editor);
+      const start = touched ? editor.selectionStart : editor.value.length;
+      const end = touched ? editor.selectionEnd : editor.value.length;
+      insertEmoteLine(start, end, cmdLine);
       showToast(`已新增：${cmdLine}`);
     };
     emoteGrid.appendChild(b);
@@ -859,12 +862,12 @@ const ac = {
   query: ''
 };
 
-// 追蹤「剛剛補完的動作」狀態 — 動作行獨立,游標已跳到下一行;
-// 此時 Tab 對動作行加 motion → 再 Tab 加 wait,Backspace 刪 motion
+// 追蹤「剛剛補完的動作」狀態 — 動作行獨立,游標停在動作行行末;
+// 此時 Tab 加 motion → 再 Tab 加 wait,Backspace 一次刪 motion
 const lastCompletion = {
   active: false,        // 是否處於「剛補完」狀態
   lineStart: -1,        // 動作行在 editor.value 的起始位置
-  cursorPos: -1,        // 補完後游標位置(動作行的下一行開頭)
+  cursorPos: -1,        // 補完後游標位置(動作行行末)
   withMotion: false     // 動作行已有 motion 後綴
 };
 
@@ -1095,31 +1098,36 @@ function acceptAutoComplete() {
   if (!ac.popup) return;
   const chosen = ac.items[ac.selectedIdx];
   if (!chosen) return;
-  // 動作永遠獨立一行:同行前面的文字留在上一行,後面的文字移到下一行,游標跳到下一行
-  const text = editor.value;
-  const lineStart = ac.matchStart === 0 ? 0 : text.lastIndexOf("\n", ac.matchStart - 1) + 1;
-  let lineEnd = text.indexOf("\n", ac.matchEnd);
-  if (lineEnd < 0) lineEnd = text.length;
-  const lineBefore = text.slice(lineStart, ac.matchStart).trimEnd();
-  const lineAfter = text.slice(ac.matchEnd, lineEnd).trimStart();
   const withMotion = state.motion;
-  const head = text.slice(0, lineStart) + (lineBefore ? lineBefore + "\n" : "");
-  const emoteLine = chosen.cn + (withMotion ? " motion" : "");
-  const before = head + emoteLine + "\n";
-  editor.value = before + lineAfter + text.slice(lineEnd);
-  const newPos = before.length;
+  const start = ac.matchStart;
+  const end = ac.matchEnd;
   closeAutoComplete();
-  updateLineCount();
+  insertEmoteLine(start, end, chosen.cn + (withMotion ? " motion" : ""));
+  showToast(`已補全為 ${chosen.cn}${withMotion ? ' motion' : ''}`);
+}
+
+/* 把 [start, end) 換成動作,動作永遠獨立一行:
+   同行前面的文字留在上一行,後面的文字移到下一行,游標停在動作行行末 */
+function insertEmoteLine(start, end, cmdLine) {
+  const text = editor.value;
+  const lineStart = start === 0 ? 0 : text.lastIndexOf("\n", start - 1) + 1;
+  let lineEnd = text.indexOf("\n", end);
+  if (lineEnd < 0) lineEnd = text.length;
+  const lineBefore = text.slice(lineStart, start).trimEnd();
+  const lineAfter = text.slice(end, lineEnd).trimStart();
+  const head = text.slice(0, lineStart) + (lineBefore ? lineBefore + "\n" : "");
+  const tail = (lineAfter ? "\n" + lineAfter : "") + text.slice(lineEnd);
+  editor.value = head + cmdLine + tail;
+  const newPos = head.length + cmdLine.length;
   editor.focus();
   editor.setSelectionRange(newPos, newPos);
+  updateLineCount();
 
   // 記錄「剛補完」狀態
   lastCompletion.active = true;
   lastCompletion.lineStart = head.length;
   lastCompletion.cursorPos = newPos;
-  lastCompletion.withMotion = withMotion;
-
-  showToast(`已補全為 ${chosen.cn}${withMotion ? ' motion' : ''}`);
+  lastCompletion.withMotion = cmdLine.endsWith(" motion");
 }
 
 function closeAutoComplete() {
@@ -1244,46 +1252,29 @@ onEditor('keydown', (e) => {
     const pos = editor.selectionStart;
     const sel = editor.selectionEnd;
 
-    // 游標還停在動作行的下一行開頭 → 對「上一行的動作行」操作
+    // 游標停在動作行行末(剛補完的位置)
     const atCursor = pos === sel && pos === lastCompletion.cursorPos;
     const text = editor.value;
-    const emoteLineEnd = lastCompletion.cursorPos - 1;  // 動作行結尾的 \n 位置
-    const emoteLine = text.slice(lastCompletion.lineStart, emoteLineEnd);
 
-    // Tab：先加 motion,已有 motion 則加 wait
-    if (e.key === 'Tab' && !e.shiftKey && atCursor) {
+    // Tab：加 motion,游標留在同一行;已有 motion 則交給下方行末 Tab 加 wait
+    if (e.key === 'Tab' && !e.shiftKey && atCursor && !lastCompletion.withMotion) {
       e.preventDefault();
-      let newLine;
-      let msg;
-      let addedWait = false;
-      if (!lastCompletion.withMotion) {
-        newLine = emoteLine + " motion";
-        lastCompletion.withMotion = true;
-        msg = "已加上 motion(再按一次 Tab 加 wait)";
-      } else {
-        addedWait = true;
-        const { body, hadMotion } = stripTailTokens(emoteLine);
-        const secs = state.waitValue || "2";
-        newLine = body + (hadMotion ? " motion" : "") + " <wait." + secs + ">";
-        msg = `已加上 <wait.${secs}>`;
-      }
-      editor.value = text.slice(0, lastCompletion.lineStart) + newLine + text.slice(emoteLineEnd);
-      const newPos = pos + newLine.length - emoteLine.length;
+      editor.value = text.slice(0, pos) + " motion" + text.slice(pos);
+      const newPos = pos + " motion".length;
       editor.setSelectionRange(newPos, newPos);
+      lastCompletion.withMotion = true;
       lastCompletion.cursorPos = newPos;
-      if (addedWait) clearLastCompletion();
       _skipNextInput = true;
       updateLineCount();
-      showToast(msg);
+      showToast("已加上 motion(再按一次 Tab 加 wait)");
       return;
     }
 
     // Backspace：動作行有 motion 時，整個 ' motion' 一次刪掉
     if (e.key === 'Backspace' && !e.shiftKey && !e.ctrlKey && !e.metaKey && atCursor &&
-        lastCompletion.withMotion && emoteLine.endsWith(" motion")) {
+        lastCompletion.withMotion && text.slice(lastCompletion.lineStart, pos).endsWith(" motion")) {
       e.preventDefault();
-      const newLine = emoteLine.slice(0, -" motion".length);
-      editor.value = text.slice(0, lastCompletion.lineStart) + newLine + text.slice(emoteLineEnd);
+      editor.value = text.slice(0, pos - " motion".length) + text.slice(pos);
       const newPos = pos - " motion".length;
       editor.setSelectionRange(newPos, newPos);
       lastCompletion.withMotion = false;
