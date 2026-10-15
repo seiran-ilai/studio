@@ -267,13 +267,101 @@
     display: flex;
     flex-direction: column;
   }
-  .editor-pane .macro-editor {
+  /* 多則巨集:固定高度的滾動容器,不撐高整頁 */
+  .editor-list {
     flex: 1;
     min-height: 0;
-    height: 100%;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding-right: 4px;
+  }
+  .editor-list::-webkit-scrollbar { width: 8px; }
+  .editor-list::-webkit-scrollbar-track { background: transparent; }
+  .editor-list::-webkit-scrollbar-thumb { background: var(--border-soft); border-radius: 3px; }
+  .editor-list::-webkit-scrollbar-thumb:hover { background: var(--aether-blue-dim); }
+
+  .macro-block {
+    flex: none;
+    display: flex;
+    flex-direction: column;
+  }
+  .macro-block-head {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 0 2px 6px;
+  }
+  .macro-block-title {
+    font-size: 0.78rem;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    color: var(--text-muted);
+    transition: color 0.15s ease;
+  }
+  .macro-block--active .macro-block-title { color: var(--aether-blue); }
+  .macro-block-count { margin-left: auto; font-size: 0.8rem; }
+  .macro-block-btn {
+    background: transparent;
+    border: 1px solid var(--border-subtle);
+    border-radius: 2px;
+    color: var(--text-secondary);
+    font-family: var(--font-body);
+    font-size: 0.75rem;
+    padding: 2px 8px;
+    cursor: pointer;
+    transition: border-color 0.15s ease, color 0.15s ease, background 0.15s ease;
+  }
+  .macro-block-btn:hover { border-color: var(--border-bright); color: var(--aether-blue); background: var(--bg-card); }
+  .macro-block-btn:active { transform: translateY(1px); }
+  .macro-block-btn--danger:hover { border-color: var(--aether-rose); color: var(--aether-rose); }
+  .macro-block-btn:disabled { opacity: 0.35; cursor: default; pointer-events: none; }
+
+  .editor-pane .macro-block .macro-editor {
+    flex: none;
+    min-height: 120px;
     resize: none;
     margin: 0;
   }
+
+  /* 下緣把手:上下拖曳調整高度,雙擊重設 */
+  .macro-block-resizer {
+    height: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: ns-resize;
+    touch-action: none;
+  }
+  .macro-block-resizer::before {
+    content: "";
+    width: 40px;
+    height: 3px;
+    border-radius: 2px;
+    background: var(--border-soft);
+    transition: width 0.15s ease, background 0.15s ease;
+  }
+  .macro-block-resizer:hover::before,
+  .macro-block-resizer.is-dragging::before { width: 72px; background: var(--aether-blue); }
+  body.ws-resizing-y { cursor: ns-resize; user-select: none; }
+
+  .editor-add {
+    flex: none;
+    margin-top: 8px;
+    padding: 9px;
+    background: transparent;
+    border: 1px dashed var(--border-soft);
+    border-radius: 8px;
+    color: var(--aether-blue);
+    font-family: var(--font-body);
+    font-size: 0.85rem;
+    letter-spacing: 0.08em;
+    cursor: pointer;
+    transition: border-color 0.15s ease, background 0.15s ease;
+  }
+  .editor-add:hover { border-color: var(--aether-blue); background: var(--bg-card); }
+  .editor-add:active { transform: translateY(1px); }
 
   /* ── 右側分頁工具欄 ── */
   .rightpanel {

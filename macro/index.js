@@ -40,7 +40,8 @@ const state = {
 
 /* =================== 元素 =================== */
 const $ = (id) => document.getElementById(id);
-const editor = $('macroEditor');
+const editorList = $('editorList');
+let editor = null;  // 目前作用中的巨集 textarea(所有工具都寫進這一則)
 const lineCountEl = $('lineCount');
 const channelGrid = $('channelGrid');
 const emoteGrid = $('emoteGrid');
@@ -115,23 +116,210 @@ function getActiveLineIndices() {
   }
 }
 
-/* 行數計數器 */
-function updateLineCount() {
-  // 空文字 = 0 行；非空算 \n + 1，但結尾換行不算
-  let n;
-  if (editor.value === '') {
-    n = 0;
-  } else {
-    n = editor.value.split('\n').length;
-    // 結尾是 \n？最後一行算空白行
-    // FF14 巨集會忽略空白行，這裡為視覺一致也忽略
-  }
-  // 過濾掉純空白行
-  const nonEmpty = editor.value.split('\n').filter(l => l.trim().length > 0).length;
-  lineCountEl.textContent = `${nonEmpty} / ${MAX_LINES} 行`;
-  lineCountEl.classList.toggle('warn', nonEmpty >= 12 && nonEmpty < MAX_LINES);
-  lineCountEl.classList.toggle('danger', nonEmpty > MAX_LINES);
+/* 行數計數器 — FF14 巨集會忽略空白行，這裡也只算非空白行 */
+function countNonEmptyLines(text) {
+  return text.split('\n').filter(l => l.trim().length > 0).length;
 }
+function renderLineCount(el, n) {
+  el.textContent = `${n} / ${MAX_LINES} 行`;
+  el.classList.toggle('warn', n >= 12 && n < MAX_LINES);
+  el.classList.toggle('danger', n > MAX_LINES);
+}
+function updateLineCount() {
+  if (!editor) return;
+  const n = countNonEmptyLines(editor.value);
+  renderLineCount(lineCountEl, n);
+  const block = editor.closest('.macro-block');
+  if (block) renderLineCount(block.querySelector('.macro-block-count'), n);
+  scheduleAutoSave();
+}
+
+/* =================== 多則巨集欄位 =================== */
+const DEFAULT_EDITOR_H = 320;
+const MIN_EDITOR_H = 120;
+const EDITOR_PLACEHOLDER = "例如：\n/em 把<t>抓過來用力親了一口。\n/p 副本要開始了 <wait.2>\n/擁抱 motion";
+
+function getBlocks() {
+  return Array.from(editorList.querySelectorAll(".macro-block"));
+}
+
+function createEditorBlock(text, height) {
+  const block = document.createElement("div");
+  block.className = "macro-block";
+  block.innerHTML = `
+    <div class="macro-block-head">
+      <span class="macro-block-title"></span>
+      <span class="line-count macro-block-count"></span>
+      <button class="macro-block-btn" type="button" data-act="copy" title="複製這則巨集">⎘ 複製</button>
+      <button class="macro-block-btn macro-block-btn--danger" type="button" data-act="delete" title="刪除這則巨集">✕</button>
+    </div>
+    <textarea class="macro-editor" spellcheck="false"></textarea>
+    <div class="macro-block-resizer" title="拖曳調整高度（雙擊重設）"></div>`;
+  const ta = block.querySelector(".macro-editor");
+  ta.placeholder = EDITOR_PLACEHOLDER;
+  ta.value = typeof text === "string" ? text : "";
+  ta.style.height = Math.max(MIN_EDITOR_H, parseInt(height, 10) || DEFAULT_EDITOR_H) + "px";
+  renderLineCount(block.querySelector(".macro-block-count"), countNonEmptyLines(ta.value));
+  editorList.appendChild(block);
+  return block;
+}
+
+/* 重新編號;只剩一則時不能刪除 */
+function renumberBlocks() {
+  const blocks = getBlocks();
+  blocks.forEach((b, i) => {
+    b.querySelector(".macro-block-title").textContent = `巨集 ${i + 1}`;
+    b.querySelector('[data-act="delete"]').disabled = blocks.length <= 1;
+  });
+}
+
+function setActiveEditor(ta) {
+  if (editor === ta) return;
+  editor = ta;
+  getBlocks().forEach((b) => b.classList.toggle("macro-block--active", b.contains(ta)));
+  closeAutoComplete();
+  clearLastCompletion();
+  clearLastInherit();
+  updateLineCount();
+  updateScopeIndicator();
+}
+
+function addEditorBlock() {
+  const block = createEditorBlock("", DEFAULT_EDITOR_H);
+  renumberBlocks();
+  const ta = block.querySelector(".macro-editor");
+  setActiveEditor(ta);
+  ta.focus();
+  block.scrollIntoView({ block: "nearest", behavior: "smooth" });
+  showToast(`已新增巨集 ${getBlocks().length}`);
+}
+
+function deleteEditorBlock(block) {
+  const blocks = getBlocks();
+  if (blocks.length <= 1) return;
+  const ta = block.querySelector(".macro-editor");
+  const idx = blocks.indexOf(block);
+  if (ta.value.trim() !== "" && !confirm(`確定刪除巨集 ${idx + 1}？內容會一起刪掉。`)) return;
+  const neighbor = blocks[idx + 1] || blocks[idx - 1];
+  const wasActive = editor === ta;
+  block.remove();
+  renumberBlocks();
+  if (wasActive) {
+    editor = null;
+    setActiveEditor(neighbor.querySelector(".macro-editor"));
+  }
+  scheduleAutoSave();
+  showToast(`已刪除巨集 ${idx + 1}`);
+}
+
+/* 用一組資料重建所有欄位 */
+function restoreEditors(list, activeIdx) {
+  editorList.innerHTML = "";
+  editor = null;
+  const items = Array.isArray(list) && list.length ? list : [{ text: "" }];
+  items.forEach((it) => createEditorBlock(it && it.text, it && it.height));
+  renumberBlocks();
+  const blocks = getBlocks();
+  const target = blocks[activeIdx] || blocks[0];
+  setActiveEditor(target.querySelector(".macro-editor"));
+}
+
+/* 事件都委派在 editorList 上,只處理作用中的那則 */
+function onEditor(type, fn) {
+  editorList.addEventListener(type, (e) => {
+    if (e.target !== editor) return;
+    fn(e);
+  });
+}
+
+editorList.addEventListener("focusin", (e) => {
+  if (e.target.classList.contains("macro-editor")) setActiveEditor(e.target);
+});
+
+editorList.addEventListener("click", (e) => {
+  const btn = e.target.closest("[data-act]");
+  if (!btn) return;
+  const block = btn.closest(".macro-block");
+  if (btn.dataset.act === "copy") copyMacroText(block.querySelector(".macro-editor").value);
+  else if (btn.dataset.act === "delete") deleteEditorBlock(block);
+});
+
+/* 下緣把手拖曳調整高度 */
+editorList.addEventListener("pointerdown", (e) => {
+  const handle = e.target.closest(".macro-block-resizer");
+  if (!handle) return;
+  e.preventDefault();
+  const ta = handle.closest(".macro-block").querySelector(".macro-editor");
+  const startY = e.clientY;
+  const startH = ta.offsetHeight;
+  handle.setPointerCapture(e.pointerId);
+  handle.classList.add("is-dragging");
+  document.body.classList.add("ws-resizing-y");
+  function move(ev) {
+    ta.style.height = Math.max(MIN_EDITOR_H, startH + ev.clientY - startY) + "px";
+  }
+  function up() {
+    handle.removeEventListener("pointermove", move);
+    handle.removeEventListener("pointerup", up);
+    handle.removeEventListener("pointercancel", up);
+    handle.classList.remove("is-dragging");
+    document.body.classList.remove("ws-resizing-y");
+    scheduleAutoSave();
+  }
+  handle.addEventListener("pointermove", move);
+  handle.addEventListener("pointerup", up);
+  handle.addEventListener("pointercancel", up);
+});
+
+editorList.addEventListener("dblclick", (e) => {
+  const handle = e.target.closest(".macro-block-resizer");
+  if (!handle) return;
+  handle.closest(".macro-block").querySelector(".macro-editor").style.height = DEFAULT_EDITOR_H + "px";
+  scheduleAutoSave();
+});
+
+$("addEditorBtn").addEventListener("click", addEditorBlock);
+
+/* =================== 自動儲存(localStorage) =================== */
+const AUTOSAVE_KEY = "macroAutosave";
+let autoSaveTimer = null;
+let autoSaveReady = false;  // 初始化還原完成前不寫入,避免覆蓋舊資料
+
+function collectEditors() {
+  return getBlocks().map((b) => {
+    const ta = b.querySelector(".macro-editor");
+    return { text: ta.value, height: parseInt(ta.style.height, 10) || DEFAULT_EDITOR_H };
+  });
+}
+
+function writeAutoSave() {
+  if (!autoSaveReady) return;
+  try {
+    localStorage.setItem(AUTOSAVE_KEY, JSON.stringify({
+      version: 1,
+      editors: collectEditors(),
+      activeIdx: getBlocks().findIndex((b) => b.contains(editor)),
+      state: { ...state }
+    }));
+  } catch {}
+}
+
+function scheduleAutoSave() {
+  if (!autoSaveReady) return;
+  if (autoSaveTimer) clearTimeout(autoSaveTimer);
+  autoSaveTimer = setTimeout(writeAutoSave, 400);
+}
+
+function readAutoSave() {
+  try {
+    const raw = localStorage.getItem(AUTOSAVE_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
+  }
+}
+
+window.addEventListener("beforeunload", writeAutoSave);
 
 /* =================== 頻道按鈕 =================== */
 function renderChannels() {
@@ -144,7 +332,7 @@ function renderChannels() {
       if (oneClickCheck && oneClickCheck.checked) {
         unifyChannel(c.cmd);
       } else {
-        addChannelLine(c.cmd);
+        applyChannelToCurrentLine(c.cmd);
       }
     };
     channelGrid.appendChild(btn);
@@ -188,10 +376,48 @@ function unifyChannel(channelCmd) {
   }
 }
 
-/* 預設模式：點頻道 → 在文字框末尾新增一行並帶上頻道前綴 */
-function addChannelLine(channelCmd) {
-  appendNewLine(channelCmd + ' ');
-  showToast(`已新增一行：${channelCmd}`);
+/* 預設模式：點頻道 → 套用到游標所在行(有選取多行則套用到選取範圍;文字框為空則新增一行) */
+function applyChannelToCurrentLine(channelCmd) {
+  if (editor.value === "") {
+    appendNewLine(channelCmd + " ");
+    showToast(`已新增一行：${channelCmd}`);
+    return;
+  }
+  if (getSelectionLineRange()) {
+    unifyChannel(channelCmd);
+    return;
+  }
+  const text = editor.value;
+  const pos = editor.selectionStart || 0;
+  const lineStart = pos === 0 ? 0 : text.lastIndexOf("\n", pos - 1) + 1;
+  let lineEnd = text.indexOf("\n", pos);
+  if (lineEnd < 0) lineEnd = text.length;
+  const line = text.slice(lineStart, lineEnd);
+  const lineNo = (text.slice(0, lineStart).match(/\n/g) || []).length + 1;
+
+  let newLine;
+  const m = line.match(CHANNEL_PREFIX_RE);
+  if (m) {
+    newLine = channelCmd + " " + line.slice(m[0].length).trimStart();
+  } else if (line.trimStart().startsWith("/")) {
+    // 動作行不能加頻道 → 在下方插入新的一行
+    const insertion = "\n" + channelCmd + " ";
+    editor.value = text.slice(0, lineEnd) + insertion + text.slice(lineEnd);
+    const newPos = lineEnd + insertion.length;
+    editor.focus();
+    editor.setSelectionRange(newPos, newPos);
+    updateLineCount();
+    showToast(`第 ${lineNo} 行是動作，已在下方新增一行：${channelCmd}`);
+    return;
+  } else {
+    newLine = channelCmd + " " + line.trimStart();
+  }
+  editor.value = text.slice(0, lineStart) + newLine + text.slice(lineEnd);
+  const newPos = lineStart + newLine.length;
+  editor.focus();
+  editor.setSelectionRange(newPos, newPos);
+  updateLineCount();
+  showToast(`第 ${lineNo} 行已套用 ${channelCmd}`);
 }
 
 /* 一鍵套用切換 */
@@ -247,6 +473,7 @@ document.querySelectorAll('.wait-num').forEach((b) => {
     waitCustom.value = '';
     highlightActiveSec();
     updateSecLabels();
+    scheduleAutoSave();
   };
 });
 
@@ -260,6 +487,7 @@ waitCustom.addEventListener('input', (e) => {
     highlightActiveSec();
   }
   updateSecLabels();
+  scheduleAutoSave();
 });
 
 /* 行末一個(或多個重複)<wait.X> 的比對 — 用於防呆,確保每行只留一個 */
@@ -364,10 +592,12 @@ $('clearBtn').onclick = () => {
   editor.value = '';
   updateLineCount();
   editor.focus();
-  showToast('已清空全部');
+  showToast('已清空目前巨集');
 };
-$('copyBtn').onclick = async () => {
-  const text = editor.value
+$('copyBtn').onclick = () => copyMacroText(editor.value);
+
+async function copyMacroText(raw) {
+  const text = raw
     .split('\n')
     .filter(l => l.trim() !== '')
     .join('\n');
@@ -387,7 +617,7 @@ $('copyBtn').onclick = async () => {
     document.body.removeChild(ta);
     showToast('已複製到剪貼簿');
   }
-};
+}
 
 function insertAtCursor(insert) {
   const start = editor.selectionStart || 0;
@@ -427,6 +657,7 @@ function renderCatTabs() {
       state.selectedCategory = c;
       renderCatTabs();
       renderEmotes();
+      scheduleAutoSave();
     };
     catTabs.appendChild(t);
   });
@@ -454,8 +685,14 @@ function renderEmotes() {
     b.innerHTML = `${e.cn.replace('/', '')}<span class="en">${e.en}</span>`;
     b.title = `${e.cn} (${e.en})`;
     b.onclick = () => {
+      // 動作永遠獨立一行,新增後游標跳到下一行
       const cmdLine = e.cn + (state.motion ? ' motion' : '');
-      appendNewLine(cmdLine);
+      appendNewLine(cmdLine + "\n");
+      const pos = editor.value.length;
+      lastCompletion.active = true;
+      lastCompletion.lineStart = pos - 1 - cmdLine.length;
+      lastCompletion.cursorPos = pos;
+      lastCompletion.withMotion = state.motion;
       showToast(`已新增：${cmdLine}`);
     };
     emoteGrid.appendChild(b);
@@ -470,6 +707,7 @@ emoteSearch.addEventListener('input', (e) => {
 motionCheck.addEventListener('change', (e) => {
   state.motion = e.target.checked;
   motionToggle.classList.toggle('checked', state.motion);
+  scheduleAutoSave();
 });
 
 /* =================== 工具側欄:每欄可收起 / 展開 + 拖曳調整寬度 =================== */
@@ -621,19 +859,20 @@ const ac = {
   query: ''
 };
 
-// 追蹤「剛剛補完的動作」狀態 — 用於 Tab 加 motion / Backspace 刪 motion
+// 追蹤「剛剛補完的動作」狀態 — 動作行獨立,游標已跳到下一行;
+// 此時 Tab 對動作行加 motion → 再 Tab 加 wait,Backspace 刪 motion
 const lastCompletion = {
   active: false,        // 是否處於「剛補完」狀態
-  emoteEnd: -1,         // 動作名稱 (e.g. /擁抱) 結尾在 editor.value 的位置
-  withMotion: false,    // 已有 motion 後綴
-  motionEnd: -1         // ' motion' 結尾位置（若有）
+  lineStart: -1,        // 動作行在 editor.value 的起始位置
+  cursorPos: -1,        // 補完後游標位置(動作行的下一行開頭)
+  withMotion: false     // 動作行已有 motion 後綴
 };
 
 function clearLastCompletion() {
   lastCompletion.active = false;
-  lastCompletion.emoteEnd = -1;
+  lastCompletion.lineStart = -1;
+  lastCompletion.cursorPos = -1;
   lastCompletion.withMotion = false;
-  lastCompletion.motionEnd = -1;
 }
 
 // 追蹤「剛換行繼承前綴」狀態 — Backspace 一次刪整個前綴
@@ -856,13 +1095,19 @@ function acceptAutoComplete() {
   if (!ac.popup) return;
   const chosen = ac.items[ac.selectedIdx];
   if (!chosen) return;
+  // 動作永遠獨立一行:同行前面的文字留在上一行,後面的文字移到下一行,游標跳到下一行
   const text = editor.value;
-  const before = text.slice(0, ac.matchStart);
-  const after = text.slice(ac.matchEnd);
+  const lineStart = ac.matchStart === 0 ? 0 : text.lastIndexOf("\n", ac.matchStart - 1) + 1;
+  let lineEnd = text.indexOf("\n", ac.matchEnd);
+  if (lineEnd < 0) lineEnd = text.length;
+  const lineBefore = text.slice(lineStart, ac.matchStart).trimEnd();
+  const lineAfter = text.slice(ac.matchEnd, lineEnd).trimStart();
   const withMotion = state.motion;
-  const insertion = chosen.cn + (withMotion ? ' motion' : '');
-  editor.value = before + insertion + after;
-  const newPos = before.length + insertion.length;
+  const head = text.slice(0, lineStart) + (lineBefore ? lineBefore + "\n" : "");
+  const emoteLine = chosen.cn + (withMotion ? " motion" : "");
+  const before = head + emoteLine + "\n";
+  editor.value = before + lineAfter + text.slice(lineEnd);
+  const newPos = before.length;
   closeAutoComplete();
   updateLineCount();
   editor.focus();
@@ -870,9 +1115,9 @@ function acceptAutoComplete() {
 
   // 記錄「剛補完」狀態
   lastCompletion.active = true;
-  lastCompletion.emoteEnd = before.length + chosen.cn.length;  // /擁抱 結尾
+  lastCompletion.lineStart = head.length;
+  lastCompletion.cursorPos = newPos;
   lastCompletion.withMotion = withMotion;
-  lastCompletion.motionEnd = withMotion ? newPos : -1;
 
   showToast(`已補全為 ${chosen.cn}${withMotion ? ' motion' : ''}`);
 }
@@ -887,7 +1132,7 @@ window.addEventListener('scroll', () => { if (ac.popup) positionAutoComplete(); 
 window.addEventListener('resize', () => { if (ac.popup) positionAutoComplete(); });
 
 /* =================== 編輯器事件 =================== */
-editor.addEventListener('input', () => {
+onEditor('input', () => {
   updateLineCount();
   // 任何輸入都讓「剛補完」狀態失效（除非是補完本身）
   if (!_skipNextInput) {
@@ -899,7 +1144,7 @@ editor.addEventListener('input', () => {
   if (tok) showAutoComplete(tok);
   else closeAutoComplete();
 });
-editor.addEventListener('click', () => {
+onEditor('click', () => {
   clearLastCompletion();
   clearLastInherit();
   updateScopeIndicator();
@@ -907,15 +1152,15 @@ editor.addEventListener('click', () => {
   if (tok) showAutoComplete(tok);
   else closeAutoComplete();
 });
-editor.addEventListener('keyup', (e) => {
+onEditor('keyup', (e) => {
   updateScopeIndicator();
   if (['ArrowLeft','ArrowRight','ArrowUp','ArrowDown','Home','End'].includes(e.key) && !ac.popup) {
     const tok = detectEmoteToken();
     if (tok) showAutoComplete(tok);
   }
 });
-editor.addEventListener('select', updateScopeIndicator);
-editor.addEventListener('blur', () => {
+onEditor('select', updateScopeIndicator);
+onEditor('focusout', () => {
   setTimeout(() => closeAutoComplete(), 150);
   clearLastCompletion();
   clearLastInherit();
@@ -923,7 +1168,7 @@ editor.addEventListener('blur', () => {
 
 let _skipNextInput = false;
 
-editor.addEventListener('keydown', (e) => {
+onEditor('keydown', (e) => {
   // popup 開啟時優先處理
   if (ac.popup) {
     if (e.key === 'ArrowDown') { e.preventDefault(); moveAutoComplete(1); return; }
@@ -999,64 +1244,54 @@ editor.addEventListener('keydown', (e) => {
     const pos = editor.selectionStart;
     const sel = editor.selectionEnd;
 
-    // Tab：加 motion（如果還沒加）
-    if (e.key === 'Tab' && !e.shiftKey) {
-      // 游標必須在 emoteEnd（剛補完的位置）才觸發
-      if (pos === sel && pos === lastCompletion.emoteEnd && !lastCompletion.withMotion) {
-        e.preventDefault();
-        const text = editor.value;
-        const before = text.slice(0, lastCompletion.emoteEnd);
-        const after = text.slice(lastCompletion.emoteEnd);
-        const insertion = ' motion';
-        editor.value = before + insertion + after;
-        const newPos = lastCompletion.emoteEnd + insertion.length;
-        editor.setSelectionRange(newPos, newPos);
-        // 更新狀態（仍處於「剛補完」狀態，但已加 motion）
+    // 游標還停在動作行的下一行開頭 → 對「上一行的動作行」操作
+    const atCursor = pos === sel && pos === lastCompletion.cursorPos;
+    const text = editor.value;
+    const emoteLineEnd = lastCompletion.cursorPos - 1;  // 動作行結尾的 \n 位置
+    const emoteLine = text.slice(lastCompletion.lineStart, emoteLineEnd);
+
+    // Tab：先加 motion,已有 motion 則加 wait
+    if (e.key === 'Tab' && !e.shiftKey && atCursor) {
+      e.preventDefault();
+      let newLine;
+      let msg;
+      let addedWait = false;
+      if (!lastCompletion.withMotion) {
+        newLine = emoteLine + " motion";
         lastCompletion.withMotion = true;
-        lastCompletion.motionEnd = newPos;
-        _skipNextInput = true;
-        updateLineCount();
-        showToast('已加上 motion');
-        return;
+        msg = "已加上 motion(再按一次 Tab 加 wait)";
+      } else {
+        addedWait = true;
+        const { body, hadMotion } = stripTailTokens(emoteLine);
+        const secs = state.waitValue || "2";
+        newLine = body + (hadMotion ? " motion" : "") + " <wait." + secs + ">";
+        msg = `已加上 <wait.${secs}>`;
       }
+      editor.value = text.slice(0, lastCompletion.lineStart) + newLine + text.slice(emoteLineEnd);
+      const newPos = pos + newLine.length - emoteLine.length;
+      editor.setSelectionRange(newPos, newPos);
+      lastCompletion.cursorPos = newPos;
+      if (addedWait) clearLastCompletion();
+      _skipNextInput = true;
+      updateLineCount();
+      showToast(msg);
+      return;
     }
 
-    // Backspace：當游標在 motion 結尾、有 motion 時，整個 ' motion' 一次刪掉
-    if (e.key === 'Backspace' && !e.shiftKey && !e.ctrlKey && !e.metaKey) {
-      if (pos === sel && lastCompletion.withMotion && pos === lastCompletion.motionEnd) {
-        e.preventDefault();
-        const text = editor.value;
-        const before = text.slice(0, lastCompletion.emoteEnd);
-        const after = text.slice(lastCompletion.motionEnd);
-        editor.value = before + after;
-        const newPos = lastCompletion.emoteEnd;
-        editor.setSelectionRange(newPos, newPos);
-        // 更新狀態（仍是「剛補完」但沒 motion）
-        lastCompletion.withMotion = false;
-        lastCompletion.motionEnd = -1;
-        _skipNextInput = true;
-        updateLineCount();
-        showToast('已移除 motion');
-        return;
-      }
-    }
-
-    // Delete：當游標在 emote 結尾且有 motion 時，整個 ' motion' 一次刪掉
-    if (e.key === 'Delete' && !e.shiftKey && !e.ctrlKey && !e.metaKey) {
-      if (pos === sel && lastCompletion.withMotion && pos === lastCompletion.emoteEnd) {
-        e.preventDefault();
-        const text = editor.value;
-        const before = text.slice(0, lastCompletion.emoteEnd);
-        const after = text.slice(lastCompletion.motionEnd);
-        editor.value = before + after;
-        editor.setSelectionRange(lastCompletion.emoteEnd, lastCompletion.emoteEnd);
-        lastCompletion.withMotion = false;
-        lastCompletion.motionEnd = -1;
-        _skipNextInput = true;
-        updateLineCount();
-        showToast('已移除 motion');
-        return;
-      }
+    // Backspace：動作行有 motion 時，整個 ' motion' 一次刪掉
+    if (e.key === 'Backspace' && !e.shiftKey && !e.ctrlKey && !e.metaKey && atCursor &&
+        lastCompletion.withMotion && emoteLine.endsWith(" motion")) {
+      e.preventDefault();
+      const newLine = emoteLine.slice(0, -" motion".length);
+      editor.value = text.slice(0, lastCompletion.lineStart) + newLine + text.slice(emoteLineEnd);
+      const newPos = pos - " motion".length;
+      editor.setSelectionRange(newPos, newPos);
+      lastCompletion.withMotion = false;
+      lastCompletion.cursorPos = newPos;
+      _skipNextInput = true;
+      updateLineCount();
+      showToast('已移除 motion');
+      return;
     }
 
     // 其他按鍵：解除「剛補完」狀態
@@ -1165,7 +1400,7 @@ editor.addEventListener('keydown', (e) => {
 });
 
 /* 滑鼠拖曳選取後也要更新 scope */
-editor.addEventListener('mouseup', () => {
+onEditor('mouseup', () => {
   updateScopeIndicator();
   clearLastCompletion();
   clearLastInherit();
@@ -1579,10 +1814,12 @@ miconType.addEventListener('change', updateMiconLine);
 /* =================== 存檔 / 讀檔 =================== */
 // 把目前狀態 + 編輯框文字打包成 JSON 下載
 function saveToFile() {
+  const editors = collectEditors();
   const data = {
     _type: "macro-save",
-    version: 1,
-    editorText: $("macroEditor").value,
+    version: 2,
+    editors: editors,
+    editorText: editors[0] ? editors[0].text : "",  // 相容舊版讀檔
     state: { ...state }
   };
   const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
@@ -1618,25 +1855,35 @@ function loadFromData(data) {
     alert("檔案格式不符，無法讀取。");
     return;
   }
-  // 還原編輯框文字
-  $("macroEditor").value = typeof data.editorText === "string" ? data.editorText : "";
+  // 還原編輯框文字(v2 多則;v1 只有單一 editorText)
+  if (Array.isArray(data.editors)) {
+    restoreEditors(data.editors, 0);
+  } else {
+    restoreEditors([{ text: data.editorText }], 0);
+  }
   // 還原狀態
   if (data.state && typeof data.state === "object") {
     Object.assign(state, data.state);
   }
-  // 同步對應 DOM
+  syncStateUi();
+  updateLineCount();
+  showToast("已讀檔");
+  editor.focus();
+}
+
+/* 依 state 同步對應 DOM 並重繪 */
+function syncStateUi() {
   if (emoteSearch) emoteSearch.value = state.emoteSearch || "";
   if (motionCheck) {
     motionCheck.checked = !!state.motion;
     if (motionToggle) motionToggle.classList.toggle("checked", !!state.motion);
   }
-  // 重繪畫面
+  const isPreset = Array.from(document.querySelectorAll(".wait-num")).some((b) => b.dataset.secs === state.waitValue);
+  waitCustom.value = isPreset ? "" : (state.waitValue || "");
   renderCatTabs();
   renderEmotes();
   highlightActiveSec();
-  updateLineCount();
-  showToast("已讀檔");
-  editor.focus();
+  updateSecLabels();
 }
 
 // 觸發隱藏 file input
@@ -1646,13 +1893,20 @@ function triggerLoad() {
 }
 
 function init() {
+  // 還原自動儲存的內容(沒有就建立一則空白巨集)
+  const saved = readAutoSave();
+  if (saved && Array.isArray(saved.editors)) {
+    restoreEditors(saved.editors, saved.activeIdx);
+    if (saved.state && typeof saved.state === "object") Object.assign(state, saved.state);
+  } else {
+    restoreEditors([], 0);
+  }
+
   renderChannels();
-  renderCatTabs();
-  renderEmotes();
-  highlightActiveSec();
-  updateSecLabels();
+  syncStateUi();
   updateLineCount();
   updateScopeIndicator();
+  autoSaveReady = true;
 
   // 存檔 / 讀檔
   $("saveBtn").addEventListener("click", saveToFile);

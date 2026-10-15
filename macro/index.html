@@ -74,7 +74,7 @@
   <div class="hintbar">
     <kbd>/</kbd> 動作建議<span class="sep">｜</span>
     <kbd>Tab</kbd> 補全<span class="sep">｜</span>
-    補完情感再 <kbd>Tab</kbd> 加 motion<span class="sep">｜</span>
+    補完情感再 <kbd>Tab</kbd> 加 motion(不顯示系統 em 文字)<span class="sep">｜</span>
     行末 <kbd>Tab</kbd> 加 wait<span class="sep">｜</span>
     <kbd>t</kbd>+<kbd>Tab</kbd> 轉 &lt;t&gt;
   </div>
@@ -84,8 +84,9 @@
 
     <!-- 左:編輯區 -->
     <div class="editor-pane">
-      <textarea class="macro-editor" id="macroEditor"
-                placeholder="例如：&#10;/em 把<t>抓過來用力親了一口。&#10;/p 副本要開始了 <wait.2>&#10;/擁抱 motion"></textarea>
+      <!-- 多則巨集欄位:由 JS 動態產生,上下滾動切換,底部把手拖曳調整高度 -->
+      <div class="editor-list" id="editorList"></div>
+      <button class="editor-add" id="addEditorBtn" type="button">＋ 新增巨集</button>
     </div>
 
     <!-- 右:分頁工具欄 -->
@@ -100,7 +101,7 @@
         <!-- 情感動作 -->
         <section class="tab-panel active" data-panel="emote" id="sideEmote">
           <div class="emote-top">
-            <p class="emote-floater-desc">點擊動作 → 在文字框最後新增一行</p>
+            <p class="emote-floater-desc">點擊動作 → 在最後新增獨立一行；加 motion 就不會出現系統預設的 em 文字</p>
             <div class="emote-search-row">
               <input type="text" class="emote-search" id="emoteSearch" placeholder="搜尋動作..." />
               <label class="motion-toggle" id="motionToggle">
@@ -229,11 +230,11 @@
     <div class="hotkey-list">
       <div class="hotkey-item">
         <span class="hotkey-keys"><kbd>/</kbd> + 字</span>
-        <span class="hotkey-desc">跳出動作建議；<kbd>Tab</kbd> / <kbd>Enter</kbd> 補全；<kbd>↑↓</kbd> 切換</span>
+        <span class="hotkey-desc">跳出動作建議；<kbd>Tab</kbd> / <kbd>Enter</kbd> 補全；<kbd>↑↓</kbd> 切換。動作一律獨立一行，補全後自動跳到下一行</span>
       </div>
       <div class="hotkey-item">
         <span class="hotkey-keys">補全情感動作後再按 <kbd>Tab</kbd></span>
-        <span class="hotkey-desc">在動作後加 <code>motion</code>；按 <kbd>Backspace</kbd> 一次刪掉</span>
+        <span class="hotkey-desc">在動作後加 <code>motion</code>（不會出現系統預設的 em 文字），再按一次加 <code>&lt;wait.X&gt;</code>；<kbd>Backspace</kbd> 一次刪掉 motion</span>
       </div>
       <div class="hotkey-item">
         <span class="hotkey-keys">行末按 <kbd>Tab</kbd></span>
@@ -309,11 +310,11 @@
 
   // 引導導覽 (coach-mark tour):i 按鈕啟動 / 首次造訪自動顯示
   (function(){var KEY='macro-seen-guide';var TOUR=[
-    {sel:'#macroEditor',pos:'right',text:'最左是<b>編輯區</b>。直接輸入台詞或動作，右側分頁工具都會寫進這個文字框。輸入 <b>/</b> 加字會跳出動作建議，<b>Tab / Enter</b> 補全。一則巨集上限 <b>15 行</b>。'},
+    {sel:'#editorList',pos:'right',text:'最左是<b>編輯區</b>。直接輸入台詞或動作，右側分頁工具都會寫進<b>目前點選的巨集</b>。輸入 <b>/</b> 加字會跳出動作建議，<b>Tab / Enter</b> 補全。一則巨集上限 <b>15 行</b>。<br>按底部 <b>＋ 新增巨集</b> 可放多則巨集，上下滾動切換；拖曳每則下緣的把手調整高度。內容會<b>自動儲存</b>。'},
     {sel:'#sideEmote',tab:'emote',pos:'left',text:'右側是<b>分頁工具</b>:上方可切換<b>情感動作 / 頻道 / 工具</b>三頁。這頁是<b>情感動作</b>:用頂部搜尋框或分類瀏覽，點一下即新增一行；勾 <b>+motion</b> 一併加靜止動作。'},
     {sel:'#waitNumRow',tab:'tools',pos:'left',text:'<b>工具</b>頁上半是<b>等待</b>:先選好秒數（或在頂列填預設秒），之後在左側行末按 <b>Tab</b>、或按 <b>每行末加 wait</b> 就會加上 <b>&lt;wait.X&gt;</b>。'},
     {sel:'#sideTools',tab:'tools',pos:'left',text:'<b>工具</b>頁還有<b>小工具</b>:換裝、倒數、切換介面等;底部的<b>自訂圖標</b>會在巨集最前面加上 /micon 行。'},
-    {sel:'#channelTool',tab:'channel',pos:'left',text:'<b>頻道</b>頁:點頻道按鈕會在文字框<b>新增一行</b>並帶上前綴。勾 <b>一鍵套用</b> 改為幫每行套上前綴；在文字框<b>選取多行</b>只動選取範圍，不選取則套用至所有行。'},
+    {sel:'#channelTool',tab:'channel',pos:'left',text:'<b>頻道</b>頁:點頻道按鈕會套用到<b>游標所在的那一行</b>（文字框為空時新增一行）。勾 <b>一鍵套用</b> 改為幫每行套上前綴；在文字框<b>選取多行</b>只動選取範圍，不選取則套用至所有行。'},
     {sel:'#copyBtn',pos:'bottom',text:'編好之後按頂列的 <b>複製巨集</b>，把整段內容貼回遊戲的巨集設定即可。'},
     {sel:'#hotkeyBtn',pos:'bottom',text:'頂列的 <b>快捷鍵</b> 可隨時叫出快捷鍵說明；旁邊可切換<b>介面大小</b>、開 <b>ℹ</b> 看關於與其他工具，設定都會自動記住。'}
   ];
